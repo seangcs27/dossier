@@ -2,24 +2,24 @@ import type { Rarity, Profession } from '../shared/types';
 
 export const PROFESSION_LABEL: Record<Profession, string> = {
   CASTER:   'Caster',
-  DEFENDER: 'Defender',
-  GUARD:    'Guard',
   MEDIC:    'Medic',
   PIONEER:  'Vanguard',
   SNIPER:   'Sniper',
   SPECIAL:  'Specialist',
   SUPPORT:  'Supporter',
+  TANK:     'Defender',
+  WARRIOR:  'Guard',
 };
 
 export const PROFESSION_CSS: Record<Profession, string> = {
   CASTER:   'caster',
-  DEFENDER: 'defender',
-  GUARD:    'guard',
   MEDIC:    'medic',
   PIONEER:  'vanguard',
   SNIPER:   'sniper',
   SPECIAL:  'specialist',
   SUPPORT:  'supporter',
+  TANK:     'defender',
+  WARRIOR:  'guard',
 };
 
 export function rarityNum(r: Rarity): number {
