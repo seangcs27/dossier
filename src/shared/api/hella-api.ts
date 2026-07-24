@@ -1,4 +1,4 @@
-import type { Operator, OperatorId } from '../types';
+import type { AttackRange, Operator, OperatorId } from '../types';
 
 const BASE_URL = 'https://awedtan.ca/api';
 export const IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
@@ -23,6 +23,15 @@ export async function fetchOperator(id: OperatorId): Promise<Operator> {
   return envelope.value;
 }
 
+export async function fetchRange(id: string): Promise<AttackRange> {
+  const envelope = await apiFetch<HellaEnvelope<AttackRange>>(`/range/${encodeURIComponent(id)}`);
+  return envelope.value;
+}
+
 export function operatorAvatarUrl(id: OperatorId): string {
   return `${IMAGE_BASE}/avatars/${id}.png`;
+}
+
+export function skillIconUrl(skillId: string): string {
+  return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }
