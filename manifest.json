@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Dossier",
+  "version": "0.1.0",
+  "description": "Arknights operator lookup",
+  "icons": {
+    "48": "icons/958143539634667591.png",
+    "96": "icons/958143539634667591.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/958143539634667591.png"
+    },
+    "default_title": "Dossier"
+  },
+  "host_permissions": [
+    "https://awedtan.ca/*"
+  ]
+}

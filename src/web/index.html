@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dossier — Arknights</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --accent:   #d29922;
+
+      --vanguard:   #14b8a6;
+      --guard:      #ef4444;
+      --defender:   #3b82f6;
+      --sniper:     #f59e0b;
+      --caster:     #8b5cf6;
+      --medic:      #22c55e;
+      --supporter:  #6b7280;
+      --specialist: #ec4899;
+
+      --r1: #6b7280; --r2: #6b7280; --r3: #3b82f6;
+      --r4: #8b5cf6; --r5: #f59e0b; --r6: #ef4444;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    #search {
+      flex: 1;
+      max-width: 360px;
+      padding: 6px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    #search:focus { border-color: var(--accent); }
+
+    #count {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── Grid ── */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      padding: 20px;
+    }
+
+    /* ── Operator card ── */
+    .op-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      display: flex;
+      flex-direction: column;
+    }
+    .op-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .op-avatar {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: var(--bg);
+      display: block;
+    }
+    .op-avatar-placeholder {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: var(--muted);
+    }
+
+    .op-info {
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .op-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .op-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .op-class {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 5px;
+      border-radius: 3px;
+      opacity: 0.9;
+    }
+    .op-class.vanguard   { background: var(--vanguard);   color: #fff; }
+    .op-class.guard      { background: var(--guard);      color: #fff; }
+    .op-class.defender   { background: var(--defender);   color: #fff; }
+    .op-class.sniper     { background: var(--sniper);     color: #000; }
+    .op-class.caster     { background: var(--caster);     color: #fff; }
+    .op-class.medic      { background: var(--medic);      color: #000; }
+    .op-class.supporter  { background: var(--supporter);  color: #fff; }
+    .op-class.specialist { background: var(--specialist); color: #fff; }
+
+    .op-rarity { font-size: 10px; letter-spacing: -1px; }
+    .op-rarity.r1, .op-rarity.r2 { color: var(--r2); }
+    .op-rarity.r3 { color: var(--r3); }
+    .op-rarity.r4 { color: var(--r4); }
+    .op-rarity.r5 { color: var(--r5); }
+    .op-rarity.r6 { color: var(--r6); }
+
+    /* ── States ── */
+    .state-msg {
+      grid-column: 1 / -1;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .state-msg .label { font-size: 18px; margin-bottom: 8px; }
+
+    .spinner {
+      display: inline-block;
+      width: 28px; height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>DOSSIER</h1>
+    <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
+    <span id="count"></span>
+  </header>
+  <main id="grid"></main>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "name": "dossier",
+  "version": "0.1.0",
+  "description": "Arknights operator lookup — browser extension + web SPA",
+  "scripts": {
+    "build": "webpack --config webpack.ext.js --mode production && webpack --config webpack.web.js --mode production",
+    "build:ext": "webpack --config webpack.ext.js --mode production",
+    "build:web": "webpack --config webpack.web.js --mode production",
+    "dev": "webpack --config webpack.ext.js --mode development --watch",
+    "dev:web": "webpack --config webpack.web.js --mode development --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/webextension-polyfill": "^0.10.7",
+    "copy-webpack-plugin": "^12.0.2",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.12.0"
+  }
+}

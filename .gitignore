@@ -1,0 +1,35 @@
+# Build output
+dist/
+
+# Git worktrees
+.worktrees/
+
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs
+*.log
+npm-debug.log*
+
+# Superpowers scratch
+.superpowers/
+
+# Secrets / local env (public repo)
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+
+# Local process docs (specs/plans stay local)
+docs/
