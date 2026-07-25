@@ -66,6 +66,8 @@ src/
     index.ts        ← app entry: hash-router dispatch (grid ↔ detail)
     router.ts       ← hash routing (#/ , #/op/<id>)
     format.ts       ← escHtml/cleanText, rarity + profession helpers
+    operator-index.ts  ← grid data store: bundle/localStorage + background refresh, sort/filter helpers
+    generated/         ← build-time generated operators.json (gitignored)
     views/
       grid.ts       ← operator grid + live search; cards link to #/op/<id>
       detail.ts     ← rich operator dossier (stats, ranges, skills, talents, potentials, base skills)
@@ -86,6 +88,7 @@ Three config files:
 ```ts
 fetchAllOperators(): Promise<Operator[]>
 fetchOperator(id: OperatorId): Promise<Operator>
+fetchOperatorIndex(): Promise<OperatorSlim[]>   // slim grid-sized list (~200 KB); id from envelope `canon`
 fetchRange(id: string): Promise<AttackRange>
 operatorAvatarUrl(id: OperatorId): string   // jsdelivr CDN
 skillIconUrl(skillId: string): string       // jsdelivr CDN
@@ -105,7 +108,9 @@ clearCache(): void
 
 ### Types (`src/shared/types/operator.ts`)
 
-Key types: `Operator`, `OperatorData`, `OperatorSummary`, `Rarity` (`TIER_1`–`TIER_6`), `Profession` (`PIONEER` = Vanguard in-game, `SUPPORT` = Supporter), `Position`.
+Key types: `Operator`, `OperatorData`, `OperatorSummary`, `OperatorSlim`, `OperatorIndexEntry`, `Rarity` (`TIER_1`–`TIER_6`), `Profession` (`PIONEER` = Vanguard in-game, `SUPPORT` = Supporter), `Position`.
+
+`Profession` uses the game's internal enums (`TANK` = Defender, `WARRIOR` = Guard); label maps translate for display.
 
 ## Extension Architecture (`src/extension/`)
 
@@ -117,7 +122,18 @@ Single entry point: **`popup/index.ts`**. No background service worker and no co
 
 ## Web SPA (`src/web/`)
 
-Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid (loads all operators via the shared cache, live-filters by name/appellation, sorted rarity desc then name asc); `#/op/<id>` shows a rich detail dossier (header, lore/tags, per-phase stats table, attack-range grids via `getRange`, skills, talents, potentials, base skills). Deployed to GitHub Pages by `.github/workflows/deploy-pages.yml` on every push to `master`.
+Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid; `#/op/<id>` shows a rich detail dossier (header, lore/tags, per-phase stats table, attack-range grids via `getRange`, skills, talents, potentials, base skills).
+
+Data: `scripts/build-operator-index.mjs` runs via `prebuild:web`/`predev:web` and writes
+`src/web/generated/operators.json` (slim index: id, name, appellation, rarity, profession,
+subProfessionId, releaseIndex — release order derived from the operator id's char-id number).
+Webpack inlines it; at runtime `src/web/operator-index.ts` first-paints from
+localStorage["dossier:operators"] or the bundle, then refreshes via HellaAPI's slim
+`?include=` query in the background. The detail view still fetches full operators via the
+shared cache. The grid defaults to newest-first with a sort dropdown (release/name/rarity/class)
+and class/rarity filter chips.
+
+Deployed to GitHub Pages by `.github/workflows/deploy-pages.yml` on every push to `master`, plus a weekly cron rebuild to pick up newly released operators.
 
 ## Testing
 
