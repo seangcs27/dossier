@@ -5,10 +5,10 @@
   "scripts": {
     "build": "npm run build:ext && npm run build:web",
     "build:ext": "webpack --config webpack.ext.js --mode production",
-    "prebuild:web": "node scripts/build-operator-index.mjs",
+    "prebuild:web": "node --no-network-family-autoselection scripts/build-operator-index.mjs",
     "build:web": "webpack --config webpack.web.js --mode production",
     "dev": "webpack --config webpack.ext.js --mode development --watch",
-    "predev:web": "node scripts/build-operator-index.mjs",
+    "predev:web": "node --no-network-family-autoselection scripts/build-operator-index.mjs",
     "dev:web": "webpack --config webpack.web.js --mode development --watch",
     "clean": "rm -rf dist"
   },
