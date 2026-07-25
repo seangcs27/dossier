@@ -4,6 +4,8 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0' # weekly, Sunday 00:00 UTC — refresh bundled operator data
 
 permissions:
   contents: read

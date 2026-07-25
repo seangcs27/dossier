@@ -266,6 +266,8 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
   const search = document.getElementById('search') as HTMLInputElement;
   const count  = document.getElementById('count')!;
   search.style.display = 'none';
+  (document.getElementById('sort') as HTMLSelectElement).style.display = 'none';
+  document.getElementById('chips')!.style.display = 'none';
   count.textContent = '';
 
   container.innerHTML = `<div class="detail">${BACK_LINK}<div class="state-msg"><span class="spinner"></span></div></div>`;

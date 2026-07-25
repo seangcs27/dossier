@@ -2,9 +2,10 @@ export type OperatorId = string; // "char_002_amiya"
 
 export type Rarity = 'TIER_1' | 'TIER_2' | 'TIER_3' | 'TIER_4' | 'TIER_5' | 'TIER_6';
 
+// HellaAPI returns the game's internal enums: TANK = Defender, WARRIOR = Guard.
 export type Profession =
-  | 'CASTER' | 'DEFENDER' | 'GUARD' | 'MEDIC'
-  | 'PIONEER' | 'SNIPER' | 'SPECIAL' | 'SUPPORT';
+  | 'CASTER' | 'MEDIC' | 'PIONEER' | 'SNIPER'
+  | 'SPECIAL' | 'SUPPORT' | 'TANK' | 'WARRIOR';
 
 export type Position = 'MELEE' | 'RANGED';
 
@@ -159,4 +160,17 @@ export interface OperatorSummary {
   rarity: Rarity;
   profession: Profession;
   subProfessionId: string;
+}
+
+export interface OperatorSlim {
+  id: OperatorId;
+  name: string;
+  appellation: string;
+  rarity: Rarity;
+  profession: Profession;
+  subProfessionId: string;
+}
+
+export interface OperatorIndexEntry extends OperatorSlim {
+  releaseIndex: number; // bigger = newer; char-id number, see scripts/build-operator-index.mjs
 }
