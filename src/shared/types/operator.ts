@@ -172,5 +172,7 @@ export interface OperatorSlim {
 }
 
 export interface OperatorIndexEntry extends OperatorSlim {
-  releaseIndex: number; // bigger = newer; char-id number, see scripts/build-operator-index.mjs
+  // CN release date, 'YYYY-MM-DD'. null for tutorial / Integrated Strategies trainer
+  // units that were never released. See scripts/build-operator-index.mjs.
+  releaseDate: string | null;
 }

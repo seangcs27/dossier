@@ -2,15 +2,11 @@ import { operatorAvatarUrl } from '../../shared/api/hella-api';
 import type { OperatorIndexEntry, Profession } from '../../shared/types';
 import {
   getOperators,
-  refreshOperators,
   filterOps,
   sortOps,
   type SortKey,
 } from '../operator-index';
 import { PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml } from '../format';
-
-// Bumped on every mount; stale async callbacks from an old mount no-op.
-let mountSeq = 0;
 
 const state = {
   query: '',
@@ -76,9 +72,7 @@ function toggleChip(chip: HTMLButtonElement): void {
   }
 }
 
-export async function mountGrid(container: HTMLElement): Promise<void> {
-  const seq = ++mountSeq;
-
+export function mountGrid(container: HTMLElement): void {
   const search = document.getElementById('search') as HTMLInputElement;
   const sort   = document.getElementById('sort') as HTMLSelectElement;
   const chips  = document.getElementById('chips')!;
@@ -96,7 +90,4 @@ export async function mountGrid(container: HTMLElement): Promise<void> {
   chips.querySelectorAll<HTMLButtonElement>('.chip').forEach(chip => {
     chip.onclick = () => { toggleChip(chip); syncChips(); render(container); };
   });
-
-  // Background refresh; re-render only if this mount is still current.
-  void refreshOperators(() => { if (seq === mountSeq) render(container); });
 }

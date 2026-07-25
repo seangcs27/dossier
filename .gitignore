@@ -34,5 +34,5 @@ secrets.json
 # Local process docs (specs/plans stay local)
 docs/
 
-# Generated web data (build artifact)
-src/web/generated/
+# Generated operator index (build artifact, shared by both targets)
+src/shared/generated/

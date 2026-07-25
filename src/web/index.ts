@@ -9,7 +9,7 @@ function dispatch(): void {
   if (route.view === 'detail') {
     void mountDetail(view, route.id);
   } else {
-    void mountGrid(view);
+    mountGrid(view);
   }
 }
 

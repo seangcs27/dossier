@@ -23,6 +23,9 @@ npm run build        # Production build — both targets
 npm run build:ext    # Production build — extension only  → dist/ext/
 npm run build:web    # Production build — web SPA only   → dist/web/
 
+npm run build:index  # Regenerate src/shared/generated/operators.json (runs automatically
+                     # via prebuild:*/predev:* hooks — rarely needed by hand)
+
 npm run clean        # Remove ./dist/
 ```
 
@@ -30,7 +33,7 @@ npm run clean        # Remove ./dist/
 - **Firefox**: `about:debugging` → "Load Temporary Add-on" → select `dist/ext/manifest.json`
 - **Chrome**: `chrome://extensions` → Developer mode ON → "Load unpacked" → select `dist/ext/`
 
-**Running the web SPA:** Open `dist/web/index.html` in a browser (hits live HellaAPI).
+**Running the web SPA:** Open `dist/web/index.html` in a browser. The grid needs no network at all (the operator index is baked into the bundle); only the detail view calls HellaAPI.
 
 **Deploying the web SPA:** Push to `master` on GitHub — `.github/workflows/deploy-pages.yml` builds `dist/web/` and publishes to GitHub Pages at https://seangcs27.github.io/dossier/. Requires repo Settings → Pages → Source = "GitHub Actions" (one-time).
 
@@ -40,34 +43,28 @@ npm run clean        # Remove ./dist/
 src/
   shared/           ← shared by both targets
     api/
-      hella-api.ts  ← HellaAPI fetch client + operatorAvatarUrl()
+      hella-api.ts  ← HellaAPI fetch client + image URL helpers
     cache/
       operator-cache.ts  ← 1hr TTL in-memory cache wrapping hella-api
+    generated/
+      operators.json  ← build-time operator index, bundled by BOTH targets (gitignored)
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position
       index.ts      ← re-export barrel
 
-  extension/        ← MV3 browser extension
-    background/
-      index.ts      ← service worker / message router
-      shopify-api.ts
-      tab-cache.ts
-    badge/          ← in-page stock badge system
-    popup/          ← toolbar popup UI (Stock + Calendar tabs)
-    content.ts      ← content script (injected at document_end)
-    injected.ts     ← page-context script (reads Shopify globals)
-    config.ts       ← extension-wide tuneable constants
-    utils/          ← logger, url, html helpers
-    types/          ← extension-specific types (StockResponse, ProductInfo, etc.)
-    data/
-      talents.ts    ← static Hololive talent roster (legacy, from hololive-helper)
+  extension/        ← MV3 browser extension (popup only)
+    popup/
+      index.ts      ← search + grid/detail switching; imports the generated index
+      render.ts     ← renderLoading / renderError / renderGrid / renderDetail
+      popup.html    ← layout + theme
+    utils/
+      html.ts       ← escHtml
 
   web/              ← SPA
     index.ts        ← app entry: hash-router dispatch (grid ↔ detail)
     router.ts       ← hash routing (#/ , #/op/<id>)
     format.ts       ← escHtml/cleanText, rarity + profession helpers
-    operator-index.ts  ← grid data store: bundle/localStorage + background refresh, sort/filter helpers
-    generated/         ← build-time generated operators.json (gitignored)
+    operator-index.ts  ← grid data store over the generated index: sort/filter helpers
     views/
       grid.ts       ← operator grid + live search; cards link to #/op/<id>
       detail.ts     ← rich operator dossier (stats, ranges, skills, talents, potentials, base skills)
@@ -78,30 +75,54 @@ src/
 
 Three config files:
 - **`webpack.base.js`** — shared TS loader + resolve settings
-- **`webpack.ext.js`** — extension entries (background, content, injected, popup) → `dist/ext/`
+- **`webpack.ext.js`** — extension entry (popup) + copies `manifest.json`/`popup.html`/`icons` → `dist/ext/`
 - **`webpack.web.js`** — SPA entry (app) + copies `index.html` → `dist/web/`
 
 ## Shared Layer (`src/shared/`)
 
 ### HellaAPI (`src/shared/api/hella-api.ts`)
 
+Only the detail view talks to HellaAPI at runtime — operator *lists* come from the
+generated index, never the network.
+
 ```ts
-fetchAllOperators(): Promise<Operator[]>
 fetchOperator(id: OperatorId): Promise<Operator>
-fetchOperatorIndex(): Promise<OperatorSlim[]>   // slim grid-sized list (~200 KB); id from envelope `canon`
 fetchRange(id: string): Promise<AttackRange>
 operatorAvatarUrl(id: OperatorId): string   // jsdelivr CDN
 skillIconUrl(skillId: string): string       // jsdelivr CDN
 IMAGE_BASE: string
 ```
 
+### Generated Operator Index (`src/shared/generated/operators.json`)
+
+Built by `scripts/build-operator-index.mjs`, bundled into both targets by webpack, and
+**gitignored** — every build regenerates it. One entry per operator:
+
+```ts
+{ id, name, appellation, rarity, profession, subProfessionId, releaseDate }
+```
+
+Two sources are joined at build time:
+
+- **HellaAPI** — operator identity, via a slim `?include=` query.
+- **arknights.wiki.gg Cargo API** — CN release dates (`Operators` → debut event →
+  `EventServerDetails.startTime`). The game data has **no** release-date field, and char-id
+  numbers are banded by category (`0xxx` standard, `1xxx` alters, `2xxx` limiteds, `4xxx`
+  newer), so they do *not* track release order — sorting by them scatters alters and
+  limiteds. Fallbacks: earliest any-server date when an event has no CN row, and a
+  surname-swap for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`).
+
+`releaseDate` is `null` (~37 operators) for Reserve/tutorial trainer units that were never
+released, plus a few event operators whose debut event has no dated row on the wiki. They
+sort last. The script hard-fails below 300 dated operators, so a wiki schema change breaks
+the build instead of silently shipping a wrong order.
+
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
 
-Module-level in-memory cache with 1-hour TTL.
+Module-level in-memory cache with 1-hour TTL, used only by detail views.
 
 ```ts
 getOperator(id: OperatorId): Promise<Operator>
-getAllOperators(): Promise<Operator[]>
 getRange(id: string): Promise<AttackRange>
 clearCache(): void
 ```
@@ -114,7 +135,7 @@ Key types: `Operator`, `OperatorData`, `OperatorSummary`, `OperatorSlim`, `Opera
 
 ## Extension Architecture (`src/extension/`)
 
-Single entry point: **`popup/index.ts`**. No background service worker and no content script — the popup imports `src/shared/cache/operator-cache.ts` and `src/shared/api/hella-api.ts` directly to search operators and fetch detail. State (search text, current view) lives in module-level variables in `popup/index.ts` and does not persist across popup close/reopen.
+Single entry point: **`popup/index.ts`**. No background service worker and no content script. The popup renders its grid from the bundled `src/shared/generated/operators.json` — it opens with **zero network requests** — and only calls `getOperator()` when you open a specific operator. State (search text, current view) lives in module-level variables and does not persist across popup close/reopen.
 
 - `popup/index.ts` — search input handling, grid/detail view switching, wires clicks via event delegation on `#view`
 - `popup/render.ts` — pure render functions: `renderLoading`, `renderError`, `renderGrid`, `renderDetail`
@@ -124,20 +145,18 @@ Single entry point: **`popup/index.ts`**. No background service worker and no co
 
 Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid; `#/op/<id>` shows a rich detail dossier (header, lore/tags, per-phase stats table, attack-range grids via `getRange`, skills, talents, potentials, base skills).
 
-Data: `scripts/build-operator-index.mjs` runs via `prebuild:web`/`predev:web` and writes
-`src/web/generated/operators.json` (slim index: id, name, appellation, rarity, profession,
-subProfessionId, releaseIndex — release order derived from the operator id's char-id number).
-Webpack inlines it; at runtime `src/web/operator-index.ts` first-paints from
-localStorage["dossier:operators"] or the bundle, then refreshes via HellaAPI's slim
-`?include=` query in the background. The detail view still fetches full operators via the
-shared cache. The grid defaults to newest-first with a sort dropdown (release/name/rarity/class)
-and class/rarity filter chips.
+Data: the grid reads the bundled operator index through `src/web/operator-index.ts`
+(`getOperators` / `filterOps` / `sortOps`) and makes **no network requests** — no fetch, no
+localStorage, no loading state. Only the detail view hits the network, via the shared cache
+(`getOperator`, `getRange`). The grid defaults to newest-first with a sort dropdown
+(release/name/rarity/class) and class/rarity filter chips; operators without a `releaseDate`
+sort last in both release directions.
 
 Deployed to GitHub Pages by `.github/workflows/deploy-pages.yml` on every push to `master`, plus a weekly cron rebuild to pick up newly released operators.
 
 ## Testing
 
-No test suite. Test the extension by building and loading in Firefox/Chrome, then opening the toolbar popup (it loads operator data directly from HellaAPI). Test the SPA by opening `dist/web/index.html`.
+No test suite. Verification is `npx tsc --noEmit` plus both webpack builds, then manual checks: load `dist/ext/` in Firefox/Chrome and open the toolbar popup, and open `dist/web/index.html` for the SPA. Both grids should render with no network activity; open an operator to exercise the one remaining HellaAPI call.
 
 ## Browser Compatibility
 

@@ -1,4 +1,4 @@
-import type { Operator, Rarity, Profession } from '../../shared/types';
+import type { Operator, OperatorIndexEntry, Rarity, Profession } from '../../shared/types';
 import { operatorAvatarUrl } from '../../shared/api/hella-api';
 import { escHtml } from '../utils/html';
 
@@ -41,7 +41,7 @@ export function renderError(container: HTMLElement, message: string): void {
   `;
 }
 
-export function renderGrid(container: HTMLElement, ops: Operator[]): void {
+export function renderGrid(container: HTMLElement, ops: OperatorIndexEntry[]): void {
   if (ops.length === 0) {
     container.innerHTML = `<div class="state-msg"><div class="label">No results</div>Try a different name.</div>`;
     return;
@@ -61,13 +61,13 @@ export function bindAvatarFallbacks(container: HTMLElement): void {
   });
 }
 
-function buildCard(op: Operator): string {
-  const n      = rarityNum(op.data.rarity);
+function buildCard(op: OperatorIndexEntry): string {
+  const n      = rarityNum(op.rarity);
   const stars  = '★'.repeat(n);
-  const cls    = PROFESSION_CSS[op.data.profession] ?? op.data.profession.toLowerCase();
-  const label  = PROFESSION_LABEL[op.data.profession] ?? op.data.profession;
+  const cls    = PROFESSION_CSS[op.profession] ?? op.profession.toLowerCase();
+  const label  = PROFESSION_LABEL[op.profession] ?? op.profession;
   const avatar = operatorAvatarUrl(op.id);
-  const name   = escHtml(op.data.name);
+  const name   = escHtml(op.name);
 
   return `
     <div class="op-card" data-id="${op.id}">

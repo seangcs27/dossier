@@ -4,11 +4,14 @@
   "description": "Arknights operator lookup — browser extension + web SPA",
   "scripts": {
     "build": "npm run build:ext && npm run build:web",
+    "build:index": "node --no-network-family-autoselection scripts/build-operator-index.mjs",
+    "prebuild:ext": "npm run build:index",
     "build:ext": "webpack --config webpack.ext.js --mode production",
-    "prebuild:web": "node --no-network-family-autoselection scripts/build-operator-index.mjs",
+    "prebuild:web": "npm run build:index",
     "build:web": "webpack --config webpack.web.js --mode production",
+    "predev": "npm run build:index",
     "dev": "webpack --config webpack.ext.js --mode development --watch",
-    "predev:web": "node --no-network-family-autoselection scripts/build-operator-index.mjs",
+    "predev:web": "npm run build:index",
     "dev:web": "webpack --config webpack.web.js --mode development --watch",
     "clean": "rm -rf dist"
   },

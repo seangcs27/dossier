@@ -1,9 +1,6 @@
-import type { OperatorIndexEntry, OperatorSlim, Profession } from '../shared/types';
-import { fetchOperatorIndex } from '../shared/api/hella-api';
+import type { OperatorIndexEntry, Profession } from '../shared/types';
 import { rarityNum } from './format';
-import bundled from './generated/operators.json';
-
-const STORAGE_KEY = 'dossier:operators';
+import bundled from '../shared/generated/operators.json';
 
 export type SortKey =
   | 'release-desc' | 'release-asc'
@@ -17,39 +14,11 @@ const CLASS_ORDER: Profession[] = [
   'PIONEER', 'WARRIOR', 'TANK', 'SNIPER', 'CASTER', 'MEDIC', 'SUPPORT', 'SPECIAL',
 ];
 
-let entries: OperatorIndexEntry[] = loadInitial();
-
-function loadInitial(): OperatorIndexEntry[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as OperatorIndexEntry[];
-  } catch { /* corrupted storage — fall through to bundle */ }
-  return bundled as unknown as OperatorIndexEntry[];
-}
-
-function releaseIndexOf(id: string): number {
-  const m = /^char_(\d+)_/.exec(id);
-  return m ? parseInt(m[1], 10) : 999999;
-}
-
-// Same rule as the build script: char-id number tracks release order, so
-// brand-new operators from live data automatically sort into place.
-function withReleaseIndex(slim: OperatorSlim[]): OperatorIndexEntry[] {
-  return slim.map(op => ({ ...op, releaseIndex: releaseIndexOf(op.id) }));
-}
+// Baked in at build time by scripts/build-operator-index.mjs — no runtime fetch.
+const entries = bundled as unknown as OperatorIndexEntry[];
 
 export function getOperators(): OperatorIndexEntry[] {
   return entries;
-}
-
-// Silently keeps current data on failure (offline / API down).
-export async function refreshOperators(onUpdated: () => void): Promise<void> {
-  try {
-    const slim = await fetchOperatorIndex();
-    entries = withReleaseIndex(slim);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-    onUpdated();
-  } catch { /* keep current data */ }
 }
 
 export function filterOps(
@@ -65,12 +34,24 @@ export function filterOps(
     (!q || op.name.toLowerCase().includes(q) || op.appellation.toLowerCase().includes(q)));
 }
 
+const byName = (a: OperatorIndexEntry, b: OperatorIndexEntry) => a.name.localeCompare(b.name);
+
+// Undated units (tutorial / Integrated Strategies trainers) have no release to order
+// by, so they sort last whichever direction the dated ones run in.
+function byRelease(a: OperatorIndexEntry, b: OperatorIndexEntry, dir: 1 | -1): number {
+  if (!a.releaseDate || !b.releaseDate) {
+    if (a.releaseDate) return -1;
+    if (b.releaseDate) return 1;
+    return byName(a, b);
+  }
+  return dir * a.releaseDate.localeCompare(b.releaseDate) || byName(a, b);
+}
+
 export function sortOps(ops: OperatorIndexEntry[], key: SortKey): OperatorIndexEntry[] {
-  const byName = (a: OperatorIndexEntry, b: OperatorIndexEntry) => a.name.localeCompare(b.name);
   const sorted = [...ops];
   switch (key) {
-    case 'release-desc': return sorted.sort((a, b) => b.releaseIndex - a.releaseIndex || byName(a, b));
-    case 'release-asc':  return sorted.sort((a, b) => a.releaseIndex - b.releaseIndex || byName(a, b));
+    case 'release-desc': return sorted.sort((a, b) => byRelease(a, b, -1));
+    case 'release-asc':  return sorted.sort((a, b) => byRelease(a, b, 1));
     case 'name-asc':     return sorted.sort(byName);
     case 'name-desc':    return sorted.sort((a, b) => byName(b, a));
     case 'rarity-desc':  return sorted.sort((a, b) => rarityNum(b.rarity) - rarityNum(a.rarity) || byName(a, b));
