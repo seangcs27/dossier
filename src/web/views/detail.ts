@@ -202,7 +202,9 @@ function skillsSection(op: Operator): string {
 }
 
 function talentHtml(talent: OperatorTalent): string {
-  const cands = talent.candidates ?? [];
+  // Some operators carry hidden talent candidates with null name/description
+  // (internal mechanics, e.g. SilverAsh the Reignfrost) — nothing to render.
+  const cands = (talent.candidates ?? []).filter(c => c.name && c.description);
   if (cands.length === 0) return '';
   const rank = (c: TalentCandidate) =>
     parseInt(c.unlockCondition.phase.replace('PHASE_', ''), 10) * 100 + c.requiredPotentialRank;
