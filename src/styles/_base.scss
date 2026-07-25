@@ -1,0 +1,42 @@
+// Reset, custom properties, and the operator-card colour modifiers — everything both
+// targets render identically. Sizing is NOT here: the popup is a fixed 380px panel and
+// the SPA is a full page, so each keeps its own layout rules.
+@use 'sass:map';
+@use 'tokens' as *;
+
+:root {
+  @each $name, $value in $surfaces {
+    --#{$name}: #{$value};
+  }
+  @each $name, $colours in $professions {
+    --#{$name}: #{map.get($colours, bg)};
+  }
+  @each $tier, $value in $rarities {
+    --r#{$tier}: #{$value};
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+@each $name, $colours in $professions {
+  .op-class.#{$name} {
+    background: var(--#{$name});
+    color: #{map.get($colours, fg)};
+  }
+}
+
+@each $tier, $value in $rarities {
+  .op-rarity.r#{$tier} {
+    color: var(--r#{$tier});
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

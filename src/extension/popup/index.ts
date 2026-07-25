@@ -1,3 +1,4 @@
+import './popup.scss';
 import { getOperator } from '../../shared/cache/operator-cache';
 import type { OperatorId, OperatorIndexEntry, Rarity } from '../../shared/types';
 import bundled from '../../shared/generated/operators.json';

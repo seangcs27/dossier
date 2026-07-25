@@ -52,11 +52,16 @@ src/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position
       index.ts      ← re-export barrel
 
+  styles/           ← SCSS shared by both targets
+    _tokens.scss    ← palette maps: surfaces, professions, rarities
+    _base.scss      ← :root custom properties, reset, .op-class/.op-rarity colours, spin
+
   extension/        ← MV3 browser extension (popup only)
     popup/
       index.ts      ← search + grid/detail switching; imports the generated index
       render.ts     ← renderLoading / renderError / renderGrid / renderDetail
-      popup.html    ← layout + theme
+      popup.scss    ← popup sizing (fixed 380px panel)
+      popup.html    ← markup shell; links popup.css
     utils/
       html.ts       ← escHtml
 
@@ -65,18 +70,38 @@ src/
     router.ts       ← hash routing (#/ , #/op/<id>)
     format.ts       ← escHtml/cleanText, rarity + profession helpers
     operator-index.ts  ← grid data store over the generated index: sort/filter helpers
+    styles.scss     ← full-page layout, topbar, chips, grid, detail
     views/
       grid.ts       ← operator grid + live search; cards link to #/op/<id>
       detail.ts     ← rich operator dossier (stats, ranges, skills, talents, potentials, base skills)
-    index.html      ← HTML shell with embedded CSS
+    index.html      ← markup shell; links styles.css
+
+  styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
 ```
 
 ## Webpack
 
 Three config files:
-- **`webpack.base.js`** — shared TS loader + resolve settings
-- **`webpack.ext.js`** — extension entry (popup) + copies `manifest.json`/`popup.html`/`icons` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app) + copies `index.html` → `dist/web/`
+- **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
+- **`webpack.ext.js`** — extension entry (popup) + copies `manifest.json`/`popup.html`/`icons`, emits `popup.css` → `dist/ext/`
+- **`webpack.web.js`** — SPA entry (app) + copies `index.html`, emits `styles.css` → `dist/web/`
+
+## Styles
+
+SCSS, compiled by webpack. Each entry point imports its own stylesheet for the build-time
+side effect (`import './styles.scss'`), which `MiniCssExtractPlugin` pulls out into a real
+`.css` file that the HTML shell `<link>`s — no inline `<style>` blocks, no runtime style
+injection.
+
+`src/styles/` holds what both targets render identically: the palette (as Sass maps), the
+`:root` custom properties generated from those maps, the reset, the `.op-class.*` /
+`.op-rarity.r*` colour modifiers, and the spinner keyframe. Adding a profession or changing
+a rarity colour means editing **one map** in `_tokens.scss` — the custom properties, badge
+rules, and the SPA's filter-chip colours are all generated from it.
+
+Sizing deliberately stays per-target: the popup is a fixed 380px panel and the SPA is a
+full page, so nearly every dimension differs. `src/web/styles.scss` and
+`src/extension/popup/popup.scss` each own their own layout.
 
 ## Shared Layer (`src/shared/`)
 

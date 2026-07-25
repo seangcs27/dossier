@@ -1,3 +1,4 @@
+import './styles.scss';
 import { currentRoute, onRouteChange } from './router';
 import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
