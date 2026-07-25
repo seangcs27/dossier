@@ -1,18 +1,31 @@
-import { getAllOperators } from '../../shared/cache/operator-cache';
 import { operatorAvatarUrl } from '../../shared/api/hella-api';
-import type { Operator } from '../../shared/types';
+import type { OperatorIndexEntry, Profession } from '../../shared/types';
+import {
+  getOperators,
+  refreshOperators,
+  filterOps,
+  sortOps,
+  type SortKey,
+} from '../operator-index';
 import { PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml } from '../format';
 
-let allOps: Operator[] = [];
-let loadPromise: Promise<void> | null = null;
+// Bumped on every mount; stale async callbacks from an old mount no-op.
+let mountSeq = 0;
 
-function buildCard(op: Operator): string {
-  const n      = rarityNum(op.data.rarity);
+const state = {
+  query: '',
+  sort: 'release-desc' as SortKey,
+  classes: new Set<Profession>(),
+  rarities: new Set<number>(),
+};
+
+function buildCard(op: OperatorIndexEntry): string {
+  const n      = rarityNum(op.rarity);
   const stars  = '★'.repeat(n);
-  const cls    = PROFESSION_CSS[op.data.profession] ?? op.data.profession.toLowerCase();
-  const label  = PROFESSION_LABEL[op.data.profession] ?? op.data.profession;
+  const cls    = PROFESSION_CSS[op.profession];
+  const label  = PROFESSION_LABEL[op.profession];
   const avatar = operatorAvatarUrl(op.id);
-  const name   = escHtml(op.data.name);
+  const name   = escHtml(op.name);
 
   return `
     <a class="op-card" href="#/op/${encodeURIComponent(op.id)}">
@@ -29,50 +42,61 @@ function buildCard(op: Operator): string {
   `;
 }
 
-function filtered(query: string): Operator[] {
-  const q = query.toLowerCase().trim();
-  if (!q) return allOps;
-  return allOps.filter(op =>
-    op.data.name.toLowerCase().includes(q) ||
-    op.data.appellation.toLowerCase().includes(q),
+function render(container: HTMLElement): void {
+  const ops = sortOps(
+    filterOps(getOperators(), state.query, state.classes, state.rarities),
+    state.sort,
   );
-}
-
-function render(container: HTMLElement, ops: Operator[]): void {
-  const countEl = document.getElementById('count')!;
-  countEl.textContent = `${ops.length} operators`;
+  document.getElementById('count')!.textContent = `${ops.length} operators`;
   if (ops.length === 0) {
-    container.innerHTML = `<div class="state-msg"><div class="label">No results</div>Try a different name.</div>`;
+    container.innerHTML = `<div class="state-msg"><div class="label">No results</div>Try a different name or filter.</div>`;
     return;
   }
   container.innerHTML = `<div id="grid">${ops.map(buildCard).join('')}</div>`;
 }
 
-async function ensureLoaded(container: HTMLElement): Promise<boolean> {
-  if (allOps.length > 0) return true;
-  if (!loadPromise) {
-    loadPromise = getAllOperators().then(ops => {
-      ops.sort((a, b) => {
-        const rd = rarityNum(b.data.rarity) - rarityNum(a.data.rarity);
-        return rd !== 0 ? rd : a.data.name.localeCompare(b.data.name);
-      });
-      allOps = ops;
-    });
-  }
-  container.innerHTML = `<div class="state-msg"><span class="spinner"></span></div>`;
-  try {
-    await loadPromise;
-    return true;
-  } catch {
-    container.innerHTML = `<div class="state-msg"><div class="label">Failed to load</div>Check your connection and reload.</div>`;
-    return false;
+function syncChips(): void {
+  document.querySelectorAll<HTMLButtonElement>('#chips .chip').forEach(chip => {
+    const { kind, value } = chip.dataset;
+    const active = kind === 'class'
+      ? state.classes.has(value as Profession)
+      : state.rarities.has(Number(value));
+    chip.classList.toggle('active', active);
+  });
+}
+
+function toggleChip(chip: HTMLButtonElement): void {
+  const { kind, value } = chip.dataset;
+  if (kind === 'class') {
+    const p = value as Profession;
+    if (state.classes.has(p)) state.classes.delete(p); else state.classes.add(p);
+  } else {
+    const r = Number(value);
+    if (state.rarities.has(r)) state.rarities.delete(r); else state.rarities.add(r);
   }
 }
 
 export async function mountGrid(container: HTMLElement): Promise<void> {
+  const seq = ++mountSeq;
+
   const search = document.getElementById('search') as HTMLInputElement;
+  const sort   = document.getElementById('sort') as HTMLSelectElement;
+  const chips  = document.getElementById('chips')!;
   search.style.display = '';
-  if (!(await ensureLoaded(container))) return;
-  render(container, filtered(search.value));
-  search.oninput = () => render(container, filtered(search.value));
+  sort.style.display = '';
+  chips.style.display = '';
+
+  search.value = state.query;
+  sort.value = state.sort;
+  syncChips();
+  render(container);
+
+  search.oninput = () => { state.query = search.value; render(container); };
+  sort.onchange  = () => { state.sort = sort.value as SortKey; render(container); };
+  chips.querySelectorAll<HTMLButtonElement>('.chip').forEach(chip => {
+    chip.onclick = () => { toggleChip(chip); syncChips(); render(container); };
+  });
+
+  // Background refresh; re-render only if this mount is still current.
+  void refreshOperators(() => { if (seq === mountSeq) render(container); });
 }

@@ -161,3 +161,16 @@ export interface OperatorSummary {
   profession: Profession;
   subProfessionId: string;
 }
+
+export interface OperatorSlim {
+  id: OperatorId;
+  name: string;
+  appellation: string;
+  rarity: Rarity;
+  profession: Profession;
+  subProfessionId: string;
+}
+
+export interface OperatorIndexEntry extends OperatorSlim {
+  releaseIndex: number; // bigger = newer; char-id number, see scripts/build-operator-index.mjs
+}

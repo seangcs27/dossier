@@ -35,11 +35,14 @@
       min-height: 100vh;
     }
 
-    /* ── Header ── */
-    header {
+    /* ── Topbar (sticky) ── */
+    .topbar {
       position: sticky;
       top: 0;
       z-index: 10;
+    }
+
+    header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
       padding: 12px 20px;
@@ -69,6 +72,50 @@
     }
     #search:focus { border-color: var(--accent); }
 
+    #sort {
+      padding: 6px 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    #sort:focus { border-color: var(--accent); }
+
+    /* ── Filter chips ── */
+    #chips {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .chip:hover { border-color: var(--accent); }
+    .chip.active { color: #fff; border-color: transparent; }
+    .chip.c-vanguard.active   { background: var(--vanguard); }
+    .chip.c-guard.active      { background: var(--guard); }
+    .chip.c-defender.active   { background: var(--defender); }
+    .chip.c-sniper.active     { background: var(--sniper); color: #000; }
+    .chip.c-caster.active     { background: var(--caster); }
+    .chip.c-medic.active      { background: var(--medic); color: #000; }
+    .chip.c-supporter.active  { background: var(--supporter); }
+    .chip.c-specialist.active { background: var(--specialist); }
+    .chip.c-rarity.active     { background: var(--accent); color: #000; }
+    .chip-sep { width: 1px; align-self: stretch; background: var(--border); margin: 2px 4px; }
+
     #count {
       margin-left: auto;
       font-size: 12px;
@@ -79,9 +126,9 @@
     /* ── Grid ── */
     #grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
-      padding: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+      gap: 10px;
+      padding: 16px;
     }
 
     /* ── Operator card ── */
@@ -306,11 +353,39 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>DOSSIER</h1>
-    <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
-    <span id="count"></span>
-  </header>
+  <div class="topbar">
+    <header>
+      <h1>DOSSIER</h1>
+      <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
+      <select id="sort" aria-label="Sort operators">
+        <option value="release-desc" selected>Newest</option>
+        <option value="release-asc">Oldest</option>
+        <option value="name-asc">Name A–Z</option>
+        <option value="name-desc">Name Z–A</option>
+        <option value="rarity-desc">Rarity ↓</option>
+        <option value="rarity-asc">Rarity ↑</option>
+        <option value="class">Class</option>
+      </select>
+      <span id="count"></span>
+    </header>
+    <div id="chips">
+      <button class="chip c-vanguard"   data-kind="class" data-value="PIONEER">Vanguard</button>
+      <button class="chip c-guard"      data-kind="class" data-value="WARRIOR">Guard</button>
+      <button class="chip c-defender"   data-kind="class" data-value="TANK">Defender</button>
+      <button class="chip c-sniper"     data-kind="class" data-value="SNIPER">Sniper</button>
+      <button class="chip c-caster"     data-kind="class" data-value="CASTER">Caster</button>
+      <button class="chip c-medic"      data-kind="class" data-value="MEDIC">Medic</button>
+      <button class="chip c-supporter"  data-kind="class" data-value="SUPPORT">Supporter</button>
+      <button class="chip c-specialist" data-kind="class" data-value="SPECIAL">Specialist</button>
+      <span class="chip-sep"></span>
+      <button class="chip c-rarity" data-kind="rarity" data-value="6">6★</button>
+      <button class="chip c-rarity" data-kind="rarity" data-value="5">5★</button>
+      <button class="chip c-rarity" data-kind="rarity" data-value="4">4★</button>
+      <button class="chip c-rarity" data-kind="rarity" data-value="3">3★</button>
+      <button class="chip c-rarity" data-kind="rarity" data-value="2">2★</button>
+      <button class="chip c-rarity" data-kind="rarity" data-value="1">1★</button>
+    </div>
+  </div>
   <main id="view"></main>
   <script src="app.js"></script>
 </body>
