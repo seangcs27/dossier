@@ -2,17 +2,11 @@ import type { OperatorIndexEntry, Profession } from '../shared/types';
 import { rarityNum } from './format';
 import bundled from '../shared/generated/operators.json';
 
+// Rarity and class are filter dimensions, so sorting by them would be redundant —
+// these are the orderings that say something the filters can't.
 export type SortKey =
   | 'release-desc' | 'release-asc'
-  | 'name-asc' | 'name-desc'
-  | 'rarity-desc' | 'rarity-asc'
-  | 'class';
-
-// Display order for the 'class' sort and chip row: Vanguard, Guard, Defender,
-// Sniper, Caster, Medic, Supporter, Specialist.
-const CLASS_ORDER: Profession[] = [
-  'PIONEER', 'WARRIOR', 'TANK', 'SNIPER', 'CASTER', 'MEDIC', 'SUPPORT', 'SPECIAL',
-];
+  | 'name-asc' | 'name-desc';
 
 // Baked in at build time by scripts/build-operator-index.mjs — no runtime fetch.
 const entries = bundled as unknown as OperatorIndexEntry[];
@@ -47,16 +41,20 @@ function byRelease(a: OperatorIndexEntry, b: OperatorIndexEntry, dir: 1 | -1): n
   return dir * a.releaseDate.localeCompare(b.releaseDate) || byName(a, b);
 }
 
-export function sortOps(ops: OperatorIndexEntry[], key: SortKey): OperatorIndexEntry[] {
-  const sorted = [...ops];
+function within(key: SortKey): (a: OperatorIndexEntry, b: OperatorIndexEntry) => number {
   switch (key) {
-    case 'release-desc': return sorted.sort((a, b) => byRelease(a, b, -1));
-    case 'release-asc':  return sorted.sort((a, b) => byRelease(a, b, 1));
-    case 'name-asc':     return sorted.sort(byName);
-    case 'name-desc':    return sorted.sort((a, b) => byName(b, a));
-    case 'rarity-desc':  return sorted.sort((a, b) => rarityNum(b.rarity) - rarityNum(a.rarity) || byName(a, b));
-    case 'rarity-asc':   return sorted.sort((a, b) => rarityNum(a.rarity) - rarityNum(b.rarity) || byName(a, b));
-    case 'class':        return sorted.sort((a, b) =>
-      CLASS_ORDER.indexOf(a.profession) - CLASS_ORDER.indexOf(b.profession) || byName(a, b));
+    case 'release-desc': return (a, b) => byRelease(a, b, -1);
+    case 'release-asc':  return (a, b) => byRelease(a, b, 1);
+    case 'name-asc':     return byName;
+    case 'name-desc':    return (a, b) => byName(b, a);
   }
+}
+
+// Rarity always groups first — 6★ together, then 5★, and so on — with the chosen sort
+// applied inside each band. Mixing rarities into one flat list buries the operators
+// people are usually looking for.
+export function sortOps(ops: OperatorIndexEntry[], key: SortKey): OperatorIndexEntry[] {
+  const compare = within(key);
+  return [...ops].sort((a, b) =>
+    rarityNum(b.rarity) - rarityNum(a.rarity) || compare(a, b));
 }

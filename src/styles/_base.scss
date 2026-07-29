@@ -1,6 +1,6 @@
-// Reset, custom properties, and the operator-card colour modifiers — everything both
-// targets render identically. Sizing is NOT here: the popup is a fixed 380px panel and
-// the SPA is a full page, so each keeps its own layout rules.
+// Reset, custom properties, and the operator colour treatment — everything both targets
+// render identically. Sizing is NOT here: the popup is a fixed 380px panel and the SPA
+// is a full page, so each keeps its own layout rules.
 @use 'sass:map';
 @use 'tokens' as *;
 
@@ -8,11 +8,8 @@
   @each $name, $value in $surfaces {
     --#{$name}: #{$value};
   }
-  @each $name, $colours in $professions {
-    --#{$name}: #{map.get($colours, bg)};
-  }
-  @each $tier, $value in $rarities {
-    --r#{$tier}: #{$value};
+  @each $tier, $spec in $rarities {
+    --r#{$tier}: #{map.get($spec, color)};
   }
 }
 
@@ -24,14 +21,15 @@
   padding: 0;
 }
 
-@each $name, $colours in $professions {
-  .op-class.#{$name} {
-    background: var(--#{$name});
-    color: #{map.get($colours, fg)};
-  }
+// One neutral treatment for every class. The profession still gets its own modifier
+// class in the markup (.op-class.defender etc.) as a styling hook, but no longer
+// carries a colour of its own.
+.op-class {
+  background: var(--chip);
+  color: var(--text);
 }
 
-@each $tier, $value in $rarities {
+@each $tier, $spec in $rarities {
   .op-rarity.r#{$tier} {
     color: var(--r#{$tier});
   }

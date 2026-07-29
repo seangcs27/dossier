@@ -30,8 +30,14 @@ header {
     font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: var(--accent);
     flex-shrink: 0;
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+
+      &:hover { opacity: 0.8; }
+    }
   }
 }
 
@@ -83,17 +89,24 @@ header {
   cursor: pointer;
 
   &:hover { border-color: var(--accent); }
-  &.active { color: #fff; border-color: transparent; }
 
-  // Active chips take the same colours as the class badges they filter by.
-  @each $name, $colours in $professions {
-    &.c-#{$name}.active {
-      background: var(--#{$name});
-      color: #{map.get($colours, fg)};
-    }
+  // Class chips select neutrally — the label already says which class it is, so a
+  // colour per class would just be noise.
+  &.active {
+    background: var(--chip);
+    border-color: var(--muted);
+    color: var(--text);
   }
 
-  &.c-rarity.active { background: var(--accent); color: #000; }
+  // Rarity is the one dimension colour actually encodes, so its chips light up in the
+  // same colour the stars use.
+  @each $tier, $spec in $rarities {
+    &.r#{$tier}.active {
+      background: var(--r#{$tier});
+      border-color: transparent;
+      color: #{map.get($spec, fg)};
+    }
+  }
 }
 
 .chip-sep {
@@ -180,11 +193,11 @@ header {
 
 .op-class {
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 2px 5px;
-  border-radius: 3px;
-  opacity: 0.9;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .op-rarity {
@@ -410,4 +423,66 @@ header {
   font-size: 11px;
   flex-shrink: 0;
   width: 24px;
+}
+
+// ── Narrow screens ──
+// The topbar becomes a 2x2 grid rather than relying on flex-wrap, so the break always
+// lands in the same place instead of shifting with the width of the operator count.
+@media (max-width: 640px) {
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 10px;
+    padding: 10px 12px;
+
+    h1 { font-size: 15px; grid-area: 1 / 1; }
+  }
+
+  #count {
+    grid-area: 1 / 2;
+    justify-self: end;
+    margin-left: 0;
+    font-size: 11px;
+  }
+
+  #search {
+    grid-area: 2 / 1;
+    max-width: none;
+    font-size: 16px; // < 16px makes iOS Safari zoom on focus
+  }
+
+  #sort {
+    grid-area: 2 / 2;
+  }
+
+  #chips {
+    padding: 8px 12px;
+    gap: 5px;
+  }
+
+  #grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .op-info { padding: 6px; }
+  .op-name { font-size: 12px; }
+  .op-avatar-placeholder { font-size: 28px; }
+
+  .detail { padding: 14px; }
+
+  .detail-header { gap: 12px; }
+  .detail-avatar { width: 72px; height: 72px; }
+  .detail-name { font-size: 20px; }
+
+  .detail-section {
+    margin-top: 16px;
+    padding: 12px;
+    // The per-phase stats table can be wider than a phone; let it scroll inside the
+    // card instead of pushing the whole page sideways.
+    overflow-x: auto;
+  }
+
+  .state-msg { padding: 40px 16px; }
 }

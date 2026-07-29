@@ -9,35 +9,32 @@
 <body>
   <div class="topbar">
     <header>
-      <h1>DOSSIER</h1>
+      <h1><a href="#/" id="home">DOSSIER</a></h1>
       <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
       <select id="sort" aria-label="Sort operators">
         <option value="release-desc" selected>Newest</option>
         <option value="release-asc">Oldest</option>
         <option value="name-asc">Name A–Z</option>
         <option value="name-desc">Name Z–A</option>
-        <option value="rarity-desc">Rarity ↓</option>
-        <option value="rarity-asc">Rarity ↑</option>
-        <option value="class">Class</option>
       </select>
       <span id="count"></span>
     </header>
     <div id="chips">
-      <button class="chip c-vanguard"   data-kind="class" data-value="PIONEER">Vanguard</button>
-      <button class="chip c-guard"      data-kind="class" data-value="WARRIOR">Guard</button>
-      <button class="chip c-defender"   data-kind="class" data-value="TANK">Defender</button>
-      <button class="chip c-sniper"     data-kind="class" data-value="SNIPER">Sniper</button>
-      <button class="chip c-caster"     data-kind="class" data-value="CASTER">Caster</button>
-      <button class="chip c-medic"      data-kind="class" data-value="MEDIC">Medic</button>
-      <button class="chip c-supporter"  data-kind="class" data-value="SUPPORT">Supporter</button>
-      <button class="chip c-specialist" data-kind="class" data-value="SPECIAL">Specialist</button>
+      <button class="chip" data-kind="class" data-value="PIONEER">Vanguard</button>
+      <button class="chip" data-kind="class" data-value="WARRIOR">Guard</button>
+      <button class="chip" data-kind="class" data-value="TANK">Defender</button>
+      <button class="chip" data-kind="class" data-value="SNIPER">Sniper</button>
+      <button class="chip" data-kind="class" data-value="CASTER">Caster</button>
+      <button class="chip" data-kind="class" data-value="MEDIC">Medic</button>
+      <button class="chip" data-kind="class" data-value="SUPPORT">Supporter</button>
+      <button class="chip" data-kind="class" data-value="SPECIAL">Specialist</button>
       <span class="chip-sep"></span>
-      <button class="chip c-rarity" data-kind="rarity" data-value="6">6★</button>
-      <button class="chip c-rarity" data-kind="rarity" data-value="5">5★</button>
-      <button class="chip c-rarity" data-kind="rarity" data-value="4">4★</button>
-      <button class="chip c-rarity" data-kind="rarity" data-value="3">3★</button>
-      <button class="chip c-rarity" data-kind="rarity" data-value="2">2★</button>
-      <button class="chip c-rarity" data-kind="rarity" data-value="1">1★</button>
+      <button class="chip r6" data-kind="rarity" data-value="6">6★</button>
+      <button class="chip r5" data-kind="rarity" data-value="5">5★</button>
+      <button class="chip r4" data-kind="rarity" data-value="4">4★</button>
+      <button class="chip r3" data-kind="rarity" data-value="3">3★</button>
+      <button class="chip r2" data-kind="rarity" data-value="2">2★</button>
+      <button class="chip r1" data-kind="rarity" data-value="1">1★</button>
     </div>
   </div>
   <main id="view"></main>

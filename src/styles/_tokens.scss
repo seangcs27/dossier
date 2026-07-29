@@ -1,34 +1,29 @@
 // Design tokens shared by the web SPA and the extension popup. Both targets compile
 // their own stylesheet from these partials, so the palette lives in exactly one place
 // instead of being copy-pasted into two <style> blocks.
+//
+// Colour is reserved for RARITY, which is ordinal and carries real meaning. Class is
+// deliberately neutral — eight saturated hues competing on every card made the grid
+// read as noise, and neither reference site (Sanity Gone, AN-EN-Tags) colour-codes
+// class either.
 
 $surfaces: (
   bg:      #0d1117,
   surface: #161b22,
   border:  #30363d,
+  chip:    #2d333b, // neutral fill: class badges, inactive filter chips
   text:    #e6edf3,
   muted:   #8b949e,
   accent:  #d29922,
 );
 
-// Profession slug -> badge colours. `fg` is picked for contrast against `bg`.
-$professions: (
-  vanguard:   (bg: #14b8a6, fg: #fff),
-  guard:      (bg: #ef4444, fg: #fff),
-  defender:   (bg: #3b82f6, fg: #fff),
-  sniper:     (bg: #f59e0b, fg: #000),
-  caster:     (bg: #8b5cf6, fg: #fff),
-  medic:      (bg: #22c55e, fg: #000),
-  supporter:  (bg: #6b7280, fg: #fff),
-  specialist: (bg: #ec4899, fg: #fff),
-);
-
-// Rarity tier -> star colour. Tiers 1 and 2 deliberately share one colour.
+// Rarity tier -> star colour, plus the foreground to pair with it when that colour is
+// used as a filled background. Tiers 1 and 2 deliberately share one colour.
 $rarities: (
-  1: #6b7280,
-  2: #6b7280,
-  3: #3b82f6,
-  4: #8b5cf6,
-  5: #f59e0b,
-  6: #ef4444,
+  1: (color: #6b7280, fg: #fff),
+  2: (color: #6b7280, fg: #fff),
+  3: (color: #3b82f6, fg: #fff),
+  4: (color: #8b5cf6, fg: #fff),
+  5: (color: #f59e0b, fg: #000),
+  6: (color: #ef4444, fg: #fff),
 );
