@@ -15,17 +15,51 @@ export function getOperators(): OperatorIndexEntry[] {
   return entries;
 }
 
-export function filterOps(
-  ops: OperatorIndexEntry[],
-  query: string,
-  classes: ReadonlySet<Profession>,
-  rarities: ReadonlySet<number>,
-): OperatorIndexEntry[] {
-  const q = query.toLowerCase().trim();
-  return ops.filter(op =>
-    (classes.size === 0 || classes.has(op.profession)) &&
-    (rarities.size === 0 || rarities.has(rarityNum(op.rarity))) &&
-    (!q || op.name.toLowerCase().includes(q) || op.appellation.toLowerCase().includes(q)));
+// 'any' matches operators carrying at least one selected tag, 'all' requires every
+// one. Only tags need the distinction — an operator has exactly one class, subclass
+// and rarity, so those can only ever be OR-ed.
+export type TagMode = 'any' | 'all';
+
+export interface OperatorFilter {
+  query: string;
+  classes: ReadonlySet<Profession>;
+  rarities: ReadonlySet<number>;
+  subclass: string; // subProfessionId, '' for any
+  tags: ReadonlySet<string>;
+  tagMode: TagMode;
+}
+
+export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): OperatorIndexEntry[] {
+  const q = f.query.toLowerCase().trim();
+  return ops.filter(op => {
+    if (f.classes.size && !f.classes.has(op.profession)) return false;
+    if (f.rarities.size && !f.rarities.has(rarityNum(op.rarity))) return false;
+    if (f.subclass && op.subProfessionId !== f.subclass) return false;
+    if (f.tags.size) {
+      const hit = [...f.tags].filter(t => op.tags.includes(t)).length;
+      if (f.tagMode === 'all' ? hit < f.tags.size : hit === 0) return false;
+    }
+    if (q && !op.name.toLowerCase().includes(q) && !op.appellation.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+// Subclasses present in the roster, restricted to the selected classes so the picker
+// stays short — all 71 at once is unusable.
+export function subclassesFor(
+  ops: OperatorIndexEntry[], classes: ReadonlySet<Profession>,
+): { id: string; label: string }[] {
+  const seen = new Map<string, string>();
+  for (const op of ops) {
+    if (classes.size && !classes.has(op.profession)) continue;
+    if (!seen.has(op.subProfessionId)) seen.set(op.subProfessionId, op.archetype || op.subProfessionId);
+  }
+  return [...seen].map(([id, label]) => ({ id, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function allTags(ops: OperatorIndexEntry[]): string[] {
+  return [...new Set(ops.flatMap(op => op.tags))].sort();
 }
 
 const byName = (a: OperatorIndexEntry, b: OperatorIndexEntry) => a.name.localeCompare(b.name);

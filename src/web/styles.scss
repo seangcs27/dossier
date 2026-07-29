@@ -116,6 +116,66 @@ header {
   margin: 2px 4px;
 }
 
+// Filters / Clear read as controls rather than filter values, so they stay outlined
+// even when the panel is open.
+.chip-action {
+  border-style: dashed;
+
+  &.active {
+    background: var(--chip);
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--text);
+  }
+}
+
+// ── Secondary filter panel (subclass + tags) ──
+#more-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  min-width: 62px;
+}
+
+.filter-hint { font-size: 11px; color: var(--muted); }
+
+#subclass {
+  padding: 5px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  max-width: 200px;
+
+  &:focus { border-color: var(--accent); }
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
 #count {
   margin-left: auto;
   font-size: 12px;
@@ -596,6 +656,10 @@ header {
     padding: 8px 12px;
     gap: 5px;
   }
+
+  #more-filters { padding: 10px 12px 12px; }
+  .filter-label { min-width: 0; }
+  #subclass { max-width: 100%; }
 
   #grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

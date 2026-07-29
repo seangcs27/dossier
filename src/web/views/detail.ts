@@ -528,6 +528,7 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
   (document.getElementById('search') as HTMLInputElement).style.display = 'none';
   (document.getElementById('sort') as HTMLSelectElement).style.display = 'none';
   document.getElementById('chips')!.style.display = 'none';
+  document.getElementById('more-filters')!.style.display = 'none';
   document.getElementById('count')!.textContent = '';
 
   container.innerHTML = `

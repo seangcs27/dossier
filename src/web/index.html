@@ -35,7 +35,11 @@
       <button class="chip r3" data-kind="rarity" data-value="3">3★</button>
       <button class="chip r2" data-kind="rarity" data-value="2">2★</button>
       <button class="chip r1" data-kind="rarity" data-value="1">1★</button>
+      <span class="chip-sep"></span>
+      <button class="chip chip-action" id="more-toggle" aria-controls="more-filters">Filters</button>
+      <button class="chip chip-action" id="clear-filters" hidden>Clear</button>
     </div>
+    <div id="more-filters" hidden></div>
   </div>
   <main id="view"></main>
   <script src="app.js"></script>

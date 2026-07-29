@@ -228,4 +228,6 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // CN release date, 'YYYY-MM-DD'. null for tutorial / Integrated Strategies trainer
   // units that were never released. See scripts/build-operator-index.mjs.
   releaseDate: string | null;
+  archetype: string;  // display name for subProfessionId, e.g. 'Splash Caster'
+  tags: string[];     // recruitment tags, e.g. ['DPS', 'AoE']
 }

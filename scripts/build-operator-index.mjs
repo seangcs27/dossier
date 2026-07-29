@@ -16,7 +16,8 @@ import { fileURLToPath } from 'node:url';
 const HELLA_URL =
   'https://awedtan.ca/api/operator' +
   '?include=data.name&include=data.appellation&include=data.rarity' +
-  '&include=data.profession&include=data.subProfessionId';
+  '&include=data.profession&include=data.subProfessionId' +
+  '&include=data.tagList&include=archetype';
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
 
@@ -99,6 +100,10 @@ const entries = envelopes.map(e => ({
   rarity: e.value.data.rarity,
   profession: e.value.data.profession,
   subProfessionId: e.value.data.subProfessionId,
+  // Readable subclass name — 'splashcaster' -> 'Splash Caster'.
+  archetype: e.value.archetype ?? '',
+  // Recruitment tags. A few operators carry an empty-string tag; drop those.
+  tags: (e.value.data.tagList ?? []).filter(t => t && t.trim()),
   // null for tutorial / Integrated Strategies trainer units that were never released,
   // plus a few event operators whose debut event has no dated row on the wiki.
   releaseDate: releaseDateFor(e.value.data.name),
