@@ -26,11 +26,18 @@ export interface AttributeKeyFrame {
   data: OperatorAttributes;
 }
 
+export interface ItemCost {
+  id: string;
+  count: number;
+  type: string;
+}
+
 export interface OperatorPhase {
   characterPrefabKey: string;
   rangeId: string | null;
   maxLevel: number;
   attributesKeyFrames: AttributeKeyFrame[];
+  evolveCost?: ItemCost[] | null;
 }
 
 export interface OperatorSkillRef {
@@ -56,9 +63,19 @@ export interface OperatorTalent {
   candidates: TalentCandidate[];
 }
 
+// Potentials mostly just describe themselves, but some carry a real stat change.
+export interface AttributeModifier {
+  attributeType: string; // "ATK" | "MAX_HP" | "COST" | "RESPAWN_TIME" | ...
+  formulaItem: string;   // "ADDITION" for everything we render
+  value: number;
+}
+
 export interface PotentialRank {
   type: string;
   description: string;
+  buff?: {
+    attributes: { attributeModifiers: AttributeModifier[] | null };
+  } | null;
 }
 
 export interface SkillSpData {
@@ -118,6 +135,39 @@ export interface Faction {
   teamPower: FactionPower | null;
 }
 
+export interface ModuleBlackboard {
+  key: string; // "max_hp" | "atk" | "def" | "attack_speed" | ...
+  value: number;
+}
+
+export interface ModuleTraitCandidate {
+  additionalDescription: string | null;
+  overrideDescripton: string | null; // [sic] — the game data misspells it
+  unlockCondition: UnlockCondition;
+}
+
+export interface ModulePhase {
+  equipLevel: number;
+  attributeBlackboard: ModuleBlackboard[];
+  parts: {
+    target: string;
+    overrideTraitDataBundle?: { candidates: ModuleTraitCandidate[] | null } | null;
+  }[];
+}
+
+export interface OperatorModule {
+  info: {
+    uniEquipId: string;
+    uniEquipName: string;
+    uniEquipDesc: string | null;
+    typeName1: string | null; // "GUA"
+    typeName2: string | null; // "Y"  -> displayed as GUA-Y
+    unlockLevel: number;
+    showEvolvePhase: string;
+  };
+  data: { phases: ModulePhase[] } | null;
+}
+
 export interface OperatorData {
   name: string;
   description: string | null;
@@ -141,6 +191,8 @@ export interface OperatorData {
   maxPotentialLevel?: number;
   talents?: OperatorTalent[] | null;
   potentialRanks?: PotentialRank[];
+  // Trust bonus. Two frames: level 0 (all zeroes) and the maximum at full trust.
+  favorKeyFrames?: AttributeKeyFrame[] | null;
 }
 
 export interface Operator {
@@ -151,6 +203,7 @@ export interface Operator {
   range?: AttackRange;
   bases?: BaseSkill[];
   factions?: Faction[];
+  modules?: OperatorModule[];
 }
 
 export interface OperatorSummary {
