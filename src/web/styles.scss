@@ -30,8 +30,14 @@ header {
     font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: var(--accent);
     flex-shrink: 0;
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+
+      &:hover { opacity: 0.8; }
+    }
   }
 }
 
@@ -83,17 +89,24 @@ header {
   cursor: pointer;
 
   &:hover { border-color: var(--accent); }
-  &.active { color: #fff; border-color: transparent; }
 
-  // Active chips take the same colours as the class badges they filter by.
-  @each $name, $colours in $professions {
-    &.c-#{$name}.active {
-      background: var(--#{$name});
-      color: #{map.get($colours, fg)};
-    }
+  // Class chips select neutrally — the label already says which class it is, so a
+  // colour per class would just be noise.
+  &.active {
+    background: var(--chip);
+    border-color: var(--muted);
+    color: var(--text);
   }
 
-  &.c-rarity.active { background: var(--accent); color: #000; }
+  // Rarity is the one dimension colour actually encodes, so its chips light up in the
+  // same colour the stars use.
+  @each $tier, $spec in $rarities {
+    &.r#{$tier}.active {
+      background: var(--r#{$tier});
+      border-color: transparent;
+      color: #{map.get($spec, fg)};
+    }
+  }
 }
 
 .chip-sep {
@@ -101,6 +114,66 @@ header {
   align-self: stretch;
   background: var(--border);
   margin: 2px 4px;
+}
+
+// Filters / Clear read as controls rather than filter values, so they stay outlined
+// even when the panel is open.
+.chip-action {
+  border-style: dashed;
+
+  &.active {
+    background: var(--chip);
+    border-style: solid;
+    border-color: var(--accent);
+    color: var(--text);
+  }
+}
+
+// ── Secondary filter panel (subclass + tags) ──
+#more-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  min-width: 62px;
+}
+
+.filter-hint { font-size: 11px; color: var(--muted); }
+
+#subclass {
+  padding: 5px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  max-width: 200px;
+
+  &:focus { border-color: var(--accent); }
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 #count {
@@ -180,11 +253,11 @@ header {
 
 .op-class {
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 2px 5px;
-  border-radius: 3px;
-  opacity: 0.9;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .op-rarity {
@@ -220,18 +293,23 @@ header {
   padding: 20px;
 }
 
-.btn-back {
-  display: inline-block;
-  color: var(--muted);
-  text-decoration: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 6px 12px;
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   margin-bottom: 16px;
 
-  &:hover { border-color: var(--accent); color: var(--accent); }
+  a {
+    color: var(--muted);
+    text-decoration: none;
+
+    &:hover { color: var(--accent); }
+  }
 }
+
+.crumb-sep { color: var(--border); }
+.crumb-current { color: var(--text); }
 
 .detail-header {
   display: flex;
@@ -263,12 +341,8 @@ header {
 
 .detail-sub { font-size: 13px; color: var(--muted); }
 
-.detail-section {
-  margin-top: 24px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
+.detail-lore {
+  margin-top: 16px;
 
   p {
     font-size: 13px;
@@ -279,14 +353,127 @@ header {
   }
 }
 
-.detail-section-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  margin-bottom: 12px;
+// ── Tabs ──
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--border);
 }
+
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  cursor: pointer;
+
+  &:hover { color: var(--text); }
+  &.on { color: var(--accent); border-bottom-color: var(--accent); }
+}
+
+.tab-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+}
+
+// ── Panel controls (elite / level / trust / potential) ──
+.panel-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ctl-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ctl-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  min-width: 58px;
+}
+
+.ctl-label-2 { min-width: 0; margin-left: 8px; }
+.ctl-value { font-size: 13px; font-weight: 700; color: var(--text); min-width: 26px; text-align: right; }
+.ctl-max { font-size: 12px; color: var(--muted); }
+
+// Wraps because the skill-level row is ten buttons wide (Lv1–M3), which overflows a
+// phone on one line.
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+  max-width: 100%;
+}
+
+.seg-btn {
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  cursor: pointer;
+
+  &:hover { color: var(--text); }
+  &.on { background: var(--chip); color: var(--text); }
+}
+
+#lvl {
+  flex: 1;
+  min-width: 120px;
+  max-width: 280px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+// ── Stat grid ──
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 10px;
+}
+
+.stat {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.stat-value { font-size: 17px; font-weight: 700; }
 
 .label-inline { color: var(--muted); }
 
@@ -306,32 +493,47 @@ header {
   padding: 2px 8px;
 }
 
-.stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-
-  th,
-  td {
-    padding: 6px 10px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-  }
-
-  thead th { color: var(--muted); font-size: 11px; }
-
-  tbody {
-    th { color: var(--muted); font-weight: 600; white-space: nowrap; }
-
-    tr:last-child th,
-    tr:last-child td { border-bottom: none; }
-  }
+// ── Modules ──
+.mod-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
-.th-sub { font-weight: 400; opacity: 0.7; }
+.mod-name { font-size: 15px; font-weight: 700; }
 
-.range-row { display: flex; gap: 24px; flex-wrap: wrap; }
-.range-block { display: flex; flex-direction: column; gap: 8px; }
+.mod-code {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: var(--chip);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.mod-unlock { font-size: 11px; color: var(--accent); }
+
+.mod-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.mod-stat {
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+.mod-trait { font-size: 13px; line-height: 1.5; margin-bottom: 6px; }
+
+.range-block { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .range-label { font-size: 11px; color: var(--muted); }
 .range-grid { display: grid; gap: 2px; }
 
@@ -378,13 +580,21 @@ header {
 
 .detail-talent,
 .detail-base {
-  padding: 8px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
 
   &:last-child { border-bottom: none; }
 }
 
-.talent-name,
+// A talent upgrades at successive elite/potential steps; each one gets its own row
+// rather than the view silently showing only the final version.
+.talent-step {
+  margin-top: 6px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border);
+}
+
+.talent-name { font-size: 14px; font-weight: 700; }
 .base-name { font-size: 13px; font-weight: 600; }
 
 .talent-unlock,
@@ -410,4 +620,70 @@ header {
   font-size: 11px;
   flex-shrink: 0;
   width: 24px;
+}
+
+// ── Narrow screens ──
+// The topbar becomes a 2x2 grid rather than relying on flex-wrap, so the break always
+// lands in the same place instead of shifting with the width of the operator count.
+@media (max-width: 640px) {
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 10px;
+    padding: 10px 12px;
+
+    h1 { font-size: 15px; grid-area: 1 / 1; }
+  }
+
+  #count {
+    grid-area: 1 / 2;
+    justify-self: end;
+    margin-left: 0;
+    font-size: 11px;
+  }
+
+  #search {
+    grid-area: 2 / 1;
+    max-width: none;
+    font-size: 16px; // < 16px makes iOS Safari zoom on focus
+  }
+
+  #sort {
+    grid-area: 2 / 2;
+  }
+
+  #chips {
+    padding: 8px 12px;
+    gap: 5px;
+  }
+
+  #more-filters { padding: 10px 12px 12px; }
+  .filter-label { min-width: 0; }
+  #subclass { max-width: 100%; }
+
+  #grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .op-info { padding: 6px; }
+  .op-name { font-size: 12px; }
+  .op-avatar-placeholder { font-size: 28px; }
+
+  .detail { padding: 14px; }
+
+  .detail-header { gap: 12px; }
+  .detail-avatar { width: 72px; height: 72px; }
+  .detail-name { font-size: 20px; }
+
+  .tabs { margin-top: 16px; }
+  .tab { padding: 8px 9px; font-size: 11px; }
+  .tab-panel { padding: 12px; }
+
+  .ctl-label { min-width: 46px; font-size: 10px; }
+  .stat-grid { grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; }
+  .stat-value { font-size: 15px; }
+
+  .state-msg { padding: 40px 16px; }
 }
