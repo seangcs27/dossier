@@ -36,3 +36,6 @@ docs/
 
 # Generated operator index (build artifact, shared by both targets)
 src/shared/generated/
+
+# Generated Claude Design previews (rebuilt from dist/web/styles.css by `npm run design`)
+design/

@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm run build:ext && npm run build:web",
     "build:index": "node --no-network-family-autoselection scripts/build-operator-index.mjs",
+    "design": "npm run build:web && node scripts/build-design-previews.mjs",
     "prebuild:ext": "npm run build:index",
     "build:ext": "webpack --config webpack.ext.js --mode production",
     "prebuild:web": "npm run build:index",
