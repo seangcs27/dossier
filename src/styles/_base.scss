@@ -25,8 +25,19 @@
 // class in the markup (.op-class.defender etc.) as a styling hook, but no longer
 // carries a colour of its own.
 .op-class {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--chip);
   color: var(--text);
+}
+
+// The game's own class glyph — white on transparency, so it needs no colouring.
+// Slightly dimmed so it reads as a label rather than competing with the artwork.
+.op-class-icon {
+  display: block;
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
 @each $tier, $spec in $rarities {

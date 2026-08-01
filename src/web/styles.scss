@@ -260,6 +260,13 @@ header {
   white-space: nowrap;
 }
 
+// On a card the glyph stands alone — the name is already the thing being read, and a
+// text badge next to it was just more words competing for 128px.
+.op-meta .op-class-icon {
+  width: 15px;
+  height: 15px;
+}
+
 .op-rarity {
   font-size: 10px;
   letter-spacing: -1px;
@@ -335,7 +342,8 @@ header {
   align-items: center;
   margin-bottom: 6px;
 
-  .op-class { font-size: 11px; padding: 2px 7px; }
+  .op-class { font-size: 11px; padding: 3px 8px; }
+  .op-class-icon { width: 14px; height: 14px; }
   .op-rarity { font-size: 13px; }
 }
 

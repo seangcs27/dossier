@@ -14,6 +14,7 @@ const outDir = path.join(root, 'design', 'components');
 
 const CDN = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
 const avatar = id => `${CDN}/avatars/${id}.png`;
+const classIcon = slug => `${CDN}/classes/class_${slug}.png`;
 
 const card = (id, name, cls, label, stars) => `
   <a class="op-card" href="#">
@@ -21,7 +22,7 @@ const card = (id, name, cls, label, stars) => `
     <div class="op-info">
       <div class="op-name" title="${name}">${name}</div>
       <div class="op-meta">
-        <span class="op-class ${cls}">${label}</span>
+        <img class="op-class-icon" src="${classIcon(cls)}" alt="${label}" title="${label}">
         <span class="op-rarity r${stars}">${'★'.repeat(stars)}</span>
       </div>
     </div>
@@ -29,10 +30,26 @@ const card = (id, name, cls, label, stars) => `
 
 const components = [
   {
+    file: 'foundations-class-glyphs.html',
+    name: 'Class glyphs',
+    group: 'Foundations',
+    subtitle: 'The eight class icons — white on transparency, no per-class colour',
+    viewport: { width: 720, height: 200 },
+    body: `
+      <div class="ds-row">
+        ${['vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter', 'specialist']
+          .map(s => `<div class="ds-swatch"><img class="op-class-icon" style="width:22px;height:22px" src="${classIcon(s)}" alt="${s}"><code>${s}</code></div>`).join('')}
+      </div>
+      <div class="ds-row">
+        ${['vanguard', 'sniper', 'medic'].map(s =>
+          `<span class="op-class" style="font-size:11px;padding:3px 8px;border-radius:4px"><img class="op-class-icon" style="width:14px;height:14px" src="${classIcon(s)}" alt="">${s[0].toUpperCase() + s.slice(1)}</span>`).join('')}
+      </div>`,
+  },
+  {
     file: 'foundations-colour.html',
     name: 'Colour tokens',
     group: 'Foundations',
-    subtitle: 'Surfaces, and the rarity scale — the only place colour encodes meaning',
+    subtitle: 'Surface ramp and the rarity scale — the only place colour encodes meaning',
     viewport: { width: 720, height: 320 },
     body: `
       <div class="ds-row">
@@ -51,7 +68,7 @@ const components = [
     file: 'operator-card.html',
     name: 'Operator card',
     group: 'Components',
-    subtitle: 'Grid cell — avatar, name, neutral class badge, rarity stars',
+    subtitle: 'Grid cell — avatar, name, class glyph, rarity stars',
     viewport: { width: 720, height: 420 },
     body: `<div id="grid" style="padding:0">
       ${card('char_1045_svash2', 'SilverAsh the Reignfrost', 'vanguard', 'Vanguard', 6)}

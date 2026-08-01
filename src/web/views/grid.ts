@@ -1,4 +1,4 @@
-import { operatorAvatarUrl } from '../../shared/api/hella-api';
+import { operatorAvatarUrl, classIconUrl } from '../../shared/api/hella-api';
 import type { OperatorIndexEntry, Profession } from '../../shared/types';
 import {
   getOperators,
@@ -37,7 +37,7 @@ function buildCard(op: OperatorIndexEntry): string {
       <div class="op-info">
         <div class="op-name" title="${name}">${name}</div>
         <div class="op-meta">
-          <span class="op-class ${cls}">${label}</span>
+          <img class="op-class-icon" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
           <span class="op-rarity r${n}">${stars}</span>
         </div>
       </div>

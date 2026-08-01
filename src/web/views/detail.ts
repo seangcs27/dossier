@@ -1,5 +1,5 @@
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
-import { operatorAvatarUrl, skillIconUrl } from '../../shared/api/hella-api';
+import { operatorAvatarUrl, skillIconUrl, classIconUrl } from '../../shared/api/hella-api';
 import type {
   AttackRange,
   ModulePhase,
@@ -438,7 +438,10 @@ function headerHtml(op: Operator): string {
       <div class="detail-info">
         <div class="detail-name">${escHtml(d.name)}</div>
         <div class="detail-meta">
-          <span class="op-class ${PROFESSION_CSS[d.profession]}">${PROFESSION_LABEL[d.profession]}</span>
+          <span class="op-class ${PROFESSION_CSS[d.profession]}">
+            <img class="op-class-icon" src="${classIconUrl(PROFESSION_CSS[d.profession])}" alt="">
+            ${PROFESSION_LABEL[d.profession]}
+          </span>
           <span class="op-rarity r${n}">${'★'.repeat(n)}</span>
         </div>
         <div class="detail-sub">

@@ -1,5 +1,5 @@
 import type { Operator, OperatorIndexEntry, Rarity, Profession } from '../../shared/types';
-import { operatorAvatarUrl } from '../../shared/api/hella-api';
+import { operatorAvatarUrl, classIconUrl } from '../../shared/api/hella-api';
 import { escHtml } from '../utils/html';
 
 const PROFESSION_LABEL: Record<Profession, string> = {
@@ -75,7 +75,7 @@ function buildCard(op: OperatorIndexEntry): string {
       <div class="op-info">
         <div class="op-name" title="${name}">${name}</div>
         <div class="op-meta">
-          <span class="op-class ${cls}">${label}</span>
+          <img class="op-class-icon" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
           <span class="op-rarity r${n}">${stars}</span>
         </div>
       </div>
@@ -102,7 +102,10 @@ export function renderDetail(container: HTMLElement, op: Operator): void {
         <div class="detail-info">
           <div class="detail-name">${name}</div>
           <div class="detail-meta">
-            <span class="op-class ${cls}">${label}</span>
+            <span class="op-class ${cls}">
+              <img class="op-class-icon" src="${classIconUrl(cls)}" alt="">
+              ${label}
+            </span>
             <span class="op-rarity r${n}">${stars}</span>
           </div>
           <div class="detail-sub">${escHtml(d.subProfessionId)} &middot; ${escHtml(d.position)}</div>

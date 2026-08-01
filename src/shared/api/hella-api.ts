@@ -30,3 +30,9 @@ export function operatorAvatarUrl(id: OperatorId): string {
 export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }
+
+// White monochrome glyph on transparency. Takes the CSS slug ('defender', 'vanguard'),
+// not the game enum — there are only eight, so they cache across the whole grid.
+export function classIconUrl(slug: string): string {
+  return `${IMAGE_BASE}/classes/class_${encodeURIComponent(slug)}.png`;
+}
