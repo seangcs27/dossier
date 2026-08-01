@@ -124,8 +124,16 @@ Built by `scripts/build-operator-index.mjs`, bundled into both targets by webpac
 **gitignored** — every build regenerates it. One entry per operator:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, releaseDate }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate }
 ```
+
+`archetype` is the readable subclass name (`splashcaster` → `Splash Caster`) and `tags` are
+the recruitment tags, both used by the grid's filter panel.
+
+Operators flagged `isNotObtainable` are **dropped** (~28): the `Reserve Operator - *` set and
+the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which were never released. The flag is
+used rather than a name match because the Integrated Strategies trainer "Mechanist"
+(`char_610_acfend`) shares its name with a real 6★ operator, as does "Raidian".
 
 Two sources are joined at build time:
 
@@ -137,10 +145,10 @@ Two sources are joined at build time:
   limiteds. Fallbacks: earliest any-server date when an event has no CN row, and a
   surname-swap for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`).
 
-`releaseDate` is `null` (~37 operators) for Reserve/tutorial trainer units that were never
-released, plus a few event operators whose debut event has no dated row on the wiki. They
-sort last. The script hard-fails below 300 dated operators, so a wiki schema change breaks
-the build instead of silently shipping a wrong order.
+After that exclusion the index holds ~407 operators, ~398 of them dated. `releaseDate` stays
+`null` for ~9 event/Integrated Strategies operators whose debut event has no dated row on the
+wiki at all; they sort last. The script hard-fails below 300 dated operators, so a wiki schema
+change breaks the build instead of silently shipping a wrong order.
 
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
 

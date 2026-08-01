@@ -17,7 +17,7 @@ const HELLA_URL =
   'https://awedtan.ca/api/operator' +
   '?include=data.name&include=data.appellation&include=data.rarity' +
   '&include=data.profession&include=data.subProfessionId' +
-  '&include=data.tagList&include=archetype';
+  '&include=data.tagList&include=archetype&include=data.isNotObtainable';
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
 
@@ -92,7 +92,17 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-const entries = envelopes.map(e => ({
+// Tutorial and Integrated Strategies trainer units — the "Reserve Operator - *" set plus
+// the Sharp/Pith/Touch/Stormeye/Tulip families. They were never released, so they have no
+// release date and only pad the end of the grid. Both reference sites omit them too.
+//
+// `isNotObtainable` is the flag rather than a name match, because name matching would
+// confuse the IS trainer "Mechanist" (char_610_acfend) with the real 6* operator of the
+// same name, and likewise for "Raidian".
+const obtainable = envelopes.filter(e => !e.value.data.isNotObtainable);
+const excluded = envelopes.length - obtainable.length;
+
+const entries = obtainable.map(e => ({
   // With include=data.* the operator id is only on the envelope, as `canon`.
   id: e.canon,
   name: e.value.data.name,
@@ -123,6 +133,6 @@ await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'operators.json');
 await writeFile(outFile, JSON.stringify(entries));
 console.log(
-  `wrote ${entries.length} operators (${dated} dated, ${entries.length - dated} undated) ` +
-  `-> ${path.relative(process.cwd(), outFile)}`,
+  `wrote ${entries.length} operators (${dated} dated, ${entries.length - dated} undated, ` +
+  `${excluded} unobtainable excluded) -> ${path.relative(process.cwd(), outFile)}`,
 );
