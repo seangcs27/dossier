@@ -83,15 +83,21 @@ const components = [
     file: 'filter-chips.html',
     name: 'Filter chips',
     group: 'Components',
-    subtitle: 'Class chips select neutrally; rarity chips carry the rarity colour',
+    subtitle: 'Class chips carry the game glyph and select neutrally; rarity chips carry the rarity colour',
     viewport: { width: 720, height: 260 },
     body: `
       <div class="ds-row">
-        <button class="chip">Vanguard</button>
-        <button class="chip active">Guard</button>
-        <button class="chip">Defender</button>
-        <button class="chip">Sniper</button>
-      </div>
+        ${['vanguard', 'guard', 'defender', 'sniper'].map((s, i) =>
+          `<button class="chip${i === 1 ? ' active' : ''}"><img class="chip-icon" src="${classIcon(s)}" alt="">${s[0].toUpperCase() + s.slice(1)}</button>`).join('')}
+      </div>`,
+  },
+  {
+    file: 'filter-rarity-chips.html',
+    name: 'Rarity chips',
+    group: 'Components',
+    subtitle: 'The one filter row where colour encodes the value',
+    viewport: { width: 720, height: 140 },
+    body: `
       <div class="ds-row">
         ${[6, 5, 4, 3, 2, 1].map(r => `<button class="chip r${r}${r >= 5 ? ' active' : ''}">${r}★</button>`).join('')}
       </div>

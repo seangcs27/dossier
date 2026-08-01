@@ -79,6 +79,9 @@ header {
 }
 
 .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 11px;
   font-weight: 600;
   padding: 3px 10px;
@@ -108,6 +111,16 @@ header {
     }
   }
 }
+
+// The class glyph is white-on-transparent, same as everywhere else it's used — it just
+// needs to dim slightly on an unselected chip so it doesn't outshine the label.
+.chip-icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
+}
+
+.chip.active .chip-icon { opacity: 1; }
 
 .chip-sep {
   width: 1px;
