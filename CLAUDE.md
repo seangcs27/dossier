@@ -145,11 +145,15 @@ Three sources are joined at build time:
   name — a pre-romanized name the game data carries even before official localization exists
   (this is also how Sanity Gone displays brand-new operators; some, like `Вий`, are Cyrillic
   by design, not a translation gap). `archetype` is looked up by matching `subProfessionId`
-  against an operator HellaAPI already knows; `tags` are left empty, since CN's `tagList` is
-  Chinese text. Filtered to `profession` in the real 8-class set — `character_table.json` is a
-  superset that also includes summons, deployable traps, and RIIC assistants (`TOKEN`/`TRAP`),
-  which are not operators. This fetch is supplemental only: if it fails, the build logs a
-  warning and continues without it, rather than failing the whole build over ~15 records.
+  against an operator HellaAPI already knows; `tags` are translated from CN's `tagList` via a
+  small static CN→EN table (recruitment tags are a frozen ~18-value vocabulary, so this doesn't
+  need a live source). Filtered to `profession` in the real 8-class set — `character_table.json`
+  is a superset that also includes summons, deployable traps, and RIIC assistants
+  (`TOKEN`/`TRAP`), which are not operators. `isSpChar` looks like a junk-data flag but isn't —
+  it's set on every alter (SilverAsh the Reignfrost, Ch'en the Dawnstreak, ...) as much as on
+  test records, so it's not used as a filter. This fetch is supplemental only: if it fails, the
+  build logs a warning and continues without it, rather than failing the whole build over ~20
+  records.
   Because `fetchOperator()` in `hella-api.ts` treats HellaAPI's `HTTP 200 {}` response (an id
   it knows about but hasn't ingested data for) as not-found, clicking into one of these
   operators shows "Unknown operator" instead of hanging — it just has no detail data yet.
@@ -163,7 +167,7 @@ Three sources are joined at build time:
   banner too (`gacha_table.json` has no debut pool for them yet) — so they sort last until
   HellaAPI catches up and the wiki does too.
 
-After exclusion and supplementing the index holds ~422 operators, ~398 of them dated. The
+After exclusion and supplementing the index holds ~427 operators, ~398 of them dated. The
 script hard-fails below 300 dated operators, so a wiki schema change breaks the build instead
 of silently shipping a wrong order.
 

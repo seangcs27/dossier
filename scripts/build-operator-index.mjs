@@ -36,6 +36,19 @@ const CN_CHARACTER_TABLE_URL =
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
 
+// CN recruitment-tag text -> the exact English string HellaAPI already uses for the
+// same tag (verified against AN-EN-Tags' tl-tags.json, reconciled to our spelling —
+// e.g. "Crowd-Control" hyphenated, not "Crowd Control"). This vocabulary is small and
+// essentially frozen (new tags ship maybe once a year), so it's a static table instead
+// of a fourth live fetch.
+const CN_TAG_EN = {
+  '控场': 'Crowd-Control', '爆发': 'Nuker', '治疗': 'Healing', '支援': 'Support',
+  '费用回复': 'DP-Recovery', '输出': 'DPS', '生存': 'Survival', '群攻': 'AoE',
+  '防护': 'Defense', '减速': 'Slow', '削弱': 'Debuff', '快速复活': 'Fast-Redeploy',
+  '位移': 'Shift', '召唤': 'Summon', '支援机械': 'Robot', '元素': 'Elemental',
+  '高空': 'Soar', '新手': 'Starter',
+};
+
 // Below this many resolved dates, assume the wiki is down or its schema moved —
 // fail the build rather than silently deploying a broken sort order.
 const MIN_DATED = 300;
@@ -109,12 +122,16 @@ async function fetchCnSupplement(knownIds) {
     const supplement = [];
     for (const [id, c] of Object.entries(table)) {
       if (knownIds.has(id)) continue; // HellaAPI already covers this one
-      if (c.isNotObtainable || c.isSpChar) continue;
+      if (c.isNotObtainable) continue;
+      // `isSpChar` looks like a "special/junk" flag but isn't one — every alter
+      // (SilverAsh the Reignfrost, Ch'en the Dawnstreak, ...) carries it too. Real
+      // exclusion is handled by the checks below instead.
       if (!VALID_PROFESSION.has(c.profession)) continue; // token / trap / summon, not an operator
       if (!VALID_RARITY.has(c.rarity)) continue; // datamine placeholder, not a real record yet
       if (!c.appellation?.trim()) continue; // nothing usable to display
+      const tags = (c.tagList ?? []).map(t => CN_TAG_EN[t]).filter(Boolean);
       supplement.push({ id, appellation: c.appellation.trim(), rarity: c.rarity,
-        profession: c.profession, subProfessionId: c.subProfessionId });
+        profession: c.profession, subProfessionId: c.subProfessionId, tags });
     }
     return supplement;
   } catch (e) {
@@ -182,7 +199,7 @@ for (const c of cnSupplement) {
     profession: c.profession,
     subProfessionId: c.subProfessionId,
     archetype: archetypeBySubclass.get(c.subProfessionId) ?? '',
-    tags: [], // CN's tagList is Chinese text; nothing to show until HellaAPI has this operator
+    tags: c.tags,
     releaseDate: null, // too new for both the wiki and any gacha banner — see header note
   });
 }
