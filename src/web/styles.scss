@@ -217,6 +217,24 @@ header {
   text-decoration: none;
   color: inherit;
 
+  // A thin rarity-coloured edge, plus a matching shelf under the info panel — the one
+  // place on the card where rarity registers at a glance instead of only in the small
+  // star row. Reuses the exact colours the stars and rarity filter chips already use,
+  // so a 6* card visually leads the eye the same way it does everywhere else.
+  @each $tier, $spec in $rarities {
+    &.r#{$tier} {
+      border-color: var(--r#{$tier});
+
+      &::after {
+        content: '';
+        display: block;
+        height: 3px;
+        background: var(--r#{$tier});
+      }
+    }
+  }
+
+  // Declared after the rarity loop so it wins the cascade regardless of tier.
   &:hover {
     border-color: var(--accent);
     transform: translateY(-2px);
@@ -251,7 +269,7 @@ header {
 
 .op-name {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -31,7 +31,7 @@ function buildCard(op: OperatorIndexEntry): string {
   const name   = escHtml(op.name);
 
   return `
-    <a class="op-card" href="#/op/${encodeURIComponent(op.id)}">
+    <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <img class="op-avatar" src="${avatar}" alt="${name}" loading="lazy"
            onerror="this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'">
       <div class="op-info">

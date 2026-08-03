@@ -17,7 +17,7 @@ const avatar = id => `${CDN}/avatars/${id}.png`;
 const classIcon = slug => `${CDN}/classes/class_${slug}.png`;
 
 const card = (id, name, cls, label, stars) => `
-  <a class="op-card" href="#">
+  <a class="op-card r${stars}" href="#">
     <img class="op-avatar" src="${avatar(id)}" alt="${name}" loading="lazy">
     <div class="op-info">
       <div class="op-name" title="${name}">${name}</div>
@@ -68,7 +68,7 @@ const components = [
     file: 'operator-card.html',
     name: 'Operator card',
     group: 'Components',
-    subtitle: 'Grid cell — avatar, name, class glyph, rarity stars',
+    subtitle: 'Grid cell — avatar, name, class glyph, rarity stars, and a rarity-tinted edge + shelf',
     viewport: { width: 720, height: 420 },
     body: `<div id="grid" style="padding:0">
       ${card('char_1045_svash2', 'SilverAsh the Reignfrost', 'vanguard', 'Vanguard', 6)}
