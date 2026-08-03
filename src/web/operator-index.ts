@@ -64,9 +64,14 @@ export function allTags(ops: OperatorIndexEntry[]): string[] {
 
 const byName = (a: OperatorIndexEntry, b: OperatorIndexEntry) => a.name.localeCompare(b.name);
 
-// Undated units (tutorial / Integrated Strategies trainers) have no release to order
-// by, so they sort last whichever direction the dated ones run in.
+// releaseOrder (Sanity Gone's PRTS-scraped ordinal) covers almost everything and is
+// verified accurate even for operators our own wiki pipeline can't date at all, so it's
+// the preferred signal. releaseDate is the fallback for the rare operator neither we
+// nor Sanity Gone can place yet; fully-undated pairs sort last, by name.
 function byRelease(a: OperatorIndexEntry, b: OperatorIndexEntry, dir: 1 | -1): number {
+  if (a.releaseOrder != null && b.releaseOrder != null) {
+    return dir * (a.releaseOrder - b.releaseOrder) || byName(a, b);
+  }
   if (!a.releaseDate || !b.releaseDate) {
     if (a.releaseDate) return -1;
     if (b.releaseDate) return 1;

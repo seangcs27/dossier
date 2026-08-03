@@ -25,6 +25,16 @@
 //                           guaranteed to sort as newest, so these operators surface at
 //                           the top instead of being buried in the genuinely-undated
 //                           tail with old operators that just lack wiki coverage.
+//   sanitygone.help        — releaseOrder, a PRTS-scraped ordinal Sanity Gone bakes into
+//                           their own bundle (their build pulls a wider set of CN/EN/JP/
+//                           KR/TW tables plus a PRTS scrape than we do). Near-universal
+//                           coverage and verified accurate even for operators our wiki
+//                           pipeline can't date at all, so it's the PREFERRED sort signal
+//                           at runtime — releaseDate above is the fallback, not this. The
+//                           asset URL is content-hashed and changes on every Sanity Gone
+//                           deploy, so it's discovered by chasing the reference chain from
+//                           their live page (page -> OperatorList.[hash].js ->
+//                           operators-index.json.[hash].js) rather than hardcoded.
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,6 +49,7 @@ const CN_CHARACTER_TABLE_URL =
   'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/character_table.json';
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
+const SANITYGONE_BASE = 'https://sanitygone.help';
 
 // Sentinel "release date" for CN-supplement operators — see the header note. Sorts
 // after every real ISO date (all real ones fall in 2019-2026), never displayed anywhere
@@ -90,7 +101,7 @@ async function cargo(params) {
 // those operators still land near the right place instead of at the end.
 async function fetchReleaseDates() {
   const [ops, events] = await Promise.all([
-    cargo({ tables: 'Operators', fields: 'name,event', order_by: 'name' }),
+    cargo({ tables: 'Operators', fields: 'name,event,obtain', order_by: 'name' }),
     cargo({ tables: 'EventServerDetails', fields: 'event,server,startTime' }),
   ]);
 
@@ -103,14 +114,62 @@ async function fetchReleaseDates() {
     const prev = anyDate.get(e.event);
     if (!prev || date < prev) anyDate.set(e.event, date);
   }
+  const eventNames = [...cnDate.keys(), ...anyDate.keys()];
+  const dateFor = name => cnDate.get(name) ?? anyDate.get(name);
 
   const byName = new Map();
   for (const op of ops) {
-    if (!op.event) continue;
-    const date = cnDate.get(op.event) ?? anyDate.get(op.event);
+    // Normal case: Operators.event names the debut event directly.
+    let date = op.event ? dateFor(op.event) : undefined;
+    // A few operators (Raidian confirmed) have a blank `event` even though the wiki
+    // does have a dated event for them — it's just linked through `obtain`'s wikitext
+    // instead, e.g. "[[Sui's Garden of Grotesqueries]] ([[Visit Memento]])". The event
+    // name there isn't always the exact match ("...Mission Event" is appended in
+    // EventServerDetails), so this falls back to a prefix match against known events.
+    if (!date && op.obtain) {
+      const linkText = /\[\[([^\]|]+)/.exec(op.obtain)?.[1]?.trim();
+      if (linkText) {
+        const fuzzy = eventNames.find(en => en.startsWith(linkText) || linkText.startsWith(en));
+        if (fuzzy) date = dateFor(fuzzy);
+      }
+    }
     if (date) byName.set(op.name, date);
   }
   return byName;
+}
+
+// Sanity Gone's own PRTS-scraped release ordinal — see the header note on why this is
+// the preferred sort signal. Chases the live reference chain to find the current
+// content-hashed asset rather than hardcoding a URL that changes on every SG deploy.
+// Supplemental only: never blocks the build.
+async function fetchReleaseOrder() {
+  try {
+    const pageRes = await fetch(`${SANITYGONE_BASE}/en/operators/`);
+    if (!pageRes.ok) throw new Error(`operators page ${pageRes.status}`);
+    const pageHtml = await pageRes.text();
+    const listRef = /"(\/_astro\/OperatorList\.[A-Za-z0-9_-]+\.js)"/.exec(pageHtml)?.[1];
+    if (!listRef) throw new Error('OperatorList asset not found on page');
+
+    const listRes = await fetch(SANITYGONE_BASE + listRef);
+    if (!listRes.ok) throw new Error(`${listRef} ${listRes.status}`);
+    const listJs = await listRes.text();
+    const dataRef = /(operators-index\.json\.[A-Za-z0-9_-]+\.js)/.exec(listJs)?.[1];
+    if (!dataRef) throw new Error('operators-index asset not referenced in OperatorList.js');
+
+    const dataRes = await fetch(`${SANITYGONE_BASE}/_astro/${dataRef}`);
+    if (!dataRes.ok) throw new Error(`${dataRef} ${dataRes.status}`);
+    const dataJs = await dataRes.text();
+
+    const byId = new Map(
+      [...dataJs.matchAll(/charId:"(char_[^"]+)"[\s\S]{0,400}?releaseOrder:(\d+)/g)]
+        .map(m => [m[1], parseInt(m[2], 10)]),
+    );
+    if (byId.size < 300) throw new Error(`only parsed ${byId.size} entries — asset shape may have changed`);
+    return byId;
+  } catch (e) {
+    console.warn(`Sanity Gone releaseOrder skipped: ${e.message}`);
+    return new Map();
+  }
 }
 
 // Supplemental only — never blocks the build. A GitHub raw-content hiccup should not
@@ -149,9 +208,10 @@ async function fetchCnSupplement(knownIds) {
   }
 }
 
-const [hellaRes, releaseDates] = await Promise.all([
+const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
   fetch(HELLA_URL), // hard-fail: no operator list, no point building
   fetchReleaseDates(),
+  fetchReleaseOrder(),
 ]);
 if (!hellaRes.ok) throw new Error(`${hellaRes.status} ${HELLA_URL}`);
 const envelopes = await hellaRes.json();
@@ -192,6 +252,7 @@ const entries = obtainable.map(e => ({
   // null for tutorial / Integrated Strategies trainer units that were never released,
   // plus a few event operators whose debut event has no dated row on the wiki.
   releaseDate: releaseDateFor(e.value.data.name),
+  releaseOrder: releaseOrders.get(e.canon) ?? null,
 }));
 
 // CN-only entries have no `archetype` field to draw on (that comes from HellaAPI), but
@@ -210,6 +271,7 @@ for (const c of cnSupplement) {
     archetype: archetypeBySubclass.get(c.subProfessionId) ?? '',
     tags: c.tags,
     releaseDate: RECENT_UNDATED,
+    releaseOrder: releaseOrders.get(c.id) ?? null,
   });
 }
 
@@ -221,17 +283,23 @@ if (dated < MIN_DATED) {
   throw new Error(`only ${dated}/${entries.length} operators got a release date (expected >= ${MIN_DATED})`);
 }
 
-// Deterministic on-disk order: oldest first, undated last.
-entries.sort((a, b) =>
-  (a.releaseDate ?? '9999').localeCompare(b.releaseDate ?? '9999') ||
-  a.name.localeCompare(b.name));
+// Deterministic on-disk order: same priority the runtime "Oldest" sort uses —
+// releaseOrder first (near-universal, most accurate), releaseDate as fallback, oldest
+// first, undated last.
+entries.sort((a, b) => {
+  if (a.releaseOrder != null && b.releaseOrder != null) {
+    return a.releaseOrder - b.releaseOrder || a.name.localeCompare(b.name);
+  }
+  return (a.releaseDate ?? '9999').localeCompare(b.releaseDate ?? '9999') || a.name.localeCompare(b.name);
+});
 
 await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'operators.json');
 await writeFile(outFile, JSON.stringify(entries));
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
+const withOrder = entries.filter(o => o.releaseOrder != null).length;
 console.log(
   `wrote ${entries.length} operators (${dated} dated, ${cnSupplement.length} recent-undated ` +
   `(sort first), ${genuinelyUndated} genuinely undated (sort last), ${excluded} unobtainable ` +
-  `excluded) -> ${path.relative(process.cwd(), outFile)}`,
+  `excluded, ${withOrder} with a Sanity Gone releaseOrder) -> ${path.relative(process.cwd(), outFile)}`,
 );

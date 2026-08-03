@@ -231,6 +231,15 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // anything HellaAPI has, exact date unavailable — so they sort first, not last.
   // See scripts/build-operator-index.mjs.
   releaseDate: string | null;
+  // Sanity Gone's own PRTS-scraped release ordinal (higher = newer), fetched live from
+  // their site at build time. Near-universal coverage (~1700/1704 of their own roster)
+  // and verified against a user-supplied reference order with an exact match, including
+  // for operators our own wiki pipeline can't date at all — so this is the PREFERRED
+  // sort signal when present; releaseDate is the fallback, not the other way around.
+  // null if Sanity Gone doesn't have this operator either (rare — usually only for an
+  // operator so new even they haven't ingested it) or their site was unreachable at
+  // build time. See scripts/build-operator-index.mjs.
+  releaseOrder: number | null;
   archetype: string;  // display name for subProfessionId, e.g. 'Splash Caster'
   tags: string[];     // recruitment tags, e.g. ['DPS', 'AoE']
 }

@@ -124,7 +124,7 @@ Built by `scripts/build-operator-index.mjs`, bundled into both targets by webpac
 **gitignored** — every build regenerates it. One entry per operator:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder }
 ```
 
 `archetype` is the readable subclass name (`splashcaster` → `Splash Caster`) and `tags` are
@@ -135,7 +135,7 @@ the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which were never released.
 used rather than a name match because the Integrated Strategies trainer "Mechanist"
 (`char_610_acfend`) shares its name with a real 6★ operator, as does "Raidian".
 
-Three sources are joined at build time:
+Four sources are joined at build time:
 
 - **HellaAPI** — primary operator identity, via a slim `?include=` query.
 - **raw CN game data** (`Kengxxiao/ArknightsGameData`, `zh_CN/gamedata/excel/character_table.json`)
@@ -161,16 +161,30 @@ Three sources are joined at build time:
   `EventServerDetails.startTime`). The game data has **no** release-date field, and char-id
   numbers are banded by category (`0xxx` standard, `1xxx` alters, `2xxx` limiteds, `4xxx`
   newer), so they do *not* track release order — sorting by them scatters alters and
-  limiteds. Fallbacks: earliest any-server date when an event has no CN row, and a
-  surname-swap for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`). CN-supplemented
-  operators have no dateable event — too new for the wiki, too new for a gacha banner too
-  (`gacha_table.json` has no debut pool for them yet) — but they're known to be newer than
-  everything HellaAPI has, so they get the `9999-12-31` sentinel and sort **first**, not
-  last, until HellaAPI and the wiki catch up and give them a real date.
+  limiteds. Fallbacks: earliest any-server date when an event has no CN row; a surname-swap
+  for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`); and, when `Operators.event` itself
+  is blank but `obtain`'s wikitext links a real place (confirmed for "Raidian" → `[[Sui's
+  Garden of Grotesqueries]]`), a fuzzy prefix match against known event names, since the
+  linked text doesn't always exactly match the full event name in `EventServerDetails`.
+  CN-supplemented operators have no dateable event — too new for the wiki, too new for a
+  gacha banner too (`gacha_table.json` has no debut pool for them yet) — but they're known to
+  be newer than everything HellaAPI has, so they get the `9999-12-31` sentinel and sort
+  **first**, not last, until HellaAPI and the wiki catch up and give them a real date.
+- **sanitygone.help** — `releaseOrder`, a PRTS-scraped release ordinal baked into Sanity
+  Gone's own bundle (their build draws on a wider set of CN/EN/JP/KR/TW tables plus an actual
+  PRTS scrape, which this project doesn't replicate). Near-universal coverage and verified
+  accurate — including for operators arknights.wiki.gg can't date at all — so it's the
+  **preferred** sort signal at runtime; `releaseDate` above is the fallback, not the reverse.
+  The asset URL is content-hashed and changes on every Sanity Gone deploy, so it's discovered
+  live by chasing the reference chain from their operators page (page →
+  `OperatorList.[hash].js` → `operators-index.json.[hash].js`) instead of hardcoded.
+  Supplemental only, same as the CN game data fetch: a change to Sanity Gone's build output
+  shape logs a warning and the index falls back to `releaseDate`-only ordering, rather than
+  failing the build.
 
-After exclusion and supplementing the index holds ~427 operators, ~398 of them dated. The
-script hard-fails below 300 dated operators, so a wiki schema change breaks the build instead
-of silently shipping a wrong order.
+After exclusion and supplementing the index holds ~427 operators: ~399 with a real CN release
+date, ~426 with a Sanity Gone `releaseOrder`. The script hard-fails below 300 dated operators,
+so a wiki schema change breaks the build instead of silently shipping a wrong order.
 
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
 
