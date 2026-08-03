@@ -163,9 +163,10 @@ Three sources are joined at build time:
   newer), so they do *not* track release order — sorting by them scatters alters and
   limiteds. Fallbacks: earliest any-server date when an event has no CN row, and a
   surname-swap for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`). CN-supplemented
-  operators are always undated — they're too new for the wiki and too new for a gacha
-  banner too (`gacha_table.json` has no debut pool for them yet) — so they sort last until
-  HellaAPI catches up and the wiki does too.
+  operators have no dateable event — too new for the wiki, too new for a gacha banner too
+  (`gacha_table.json` has no debut pool for them yet) — but they're known to be newer than
+  everything HellaAPI has, so they get the `9999-12-31` sentinel and sort **first**, not
+  last, until HellaAPI and the wiki catch up and give them a real date.
 
 After exclusion and supplementing the index holds ~427 operators, ~398 of them dated. The
 script hard-fails below 300 dated operators, so a wiki schema change breaks the build instead

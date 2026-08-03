@@ -225,8 +225,11 @@ export interface OperatorSlim {
 }
 
 export interface OperatorIndexEntry extends OperatorSlim {
-  // CN release date, 'YYYY-MM-DD'. null for tutorial / Integrated Strategies trainer
-  // units that were never released. See scripts/build-operator-index.mjs.
+  // CN release date, 'YYYY-MM-DD'. null for operators with no dateable event (some
+  // Integrated Strategies exclusives, a few event operators the wiki never dated).
+  // '9999-12-31' is a sentinel for CN-supplement operators — known to be newer than
+  // anything HellaAPI has, exact date unavailable — so they sort first, not last.
+  // See scripts/build-operator-index.mjs.
   releaseDate: string | null;
   archetype: string;  // display name for subProfessionId, e.g. 'Splash Caster'
   tags: string[];     // recruitment tags, e.g. ['DPS', 'AoE']

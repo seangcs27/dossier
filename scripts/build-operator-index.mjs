@@ -17,10 +17,14 @@
 //                           date field, and char-id numbers are banded by operator
 //                           category (0xxx standard, 1xxx alters, 2xxx limiteds, 4xxx
 //                           newer), so they do NOT track release order. CN-supplement
-//                           operators are always undated: they're too new for the wiki
-//                           and too new for a gacha banner (their debut pool doesn't
-//                           exist in gacha_table.json yet), so there's nothing to date
-//                           them from — they sort last until HellaAPI catches up.
+//                           operators have no dateable event yet (too new for the wiki,
+//                           no gacha banner in gacha_table.json either), but by
+//                           construction they ARE newer than everything HellaAPI has
+//                           ingested — that's the only reason they needed supplementing
+//                           at all. RECENT_UNDATED encodes that: not a real date, but
+//                           guaranteed to sort as newest, so these operators surface at
+//                           the top instead of being buried in the genuinely-undated
+//                           tail with old operators that just lack wiki coverage.
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +39,11 @@ const CN_CHARACTER_TABLE_URL =
   'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/character_table.json';
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
+
+// Sentinel "release date" for CN-supplement operators — see the header note. Sorts
+// after every real ISO date (all real ones fall in 2019-2026), never displayed anywhere
+// (releaseDate only drives sort order, checked with `grep -rn releaseDate src/`).
+const RECENT_UNDATED = '9999-12-31';
 
 // CN recruitment-tag text -> the exact English string HellaAPI already uses for the
 // same tag (verified against AN-EN-Tags' tl-tags.json, reconciled to our spelling —
@@ -200,11 +209,14 @@ for (const c of cnSupplement) {
     subProfessionId: c.subProfessionId,
     archetype: archetypeBySubclass.get(c.subProfessionId) ?? '',
     tags: c.tags,
-    releaseDate: null, // too new for both the wiki and any gacha banner — see header note
+    releaseDate: RECENT_UNDATED,
   });
 }
 
-const dated = entries.filter(o => o.releaseDate).length;
+// RECENT_UNDATED entries are placeholder-dated, not genuinely dated — don't let them
+// count toward MIN_DATED, or a wiki outage that zeroed out real dates could still pass
+// the check as long as enough CN-supplement operators existed.
+const dated = entries.filter(o => o.releaseDate && o.releaseDate !== RECENT_UNDATED).length;
 if (dated < MIN_DATED) {
   throw new Error(`only ${dated}/${entries.length} operators got a release date (expected >= ${MIN_DATED})`);
 }
@@ -217,8 +229,9 @@ entries.sort((a, b) =>
 await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'operators.json');
 await writeFile(outFile, JSON.stringify(entries));
+const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 console.log(
-  `wrote ${entries.length} operators (${dated} dated, ${entries.length - dated} undated, ` +
-  `${excluded} unobtainable excluded, ${cnSupplement.length} CN-only supplemented) ` +
-  `-> ${path.relative(process.cwd(), outFile)}`,
+  `wrote ${entries.length} operators (${dated} dated, ${cnSupplement.length} recent-undated ` +
+  `(sort first), ${genuinelyUndated} genuinely undated (sort last), ${excluded} unobtainable ` +
+  `excluded) -> ${path.relative(process.cwd(), outFile)}`,
 );
