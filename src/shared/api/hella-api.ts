@@ -15,6 +15,10 @@ async function apiFetch<T>(path: string): Promise<T> {
 
 export async function fetchOperator(id: OperatorId): Promise<Operator> {
   const envelope = await apiFetch<HellaEnvelope<Operator>>(`/operator/${encodeURIComponent(id)}`);
+  // HellaAPI returns HTTP 200 with `{}` for an id it knows about but hasn't ingested
+  // data for yet (recently-added CN operators), rather than a 404. Treat that the same
+  // as not-found — the "404" substring is what detail.ts's error handling keys on.
+  if (!envelope?.value) throw new Error(`HellaAPI 404: no data for ${id}`);
   return envelope.value;
 }
 

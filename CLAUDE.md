@@ -135,20 +135,37 @@ the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which were never released.
 used rather than a name match because the Integrated Strategies trainer "Mechanist"
 (`char_610_acfend`) shares its name with a real 6★ operator, as does "Raidian".
 
-Two sources are joined at build time:
+Three sources are joined at build time:
 
-- **HellaAPI** — operator identity, via a slim `?include=` query.
+- **HellaAPI** — primary operator identity, via a slim `?include=` query.
+- **raw CN game data** (`Kengxxiao/ArknightsGameData`, `zh_CN/gamedata/excel/character_table.json`)
+  — supplements HellaAPI, which lags the CN release frontier by roughly one patch (~10-15
+  operators at any time). For any operator id present in CN data but not in HellaAPI's
+  response, the script adds a minimal entry using CN's own `appellation` field as the display
+  name — a pre-romanized name the game data carries even before official localization exists
+  (this is also how Sanity Gone displays brand-new operators; some, like `Вий`, are Cyrillic
+  by design, not a translation gap). `archetype` is looked up by matching `subProfessionId`
+  against an operator HellaAPI already knows; `tags` are left empty, since CN's `tagList` is
+  Chinese text. Filtered to `profession` in the real 8-class set — `character_table.json` is a
+  superset that also includes summons, deployable traps, and RIIC assistants (`TOKEN`/`TRAP`),
+  which are not operators. This fetch is supplemental only: if it fails, the build logs a
+  warning and continues without it, rather than failing the whole build over ~15 records.
+  Because `fetchOperator()` in `hella-api.ts` treats HellaAPI's `HTTP 200 {}` response (an id
+  it knows about but hasn't ingested data for) as not-found, clicking into one of these
+  operators shows "Unknown operator" instead of hanging — it just has no detail data yet.
 - **arknights.wiki.gg Cargo API** — CN release dates (`Operators` → debut event →
   `EventServerDetails.startTime`). The game data has **no** release-date field, and char-id
   numbers are banded by category (`0xxx` standard, `1xxx` alters, `2xxx` limiteds, `4xxx`
   newer), so they do *not* track release order — sorting by them scatters alters and
   limiteds. Fallbacks: earliest any-server date when an event has no CN row, and a
-  surname-swap for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`).
+  surname-swap for JP collab names (`Sakiko Togawa` ↔ `Togawa Sakiko`). CN-supplemented
+  operators are always undated — they're too new for the wiki and too new for a gacha
+  banner too (`gacha_table.json` has no debut pool for them yet) — so they sort last until
+  HellaAPI catches up and the wiki does too.
 
-After that exclusion the index holds ~407 operators, ~398 of them dated. `releaseDate` stays
-`null` for ~9 event/Integrated Strategies operators whose debut event has no dated row on the
-wiki at all; they sort last. The script hard-fails below 300 dated operators, so a wiki schema
-change breaks the build instead of silently shipping a wrong order.
+After exclusion and supplementing the index holds ~422 operators, ~398 of them dated. The
+script hard-fails below 300 dated operators, so a wiki schema change breaks the build instead
+of silently shipping a wrong order.
 
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
 

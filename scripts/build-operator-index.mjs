@@ -2,13 +2,25 @@
 // BOTH targets (web grid + extension popup). Bundled at build time; nothing fetches
 // this list at runtime.
 //
-// Two sources:
-//   HellaAPI          — operator identity (name, rarity, class, …)
-//   arknights.wiki.gg — CN release dates, via its Cargo API (operator -> debut event
-//                       -> that event's CN start time). The game data has no release
-//                       date field, and char-id numbers are banded by operator
-//                       category (0xxx standard, 1xxx alters, 2xxx limiteds, 4xxx
-//                       newer), so they do NOT track release order.
+// Three sources:
+//   HellaAPI              — primary operator identity (name, rarity, class, resolved
+//                           archetype, tags, isNotObtainable). Lags the CN release
+//                           frontier by roughly one patch (~10-15 operators).
+//   raw CN game data      — supplements HellaAPI for that lag only: operators CN
+//                           already has that HellaAPI hasn't ingested yet. Names come
+//                           from CN's own `appellation` field, a pre-romanized name the
+//                           game data carries even before official localization (this
+//                           is how Sanity Gone displays brand-new operators too — see
+//                           `getLocalesForValue` in their import-operators.js).
+//   arknights.wiki.gg     — CN release dates, via its Cargo API (operator -> debut event
+//                           -> that event's CN start time). The game data has no release
+//                           date field, and char-id numbers are banded by operator
+//                           category (0xxx standard, 1xxx alters, 2xxx limiteds, 4xxx
+//                           newer), so they do NOT track release order. CN-supplement
+//                           operators are always undated: they're too new for the wiki
+//                           and too new for a gacha banner (their debut pool doesn't
+//                           exist in gacha_table.json yet), so there's nothing to date
+//                           them from — they sort last until HellaAPI catches up.
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,6 +30,9 @@ const HELLA_URL =
   '?include=data.name&include=data.appellation&include=data.rarity' +
   '&include=data.profession&include=data.subProfessionId' +
   '&include=data.tagList&include=archetype&include=data.isNotObtainable';
+
+const CN_CHARACTER_TABLE_URL =
+  'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/character_table.json';
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
 
@@ -76,12 +91,46 @@ async function fetchReleaseDates() {
   return byName;
 }
 
+// Supplemental only — never blocks the build. A GitHub raw-content hiccup should not
+// fail a weekly deploy over ~10 operators that are already tolerably handled by sorting
+// last; HellaAPI is the source that matters.
+async function fetchCnSupplement(knownIds) {
+  try {
+    const res = await fetch(CN_CHARACTER_TABLE_URL);
+    if (!res.ok) throw new Error(`CN table ${res.status}`);
+    const table = await res.json();
+    const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
+    // character_table.json is a superset of every "character" entity the game engine
+    // has — real operators, but also summons, deployable traps, and RIIC assistants,
+    // which use `profession` values like TOKEN/TRAP. Only these eight are operators.
+    const VALID_PROFESSION = new Set([
+      'CASTER', 'MEDIC', 'PIONEER', 'SNIPER', 'SPECIAL', 'SUPPORT', 'TANK', 'WARRIOR',
+    ]);
+    const supplement = [];
+    for (const [id, c] of Object.entries(table)) {
+      if (knownIds.has(id)) continue; // HellaAPI already covers this one
+      if (c.isNotObtainable || c.isSpChar) continue;
+      if (!VALID_PROFESSION.has(c.profession)) continue; // token / trap / summon, not an operator
+      if (!VALID_RARITY.has(c.rarity)) continue; // datamine placeholder, not a real record yet
+      if (!c.appellation?.trim()) continue; // nothing usable to display
+      supplement.push({ id, appellation: c.appellation.trim(), rarity: c.rarity,
+        profession: c.profession, subProfessionId: c.subProfessionId });
+    }
+    return supplement;
+  } catch (e) {
+    console.warn(`CN supplement skipped: ${e.message}`);
+    return [];
+  }
+}
+
 const [hellaRes, releaseDates] = await Promise.all([
   fetch(HELLA_URL), // hard-fail: no operator list, no point building
   fetchReleaseDates(),
 ]);
 if (!hellaRes.ok) throw new Error(`${hellaRes.status} ${HELLA_URL}`);
 const envelopes = await hellaRes.json();
+
+const cnSupplement = await fetchCnSupplement(new Set(envelopes.map(e => e.canon)));
 
 // The wiki lists Japanese collab operators surname-first ("Togawa Sakiko"); HellaAPI
 // gives given-name-first ("Sakiko Togawa").
@@ -119,6 +168,25 @@ const entries = obtainable.map(e => ({
   releaseDate: releaseDateFor(e.value.data.name),
 }));
 
+// CN-only entries have no `archetype` field to draw on (that comes from HellaAPI), but
+// their subProfessionId is the same stable slug either way — if any HellaAPI operator
+// already shares it, reuse that translation instead of showing the raw id.
+const archetypeBySubclass = new Map(entries.map(o => [o.subProfessionId, o.archetype]).filter(([, a]) => a));
+
+for (const c of cnSupplement) {
+  entries.push({
+    id: c.id,
+    name: c.appellation,
+    appellation: c.appellation,
+    rarity: c.rarity,
+    profession: c.profession,
+    subProfessionId: c.subProfessionId,
+    archetype: archetypeBySubclass.get(c.subProfessionId) ?? '',
+    tags: [], // CN's tagList is Chinese text; nothing to show until HellaAPI has this operator
+    releaseDate: null, // too new for both the wiki and any gacha banner — see header note
+  });
+}
+
 const dated = entries.filter(o => o.releaseDate).length;
 if (dated < MIN_DATED) {
   throw new Error(`only ${dated}/${entries.length} operators got a release date (expected >= ${MIN_DATED})`);
@@ -134,5 +202,6 @@ const outFile = path.join(outDir, 'operators.json');
 await writeFile(outFile, JSON.stringify(entries));
 console.log(
   `wrote ${entries.length} operators (${dated} dated, ${entries.length - dated} undated, ` +
-  `${excluded} unobtainable excluded) -> ${path.relative(process.cwd(), outFile)}`,
+  `${excluded} unobtainable excluded, ${cnSupplement.length} CN-only supplemented) ` +
+  `-> ${path.relative(process.cwd(), outFile)}`,
 );
