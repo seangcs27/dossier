@@ -264,7 +264,7 @@ header {
   padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .op-name {
@@ -275,11 +275,27 @@ header {
   text-overflow: ellipsis;
 }
 
-.op-meta {
+// Alters ("SilverAsh the Reignfrost") get their epithet on its own line rather than
+// packed into .op-name, where it would just get truncated on a 128px card.
+.op-epithet {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.op-class-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 4px;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.op-class-label {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .op-class {
@@ -291,16 +307,23 @@ header {
   white-space: nowrap;
 }
 
-// On a card the glyph stands alone — the name is already the thing being read, and a
-// text badge next to it was just more words competing for 128px.
-.op-meta .op-class-icon {
-  width: 15px;
-  height: 15px;
+.op-class-row .op-class-icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
 }
 
 .op-rarity {
   font-size: 10px;
   letter-spacing: -1px;
+}
+
+// On the card the rarity line sits below the class row rather than sharing space
+// with it (unlike .detail-meta, where it stays inline beside the class badge).
+.op-info .op-rarity {
+  display: block;
+  font-size: 11px;
+  margin-top: 3px;
 }
 
 // ── States ──

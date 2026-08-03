@@ -43,3 +43,12 @@ export function cleanText(s: string): string {
 export function phaseLabel(phase: string): string {
   return 'E' + phase.replace('PHASE_', '');
 }
+
+// Alters are always named "Base Name the Epithet" ("SilverAsh the Reignfrost", "Ch'en
+// the Dawnstreak") — a naming convention the game itself uses consistently, not a
+// heuristic. Splitting it out lets the base name and epithet render as two lines
+// instead of one truncated string.
+export function splitAlterName(name: string): { base: string; epithet: string | null } {
+  const m = /^(.+?) the (.+)$/.exec(name);
+  return m ? { base: m[1], epithet: m[2] } : { base: name, epithet: null };
+}

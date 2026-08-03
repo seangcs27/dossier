@@ -16,17 +16,28 @@ const CDN = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
 const avatar = id => `${CDN}/avatars/${id}.png`;
 const classIcon = slug => `${CDN}/classes/class_${slug}.png`;
 
-const card = (id, name, cls, label, stars) => `
+// Mirrors src/web/format.ts's splitAlterName — alters are always "Base Name the Epithet".
+const splitAlterName = name => {
+  const m = /^(.+?) the (.+)$/.exec(name);
+  return m ? { base: m[1], epithet: m[2] } : { base: name, epithet: null };
+};
+
+const card = (id, name, cls, label, stars) => {
+  const { base, epithet } = splitAlterName(name);
+  return `
   <a class="op-card r${stars}" href="#">
     <img class="op-avatar" src="${avatar(id)}" alt="${name}" loading="lazy">
     <div class="op-info">
-      <div class="op-name" title="${name}">${name}</div>
-      <div class="op-meta">
-        <img class="op-class-icon" src="${classIcon(cls)}" alt="${label}" title="${label}">
-        <span class="op-rarity r${stars}">${'★'.repeat(stars)}</span>
+      <div class="op-name" title="${name}">${base}</div>
+      <div class="op-epithet"${epithet ? ` title="${name}"` : ''}>${epithet ?? '&nbsp;'}</div>
+      <div class="op-class-row">
+        <img class="op-class-icon" src="${classIcon(cls)}" alt="">
+        <span class="op-class-label">${label}</span>
       </div>
+      <span class="op-rarity r${stars}">${'★'.repeat(stars)}</span>
     </div>
   </a>`;
+};
 
 const components = [
   {
@@ -68,8 +79,8 @@ const components = [
     file: 'operator-card.html',
     name: 'Operator card',
     group: 'Components',
-    subtitle: 'Grid cell — avatar, name, class glyph, rarity stars, and a rarity-tinted edge + shelf',
-    viewport: { width: 720, height: 420 },
+    subtitle: 'Grid cell — avatar, name + alter epithet, class glyph + label, rarity stars, rarity-tinted edge + shelf',
+    viewport: { width: 720, height: 460 },
     body: `<div id="grid" style="padding:0">
       ${card('char_1045_svash2', 'SilverAsh the Reignfrost', 'vanguard', 'Vanguard', 6)}
       ${card('char_423_blemsh', 'Blemishine', 'defender', 'Defender', 6)}

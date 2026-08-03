@@ -9,7 +9,7 @@ import {
   type SortKey,
   type TagMode,
 } from '../operator-index';
-import { PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml } from '../format';
+import { PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 
 const state = {
   query: '',
@@ -28,18 +28,20 @@ function buildCard(op: OperatorIndexEntry): string {
   const cls    = PROFESSION_CSS[op.profession];
   const label  = PROFESSION_LABEL[op.profession];
   const avatar = operatorAvatarUrl(op.id);
-  const name   = escHtml(op.name);
+  const { base, epithet } = splitAlterName(op.name);
 
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
-      <img class="op-avatar" src="${avatar}" alt="${name}" loading="lazy"
+      <img class="op-avatar" src="${avatar}" alt="${escHtml(op.name)}" loading="lazy"
            onerror="this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'">
       <div class="op-info">
-        <div class="op-name" title="${name}">${name}</div>
-        <div class="op-meta">
-          <img class="op-class-icon" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
-          <span class="op-rarity r${n}">${stars}</span>
+        <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
+        <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
+        <div class="op-class-row">
+          <img class="op-class-icon" src="${classIconUrl(cls)}" alt="" loading="lazy">
+          <span class="op-class-label">${label}</span>
         </div>
+        <span class="op-rarity r${n}">${stars}</span>
       </div>
     </a>
   `;
