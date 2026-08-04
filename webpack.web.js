@@ -16,7 +16,10 @@ module.exports = {
   plugins: [
     new MiniCssExtractPlugin({ filename: 'styles.css' }),
     new CopyPlugin({
-      patterns: [{ from: 'src/web/index.html', to: 'index.html' }],
+      patterns: [
+        { from: 'src/web/index.html', to: 'index.html' },
+        { from: 'icons', to: 'icons' },
+      ],
     }),
   ],
 };
