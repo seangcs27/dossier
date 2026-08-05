@@ -19,7 +19,13 @@ module.exports = {
       patterns: [
         { from: 'manifest.json',        to: 'manifest.json' },
         { from: 'src/extension/popup/popup.html', to: 'popup.html' },
-        { from: 'icons',                to: 'icons' },
+        // Only the plain (unsuffixed) sizes manifest.json declares — the shuffle
+        // variants under icons/ are a web-SPA-only feature (see src/web/logo.ts),
+        // the popup has no header/favicon to shuffle.
+        { from: 'icons/icon-16.png',    to: 'icons/icon-16.png' },
+        { from: 'icons/icon-32.png',    to: 'icons/icon-32.png' },
+        { from: 'icons/icon-48.png',    to: 'icons/icon-48.png' },
+        { from: 'icons/icon-96.png',    to: 'icons/icon-96.png' },
       ],
     }),
   ],
