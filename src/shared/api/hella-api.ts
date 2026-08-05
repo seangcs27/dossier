@@ -15,11 +15,19 @@ async function apiFetch<T>(path: string): Promise<T> {
 
 export async function fetchOperator(id: OperatorId): Promise<Operator> {
   const envelope = await apiFetch<HellaEnvelope<Operator>>(`/operator/${encodeURIComponent(id)}`);
+  if (envelope?.value) return envelope.value;
+
   // HellaAPI returns HTTP 200 with `{}` for an id it knows about but hasn't ingested
-  // data for yet (recently-added CN operators), rather than a 404. Treat that the same
-  // as not-found — the "404" substring is what detail.ts's error handling keys on.
-  if (!envelope?.value) throw new Error(`HellaAPI 404: no data for ${id}`);
-  return envelope.value;
+  // *global* (translated) data for yet — recently-added CN operators. Its separate
+  // /cn/operator endpoint carries the same shape straight from CN game data: skills,
+  // talents, modules, bases all present, just untranslated. `appellation` is already
+  // English (the game's own pre-romanized name — same field build-operator-index.mjs
+  // uses for these operators in the grid), so it's swapped in for `data.name`, which
+  // every view treats as the display name.
+  const cnEnvelope = await apiFetch<HellaEnvelope<Operator>>(`/cn/operator/${encodeURIComponent(id)}`);
+  if (!cnEnvelope?.value) throw new Error(`HellaAPI 404: no data for ${id}`);
+  const op = cnEnvelope.value;
+  return { ...op, data: { ...op.data, name: op.data.appellation } };
 }
 
 export async function fetchRange(id: string): Promise<AttackRange> {

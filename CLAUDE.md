@@ -154,9 +154,14 @@ Four sources are joined at build time:
   test records, so it's not used as a filter. This fetch is supplemental only: if it fails, the
   build logs a warning and continues without it, rather than failing the whole build over ~20
   records.
-  Because `fetchOperator()` in `hella-api.ts` treats HellaAPI's `HTTP 200 {}` response (an id
-  it knows about but hasn't ingested data for) as not-found, clicking into one of these
-  operators shows "Unknown operator" instead of hanging — it just has no detail data yet.
+  HellaAPI's plain `/operator/:id` returns `HTTP 200 {}` for an id it knows about but hasn't
+  ingested *global* (translated) data for yet — these same recently-added CN operators.
+  `fetchOperator()` in `hella-api.ts` falls back to HellaAPI's separate `/cn/operator/:id` in
+  that case, which carries the same shape straight from CN game data: skills, talents,
+  modules, bases, attributes are all present, just untranslated (Chinese prose). `data.name`
+  is swapped for `data.appellation` (already English, the same field the build script uses
+  above) so the header/breadcrumb still show the right name. Only a genuinely-unknown id (or
+  one CN doesn't have either) falls through to "Unknown operator".
 - **arknights.wiki.gg Cargo API** — CN release dates (`Operators` → debut event →
   `EventServerDetails.startTime`). The game data has **no** release-date field, and char-id
   numbers are banded by category (`0xxx` standard, `1xxx` alters, `2xxx` limiteds, `4xxx`
