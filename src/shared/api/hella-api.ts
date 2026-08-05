@@ -1,7 +1,36 @@
-import type { AttackRange, Operator, OperatorId, OperatorSkillDetail, UnlockCondition } from '../types';
+import type { AttackRange, Operator, OperatorId, OperatorIndexEntry, OperatorSkillDetail, UnlockCondition } from '../types';
+import bundledIndex from '../generated/operators.json';
 
 const BASE_URL = 'https://awedtan.ca/api';
 export const IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+
+// 'YYYY-MM-DD' sentinel build-operator-index.mjs stamps on CN-supplement operators —
+// see OperatorIndexEntry.releaseDate. Duplicated here rather than imported since it's
+// a plain literal, not worth a shared constants module for one string.
+const RECENT_UNDATED = '9999-12-31';
+
+// Baked at build time by build-operator-index.mjs, one JSON file per CN-supplement
+// operator (see buildCnOperatorDetails there) — full Operator objects, skills already
+// shape-normalized, skill/talent descriptions already translated via Aceship's
+// community translation project, trait via arknights.wiki.gg. Checking this bundled
+// index (in-memory, zero cost) is what lets fetchOperator() skip straight to the
+// static file for operators it already knows are CN-only, instead of wasting a
+// guaranteed-empty round trip to HellaAPI's global endpoint first.
+const cnSupplementIds = new Set(
+  (bundledIndex as unknown as OperatorIndexEntry[])
+    .filter(o => o.releaseDate === RECENT_UNDATED)
+    .map(o => o.id),
+);
+
+async function fetchBakedCnOperator(id: OperatorId): Promise<Operator | null> {
+  try {
+    const res = await fetch(`cn-operators/${encodeURIComponent(id)}.json`);
+    if (!res.ok) return null;
+    return await res.json() as Operator;
+  } catch {
+    return null;
+  }
+}
 
 interface HellaEnvelope<T> {
   value: T;
@@ -34,6 +63,15 @@ function normalizeCnSkills(op: Operator): OperatorSkillDetail[] {
 }
 
 export async function fetchOperator(id: OperatorId): Promise<Operator> {
+  // Known-CN-only as of the last index build: skip the guaranteed-empty global fetch
+  // and go straight to our own pre-translated static file — same-origin, no HellaAPI
+  // round trip at all. Only operators our own index doesn't yet know about (the gap
+  // between weekly rebuilds) fall through to the live path below.
+  if (cnSupplementIds.has(id)) {
+    const baked = await fetchBakedCnOperator(id);
+    if (baked) return baked;
+  }
+
   const envelope = await apiFetch<HellaEnvelope<Operator>>(`/operator/${encodeURIComponent(id)}`);
   if (envelope?.value) return envelope.value;
 

@@ -50,6 +50,8 @@ const CN_CHARACTER_TABLE_URL =
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
 const SANITYGONE_BASE = 'https://sanitygone.help';
+const HELLA_CN_OPERATOR_BASE = 'https://awedtan.ca/api/cn/operator';
+const AN_EN_TAGS_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/AN-EN-Tags/main/json/ace';
 
 // Sentinel "release date" for CN-supplement operators — see the header note. Sorts
 // after every real ISO date (all real ones fall in 2019-2026), never displayed anywhere
@@ -67,6 +69,17 @@ const CN_TAG_EN = {
   '防护': 'Defense', '减速': 'Slow', '削弱': 'Debuff', '快速复活': 'Fast-Redeploy',
   '位移': 'Shift', '召唤': 'Summon', '支援机械': 'Robot', '元素': 'Elemental',
   '高空': 'Soar', '新手': 'Starter',
+};
+
+// OperatorData.itemObtainApproach — how the operator is recruited/acquired. Same
+// frozen-small-vocabulary situation as CN_TAG_EN (verified against every distinct
+// value in character_table.json: 9 total).
+const CN_OBTAIN_EN = {
+  '招募寻访': 'Recruitment', '活动获得': 'Event', '凭证交易所': 'Certificate Exchange',
+  '信用交易所': 'Credit Store', '限时礼包': 'Limited-Time Pack',
+  '招募寻访、见习任务': 'Recruitment, Trainee Mission',
+  '集成战略获得': 'Integrated Strategies', '主题曲剧情': 'Theme Song Story',
+  '周年奖励': 'Anniversary Reward',
 };
 
 // Below this many resolved dates, assume the wiki is down or its schema moved —
@@ -208,6 +221,153 @@ async function fetchCnSupplement(knownIds) {
   }
 }
 
+// HellaAPI's /cn/operator returns `skills` as bare excel objects (no `deploy` wrapper)
+// whenever an operator actually has skills — unlike /operator, which nests each as
+// `{ deploy, excel }`. Mirrors normalizeCnSkills() in src/shared/api/hella-api.ts;
+// duplicated here rather than shared because this is a standalone Node script, not
+// bundled through the TS build.
+function normalizeCnSkills(op) {
+  const raw = op.skills ?? [];
+  return raw.map(entry => {
+    if ('excel' in entry) return entry;
+    const ref = (op.data.skills ?? []).find(r => r.skillId === entry.skillId);
+    return {
+      deploy: { skillId: entry.skillId, unlockCond: ref?.unlockCond ?? { phase: 'PHASE_0', level: 1 } },
+      excel: entry,
+    };
+  });
+}
+
+// English fan translations for skill/talent text, sourced from Aceship's community
+// translation project (the same repo CN_TAG_EN above is already verified against) —
+// these operators haven't had an official EN localization pass yet, so this is the
+// best available English until they release on Global. Keyed by skillId (skills) and
+// by operator id (talents, as an array-of-arrays matching data.talents[j].candidates[k]
+// positionally). Supplemental only: a fetch failure here degrades to the existing raw-
+// Chinese CN fallback in hella-api.ts, it doesn't block the index build.
+async function fetchAceTranslations() {
+  try {
+    const [skillsRes, talentsRes] = await Promise.all([
+      fetch(`${AN_EN_TAGS_BASE}/tl-skills.json`),
+      fetch(`${AN_EN_TAGS_BASE}/tl-talents.json`),
+    ]);
+    if (!skillsRes.ok) throw new Error(`tl-skills ${skillsRes.status}`);
+    if (!talentsRes.ok) throw new Error(`tl-talents ${talentsRes.status}`);
+    return { skills: await skillsRes.json(), talents: await talentsRes.json() };
+  } catch (e) {
+    console.warn(`Ace translations skipped: ${e.message}`);
+    return { skills: {}, talents: {} };
+  }
+}
+
+// Strips MediaWiki [[page|display]] / [[page]] link syntax down to the display text —
+// wiki.gg's `description` field embeds these (e.g. "[[Vigil|Leontuzzo]]" for a nickname
+// linking to an operator's actual page title).
+function stripWikiLinks(s) {
+  return s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, page, display) => display ?? page);
+}
+
+// wiki.gg's `trait` Cargo field is what CLAUDE.md calls "Trait:" in the detail view —
+// it's actually OperatorData.description (a short tagline), not OperatorData.trait,
+// which is null across the board (confirmed on official operators too, not a CN-data
+// quirk). Its `description` field is the longer profile blurb, OperatorData.itemUsage
+// (verified against Bellone's raw CN text — an exact translation match). Batches one
+// query for every CN-supplement operator by name.
+async function fetchWikiTraits(names) {
+  try {
+    const rows = await cargo({ tables: 'Operators', fields: 'name,trait,description', where: `name IN (${names.map(n => `"${n.replace(/"/g, '')}"`).join(',')})` });
+    return new Map(rows.map(r => [r.name, {
+      trait: r.trait || null,
+      itemUsage: r.description ? stripWikiLinks(r.description) : null,
+    }]));
+  } catch (e) {
+    console.warn(`wiki trait fetch skipped: ${e.message}`);
+    return new Map();
+  }
+}
+
+// Fetches, normalizes, and translates full Operator detail objects for every CN-
+// supplement operator, baking each to src/shared/generated/cn-operators/<id>.json.
+// This is what makes their detail pages load instantly with no live HellaAPI call and
+// no raw-Chinese text (see hella-api.ts's static-first lookup) — the exact problem
+// the CN fallback in fetchOperator() otherwise has to eat live, on every visit.
+// Best-effort per operator: one bad fetch shouldn't cost the others their translation.
+async function buildCnOperatorDetails(cnSupplement) {
+  if (!cnSupplement.length) return 0;
+  const { skills: skillTl, talents: talentTl } = await fetchAceTranslations();
+  const traitByName = await fetchWikiTraits(cnSupplement.map(c => c.appellation));
+
+  const cnOutDir = path.join(outDir, 'cn-operators');
+  await mkdir(cnOutDir, { recursive: true });
+
+  let written = 0;
+  for (const c of cnSupplement) {
+    try {
+      const res = await fetch(`${HELLA_CN_OPERATOR_BASE}/${encodeURIComponent(c.id)}`);
+      if (!res.ok) throw new Error(`cn/operator ${res.status}`);
+      const envelope = await res.json();
+      if (!envelope?.value) throw new Error('empty cn/operator response');
+      const op = envelope.value;
+
+      const skills = normalizeCnSkills(op).map(s => {
+        const tl = skillTl[s.excel.skillId];
+        if (!tl) return s;
+        return {
+          ...s,
+          excel: {
+            ...s.excel,
+            levels: s.excel.levels.map((lv, i) => ({
+              ...lv,
+              name: tl.name ?? lv.name,
+              description: tl.desc?.[i] ?? lv.description,
+            })),
+          },
+        };
+      });
+
+      const talentTlForOp = talentTl[c.id];
+      const talents = (op.data.talents ?? []).map((t, j) => ({
+        ...t,
+        candidates: (t.candidates ?? []).map((cand, k) => {
+          const tl = talentTlForOp?.[j]?.[k];
+          if (!tl?.desc) return cand;
+          return { ...cand, name: tl.name ?? cand.name, description: tl.desc };
+        }),
+      }));
+
+      const wikiText = traitByName.get(c.appellation);
+      // Same CN_TAG_EN table the grid index uses for these operators — the detail
+      // view's own copy of tagList (from the live cn/operator payload) is CN, and
+      // baking it in untranslated here would've been the one visible inconsistency
+      // between a CN-supplement operator's grid card and its detail page.
+      const tagList = (op.data.tagList ?? []).map(t => CN_TAG_EN[t] ?? t);
+      const itemObtainApproach = op.data.itemObtainApproach != null
+        ? (CN_OBTAIN_EN[op.data.itemObtainApproach] ?? op.data.itemObtainApproach)
+        : op.data.itemObtainApproach;
+
+      const finalOp = {
+        ...op,
+        data: {
+          ...op.data,
+          name: op.data.appellation,
+          talents,
+          tagList,
+          itemObtainApproach,
+          ...(wikiText?.trait ? { description: wikiText.trait } : {}),
+          ...(wikiText?.itemUsage ? { itemUsage: wikiText.itemUsage } : {}),
+        },
+        skills,
+      };
+
+      await writeFile(path.join(cnOutDir, `${c.id}.json`), JSON.stringify(finalOp));
+      written++;
+    } catch (e) {
+      console.warn(`cn-operator detail skipped for ${c.id}: ${e.message}`);
+    }
+  }
+  return written;
+}
+
 const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
   fetch(HELLA_URL), // hard-fail: no operator list, no point building
   fetchReleaseDates(),
@@ -217,6 +377,7 @@ if (!hellaRes.ok) throw new Error(`${hellaRes.status} ${HELLA_URL}`);
 const envelopes = await hellaRes.json();
 
 const cnSupplement = await fetchCnSupplement(new Set(envelopes.map(e => e.canon)));
+const cnDetailsWritten = await buildCnOperatorDetails(cnSupplement);
 
 // The wiki lists Japanese collab operators surname-first ("Togawa Sakiko"); HellaAPI
 // gives given-name-first ("Sakiko Togawa").
@@ -302,4 +463,8 @@ console.log(
   `wrote ${entries.length} operators (${dated} dated, ${cnSupplement.length} recent-undated ` +
   `(sort first), ${genuinelyUndated} genuinely undated (sort last), ${excluded} unobtainable ` +
   `excluded, ${withOrder} with a Sanity Gone releaseOrder) -> ${path.relative(process.cwd(), outFile)}`,
+);
+console.log(
+  `wrote ${cnDetailsWritten}/${cnSupplement.length} baked CN operator details -> ` +
+  `${path.relative(process.cwd(), path.join(outDir, 'cn-operators'))}`,
 );

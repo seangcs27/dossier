@@ -26,6 +26,7 @@ module.exports = {
         { from: 'icons/icon-32.png',    to: 'icons/icon-32.png' },
         { from: 'icons/icon-48.png',    to: 'icons/icon-48.png' },
         { from: 'icons/icon-96.png',    to: 'icons/icon-96.png' },
+        { from: 'src/shared/generated/cn-operators', to: 'cn-operators' },
       ],
     }),
   ],
