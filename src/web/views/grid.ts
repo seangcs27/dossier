@@ -1,4 +1,4 @@
-import { operatorAvatarUrl, classIconUrl } from '../../shared/api/hella-api';
+import { operatorAvatarUrl, operatorPortraitUrl, classIconUrl } from '../../shared/api/hella-api';
 import type { OperatorIndexEntry, Profession } from '../../shared/types';
 import {
   getOperators,
@@ -27,13 +27,18 @@ function buildCard(op: OperatorIndexEntry): string {
   const stars  = '★'.repeat(n);
   const cls    = PROFESSION_CSS[op.profession];
   const label  = PROFESSION_LABEL[op.profession];
-  const avatar = operatorAvatarUrl(op.id);
   const { base, epithet } = splitAlterName(op.name);
+  // Full character art reads better in the grid than the small square avatar (closer
+  // to how sites like Sanity Gone present it), but not every id has both elite-art
+  // suffixes — a couple of alter forms only ship `_2`. This chain tries `_1`, then
+  // `_2`, then falls back to the avatar crop, before giving up on a placeholder.
+  const portrait1 = operatorPortraitUrl(op.id, '1');
+  const fallbacks = [operatorPortraitUrl(op.id, '2'), operatorAvatarUrl(op.id)].join('|');
 
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
-      <img class="op-avatar" src="${avatar}" alt="${escHtml(op.name)}" loading="lazy"
-           onerror="this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'">
+      <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
+           onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
       <div class="op-info">
         <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
         <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>

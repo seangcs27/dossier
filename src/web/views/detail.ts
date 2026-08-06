@@ -469,6 +469,24 @@ function loreHtml(op: Operator): string {
   `;
 }
 
+function artsHtml(op: Operator): string {
+  const arts = op.arts ?? [];
+  if (!arts.length) return '';
+  return `
+    <div class="detail-arts">
+      <div class="detail-arts-label">Arts</div>
+      <div class="detail-arts-row">
+        ${arts.map(a => `
+          <a class="detail-art" href="${a.url}" target="_blank" rel="noopener" title="${escHtml(a.label)}">
+            <img src="${a.url}" alt="${escHtml(a.label)}" loading="lazy">
+            <span class="detail-art-label">${escHtml(a.label)}</span>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function shellHtml(s: DetailState): string {
   const tabs = tabsFor(s.op);
   return `
@@ -480,6 +498,7 @@ function shellHtml(s: DetailState): string {
       </nav>
       ${headerHtml(s.op)}
       ${loreHtml(s.op)}
+      ${artsHtml(s.op)}
       <div class="tabs" role="tablist">
         ${tabs.map(t => `
           <button class="tab${t.id === s.tab ? ' on' : ''}" role="tab"

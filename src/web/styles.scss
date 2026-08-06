@@ -253,7 +253,12 @@ header {
 .op-avatar {
   width: 100%;
   aspect-ratio: 3 / 5;
-  object-fit: cover;
+  // Every characters/*_1.png in the asset repo is a square source image with wildly
+  // inconsistent padding around the subject (some near-full-bleed, some mostly empty
+  // canvas) — object-fit: cover crops that padding unpredictably, cutting characters
+  // off entirely for images with more headroom. fill stretches instead of cropping,
+  // so the whole composed image always shows regardless of source padding.
+  object-fit: fill;
   background: var(--bg);
   display: block;
 }
@@ -422,6 +427,52 @@ header {
 
     &:last-child { margin-bottom: 0; }
   }
+}
+
+.detail-arts {
+  margin-top: 16px;
+}
+
+.detail-arts-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.detail-arts-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.detail-art {
+  flex: 0 0 auto;
+  width: 110px;
+  display: block;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+
+  img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.detail-art-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px 0;
 }
 
 // ── Tabs ──

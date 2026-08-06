@@ -52,7 +52,53 @@ const WIKI_API = 'https://arknights.wiki.gg/api.php';
 const SANITYGONE_BASE = 'https://sanitygone.help';
 const HELLA_OPERATOR_BASE = 'https://awedtan.ca/api/operator';
 const HELLA_CN_OPERATOR_BASE = 'https://awedtan.ca/api/cn/operator';
-const AN_EN_TAGS_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/AN-EN-Tags/main/json/ace';
+const AN_EN_TAGS_JSON_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/AN-EN-Tags/main/json';
+const AN_EN_TAGS_BASE = `${AN_EN_TAGS_JSON_BASE}/ace`;
+const ARKNIGHT_IMAGES_TREE_URL =
+  'https://api.github.com/repos/PuppiizSunniiz/Arknight-Images/git/trees/main?recursive=1';
+const ARKNIGHT_IMAGES_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+
+// Every characters/<id>_<suffix>.png in the asset repo, grouped by operator id — base
+// art (`1`), elite 2 art (`2`), and any alternate-outfit/promo variant (`sale#14`,
+// `epoque#7`, ...). The repo's own directory-listing API truncates past 1000 entries
+// (this folder alone has 1300+), so this uses the git Trees API instead, which returns
+// the whole repo in one call. Supplemental only — a fetch failure here just means no
+// operator gets an arts gallery, not a build failure; the plain avatar still works.
+async function fetchCharacterArtIndex() {
+  try {
+    const res = await fetch(ARKNIGHT_IMAGES_TREE_URL);
+    if (!res.ok) throw new Error(`tree ${res.status}`);
+    const json = await res.json();
+    if (json.truncated) throw new Error('tree response truncated');
+    const byId = new Map();
+    for (const entry of json.tree) {
+      const m = /^characters\/(char_\w+)_([^/]+)\.png$/.exec(entry.path);
+      if (!m) continue;
+      const [, id, suffix] = m;
+      if (!byId.has(id)) byId.set(id, []);
+      byId.get(id).push(suffix);
+    }
+    return byId;
+  } catch (e) {
+    console.warn(`character art index skipped: ${e.message}`);
+    return new Map();
+  }
+}
+
+// Human labels for the suffix vocabulary actually seen in the repo — '1'/'2' are
+// universal (base and Elite 2 art), everything else is an outfit/promo-art code tied
+// to a specific skin or event. Sorted so the two elite arts always lead the gallery.
+function artLabel(suffix) {
+  if (suffix === '1') return 'Elite 0/1';
+  if (suffix === '2') return 'Elite 2';
+  return 'Outfit';
+}
+
+function buildArtsList(id, suffixes) {
+  return [...suffixes]
+    .sort((a, b) => (a === '1' ? -1 : b === '1' ? 1 : a === '2' ? -1 : b === '2' ? 1 : a.localeCompare(b)))
+    .map(suffix => ({ suffix, label: artLabel(suffix), url: `${ARKNIGHT_IMAGES_BASE}/characters/${id}_${suffix}.png` }));
+}
 
 // Runs `fn` over `items` with at most `limit` in flight at once — 427 individual detail
 // fetches at build time is enough that unbounded parallelism risks hammering a shared
@@ -275,6 +321,48 @@ async function fetchAceTranslations() {
   }
 }
 
+// RIIC base-skill translations, keyed by buffId — a direct match against
+// bases[].skill.buffId, our own raw CN payload's own key for the exact same skill.
+// Community-maintained like the others: `description` degrades to an exact copy of the
+// CN `desc` field for a buff nobody's translated yet, so an untranslated buff is
+// indistinguishable from a translated one that happens to already have failed — either
+// way it's a safe no-op overlay, never garbles anything.
+async function fetchRiicTranslations() {
+  try {
+    const res = await fetch(`${AN_EN_TAGS_JSON_BASE}/puppiiz/riic_data.json`);
+    if (!res.ok) throw new Error(`riic_data ${res.status}`);
+    const json = await res.json();
+    return json.buffs ?? {};
+  } catch (e) {
+    console.warn(`RIIC translations skipped: ${e.message}`);
+    return {};
+  }
+}
+
+// Potential rank descriptions are short templated strings built from a small, closed
+// vocabulary ("部署费用-1", "攻击力+3", ...) rather than free prose, so a keyword
+// substitution table is enough — no need for a per-operator translation. tl-potential
+// pairs each CN stat phrase with its English name; trailing CJK (mostly the "秒"/
+// seconds unit) gets dropped after substitution since the number+sign already carries
+// the meaning without it.
+async function fetchPotentialKeywords() {
+  try {
+    const res = await fetch(`${AN_EN_TAGS_JSON_BASE}/tl-potential.json`);
+    if (!res.ok) throw new Error(`tl-potential ${res.status}`);
+    const rows = await res.json();
+    return rows.filter(r => r.skill_cn && r.skill_en).map(r => [r.skill_cn, r.skill_en]);
+  } catch (e) {
+    console.warn(`Potential keyword fetch skipped: ${e.message}`);
+    return [];
+  }
+}
+
+function translatePotentialDescription(cn, keywordPairs) {
+  let s = cn;
+  for (const [zh, en] of keywordPairs) s = s.split(zh).join(en);
+  return s.replace(/[一-鿿]+/g, '').trim();
+}
+
 // Strips MediaWiki [[page|display]] / [[page]] link syntax down to the display text —
 // wiki.gg's `description` field embeds these (e.g. "[[Vigil|Leontuzzo]]" for a nickname
 // linking to an operator's actual page title).
@@ -303,8 +391,12 @@ async function fetchWikiTraits(names) {
 
 // Builds the CN-supplement version of a full Operator object: shape-normalized skills,
 // plus every translated field (skills/talents from Aceship, trait/itemUsage from the
-// wiki, tags/obtain from the static CN_* tables above).
-function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByName) {
+// wiki, tags/obtain from the static CN_* tables above, base skills from RIIC data,
+// potential ranks via keyword substitution). Module trait-override text has no clean
+// translation source in any of these — the only module data available covers talent-
+// upgrade numbers, not the trait text detail.ts actually renders — so it's left as
+// raw CN rather than force a bad match.
+function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords) {
   const skills = normalizeCnSkills(op).map(s => {
     const tl = skillTl[s.excel.skillId];
     if (!tl) return s;
@@ -341,6 +433,18 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
     ? (CN_OBTAIN_EN[op.data.itemObtainApproach] ?? op.data.itemObtainApproach)
     : op.data.itemObtainApproach;
 
+  const bases = (op.bases ?? []).map(b => {
+    const tl = riicBuffs[b.skill?.buffId];
+    if (!tl?.description) return b;
+    return { ...b, skill: { ...b.skill, description: tl.description } };
+  });
+
+  const potentialRanks = (op.data.potentialRanks ?? []).map(r => (
+    r.description
+      ? { ...r, description: translatePotentialDescription(r.description, potentialKeywords) }
+      : r
+  ));
+
   return {
     ...op,
     data: {
@@ -349,10 +453,12 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
       talents,
       tagList,
       itemObtainApproach,
+      potentialRanks,
       ...(wikiText?.trait ? { description: wikiText.trait } : {}),
       ...(wikiText?.itemUsage ? { itemUsage: wikiText.itemUsage } : {}),
     },
     skills,
+    bases,
   };
 }
 
@@ -365,8 +471,13 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 // with the live fetch kept only as a fallback for an id this build doesn't know about
 // yet. Best-effort per operator: one bad fetch shouldn't cost the others.
 async function buildOperatorDetails(regular, cnSupplement) {
-  const { skills: skillTl, talents: talentTl } = await fetchAceTranslations();
-  const traitByName = await fetchWikiTraits(cnSupplement.map(c => c.appellation));
+  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex] = await Promise.all([
+    fetchAceTranslations(),
+    fetchWikiTraits(cnSupplement.map(c => c.appellation)),
+    fetchRiicTranslations(),
+    fetchPotentialKeywords(),
+    fetchCharacterArtIndex(),
+  ]);
   const cnById = new Map(cnSupplement.map(c => [c.id, c]));
 
   const detailOutDir = path.join(outDir, 'operator-details');
@@ -386,9 +497,11 @@ async function buildOperatorDetails(regular, cnSupplement) {
       if (!envelope?.value) throw new Error('empty response');
       const op = envelope.value;
 
-      const finalOp = cn
-        ? buildCnOperatorPayload(op, entry.id, entry.appellation, skillTl, talentTl, traitByName)
+      const base = cn
+        ? buildCnOperatorPayload(op, entry.id, entry.appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords)
         : op;
+      const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? []);
+      const finalOp = { ...base, arts };
 
       await writeFile(path.join(detailOutDir, `${entry.id}.json`), JSON.stringify(finalOp));
       written++;

@@ -195,6 +195,12 @@ export interface OperatorData {
   favorKeyFrames?: AttributeKeyFrame[] | null;
 }
 
+export interface OperatorArt {
+  suffix: string;   // '1' (base), '2' (Elite 2), or a promo/skin code like 'sale#14'
+  label: string;    // 'Elite 0/1' | 'Elite 2' | 'Outfit'
+  url: string;
+}
+
 export interface Operator {
   id: OperatorId;
   data: OperatorData;
@@ -204,6 +210,11 @@ export interface Operator {
   bases?: BaseSkill[];
   factions?: Faction[];
   modules?: OperatorModule[];
+  // Baked at build time by build-operator-index.mjs from the asset repo's own file
+  // listing — every characters/<id>_<suffix>.png that actually exists for this
+  // operator. Not present on data fetched via the live HellaAPI fallback path (only
+  // the static per-operator bundle has it), so always optional.
+  arts?: OperatorArt[];
 }
 
 export interface OperatorSummary {

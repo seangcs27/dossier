@@ -82,6 +82,14 @@ export function operatorAvatarUrl(id: OperatorId): string {
   return `${IMAGE_BASE}/avatars/${id}.png`;
 }
 
+// Full character CG art (tall, not the square avatar crop) — `_1` is the base/E1
+// look, `_2` is E2. Not every id has both (a couple of alter forms only ship `_2`),
+// so this is meant to be tried with an <img onerror> fallback chain down to `_2`
+// then the avatar, not asserted to exist outright.
+export function operatorPortraitUrl(id: OperatorId, suffix: '1' | '2' = '1'): string {
+  return `${IMAGE_BASE}/characters/${id}_${suffix}.png`;
+}
+
 export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }
