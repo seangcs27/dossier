@@ -19,7 +19,7 @@ module.exports = {
       patterns: [
         { from: 'src/web/index.html', to: 'index.html' },
         { from: 'icons', to: 'icons' },
-        { from: 'src/shared/generated/cn-operators', to: 'cn-operators' },
+        { from: 'src/shared/generated/operator-details', to: 'operator-details' },
       ],
     }),
   ],

@@ -252,7 +252,7 @@ header {
 
 .op-avatar {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 5;
   object-fit: cover;
   background: var(--bg);
   display: block;
@@ -260,7 +260,7 @@ header {
 
 .op-avatar-placeholder {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 5;
   background: var(--bg);
   display: flex;
   align-items: center;
