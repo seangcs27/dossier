@@ -1,6 +1,6 @@
 import type { Operator, OperatorIndexEntry, Rarity, Profession } from '../../shared/types';
 import { operatorAvatarUrl, classIconUrl } from '../../shared/api/hella-api';
-import { escHtml } from '../utils/html';
+import { escHtml, cleanText } from '../utils/html';
 
 const PROFESSION_LABEL: Record<Profession, string> = {
   CASTER:   'Caster',
@@ -112,7 +112,7 @@ export function renderDetail(container: HTMLElement, op: Operator): void {
         </div>
       </div>
       ${tags ? `<div class="detail-tags">${tags}</div>` : ''}
-      ${d.description ? `<div class="detail-desc">${escHtml(d.description)}</div>` : ''}
+      ${d.description ? `<div class="detail-desc">${cleanText(d.description)}</div>` : ''}
       <div class="detail-levels">${escHtml(maxLevels)}</div>
       ${d.skills.length > 0 ? `
         <div class="detail-section-title">Skills</div>

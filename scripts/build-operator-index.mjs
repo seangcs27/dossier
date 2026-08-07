@@ -384,11 +384,20 @@ function translatePotentialDescription(cn, keywordPairs) {
   return s.replace(/[一-鿿]+/g, '').trim();
 }
 
-// Strips MediaWiki [[page|display]] / [[page]] link syntax down to the display text —
-// wiki.gg's `description` field embeds these (e.g. "[[Vigil|Leontuzzo]]" for a nickname
-// linking to an operator's actual page title).
-function stripWikiLinks(s) {
-  return s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, page, display) => display ?? page);
+// Reduces wiki.gg markup to plain text: MediaWiki [[page|display]] link syntax down to
+// its display text (its `description` embeds these, e.g. "[[Vigil|Leontuzzo]]" for a
+// nickname linking to an operator's real page title), plus any rendered HTML the Cargo
+// API hands back — glossary tooltips arrive as a full
+// `<span class="glossary" data-desc="...">Take Off</span>`, which is wiki presentation
+// chrome, not game data. That HTML has to die here rather than at render time: the web
+// view's cleanText() would strip it, but the extension popup escapes description instead
+// of stripping it, so leaving it in the baked JSON shows the raw span as literal text.
+function stripWikiMarkup(s) {
+  return s
+    .replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, page, display) => display ?? page)
+    .replace(/<[^>]*>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 // Lowercased, with "·" and " - " both collapsed to a single space, so "Kal'tsit·Esperanta"
@@ -420,8 +429,8 @@ async function fetchWikiTraits(names) {
       // Kal'tsit·Esperanta's trait, not just the bio blurb this was first written for)
       // — cleanText() at render time strips HTML tags but has no idea about wikitext,
       // so this needs to happen here or "[[Take Off|Take Off]]" shows up literally.
-      trait: r.trait ? stripWikiLinks(r.trait) : null,
-      itemUsage: r.description ? stripWikiLinks(r.description) : null,
+      trait: r.trait ? stripWikiMarkup(r.trait) : null,
+      itemUsage: r.description ? stripWikiMarkup(r.description) : null,
     }]));
   } catch (e) {
     console.warn(`wiki trait fetch skipped: ${e.message}`);
