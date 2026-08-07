@@ -253,12 +253,12 @@ header {
 .op-avatar {
   width: 100%;
   aspect-ratio: 3 / 5;
-  // Every characters/*_1.png in the asset repo is a square source image with wildly
-  // inconsistent padding around the subject (some near-full-bleed, some mostly empty
-  // canvas) — object-fit: cover crops that padding unpredictably, cutting characters
-  // off entirely for images with more headroom. fill stretches instead of cropping,
-  // so the whole composed image always shows regardless of source padding.
-  object-fit: fill;
+  // Every characters/*_1.png in the asset repo is a square source image, and the
+  // character is consistently drawn in the upper portion of that square (headroom
+  // above, legs/feet trimmed or absent below) — cropping to the top instead of
+  // centering reliably lands on the face, matching Sanity Gone's zoomed-in look.
+  object-fit: cover;
+  object-position: center top;
   background: var(--bg);
   display: block;
 }
