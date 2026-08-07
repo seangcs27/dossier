@@ -2,6 +2,14 @@ import type { AttackRange, Operator, OperatorId, OperatorSkillDetail, UnlockCond
 
 const BASE_URL = 'https://awedtan.ca/api';
 export const IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+// Pre-cropped half-body bust portraits (a fixed 180x360 — genuinely portrait-shaped,
+// unlike the square full-illustration crops in IMAGE_BASE/characters/) — the same
+// asset category Sanity Gone displays as charportraits. Not in PuppiizSunniiz's repo
+// (checked the full tree — no such folder there); this one's README documents it as
+// exactly this: "干员半身像" (operator half-body portraits), same fan-asset-repo
+// pattern as everything else this project already sources from, official art under
+// Hypergryph's copyright per the repo's own disclaimer.
+const PORTRAIT_BASE = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
 
 // Baked at build time by build-operator-index.mjs — one JSON file per operator, every
 // operator, not just CN-supplement ones (see buildOperatorDetails there): full Operator
@@ -82,12 +90,11 @@ export function operatorAvatarUrl(id: OperatorId): string {
   return `${IMAGE_BASE}/avatars/${id}.png`;
 }
 
-// Full character CG art (tall, not the square avatar crop) — `_1` is the base/E1
-// look, `_2` is E2. Not every id has both (a couple of alter forms only ship `_2`),
-// so this is meant to be tried with an <img onerror> fallback chain down to `_2`
-// then the avatar, not asserted to exist outright.
+// `_1` is the base/E1 look, `_2` is E2. Not every id has both (a couple of alter forms
+// only ship `_2`), so this is meant to be tried with an <img onerror> fallback chain
+// down to `_2` then the avatar, not asserted to exist outright.
 export function operatorPortraitUrl(id: OperatorId, suffix: '1' | '2' = '1'): string {
-  return `${IMAGE_BASE}/characters/${id}_${suffix}.png`;
+  return `${PORTRAIT_BASE}/${id}_${suffix}.png`;
 }
 
 export function skillIconUrl(skillId: string): string {

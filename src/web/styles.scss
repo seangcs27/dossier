@@ -252,11 +252,12 @@ header {
 
 .op-avatar {
   width: 100%;
-  aspect-ratio: 3 / 5;
-  // Every characters/*_1.png in the asset repo is a square source image, and the
-  // character is consistently drawn in the upper portion of that square (headroom
-  // above, legs/feet trimmed or absent below) — cropping to the top instead of
-  // centering reliably lands on the face, matching Sanity Gone's zoomed-in look.
+  // Matches the portrait source's own fixed 180x360 exactly (see operatorPortraitUrl)
+  // — a pre-cropped half-body bust, not a square full-illustration crop like the old
+  // source. cover + top is kept as a safety net for the couple of ids that fall back
+  // to the square avatar (no bust portrait exists for them), not because it's doing
+  // meaningful cropping on the normal case.
+  aspect-ratio: 1 / 2;
   object-fit: cover;
   object-position: center top;
   background: var(--bg);
@@ -265,7 +266,7 @@ header {
 
 .op-avatar-placeholder {
   width: 100%;
-  aspect-ratio: 3 / 5;
+  aspect-ratio: 1 / 2;
   background: var(--bg);
   display: flex;
   align-items: center;
