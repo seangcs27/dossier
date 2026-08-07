@@ -39,6 +39,27 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// Plain `fetch` has no timeout, and this script now makes 400+ live requests to
+// third-party hosts. Locally that's fine; on GitHub's shared runners a single stalled
+// connection (rate-limiting, a slow host, a dropped packet) hung the whole build for
+// 15+ minutes with no error until the job got killed — twice, in two different deploy
+// runs. Every fetch in this file goes through this instead, so a hung request fails
+// fast and loud (or, for the supplemental fetches that already tolerate failure, just
+// gets skipped) rather than stalling the entire build silently.
+const FETCH_TIMEOUT_MS = 20_000;
+async function timedFetch(url, init) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const HELLA_URL =
   'https://awedtan.ca/api/operator' +
   '?include=data.name&include=data.appellation&include=data.rarity' +
@@ -66,7 +87,7 @@ const ARKNIGHT_IMAGES_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknigh
 // operator gets an arts gallery, not a build failure; the plain avatar still works.
 async function fetchCharacterArtIndex() {
   try {
-    const res = await fetch(ARKNIGHT_IMAGES_TREE_URL);
+    const res = await timedFetch(ARKNIGHT_IMAGES_TREE_URL);
     if (!res.ok) throw new Error(`tree ${res.status}`);
     const json = await res.json();
     if (json.truncated) throw new Error('tree response truncated');
@@ -158,7 +179,7 @@ async function cargo(params) {
       ...params, action: 'cargoquery', limit: '500',
       offset: String(offset), format: 'json', formatversion: '2',
     });
-    const res = await fetch(`${WIKI_API}?${qs}`);
+    const res = await timedFetch(`${WIKI_API}?${qs}`);
     if (!res.ok) throw new Error(`wiki ${res.status}`);
     const json = await res.json();
     if (json.error) throw new Error(`wiki: ${JSON.stringify(json.error).slice(0, 200)}`);
@@ -218,19 +239,19 @@ async function fetchReleaseDates() {
 // Supplemental only: never blocks the build.
 async function fetchReleaseOrder() {
   try {
-    const pageRes = await fetch(`${SANITYGONE_BASE}/en/operators/`);
+    const pageRes = await timedFetch(`${SANITYGONE_BASE}/en/operators/`);
     if (!pageRes.ok) throw new Error(`operators page ${pageRes.status}`);
     const pageHtml = await pageRes.text();
     const listRef = /"(\/_astro\/OperatorList\.[A-Za-z0-9_-]+\.js)"/.exec(pageHtml)?.[1];
     if (!listRef) throw new Error('OperatorList asset not found on page');
 
-    const listRes = await fetch(SANITYGONE_BASE + listRef);
+    const listRes = await timedFetch(SANITYGONE_BASE + listRef);
     if (!listRes.ok) throw new Error(`${listRef} ${listRes.status}`);
     const listJs = await listRes.text();
     const dataRef = /(operators-index\.json\.[A-Za-z0-9_-]+\.js)/.exec(listJs)?.[1];
     if (!dataRef) throw new Error('operators-index asset not referenced in OperatorList.js');
 
-    const dataRes = await fetch(`${SANITYGONE_BASE}/_astro/${dataRef}`);
+    const dataRes = await timedFetch(`${SANITYGONE_BASE}/_astro/${dataRef}`);
     if (!dataRes.ok) throw new Error(`${dataRef} ${dataRes.status}`);
     const dataJs = await dataRes.text();
 
@@ -251,7 +272,7 @@ async function fetchReleaseOrder() {
 // last; HellaAPI is the source that matters.
 async function fetchCnSupplement(knownIds) {
   try {
-    const res = await fetch(CN_CHARACTER_TABLE_URL);
+    const res = await timedFetch(CN_CHARACTER_TABLE_URL);
     if (!res.ok) throw new Error(`CN table ${res.status}`);
     const table = await res.json();
     const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
@@ -309,8 +330,8 @@ function normalizeCnSkills(op) {
 async function fetchAceTranslations() {
   try {
     const [skillsRes, talentsRes] = await Promise.all([
-      fetch(`${AN_EN_TAGS_BASE}/tl-skills.json`),
-      fetch(`${AN_EN_TAGS_BASE}/tl-talents.json`),
+      timedFetch(`${AN_EN_TAGS_BASE}/tl-skills.json`),
+      timedFetch(`${AN_EN_TAGS_BASE}/tl-talents.json`),
     ]);
     if (!skillsRes.ok) throw new Error(`tl-skills ${skillsRes.status}`);
     if (!talentsRes.ok) throw new Error(`tl-talents ${talentsRes.status}`);
@@ -329,7 +350,7 @@ async function fetchAceTranslations() {
 // way it's a safe no-op overlay, never garbles anything.
 async function fetchRiicTranslations() {
   try {
-    const res = await fetch(`${AN_EN_TAGS_JSON_BASE}/puppiiz/riic_data.json`);
+    const res = await timedFetch(`${AN_EN_TAGS_JSON_BASE}/puppiiz/riic_data.json`);
     if (!res.ok) throw new Error(`riic_data ${res.status}`);
     const json = await res.json();
     return json.buffs ?? {};
@@ -347,7 +368,7 @@ async function fetchRiicTranslations() {
 // the meaning without it.
 async function fetchPotentialKeywords() {
   try {
-    const res = await fetch(`${AN_EN_TAGS_JSON_BASE}/tl-potential.json`);
+    const res = await timedFetch(`${AN_EN_TAGS_JSON_BASE}/tl-potential.json`);
     if (!res.ok) throw new Error(`tl-potential ${res.status}`);
     const rows = await res.json();
     return rows.filter(r => r.skill_cn && r.skill_en).map(r => [r.skill_cn, r.skill_en]);
@@ -491,7 +512,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
       const url = cn
         ? `${HELLA_CN_OPERATOR_BASE}/${encodeURIComponent(entry.id)}`
         : `${HELLA_OPERATOR_BASE}/${encodeURIComponent(entry.id)}`;
-      const res = await fetch(url);
+      const res = await timedFetch(url);
       if (!res.ok) throw new Error(`${res.status}`);
       const envelope = await res.json();
       if (!envelope?.value) throw new Error('empty response');
@@ -513,7 +534,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
 }
 
 const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
-  fetch(HELLA_URL), // hard-fail: no operator list, no point building
+  timedFetch(HELLA_URL), // hard-fail: no operator list, no point building
   fetchReleaseDates(),
   fetchReleaseOrder(),
 ]);

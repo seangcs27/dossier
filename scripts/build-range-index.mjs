@@ -9,11 +9,28 @@ import { fileURLToPath } from 'node:url';
 
 const BASE_URL = 'https://awedtan.ca/api';
 
+// Plain `fetch` has no timeout — a stalled connection on a shared CI runner would hang
+// this indefinitely with no error. See build-operator-index.mjs for the same fix and
+// the outage that prompted it.
+const FETCH_TIMEOUT_MS = 20_000;
+async function timedFetch(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated',
 );
 
-const listRes = await fetch(`${BASE_URL}/operator?include=data.phases.rangeId`);
+const listRes = await timedFetch(`${BASE_URL}/operator?include=data.phases.rangeId`);
 if (!listRes.ok) throw new Error(`${listRes.status} fetching operator range ids`);
 const envelopes = await listRes.json();
 
@@ -28,7 +45,7 @@ const ranges = {};
 let failed = 0;
 await Promise.all([...rangeIds].map(async id => {
   try {
-    const res = await fetch(`${BASE_URL}/range/${encodeURIComponent(id)}`);
+    const res = await timedFetch(`${BASE_URL}/range/${encodeURIComponent(id)}`);
     if (!res.ok) throw new Error(`${res.status}`);
     const envelope = await res.json();
     if (!envelope?.value) throw new Error('empty envelope');
