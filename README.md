@@ -43,6 +43,7 @@ independent sources, then writes:
 - `src/shared/generated/operators.json` — the slim grid index (bundled into both targets)
 - `src/shared/generated/operator-details/<id>.json` — one full dossier per operator
 - `src/shared/generated/ranges.json` — every attack range in use
+- `src/shared/generated/branch-icons/<subProfessionId>.png` — archetype badge icons
 
 All generated output is gitignored and rebuilt from scratch each time. A weekly cron in
 the deploy workflow keeps the published site current as new operators release.
@@ -51,12 +52,11 @@ the deploy workflow keeps the published site current as new operators release.
 |---|---|
 | [HellaAPI](https://awedtan.ca/api) | Primary operator data. Its `/cn/operator` endpoint backfills operators with no global release yet |
 | [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData) | Raw CN `character_table.json` — covers HellaAPI's ~1-patch lag (~20 operators) |
-| [arknights.wiki.gg](https://arknights.wiki.gg) (Cargo API) | CN release dates; English trait + bio for CN-only operators |
+| [arknights.wiki.gg](https://arknights.wiki.gg) | CN release dates; English trait + bio for CN-only operators (Cargo API); branch/archetype icons, downloaded into the bundle |
 | [sanitygone.help](https://sanitygone.help) | `releaseOrder`, a PRTS-scraped ordinal — the preferred sort signal |
 | [PuppiizSunniiz/AN-EN-Tags](https://github.com/PuppiizSunniiz/AN-EN-Tags) | Community English translations: skills, talents, RIIC buffs, potentials, recruitment tags |
 | [PuppiizSunniiz/Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images) | Avatars, class icons, skill icons, full illustrations |
 | [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) | 180×360 bust portraits for grid cards |
-| [Aceship/Arknight-Images](https://github.com/Aceship/Arknight-Images) | Archetype (subclass) badge icons |
 
 Every source except HellaAPI is supplemental: if one is unreachable the build logs a
 warning and degrades rather than failing. All network calls carry a 20 s timeout.

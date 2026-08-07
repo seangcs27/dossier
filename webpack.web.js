@@ -20,6 +20,7 @@ module.exports = {
         { from: 'src/web/index.html', to: 'index.html' },
         { from: 'icons', to: 'icons' },
         { from: 'src/shared/generated/operator-details', to: 'operator-details' },
+        { from: 'src/shared/generated/branch-icons', to: 'branch-icons' },
       ],
     }),
   ],

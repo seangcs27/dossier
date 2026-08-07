@@ -47,16 +47,41 @@ import { fileURLToPath } from 'node:url';
 // fast and loud (or, for the supplemental fetches that already tolerate failure, just
 // gets skipped) rather than stalling the entire build silently.
 const FETCH_TIMEOUT_MS = 20_000;
+
+// MediaWiki asks clients to identify themselves and throttles anonymous ones much harder
+// — downloading the branch icons without this got a wall of HTTP 429s.
+const USER_AGENT = 'dossier-build/1.0 (https://github.com/seangcs27/dossier)';
+
 async function timedFetch(url, init) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    return await fetch(url, {
+      ...init,
+      headers: { 'User-Agent': USER_AGENT, ...(init?.headers ?? {}) },
+      signal: controller.signal,
+    });
   } catch (e) {
     if (e.name === 'AbortError') throw new Error(`timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}`);
     throw e;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Retries on 429/5xx with a widening delay, honouring Retry-After when the server sends
+// one. Only used for the icon downloads, which are the one place here that hits a single
+// host in a tight loop.
+async function fetchWithRetry(url, attempts = 4) {
+  let wait = 600;
+  for (let i = 1; ; i++) {
+    const res = await timedFetch(url);
+    if (res.ok || i === attempts || (res.status !== 429 && res.status < 500)) return res;
+    const retryAfter = Number(res.headers.get('retry-after'));
+    await sleep(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : wait);
+    wait *= 2;
   }
 }
 
@@ -103,6 +128,83 @@ async function fetchCharacterArtIndex() {
   } catch (e) {
     console.warn(`character art index skipped: ${e.message}`);
     return new Map();
+  }
+}
+
+// Class enum -> the English class name arknights.wiki.gg uses in its branch-icon
+// filenames. Same eight values as PROFESSION_LABEL in src/web/format.ts; duplicated
+// because this is a standalone Node script, not part of the TS build.
+const PROFESSION_EN = {
+  CASTER: 'Caster', MEDIC: 'Medic', PIONEER: 'Vanguard', SNIPER: 'Sniper',
+  SPECIAL: 'Specialist', SUPPORT: 'Supporter', TANK: 'Defender', WARRIOR: 'Guard',
+};
+
+// Branch (archetype) icons, self-hosted rather than hotlinked.
+//
+// These were previously pulled live from Aceship/Arknight-Images, whose `ui/subclass`
+// folder has not been touched since 2022-11-01 — it covers 57 of the 72 branches in use,
+// so every archetype introduced since (Ritualist, Primal Caster, Watchman, …) rendered
+// with no icon at all: 43 operators. Checked yuanyan3060, ArknightsAssets and PRTS; none
+// ship branch icons under any naming.
+//
+// arknights.wiki.gg — already a source here for release dates and CN traits — maintains
+// them as `Category:Branch icons`, currently 71 files and current with the CN release
+// frontier. The whole set is ~112 KB, so it's downloaded into the bundle instead of
+// hotlinked: no runtime dependency on the wiki, and no cache-busting query string in the
+// asset URL to go stale.
+//
+// Filenames are `<branch> <class>.png`, except where the branch name already ends in the
+// class ("Primal Caster.png", "Multi-target Medic.png"), so both forms are tried. Match
+// is case-insensitive — our archetype text says "Mech-accord Caster", the wiki file says
+// "Mech-Accord Caster".
+async function fetchBranchIcons(entries) {
+  const iconDir = path.join(outDir, 'branch-icons');
+  try {
+    const qs = new URLSearchParams({
+      action: 'query', generator: 'categorymembers', gcmtitle: 'Category:Branch icons',
+      gcmlimit: '500', gcmtype: 'file', prop: 'imageinfo', iiprop: 'url',
+      format: 'json', formatversion: '2',
+    });
+    const res = await timedFetch(`${WIKI_API}?${qs}`);
+    if (!res.ok) throw new Error(`branch icons ${res.status}`);
+    const json = await res.json();
+    const byName = new Map();
+    for (const p of Object.values(json.query?.pages ?? {})) {
+      const name = p.title.replace(/^File:/, '').replace(/\.png$/i, '');
+      const url = p.imageinfo?.[0]?.url;
+      if (url) byName.set(name.toLowerCase(), url);
+    }
+    if (byName.size < 40) throw new Error(`only ${byName.size} branch icons found — category may have moved`);
+
+    // One icon per subProfessionId, not per operator.
+    const bySub = new Map();
+    for (const e of entries) if (!bySub.has(e.subProfessionId)) bySub.set(e.subProfessionId, e);
+
+    await mkdir(iconDir, { recursive: true });
+    let written = 0;
+    const unmatched = [];
+    // Deliberately low concurrency: this is ~70 requests to a single wiki, and it starts
+    // returning 429 well before the parallelism used elsewhere in this script.
+    await mapConcurrent([...bySub.values()], 3, async e => {
+      const cls = PROFESSION_EN[e.profession] ?? '';
+      const url = [`${e.archetype} ${cls}`, e.archetype]
+        .map(c => byName.get(c.trim().toLowerCase()))
+        .find(Boolean);
+      if (!url) { unmatched.push(`${e.subProfessionId} (${e.archetype || 'no archetype name'})`); return; }
+      try {
+        const imgRes = await fetchWithRetry(url);
+        if (!imgRes.ok) throw new Error(String(imgRes.status));
+        await writeFile(path.join(iconDir, `${e.subProfessionId}.png`), Buffer.from(await imgRes.arrayBuffer()));
+        written++;
+      } catch (err) {
+        unmatched.push(`${e.subProfessionId} (download failed: ${err.message})`);
+      }
+    });
+    if (unmatched.length) console.warn(`branch icons unmatched: ${unmatched.join(', ')}`);
+    return { written, total: bySub.size };
+  } catch (e) {
+    console.warn(`branch icons skipped: ${e.message}`);
+    return { written: 0, total: 0 };
   }
 }
 
@@ -672,6 +774,10 @@ entries.sort((a, b) => {
 await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'operators.json');
 await writeFile(outFile, JSON.stringify(entries));
+
+// Runs off the finished entry list so it sees CN-supplement operators too — several of
+// the branches missing from the old icon source belong exclusively to them.
+const branchIcons = await fetchBranchIcons(entries);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 const withOrder = entries.filter(o => o.releaseOrder != null).length;
 console.log(
@@ -682,4 +788,8 @@ console.log(
 console.log(
   `wrote ${detailsWritten}/${entries.length} baked operator details -> ` +
   `${path.relative(process.cwd(), path.join(outDir, 'operator-details'))}`,
+);
+console.log(
+  `wrote ${branchIcons.written}/${branchIcons.total} branch icons -> ` +
+  `${path.relative(process.cwd(), path.join(outDir, 'branch-icons'))}`,
 );

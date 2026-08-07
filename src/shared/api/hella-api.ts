@@ -107,10 +107,12 @@ export function classIconUrl(slug: string): string {
   return `${IMAGE_BASE}/classes/class_${encodeURIComponent(slug)}.png`;
 }
 
-// Archetype/branch glyph, keyed by subProfessionId. Aceship's mirror is the only public
-// source for these and it has stopped updating: it covers 57 of the 72 subclasses in use,
-// so the 15 newest (watchman, primprotector, ritualist, …) have no icon. Callers must
-// treat this as best-effort and hide the <img> on error rather than showing a broken one.
+// Archetype/branch glyph, keyed by subProfessionId. Downloaded from arknights.wiki.gg's
+// `Category:Branch icons` at build time (see fetchBranchIcons in
+// scripts/build-operator-index.mjs) and served from our own origin — the previous source,
+// Aceship's mirror, stopped updating in 2022 and was missing every branch added since.
+// Coverage is 71 of 72; "Supportive Ranger" is new enough that the wiki has no icon for it
+// yet, so callers still hide the <img> on error rather than showing a broken one.
 export function archetypeIconUrl(subProfessionId: string): string {
-  return `https://cdn.jsdelivr.net/gh/Aceship/Arknight-Images@main/ui/subclass/sub_${encodeURIComponent(subProfessionId)}_icon.png`;
+  return `branch-icons/${encodeURIComponent(subProfessionId)}.png`;
 }
