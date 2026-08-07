@@ -1,4 +1,4 @@
-import type { Rarity, Profession } from '../shared/types';
+import type { Rarity, Profession, OperatorData } from '../shared/types';
 
 export const PROFESSION_LABEL: Record<Profession, string> = {
   CASTER:   'Caster',
@@ -42,6 +42,23 @@ export function cleanText(s: string): string {
 // "PHASE_2" -> "E2"
 export function phaseLabel(phase: string): string {
   return 'E' + phase.replace('PHASE_', '');
+}
+
+// d.trait is a plain string for most operators (or null — the class's generic trait
+// applies instead, via d.description) but for ~150 of 427 it's an evolving-candidate
+// object instead, shaped like a talent (see OperatorData.trait's doc comment). Picks
+// the last candidate — the fullest-grown state (max Elite phase + potential) — same
+// convention the detail view already defaults to elsewhere (E2, max level, max trust).
+// Returns null (falls back to d.description) when there's no override text to show,
+// e.g. SilverAsh's trait is purely numeric with no text override at any tier.
+export function traitText(d: OperatorData): string | null {
+  if (typeof d.trait === 'string') return d.trait || null;
+  if (d.trait && typeof d.trait === 'object') {
+    const candidates = d.trait.candidates ?? [];
+    const last = candidates[candidates.length - 1];
+    return last?.overrideDescripton ?? last?.additionalDescription ?? null;
+  }
+  return null;
 }
 
 // Alters are always named "Base Name the Epithet" ("SilverAsh the Reignfrost", "Ch'en

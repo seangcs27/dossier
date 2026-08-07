@@ -18,6 +18,7 @@ import {
   escHtml,
   cleanText,
   phaseLabel,
+  traitText,
 } from '../format';
 
 // ── Stat model ───────────────────────────────────────────────────────────────
@@ -455,7 +456,7 @@ function headerHtml(op: Operator): string {
 function loreHtml(op: Operator): string {
   const d = op.data;
   const tags = (d.tagList ?? []).map(t => `<span class="op-tag">${escHtml(t)}</span>`).join('');
-  const trait = d.trait ?? d.description;
+  const trait = traitText(d) ?? d.description;
   const bits: string[] = [];
   if (trait)                bits.push(`<p><span class="label-inline">Trait:</span> ${cleanText(trait)}</p>`);
   if (d.itemUsage)          bits.push(`<p>${cleanText(d.itemUsage)}</p>`);

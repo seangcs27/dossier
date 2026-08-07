@@ -391,17 +391,36 @@ function stripWikiLinks(s) {
   return s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, page, display) => display ?? page);
 }
 
+// Lowercased, with "·" and " - " both collapsed to a single space, so "Kal'tsit·Esperanta"
+// (HellaAPI's appellation) and "Kal'tsit - Esperanta" (the wiki's own page title for the
+// same operator — confirmed a real mismatch, not hypothetical) land on the same key.
+function normalizeWikiName(name) {
+  return name.toLowerCase().replace(/\s*[-·]\s*/g, ' ').trim();
+}
+
 // wiki.gg's `trait` Cargo field is what CLAUDE.md calls "Trait:" in the detail view —
 // it's actually OperatorData.description (a short tagline), not OperatorData.trait,
 // which is null across the board (confirmed on official operators too, not a CN-data
 // quirk). Its `description` field is the longer profile blurb, OperatorData.itemUsage
 // (verified against Bellone's raw CN text — an exact translation match). Batches one
-// query for every CN-supplement operator by name.
+// query for every CN-supplement operator by name; matching is normalized because the
+// wiki's own title casing/punctuation doesn't always match HellaAPI's appellation
+// exactly (confirmed misses on "Gallus²" vs "GALLUS²" and the Kal'tsit case above).
 async function fetchWikiTraits(names) {
   try {
-    const rows = await cargo({ tables: 'Operators', fields: 'name,trait,description', where: `name IN (${names.map(n => `"${n.replace(/"/g, '')}"`).join(',')})` });
-    return new Map(rows.map(r => [r.name, {
-      trait: r.trait || null,
+    // The IN(...) clause is an exact string match, so a punctuation variant (the "·"
+    // case above) needs its alternate form included here too, or the row never comes
+    // back for the query to find in the first place — normalizing only the returned
+    // rows wouldn't help if the query itself excludes them.
+    const queryNames = new Set(names);
+    for (const n of names) if (n.includes('·')) queryNames.add(n.replace(/·/g, ' - '));
+    const rows = await cargo({ tables: 'Operators', fields: 'name,trait,description', where: `name IN (${[...queryNames].map(n => `"${n.replace(/"/g, '')}"`).join(',')})` });
+    return new Map(rows.map(r => [normalizeWikiName(r.name), {
+      // Both fields can carry [[page|display]] wikilink syntax (confirmed on
+      // Kal'tsit·Esperanta's trait, not just the bio blurb this was first written for)
+      // — cleanText() at render time strips HTML tags but has no idea about wikitext,
+      // so this needs to happen here or "[[Take Off|Take Off]]" shows up literally.
+      trait: r.trait ? stripWikiLinks(r.trait) : null,
       itemUsage: r.description ? stripWikiLinks(r.description) : null,
     }]));
   } catch (e) {
@@ -444,7 +463,7 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
     }),
   }));
 
-  const wikiText = traitByName.get(appellation);
+  const wikiText = traitByName.get(normalizeWikiName(appellation));
   // Same CN_TAG_EN table the grid index uses for these operators — the detail view's
   // own copy of tagList (from the live cn/operator payload) is CN, and baking it in
   // untranslated here would've been the one visible inconsistency between a CN-

@@ -187,7 +187,14 @@ export interface OperatorData {
   itemUsage?: string | null;
   itemDesc?: string | null;
   itemObtainApproach?: string | null;
-  trait?: string | null;
+  // Usually a plain string (or null, most common — the class's generic trait text is
+  // used instead, via `description`). For ~150 of 427 operators it's instead an
+  // evolving-candidate object shaped just like a talent (unlockCondition/blackboard/
+  // overrideDescripton per phase+potential tier) — same misspelled field name as
+  // ModuleTraitCandidate. Discovered via a full-roster audit: every one of those ~150
+  // operators' detail pages was crashing (`d.trait ?? d.description` treats the object
+  // as truthy and passes it straight into cleanText(), which calls .replace() on it).
+  trait?: string | { candidates: ModuleTraitCandidate[] | null } | null;
   maxPotentialLevel?: number;
   talents?: OperatorTalent[] | null;
   potentialRanks?: PotentialRank[];
