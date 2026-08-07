@@ -13,8 +13,12 @@ const cssPath = path.join(root, 'dist', 'web', 'styles.css');
 const outDir = path.join(root, 'design', 'components');
 
 const CDN = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+const PORTRAIT_CDN = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
+const ACESHIP_CDN = 'https://cdn.jsdelivr.net/gh/Aceship/Arknight-Images@main';
 const avatar = id => `${CDN}/avatars/${id}.png`;
+const portrait = id => `${PORTRAIT_CDN}/${id}_1.png`;
 const classIcon = slug => `${CDN}/classes/class_${slug}.png`;
+const archetypeIcon = sub => `${ACESHIP_CDN}/ui/subclass/sub_${sub}_icon.png`;
 
 // Mirrors src/web/format.ts's splitAlterName — alters are always "Base Name the Epithet".
 const splitAlterName = name => {
@@ -22,20 +26,26 @@ const splitAlterName = name => {
   return m ? { base: m[1], epithet: m[2] } : { base: name, epithet: null };
 };
 
-const card = (id, name, cls, label, stars) => {
+// Mirrors buildCard() in src/web/views/grid.ts. `sub` is a subProfessionId — pass null
+// for a card whose archetype has no icon upstream, to preview that degraded state.
+const card = (id, name, cls, label, stars, sub = null) => {
   const { base, epithet } = splitAlterName(name);
   return `
   <a class="op-card r${stars}" href="#">
-    <img class="op-avatar" src="${avatar(id)}" alt="${name}" loading="lazy">
+    <img class="op-avatar" src="${portrait(id)}" alt="${name}" loading="lazy">
+    <div class="op-badges">
+      <img class="op-badge-class" src="${classIcon(cls)}" alt="${label}">
+      ${sub ? `<img class="op-badge-archetype" src="${archetypeIcon(sub)}" alt="" onerror="this.remove()">` : ''}
+    </div>
     <div class="op-info">
       <div class="op-name" title="${name}">${base}</div>
       <div class="op-epithet"${epithet ? ` title="${name}"` : ''}>${epithet ?? '&nbsp;'}</div>
-      <div class="op-class-row">
-        <img class="op-class-icon" src="${classIcon(cls)}" alt="">
+      <div class="op-meta-row">
         <span class="op-class-label">${label}</span>
+        <span class="op-rarity r${stars}">${'★'.repeat(stars)}</span>
       </div>
-      <span class="op-rarity r${stars}">${'★'.repeat(stars)}</span>
     </div>
+    <span class="op-cta">View operator</span>
   </a>`;
 };
 
@@ -82,12 +92,12 @@ const components = [
     subtitle: 'Grid cell — avatar, name + alter epithet, class glyph + label, rarity stars, rarity-tinted edge + shelf',
     viewport: { width: 720, height: 460 },
     body: `<div id="grid" style="padding:0">
-      ${card('char_1045_svash2', 'SilverAsh the Reignfrost', 'vanguard', 'Vanguard', 6)}
-      ${card('char_423_blemsh', 'Blemishine', 'defender', 'Defender', 6)}
-      ${card('char_2014_nian', 'Nian', 'defender', 'Defender', 6)}
-      ${card('char_143_ghost', 'Specter', 'guard', 'Guard', 5)}
-      ${card('char_181_flower', 'Perfumer', 'medic', 'Medic', 4)}
-      ${card('char_281_popka', 'Popukar', 'guard', 'Guard', 3)}
+      ${card('char_1045_svash2', 'SilverAsh the Reignfrost', 'vanguard', 'Vanguard', 6, 'counsellor')}
+      ${card('char_423_blemsh', 'Blemishine', 'defender', 'Defender', 6, 'guardian')}
+      ${card('char_2014_nian', 'Nian', 'defender', 'Defender', 6, 'protector')}
+      ${card('char_143_ghost', 'Specter', 'guard', 'Guard', 5, 'centurion')}
+      ${card('char_181_flower', 'Perfumer', 'medic', 'Medic', 4, 'ringhealer')}
+      ${card('char_281_popka', 'Popukar', 'guard', 'Guard', 3, 'centurion')}
     </div>`,
   },
   {

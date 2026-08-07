@@ -106,3 +106,11 @@ export function skillIconUrl(skillId: string): string {
 export function classIconUrl(slug: string): string {
   return `${IMAGE_BASE}/classes/class_${encodeURIComponent(slug)}.png`;
 }
+
+// Archetype/branch glyph, keyed by subProfessionId. Aceship's mirror is the only public
+// source for these and it has stopped updating: it covers 57 of the 72 subclasses in use,
+// so the 15 newest (watchman, primprotector, ritualist, …) have no icon. Callers must
+// treat this as best-effort and hide the <img> on error rather than showing a broken one.
+export function archetypeIconUrl(subProfessionId: string): string {
+  return `https://cdn.jsdelivr.net/gh/Aceship/Arknight-Images@main/ui/subclass/sub_${encodeURIComponent(subProfessionId)}_icon.png`;
+}

@@ -1,4 +1,4 @@
-import { operatorAvatarUrl, operatorPortraitUrl, classIconUrl } from '../../shared/api/hella-api';
+import { operatorAvatarUrl, operatorPortraitUrl, classIconUrl, archetypeIconUrl } from '../../shared/api/hella-api';
 import type { OperatorIndexEntry, Profession } from '../../shared/types';
 import {
   getOperators,
@@ -39,15 +39,21 @@ function buildCard(op: OperatorIndexEntry): string {
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
            onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
+      <div class="op-badges">
+        <img class="op-badge-class" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
+        <img class="op-badge-archetype" src="${archetypeIconUrl(op.subProfessionId)}"
+             alt="${escHtml(op.archetype)}" title="${escHtml(op.archetype)}" loading="lazy"
+             onerror="this.remove()">
+      </div>
       <div class="op-info">
         <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
         <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
-        <div class="op-class-row">
-          <img class="op-class-icon" src="${classIconUrl(cls)}" alt="" loading="lazy">
+        <div class="op-meta-row">
           <span class="op-class-label">${label}</span>
+          <span class="op-rarity r${n}">${stars}</span>
         </div>
-        <span class="op-rarity r${n}">${stars}</span>
       </div>
+      <span class="op-cta">View operator</span>
     </a>
   `;
 }

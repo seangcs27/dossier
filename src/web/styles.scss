@@ -287,6 +287,7 @@ header {
 
 // ── Operator card ──
 .op-card {
+  position: relative; // anchors .op-badges and the hover .op-cta
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -373,16 +374,23 @@ header {
   margin-bottom: 2px;
 }
 
-.op-class-row {
+// Class text and rarity share one baseline row — the class/archetype glyphs already
+// carry that information visually up in the corner badge, so the text can sit quietly
+// beside the stars instead of taking a row of its own.
+.op-meta-row {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
   margin-top: 2px;
 }
 
 .op-class-label {
   font-size: 11px;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .op-class {
@@ -394,24 +402,77 @@ header {
   white-space: nowrap;
 }
 
-.op-class-row .op-class-icon {
-  width: 13px;
-  height: 13px;
-  opacity: 0.8;
-}
-
 .op-rarity {
   font-size: 10px;
   letter-spacing: -1px;
 }
 
-// On the card the rarity line sits below the class row rather than sharing space
-// with it (unlike .detail-meta, where it stays inline beside the class badge).
 .op-info .op-rarity {
-  display: block;
   font-size: 11px;
-  margin-top: 3px;
+  flex-shrink: 0;
 }
+
+// ── Card corner badges ──
+// Class glyph large, archetype glyph smaller beside it: class is the coarse filter people
+// scan for, archetype the refinement. Sits over the art in the top-left corner rather
+// than in the info panel, which keeps the text block to name + one meta line.
+.op-badges {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 5px;
+  border-radius: 7px;
+  // The art behind these varies wildly in brightness, so the glyphs need their own
+  // backing to stay legible rather than relying on the illustration being dark.
+  background: rgb(0 0 0 / 62%);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.op-badge-class {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.op-badge-archetype {
+  width: 13px;
+  height: 13px;
+  display: block;
+  opacity: 0.85;
+}
+
+// ── Hover call-to-action ──
+// Hidden until hover, matching the reference: the card is already a link, so this is
+// affordance rather than new function. Skipped entirely for touch/keyboard-only input,
+// where there is no hover state to reveal it.
+.op-cta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 7px 8px;
+  background: var(--accent);
+  color: #10131a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  transform: translateY(100%);
+  transition: transform 0.15s ease;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .op-card:hover .op-cta { transform: translateY(0); }
+}
+
+// Keyboard users get the same affordance on focus, since they never trigger :hover.
+.op-card:focus-visible .op-cta { transform: translateY(0); }
 
 // ── States ──
 .state-msg {
