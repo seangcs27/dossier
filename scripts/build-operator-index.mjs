@@ -106,19 +106,37 @@ async function fetchCharacterArtIndex() {
   }
 }
 
-// Human labels for the suffix vocabulary actually seen in the repo — '1'/'2' are
-// universal (base and Elite 2 art), everything else is an outfit/promo-art code tied
-// to a specific skin or event. Sorted so the two elite arts always lead the gallery.
-function artLabel(suffix) {
-  if (suffix === '1') return 'Elite 0/1';
+// Human labels for the suffix vocabulary actually seen in the repo. '1'/'2' are the
+// universal elite arts; '1+' is a separate Elite 1 piece that only exists when an
+// operator's E1 look differs from E0 (Amiya is the sole case across all 427), so plain
+// '1' only covers both tiers when there's no '1+' beside it. Anything else is an
+// outfit/promo code tied to a specific skin, named from the skin data when possible.
+function artLabel(suffix, hasElite1Variant, skinName) {
+  if (suffix === '1') return hasElite1Variant ? 'Elite 0' : 'Elite 0/1';
+  if (suffix === '1+') return 'Elite 1';
   if (suffix === '2') return 'Elite 2';
-  return 'Outfit';
+  return skinName || 'Outfit';
 }
 
-function buildArtsList(id, suffixes) {
+// `skins[].portraitId` is exactly `<id>_<suffix>`, so each art piece can be joined to
+// its skin record for the illustrator credit (`displaySkin.drawerList`) and the outfit's
+// own name — the same attribution Sanity Gone shows under its artwork viewer.
+function buildArtsList(id, suffixes, skins) {
+  const skinByPortrait = new Map((skins ?? []).map(s => [s.portraitId, s.displaySkin ?? {}]));
+  const hasElite1Variant = suffixes.includes('1+');
+  const rank = s => (s === '1' ? 0 : s === '1+' ? 1 : s === '2' ? 2 : 3);
   return [...suffixes]
-    .sort((a, b) => (a === '1' ? -1 : b === '1' ? 1 : a === '2' ? -1 : b === '2' ? 1 : a.localeCompare(b)))
-    .map(suffix => ({ suffix, label: artLabel(suffix), url: `${ARKNIGHT_IMAGES_BASE}/characters/${id}_${suffix}.png` }));
+    .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
+    .map(suffix => {
+      const skin = skinByPortrait.get(`${id}_${suffix}`) ?? {};
+      const artist = (skin.drawerList ?? []).filter(Boolean).join(', ') || null;
+      return {
+        suffix,
+        label: artLabel(suffix, hasElite1Variant, skin.skinName),
+        artist,
+        url: `${ARKNIGHT_IMAGES_BASE}/characters/${id}_${suffix}.png`,
+      };
+    });
 }
 
 // Runs `fn` over `items` with at most `limit` in flight at once — 427 individual detail
@@ -549,7 +567,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
       const base = cn
         ? buildCnOperatorPayload(op, entry.id, entry.appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords)
         : op;
-      const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? []);
+      const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
       const finalOp = { ...base, arts };
 
       await writeFile(path.join(detailOutDir, `${entry.id}.json`), JSON.stringify(finalOp));

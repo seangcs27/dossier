@@ -21,15 +21,15 @@ body {
 header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 12px 20px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 24px;
 
   h1 {
-    font-size: 18px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     flex-shrink: 0;
 
     a {
@@ -37,7 +37,7 @@ header {
       text-decoration: none;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
 
       &:hover { opacity: 0.8; }
     }
@@ -46,22 +46,52 @@ header {
 
 .logo-mark {
   display: block;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+}
+
+// Search leads the bar rather than sitting as one control among many — it's the
+// primary way into 427 operators, so it gets the width and the icon affordance.
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
 }
 
 #search {
-  flex: 1;
-  max-width: 360px;
-  padding: 6px 12px;
+  width: 100%;
+  padding: 10px 14px 10px 36px;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text);
   font-size: 14px;
   outline: none;
 
   &:focus { border-color: var(--accent); }
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 #sort {
@@ -77,16 +107,6 @@ header {
 }
 
 // ── Filter chips ──
-#chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 20px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-
 .chip {
   display: inline-flex;
   align-items: center;
@@ -131,17 +151,12 @@ header {
 
 .chip.active .chip-icon { opacity: 1; }
 
-.chip-sep {
-  width: 1px;
-  align-self: stretch;
-  background: var(--border);
-  margin: 2px 4px;
-}
-
-// Filters / Clear read as controls rather than filter values, so they stay outlined
-// even when the panel is open.
+// Filters reads as a control rather than a filter value, so it stays outlined even
+// when the panel is open.
 .chip-action {
   border-style: dashed;
+  padding: 7px 14px;
+  font-size: 12px;
 
   &.active {
     background: var(--chip);
@@ -151,55 +166,112 @@ header {
   }
 }
 
-// ── Secondary filter panel (subclass + tags) ──
+// ── Filter popover ──
+// Anchored under the topbar rather than inline in the flow: every filter dimension
+// lives here now, so leaving it in the document flow would push the grid down by a
+// couple hundred pixels every time it opened.
 #more-filters {
+  position: absolute;
+  right: 24px;
+  top: 100%;
+  z-index: 20;
+  width: min(420px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+
+  &[hidden] { display: none; }
+}
+
+.filter-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 20px 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-
-.filter-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .filter-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  min-width: 62px;
 }
 
-.filter-hint { font-size: 11px; color: var(--muted); }
+.filter-hint {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
 
-#subclass {
-  padding: 5px 8px;
-  background: var(--bg);
+// Class is picked by its glyph alone — the eight icons are the game's own shorthand
+// and read faster than eight text labels wrapping across rows.
+.class-row {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.class-btn {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 12px;
-  outline: none;
-  max-width: 200px;
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
 
-  &:focus { border-color: var(--accent); }
+  img {
+    width: 22px;
+    height: 22px;
+    opacity: 0.65;
+  }
+
+  &:hover { border-color: var(--accent); }
+
+  &.on {
+    background: var(--chip);
+    border-color: var(--accent);
+    img { opacity: 1; }
+  }
 }
 
+.branch-row,
+.rarity-row,
 .tag-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
+}
+
+.filter-clear {
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { border-color: var(--accent); }
+  &:disabled { opacity: 0.4; cursor: default; }
 }
 
 #count {
-  margin-left: auto;
   font-size: 12px;
   color: var(--muted);
   flex-shrink: 0;
@@ -430,50 +502,92 @@ header {
   }
 }
 
+// ── Artwork viewer ──
 .detail-arts {
   margin-top: 16px;
-}
-
-.detail-arts-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.detail-arts-row {
   display: flex;
   gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  align-items: flex-start;
 }
 
-.detail-art {
+.art-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   flex: 0 0 auto;
-  width: 110px;
-  display: block;
-  text-decoration: none;
+}
+
+.art-thumb {
+  width: 56px;
+  padding: 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   background: var(--surface);
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, border-color 0.15s;
 
   img {
     width: 100%;
     aspect-ratio: 1;
+    // The source art is square with the subject up top — same crop the grid cards use.
     object-fit: cover;
+    object-position: center top;
     display: block;
+  }
+
+  &:hover { opacity: 0.85; }
+
+  &.on {
+    opacity: 1;
+    border-color: var(--accent);
   }
 }
 
-.detail-art-label {
+.art-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.art-main {
   display: block;
+  width: 100%;
+  max-height: 460px;
+  // contain, not cover: this is the showcase view, so the whole illustration should be
+  // visible rather than cropped to fill a box.
+  object-fit: contain;
+}
+
+.art-caption {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-top-right-radius: 8px;
+  max-width: 100%;
+}
+
+.art-caption-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.art-caption-artist {
   font-size: 11px;
   color: var(--muted);
-  text-align: center;
-  padding: 4px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // ── Tabs ──
@@ -752,37 +866,38 @@ header {
   header {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 8px 10px;
+    gap: 10px;
     padding: 10px 12px;
 
-    h1 { font-size: 15px; grid-area: 1 / 1; }
+    h1 { font-size: 17px; grid-area: 1 / 1; letter-spacing: 0.06em; }
   }
 
-  #count {
+  .logo-mark { width: 32px; height: 32px; }
+
+  .topbar-actions {
     grid-area: 1 / 2;
-    justify-self: end;
     margin-left: 0;
-    font-size: 11px;
+  }
+
+  #count { font-size: 11px; }
+
+  .search-wrap {
+    grid-area: 2 / 1 / 2 / 3;
+    max-width: none;
   }
 
   #search {
-    grid-area: 2 / 1;
-    max-width: none;
     font-size: 16px; // < 16px makes iOS Safari zoom on focus
   }
 
-  #sort {
-    grid-area: 2 / 2;
+  #more-filters {
+    right: 12px;
+    left: 12px;
+    width: auto;
   }
 
-  #chips {
-    padding: 8px 12px;
-    gap: 5px;
-  }
-
-  #more-filters { padding: 10px 12px 12px; }
-  .filter-label { min-width: 0; }
-  #subclass { max-width: 100%; }
+  // Eight class glyphs across a phone width leaves each one too small to hit reliably.
+  .class-row { grid-template-columns: repeat(4, 1fr); }
 
   #grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));

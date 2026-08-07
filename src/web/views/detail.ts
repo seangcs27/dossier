@@ -123,6 +123,7 @@ interface DetailState {
   moduleIdx: number;
   moduleLevel: number;
   moduleEquipped: boolean; // whether the selected module feeds into the stat panel
+  artIdx: number;          // which piece of artwork the viewer is showing
 }
 
 // Modules only exist from E2 and their own unlock level onwards, so the Attributes tab
@@ -470,19 +471,32 @@ function loreHtml(op: Operator): string {
   `;
 }
 
-function artsHtml(op: Operator): string {
+// Full-size artwork viewer: one large piece with a thumbnail rail to switch between an
+// operator's elite arts and outfits, captioned with the illustrator — the same shape
+// Sanity Gone and Aceship's toolbox both use. Only the active <img> is eager; the rest
+// stay lazy so opening a detail page doesn't pull every skin at once.
+function artsHtml(op: Operator, artIdx: number): string {
   const arts = op.arts ?? [];
   if (!arts.length) return '';
+  const active = arts[Math.min(artIdx, arts.length - 1)];
   return `
     <div class="detail-arts">
-      <div class="detail-arts-label">Arts</div>
-      <div class="detail-arts-row">
-        ${arts.map(a => `
-          <a class="detail-art" href="${a.url}" target="_blank" rel="noopener" title="${escHtml(a.label)}">
-            <img src="${a.url}" alt="${escHtml(a.label)}" loading="lazy">
-            <span class="detail-art-label">${escHtml(a.label)}</span>
-          </a>
-        `).join('')}
+      ${arts.length > 1 ? `
+        <div class="art-rail" role="tablist" aria-label="Artwork">
+          ${arts.map((a, i) => `
+            <button class="art-thumb${i === artIdx ? ' on' : ''}" data-act="art" data-value="${i}"
+                    role="tab" aria-selected="${i === artIdx}" title="${escHtml(a.label)}">
+              <img src="${a.url}" alt="${escHtml(a.label)}" loading="lazy">
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+      <div class="art-stage">
+        <img class="art-main" src="${active.url}" alt="${escHtml(active.label)}">
+        <div class="art-caption">
+          <span class="art-caption-label">${escHtml(active.label)}</span>
+          ${active.artist ? `<span class="art-caption-artist">${escHtml(active.artist)}</span>` : ''}
+        </div>
       </div>
     </div>
   `;
@@ -499,7 +513,7 @@ function shellHtml(s: DetailState): string {
       </nav>
       ${headerHtml(s.op)}
       ${loreHtml(s.op)}
-      ${artsHtml(s.op)}
+      ${artsHtml(s.op, s.artIdx)}
       <div class="tabs" role="tablist">
         ${tabs.map(t => `
           <button class="tab${t.id === s.tab ? ' on' : ''}" role="tab"
@@ -548,10 +562,13 @@ function errorHtml(id: string, label: string): string {
 
 export async function mountDetail(container: HTMLElement, id: string): Promise<void> {
   const seq = ++mountSeq;
-  (document.getElementById('search') as HTMLInputElement).style.display = 'none';
-  (document.getElementById('sort') as HTMLSelectElement).style.display = 'none';
-  document.getElementById('chips')!.style.display = 'none';
-  document.getElementById('more-filters')!.style.display = 'none';
+  // The grid's controls have no meaning on a detail page — hide the search box and the
+  // whole actions cluster (filters/sort/count), but leave the logo bar standing so the
+  // header stays put across routes instead of the page visibly restructuring.
+  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
+  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
+  const filters = document.getElementById('more-filters')!;
+  filters.hidden = true;
   document.getElementById('count')!.textContent = '';
 
   container.innerHTML = `
@@ -592,6 +609,7 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
     moduleIdx: 0,
     moduleLevel: Math.max(0, (visibleModules(op)[0]?.data?.phases.length ?? 1) - 1),
     moduleEquipped: false,
+    artIdx: 0,
   };
   renderAll(container);
 
@@ -606,6 +624,9 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
         state.level = state.op.data.phases[state.phaseIdx].maxLevel;
         break;
       }
+      // The artwork viewer lives in the shell, not the tab panel, so it needs the full
+      // re-render — renderPanel() below would leave it untouched.
+      case 'art': state.artIdx = Number(value); renderAll(container); return;
       case 'trust':     state.trust = value === '1'; break;
       case 'pot':       state.potential = Number(value); break;
       case 'skill':     state.skillIdx = Number(value);

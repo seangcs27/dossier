@@ -66,7 +66,13 @@ function activeCount(): number {
   return state.classes.size + state.rarities.size + state.tags.size + (state.subclass ? 1 : 0);
 }
 
-// ── Secondary filter panel (subclass + tags), built from the data ──
+// ── Filter popover: every dimension in one panel, opened from the topbar ──
+
+// Class order matches the in-game roster screen rather than the enum's alphabetical
+// order, so the row reads the way people are used to seeing it.
+const CLASS_ORDER: Profession[] = [
+  'PIONEER', 'WARRIOR', 'TANK', 'SNIPER', 'CASTER', 'MEDIC', 'SUPPORT', 'SPECIAL',
+];
 
 function renderMore(): void {
   const panel = document.getElementById('more-filters')!;
@@ -78,21 +84,49 @@ function renderMore(): void {
   if (state.subclass && !subs.some(s => s.id === state.subclass)) state.subclass = '';
 
   panel.innerHTML = `
-    <div class="filter-row">
-      <label class="filter-label" for="subclass">Subclass</label>
-      <select id="subclass">
-        <option value="">Any</option>
-        ${subs.map(s => `
-          <option value="${escHtml(s.id)}"${s.id === state.subclass ? ' selected' : ''}>${escHtml(s.label)}</option>
+    <div class="filter-group">
+      <div class="filter-label">Class</div>
+      <div class="class-row">
+        ${CLASS_ORDER.map(p => `
+          <button class="class-btn${state.classes.has(p) ? ' on' : ''}"
+                  data-kind="class" data-value="${p}" title="${PROFESSION_LABEL[p]}"
+                  aria-pressed="${state.classes.has(p)}">
+            <img src="${classIconUrl(PROFESSION_CSS[p])}" alt="${PROFESSION_LABEL[p]}">
+          </button>
         `).join('')}
-      </select>
-      <span class="filter-hint">${subs.length} in scope</span>
+      </div>
     </div>
-    <div class="filter-row">
-      <span class="filter-label">Tags</span>
-      <div class="seg" id="tag-mode">
-        <button class="seg-btn${state.tagMode === 'any' ? ' on' : ''}" data-mode="any">Any</button>
-        <button class="seg-btn${state.tagMode === 'all' ? ' on' : ''}" data-mode="all">All</button>
+
+    <div class="filter-group">
+      <div class="filter-label">Branch${state.classes.size ? '' : ' <span class="filter-hint">— pick a class first</span>'}</div>
+      <div class="branch-row">
+        ${subs.length
+          ? subs.map(s => `
+              <button class="chip${s.id === state.subclass ? ' active' : ''}" data-sub="${escHtml(s.id)}">
+                ${escHtml(s.label)}
+              </button>
+            `).join('')
+          : '<span class="filter-hint">All branches</span>'}
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">Rarity</div>
+      <div class="rarity-row">
+        ${[6, 5, 4, 3, 2, 1].map(r => `
+          <button class="chip r${r}${state.rarities.has(r) ? ' active' : ''}"
+                  data-kind="rarity" data-value="${r}">${r}★</button>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <div class="filter-label">
+        Tags
+        <span class="seg" id="tag-mode">
+          <button class="seg-btn${state.tagMode === 'any' ? ' on' : ''}" data-mode="any">Any</button>
+          <button class="seg-btn${state.tagMode === 'all' ? ' on' : ''}" data-mode="all">All</button>
+        </span>
       </div>
       <div class="tag-chips">
         ${allTags(getOperators()).map(t => `
@@ -100,25 +134,18 @@ function renderMore(): void {
         `).join('')}
       </div>
     </div>
+
+    <button class="filter-clear" id="clear-filters"${activeCount() ? '' : ' disabled'}>Clear Filters</button>
   `;
 }
 
 function syncChips(): void {
-  document.querySelectorAll<HTMLButtonElement>('#chips .chip[data-kind]').forEach(chip => {
-    const { kind, value } = chip.dataset;
-    const active = kind === 'class'
-      ? state.classes.has(value as Profession)
-      : state.rarities.has(Number(value));
-    chip.classList.toggle('active', active);
-  });
   const more = document.getElementById('more-toggle');
-  if (more) {
-    const n = activeCount();
-    more.textContent = n ? `Filters · ${n}` : 'Filters';
-    more.classList.toggle('active', state.moreOpen);
-  }
-  const clear = document.getElementById('clear-filters') as HTMLButtonElement | null;
-  if (clear) clear.hidden = activeCount() === 0;
+  if (!more) return;
+  const n = activeCount();
+  more.textContent = n ? `Filters · ${n}` : 'Filters';
+  more.classList.toggle('active', state.moreOpen || n > 0);
+  more.setAttribute('aria-expanded', String(state.moreOpen));
 }
 
 function toggleChip(chip: HTMLButtonElement): void {
@@ -140,13 +167,12 @@ function clearAll(): void {
 }
 
 export function mountGrid(container: HTMLElement): void {
-  const search = document.getElementById('search') as HTMLInputElement;
-  const sort   = document.getElementById('sort') as HTMLSelectElement;
-  const chips  = document.getElementById('chips')!;
-  search.style.display = '';
-  sort.style.display = '';
-  chips.style.display = '';
-  document.getElementById('more-filters')!.style.display = '';
+  const search  = document.getElementById('search') as HTMLInputElement;
+  const sort    = document.getElementById('sort') as HTMLSelectElement;
+  const actions = document.querySelector<HTMLElement>('.topbar-actions')!;
+  const wrap    = document.querySelector<HTMLElement>('.search-wrap')!;
+  wrap.style.display = '';
+  actions.style.display = '';
 
   search.value = state.query;
   sort.value = state.sort;
@@ -159,30 +185,42 @@ export function mountGrid(container: HTMLElement): void {
   search.oninput = () => { state.query = search.value; render(container); };
   sort.onchange  = () => { state.sort = sort.value as SortKey; render(container); };
 
-  chips.onclick = (ev) => {
-    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
+  actions.onclick = (ev) => {
+    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle');
     if (!el) return;
-    if (el.id === 'more-toggle') { state.moreOpen = !state.moreOpen; refresh(); return; }
-    if (el.id === 'clear-filters') { clearAll(); refresh(); return; }
-    if (el.dataset.kind) { toggleChip(el); refresh(); }
+    state.moreOpen = !state.moreOpen;
+    refresh();
   };
 
   const panel = document.getElementById('more-filters')!;
   panel.onclick = (ev) => {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!el) return;
+    if (el.id === 'clear-filters') { clearAll(); refresh(); return; }
     if (el.dataset.mode) { state.tagMode = el.dataset.mode as TagMode; refresh(); return; }
+    if (el.dataset.kind) { toggleChip(el); refresh(); return; }
+    const sub = el.dataset.sub;
+    if (sub !== undefined) {
+      // Branch is single-select — clicking the active one clears it.
+      state.subclass = state.subclass === sub ? '' : sub;
+      refresh();
+      return;
+    }
     const tag = el.dataset.tag;
     if (tag) {
       if (state.tags.has(tag)) state.tags.delete(tag); else state.tags.add(tag);
       refresh();
     }
   };
-  panel.onchange = (ev) => {
-    const el = ev.target as HTMLSelectElement;
-    if (el.id !== 'subclass') return;
-    state.subclass = el.value;
+
+  // Click-away close, matching how the reference popover behaves. Registered on the
+  // document rather than the panel so it also catches clicks on the grid below.
+  document.onclick = (ev) => {
+    if (!state.moreOpen) return;
+    const t = ev.target as HTMLElement;
+    if (t.closest('#more-filters') || t.closest('#more-toggle')) return;
+    state.moreOpen = false;
     syncChips();
-    render(container);
+    renderMore();
   };
 }

@@ -203,8 +203,9 @@ export interface OperatorData {
 }
 
 export interface OperatorArt {
-  suffix: string;   // '1' (base), '2' (Elite 2), or a promo/skin code like 'sale#14'
-  label: string;    // 'Elite 0/1' | 'Elite 2' | 'Outfit'
+  suffix: string;   // '1' (base), '1+' (Elite 1), '2' (Elite 2), or a skin code like 'sale#14'
+  label: string;    // 'Elite 0/1' | 'Elite 1' | 'Elite 2' | the outfit's own name
+  artist: string | null; // illustrator, from the matching skin's drawerList
   url: string;
 }
 
