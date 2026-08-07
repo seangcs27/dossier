@@ -497,9 +497,38 @@ header {
 
 // ── Detail ──
 .detail {
-  max-width: 860px;
+  // Wider than the old single-column page: the artwork and the data panels now sit side
+  // by side, and 860px split two ways left the stats tables cramped.
+  max-width: 1240px;
   margin: 0 auto;
   padding: 20px;
+}
+
+// Artwork left, data right — so the illustration and the stats are both on screen at
+// once instead of the art pushing everything below the fold.
+.detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+// The data column is much taller than the art, so the art rides along instead of
+// scrolling off and leaving dead space. 93px clears the sticky topbar (77px) plus gap.
+.detail-art-col {
+  position: sticky;
+  top: 93px;
+}
+
+.detail-data-col {
+  min-width: 0; // lets the stats tables shrink instead of forcing the grid wider
+}
+
+// Both columns already carry their own top spacing inside .detail-body.
+.detail-body .detail-arts,
+.detail-body .detail-header {
+  margin-top: 0;
 }
 
 .crumbs {
@@ -619,7 +648,9 @@ header {
 .art-main {
   display: block;
   width: 100%;
-  max-height: 460px;
+  // Capped against the viewport rather than a fixed px so the sticky art column can
+  // never grow taller than the screen and strand its own bottom edge.
+  max-height: min(560px, calc(100vh - 140px));
   // contain, not cover: this is the showcase view, so the whole illustration should be
   // visible rather than cropped to fill a box.
   object-fit: contain;
@@ -920,6 +951,25 @@ header {
   width: 24px;
 }
 
+// ── Detail: collapse to one column ──
+// Below this the data column gets too narrow for the stats tables, so the art goes back
+// on top. It also stops being sticky — a full-width image pinned to the top of a phone
+// screen would eat most of the viewport.
+@media (max-width: 900px) {
+  .detail-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .detail-art-col {
+    position: static;
+    // Keeps the illustration from dominating a stacked layout the way a full-width
+    // square would.
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+
 // ── Narrow screens ──
 // The topbar becomes a 2x2 grid rather than relying on flex-wrap, so the break always
 // lands in the same place instead of shifting with the width of the operator count.
@@ -940,10 +990,17 @@ header {
     margin-left: 0;
   }
 
-  #count { font-size: 11px; }
+  // Logo + Filters + sort + count all on one row overflows a 375px phone, so the count
+  // drops to sit beside the search box instead of being cut off.
+  #count {
+    grid-area: 2 / 2;
+    font-size: 11px;
+    align-self: center;
+    justify-self: end;
+  }
 
   .search-wrap {
-    grid-area: 2 / 1 / 2 / 3;
+    grid-area: 2 / 1;
     max-width: none;
   }
 

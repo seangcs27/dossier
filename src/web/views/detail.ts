@@ -511,16 +511,20 @@ function shellHtml(s: DetailState): string {
         <span class="crumb-sep">/</span>
         <span class="crumb-current">${escHtml(s.op.data.name)}</span>
       </nav>
-      ${headerHtml(s.op)}
-      ${loreHtml(s.op)}
-      ${artsHtml(s.op, s.artIdx)}
-      <div class="tabs" role="tablist">
-        ${tabs.map(t => `
-          <button class="tab${t.id === s.tab ? ' on' : ''}" role="tab"
-                  aria-selected="${t.id === s.tab}" data-act="tab" data-value="${t.id}">${t.label}</button>
-        `).join('')}
+      <div class="detail-body">
+        <div class="detail-art-col">${artsHtml(s.op, s.artIdx)}</div>
+        <div class="detail-data-col">
+          ${headerHtml(s.op)}
+          ${loreHtml(s.op)}
+          <div class="tabs" role="tablist">
+            ${tabs.map(t => `
+              <button class="tab${t.id === s.tab ? ' on' : ''}" role="tab"
+                      aria-selected="${t.id === s.tab}" data-act="tab" data-value="${t.id}">${t.label}</button>
+            `).join('')}
+          </div>
+          <div class="tab-panel" id="panel">${panelHtml(s)}</div>
+        </div>
       </div>
-      <div class="tab-panel" id="panel">${panelHtml(s)}</div>
     </div>
   `;
 }
