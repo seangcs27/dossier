@@ -236,7 +236,12 @@ function buildArtsList(id, suffixes, skins) {
         suffix,
         label: artLabel(suffix, hasElite1Variant, skin.skinName),
         artist,
-        url: `${ARKNIGHT_IMAGES_BASE}/characters/${id}_${suffix}.png`,
+        // The suffix MUST be percent-encoded. Skin codes contain '#' ("epoque#4"), and a
+        // raw '#' in an <img src> is a fragment delimiter — the browser requests
+        // ".../char_002_amiya_epoque" and gets a 404, which silently broke every outfit
+        // art: 523 of 1346 pieces across 359 operators. A handful also contain spaces
+        // ("witch#5 (Old)"). The id is safe as-is; only the suffix needs it.
+        url: `${ARKNIGHT_IMAGES_BASE}/characters/${id}_${encodeURIComponent(suffix)}.png`,
       };
     });
 }
