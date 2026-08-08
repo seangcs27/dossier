@@ -3,7 +3,7 @@
 // HellaAPI call. There are only ~35 unique ranges across the whole roster (operators
 // share them heavily — most "Melee 1-tile" operators point at the same range id), so
 // this is a few KB, not per-operator data.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,16 +30,53 @@ const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated',
 );
 
-const listRes = await timedFetch(`${BASE_URL}/operator?include=data.phases.rangeId`);
-if (!listRes.ok) throw new Error(`${listRes.status} fetching operator range ids`);
-const envelopes = await listRes.json();
+// Every range id the detail view can ask for: an operator's per-phase range AND every
+// skill level's own range (skills that change reach — Ranged Guards, most Snipers'
+// S3s — carry their own rangeId, and the view draws it over the operator's).
+//
+// Collected from the baked per-operator details that build:index:operators has already
+// written, rather than from a `?include=` list query: those files are the exact input
+// the runtime reads, so nothing can be needed at runtime and absent here. Skipping this
+// left 20 of 47 skill ranges unbundled, and 56 operators made a blocking live HellaAPI
+// call before their page could paint.
+async function collectRangeIds() {
+  const detailDir = path.join(outDir, 'operator-details');
+  const ids = new Set();
+  let files = [];
+  try {
+    files = (await readdir(detailDir)).filter(f => f.endsWith('.json'));
+  } catch { /* details not built yet — fall back to the list query below */ }
 
-const rangeIds = new Set();
-for (const e of envelopes) {
-  for (const phase of e.value?.data?.phases ?? []) {
-    if (phase.rangeId) rangeIds.add(phase.rangeId);
+  if (files.length) {
+    for (const file of files) {
+      const op = JSON.parse(await readFile(path.join(detailDir, file), 'utf8'));
+      for (const phase of op.data?.phases ?? []) {
+        if (phase.rangeId) ids.add(phase.rangeId);
+      }
+      for (const skill of op.skills ?? []) {
+        for (const level of skill.excel?.levels ?? []) {
+          if (level.rangeId) ids.add(level.rangeId);
+        }
+      }
+    }
+    console.log(`collected ${ids.size} range ids from ${files.length} baked operators`);
+    return ids;
   }
+
+  // Standalone `npm run build:index:ranges` with no baked details on disk. Phase ranges
+  // only — the list endpoint can't reach into skill levels — but better than nothing.
+  console.warn('no baked operator details found; falling back to phase ranges only');
+  const listRes = await timedFetch(`${BASE_URL}/operator?include=data.phases.rangeId`);
+  if (!listRes.ok) throw new Error(`${listRes.status} fetching operator range ids`);
+  for (const e of await listRes.json()) {
+    for (const phase of e.value?.data?.phases ?? []) {
+      if (phase.rangeId) ids.add(phase.rangeId);
+    }
+  }
+  return ids;
 }
+
+const rangeIds = await collectRangeIds();
 
 const ranges = {};
 let failed = 0;
