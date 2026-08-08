@@ -1133,6 +1133,15 @@ input[type='number'] {
 .muted-text { color: var(--dim); }
 
 // ── Skills ──
+// The skill slider re-renders only this subtree, so it's a child of the tab panel rather
+// than a set of siblings — which means it needs its own column gap. Without it the SP /
+// duration row rides up into the skill header.
+#skill-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .skill-head {
   display: grid;
   grid-template-columns: 48px 1fr;
