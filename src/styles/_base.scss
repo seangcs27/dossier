@@ -10,6 +10,7 @@
   }
   @each $tier, $spec in $rarities {
     --r#{$tier}: #{map.get($spec, color)};
+    --r#{$tier}-dark: #{map.get($spec, dark)};
   }
 }
 

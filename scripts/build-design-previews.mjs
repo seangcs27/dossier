@@ -37,15 +37,17 @@ const card = (id, name, cls, label, stars, sub = null) => {
       <img class="op-badge-class" src="${classIcon(cls)}" alt="${label}">
       ${sub ? `<img class="op-badge-archetype" src="${archetypeIcon(sub)}" alt="" onerror="this.remove()">` : ''}
     </div>
-    <div class="op-info">
-      <div class="op-name" title="${name}">${base}</div>
-      <div class="op-epithet"${epithet ? ` title="${name}"` : ''}>${epithet ?? '&nbsp;'}</div>
-      <div class="op-meta-row">
-        <span class="op-class-label">${label}</span>
-        <span class="op-rarity r${stars}">${'★'.repeat(stars)}</span>
+    <div class="op-overlay">
+      <div class="op-info">
+        <div class="op-name" title="${name}">${base}</div>
+        ${epithet ? `<div class="op-epithet" title="${name}">${epithet}</div>` : ''}
+        <div class="op-meta-row">
+          <span class="op-class-label r${stars}">${label}</span>
+          <span class="op-rarity r${stars}">${stars}<span class="op-star">★</span></span>
+        </div>
       </div>
+      <span class="op-cta">View operator</span>
     </div>
-    <span class="op-cta">View operator</span>
   </a>`;
 };
 

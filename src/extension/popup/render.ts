@@ -69,15 +69,21 @@ function buildCard(op: OperatorIndexEntry): string {
   const avatar = operatorAvatarUrl(op.id);
   const name   = escHtml(op.name);
 
+  // Same overlay treatment as the web grid: the text rides a gradient over the avatar
+  // rather than sitting in a solid panel below it, with a rarity-coloured bar closing
+  // the card off at the bottom.
   return `
-    <div class="op-card" data-id="${op.id}">
+    <div class="op-card r${n}" data-id="${op.id}">
       <img class="op-avatar" src="${avatar}" alt="${name}" loading="lazy">
-      <div class="op-info">
-        <div class="op-name" title="${name}">${name}</div>
-        <div class="op-meta">
-          <img class="op-class-icon" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
-          <span class="op-rarity r${n}">${stars}</span>
+      <div class="op-overlay">
+        <div class="op-info">
+          <div class="op-name" title="${name}">${name}</div>
+          <div class="op-meta">
+            <img class="op-class-icon" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
+            <span class="op-rarity r${n}">${stars}</span>
+          </div>
         </div>
+        <span class="op-rarity-bar"></span>
       </div>
     </div>
   `;
