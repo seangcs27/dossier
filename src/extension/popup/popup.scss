@@ -1,7 +1,9 @@
 // Extension popup stylesheet. Shared palette, reset, and operator colour modifiers come
 // from src/styles/; everything below is sized for the fixed 380px popup panel and is
 // deliberately tighter than the web SPA's equivalent rules.
+@use 'sass:map';
 @use '../../styles/base';
+@use '../../styles/tokens' as *;
 
 body {
   width: 380px;
@@ -54,36 +56,65 @@ header {
 }
 
 // ── Operator card ──
+// The name/class/rarity overlay the avatar on a gradient rather than sitting in a solid
+// panel underneath it — same treatment as the web grid, just at popup scale.
 .op-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: var(--border);
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.15s;
-  display: flex;
-  flex-direction: column;
+  transition: transform 0.1s;
 
-  &:hover { border-color: var(--accent); }
+  &:hover { transform: translateY(-2px); }
 }
 
 .op-avatar {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
   object-fit: cover;
+  object-position: center top;
   background: var(--bg);
   display: block;
 }
 
 .op-avatar-placeholder {
-  width: 100%;
-  aspect-ratio: 1;
+  position: absolute;
+  inset: 0;
   background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
   color: var(--muted);
+}
+
+.op-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(
+    to bottom,
+    transparent 35%,
+    rgb(5 5 7 / 67%) 70%,
+    #1c1c1c 100%
+  );
+}
+
+.op-rarity-bar {
+  flex: 0 0 auto;
+  height: 3px;
+}
+
+@each $tier, $spec in $rarities {
+  .op-card.r#{$tier} .op-rarity-bar {
+    background: linear-gradient(to right, var(--r#{$tier}), var(--r#{$tier}-dark));
+  }
 }
 
 .op-info {

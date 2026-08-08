@@ -9,6 +9,12 @@ export type Profession =
 
 export type Position = 'MELEE' | 'RANGED';
 
+// Interpolation values carried alongside a description string. See descriptionToHtml.
+export interface Blackboard {
+  key: string;
+  value: number;
+}
+
 export interface OperatorAttributes {
   maxHp: number;
   atk: number;
@@ -57,6 +63,8 @@ export interface TalentCandidate {
   name: string;
   description: string;
   isHideTalent: boolean;
+  // Values the description's {placeholders} interpolate from. See descriptionToHtml.
+  blackboard?: Blackboard[] | null;
 }
 
 export interface OperatorTalent {
@@ -90,6 +98,7 @@ export interface SkillLevel {
   name: string;
   rangeId: string | null;
   description: string;
+  blackboard?: Blackboard[] | null;
   skillType: string; // "MANUAL" | "AUTO" | ...
   durationType: string;
   duration: number;
@@ -144,6 +153,7 @@ export interface ModuleTraitCandidate {
   additionalDescription: string | null;
   overrideDescripton: string | null; // [sic] — the game data misspells it
   unlockCondition: UnlockCondition;
+  blackboard?: Blackboard[] | null;
 }
 
 export interface ModulePhase {

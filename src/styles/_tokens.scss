@@ -7,23 +7,32 @@
 // read as noise, and neither reference site (Sanity Gone, AN-EN-Tags) colour-codes
 // class either.
 
+// Surfaces follow Sanity Gone's neutral ramp (their `--color-neutral-*` scale), so the
+// detail page — which is a deliberate clone of theirs — reads at the right contrast
+// without a second palette fighting the first.
 $surfaces: (
-  bg:      #0d1117,
-  surface: #161b22,
-  border:  #30363d,
-  chip:    #2d333b, // neutral fill: class badges, inactive filter chips
-  text:    #e6edf3,
-  muted:   #8b949e,
-  accent:  #d29922,
+  bg:       #101014, // neutral-900 — page
+  surface:  #14141b, // neutral-800 — panel top
+  surface2: #191920, // neutral-700 — panel bottom (panels are a vertical gradient)
+  border:   #24242e, // neutral-600 — dividers, inset boxes
+  chip:     #363643, // neutral-500 — control fills, class badges
+  text:     #e8e8f2, // neutral-50
+  muted:    #87879b, // neutral-200
+  dim:      #b8b8c0, // neutral-100 — secondary body text
+  accent:   #fed874, // yellow — the elite/level controls' active colour
+  link:     #83cbff, // blue-light — breadcrumbs, buff values
 );
 
-// Rarity tier -> star colour, plus the foreground to pair with it when that colour is
-// used as a filled background. Tiers 1 and 2 deliberately share one colour.
+// Rarity tier -> star colour, plus a darker partner for the gradient the card's bottom
+// accent bar and the detail header's tint are drawn with, and the foreground to pair
+// with the colour when it's used as a filled background. Same six hues Sanity Gone uses
+// (1 white, 2 green, 3 blue, 4 purple, 5 yellow, 6 orange) — the ramp people already
+// read as rarity everywhere else in the community.
 $rarities: (
-  1: (color: #6b7280, fg: #fff),
-  2: (color: #6b7280, fg: #fff),
-  3: (color: #3b82f6, fg: #fff),
-  4: (color: #8b5cf6, fg: #fff),
-  5: (color: #f59e0b, fg: #000),
-  6: (color: #ef4444, fg: #fff),
+  1: (color: #e8e8f2, dark: #b8b8c0, fg: #050507),
+  2: (color: #d3ff9b, dark: #a7e855, fg: #050507),
+  3: (color: #83cbff, dark: #49b3ff, fg: #050507),
+  4: (color: #b1afff, dark: #7f6bff, fg: #050507),
+  5: (color: #ffebb8, dark: #fed874, fg: #050507),
+  6: (color: #ffc397, dark: #ff994f, fg: #050507),
 );

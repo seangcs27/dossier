@@ -35,6 +35,9 @@ function buildCard(op: OperatorIndexEntry): string {
   const portrait1 = operatorPortraitUrl(op.id, '1');
   const fallbacks = [operatorPortraitUrl(op.id, '2'), operatorAvatarUrl(op.id)].join('|');
 
+  // The text block is an overlay on the art, not a panel beneath it — Sanity Gone's
+  // treatment: the card is one uninterrupted illustration and the name/class/rarity ride
+  // a transparent-to-black gradient over its lower half, so nothing reads as a grey shelf.
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
@@ -45,15 +48,17 @@ function buildCard(op: OperatorIndexEntry): string {
              alt="${escHtml(op.archetype)}" title="${escHtml(op.archetype)}" loading="lazy"
              onerror="this.remove()">
       </div>
-      <div class="op-info">
-        <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
-        <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
-        <div class="op-meta-row">
-          <span class="op-class-label">${label}</span>
-          <span class="op-rarity r${n}">${stars}</span>
+      <div class="op-overlay">
+        <div class="op-info">
+          <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
+          ${epithet ? `<div class="op-epithet" title="${escHtml(op.name)}">${escHtml(epithet)}</div>` : ''}
+          <div class="op-meta-row">
+            <span class="op-class-label r${n}">${label}</span>
+            <span class="op-rarity r${n}">${n}<span class="op-star">${stars.slice(0, 1)}</span></span>
+          </div>
         </div>
+        <span class="op-cta">View operator</span>
       </div>
-      <span class="op-cta">View operator</span>
     </a>
   `;
 }

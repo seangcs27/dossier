@@ -68,12 +68,13 @@ src/
   web/              ← SPA
     index.ts        ← app entry: hash-router dispatch (grid ↔ detail)
     router.ts       ← hash routing (#/ , #/op/<id>)
-    format.ts       ← escHtml/cleanText, rarity + profession helpers
+    format.ts       ← escHtml/cleanText, descriptionToHtml, rarity + profession helpers
+    icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store over the generated index: sort/filter helpers
     styles.scss     ← full-page layout, topbar, chips, grid, detail
     views/
       grid.ts       ← operator grid + live search; cards link to #/op/<id>
-      detail.ts     ← rich operator dossier (stats, ranges, skills, talents, potentials, base skills)
+      detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
     index.html      ← markup shell; links styles.css
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
@@ -97,7 +98,20 @@ injection.
 `:root` custom properties generated from those maps, the reset, the `.op-class.*` /
 `.op-rarity.r*` colour modifiers, and the spinner keyframe. Adding a profession or changing
 a rarity colour means editing **one map** in `_tokens.scss` — the custom properties, badge
-rules, and the SPA's filter-chip colours are all generated from it.
+rules, the card's rarity bar, and the SPA's filter-chip colours are all generated from it.
+
+The palette follows **Sanity Gone's**: their `neutral-*` ramp for surfaces (`bg` #101014 →
+`chip` #363643) and their six rarity hues (1 white, 2 green, 3 blue, 4 purple, 5 yellow,
+6 orange). Each rarity carries a `dark` partner as well as its `color`, because the card's
+bottom accent bar and the detail header's tint are both gradients between the two.
+
+**Operator cards carry no solid panel.** The card is a fixed-height box (280px on the web,
+3:4 in the popup) with the illustration filling it edge to edge and one absolutely
+positioned `.op-overlay` on top. The overlay paints a
+`transparent 40% → rgb(5 5 7 / 67%) 67% → #1c1c1c 100%` vertical gradient and holds the
+name, class and rarity, so the text sits over art that has already faded to black rather
+than on a grey shelf below it. The rarity bar at the bottom doubles as the hover
+"View operator" CTA (4px → 32px). This is exactly how Sanity Gone builds theirs.
 
 Sizing deliberately stays per-target: the popup is a fixed 380px panel and the SPA is a
 full page, so nearly every dimension differs. `src/web/styles.scss` and
@@ -217,7 +231,44 @@ Single entry point: **`popup/index.ts`**. No background service worker and no co
 
 ## Web SPA (`src/web/`)
 
-Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid; `#/op/<id>` shows a rich detail dossier (header, lore/tags, per-phase stats table, attack-range grids via `getRange`, skills, talents, potentials, base skills).
+Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid; `#/op/<id>` shows the operator dossier.
+
+### Detail view (`src/web/views/detail.ts`)
+
+A deliberate clone of **Sanity Gone's** operator page (`sanitygone.help`) — layout,
+control set and information architecture all follow theirs, so read
+[SanityGoneAK/sanity-gone](https://github.com/SanityGoneAK/sanity-gone) (`src/components/operator/`)
+before changing the shape of this page:
+
+- **Page** — the selected artwork fills a fixed background at 7.5% opacity, faded into
+  `--bg` by a gradient. Art column left (sticky, with a vertical skin-thumbnail rail
+  overlaying the top-left of the art and an illustrator caption bottom-left); a
+  fixed 590px data panel right, collapsing to one column below 1200px.
+- **Panel** — rarity-tinted strip with stars, then a 72px avatar + serif operator name
+  (the alter epithet in `--dim`) + class / branch / melee-ranged row. The branch name
+  carries the class trait as its `title` tooltip.
+- **Tabs** — Attributes, Talents, Skills, Modules, RIIC, Misc. Every panel opens with its
+  own controls above a rule. **Elite and potential are shared state across panels**, unlike
+  the reference, which resets them per tab.
+- **Attributes** — elite button group, level slider + round typed input, module
+  checkbox/pills, trust checkbox + 0–200 input, potential dropdown; the trust bonus scales
+  by `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule.
+- **Skills** — skill pills + a 1–10 rank slider labelled `1…7, M1–M3`, skill header, an
+  SP-cost / initial-SP / duration row, the description, and the skill's range overlaid on
+  the operator's (added cells blue, removed cells red).
+
+Descriptions are rendered by `descriptionToHtml` in `format.ts`, not `cleanText`: the game
+data is a markup language (`<@ba.vup>+{atk:0%}</>`), so tags become styled spans and
+`{placeholders}` are interpolated from the entry's own `blackboard`. An unresolvable key
+renders as the raw token rather than vanishing — that only happens when an entry ships
+without its blackboard.
+
+Not cloned, for lack of data: promotion/mastery **material costs** (the API gives item ids
+but no names or icons), **summon/token** stat blocks, the reference's handbook-driven Misc
+tab (profile, physical exam, voice actor — HellaAPI exposes no handbook; ours shows tags,
+trait, archive blurb, obtain source, the potential ladder and a fact list instead), and
+outfit prices. `src/web/icons.ts` draws the stat/skill/elite glyphs inline rather than
+fetching them, so the detail page adds no image requests beyond artwork and skill icons.
 
 Data: the grid reads the bundled operator index through `src/web/operator-index.ts`
 (`getOperators` / `filterOps` / `sortOps`) and makes **no network requests** — no fetch, no

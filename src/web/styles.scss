@@ -18,7 +18,9 @@ body {
   z-index: 10;
 }
 
-header {
+// Scoped to the topbar's own <header>: the detail page uses <header> inside its content
+// too, and a bare element selector would give every panel heading a topbar background.
+.topbar header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 16px 24px;
@@ -280,66 +282,49 @@ header {
 // ── Grid ──
 #grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-  gap: 10px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+  gap: 16px 24px;
+  padding: 20px;
 }
 
 // ── Operator card ──
+// Structure mirrors Sanity Gone's operator grid item: a fixed-height box holding the
+// illustration edge to edge, with a single absolutely-positioned overlay layer on top
+// carrying the badges, the gradient, the text and the rarity bar. Nothing sits *below*
+// the art, so the card never grows a solid panel.
 .op-card {
-  position: relative; // anchors .op-badges and the hover .op-cta
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  position: relative; // anchors .op-badges and .op-overlay
+  height: 280px;
+  background: var(--border);
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.1s;
-  display: flex;
-  flex-direction: column;
+  transition: transform 0.1s;
+  display: block;
   text-decoration: none;
   color: inherit;
 
-  // A thin rarity-coloured edge, plus a matching shelf under the info panel — the one
-  // place on the card where rarity registers at a glance instead of only in the small
-  // star row. Reuses the exact colours the stars and rarity filter chips already use,
-  // so a 6* card visually leads the eye the same way it does everywhere else.
-  @each $tier, $spec in $rarities {
-    &.r#{$tier} {
-      border-color: var(--r#{$tier});
-
-      &::after {
-        content: '';
-        display: block;
-        height: 3px;
-        background: var(--r#{$tier});
-      }
-    }
-  }
-
-  // Declared after the rarity loop so it wins the cascade regardless of tier.
-  &:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-  }
+  &:hover { transform: translateY(-2px); }
 }
 
 .op-avatar {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  // Matches the portrait source's own fixed 180x360 exactly (see operatorPortraitUrl)
-  // — a pre-cropped half-body bust, not a square full-illustration crop like the old
-  // source. cover + top is kept as a safety net for the couple of ids that fall back
-  // to the square avatar (no bust portrait exists for them), not because it's doing
-  // meaningful cropping on the normal case.
-  aspect-ratio: 1 / 2;
+  height: 100%;
+  // The portrait source is a fixed 180x360 half-body bust (see operatorPortraitUrl).
+  // Anchoring the crop to the bottom-right keeps the face in frame on the wider cards,
+  // and is what the reference does; the couple of ids that fall back to the square
+  // avatar crop acceptably under the same rule.
   object-fit: cover;
-  object-position: center top;
+  object-position: right bottom;
   background: var(--bg);
   display: block;
 }
 
 .op-avatar-placeholder {
-  width: 100%;
-  aspect-ratio: 1 / 2;
+  position: absolute;
+  inset: 0;
   background: var(--bg);
   display: flex;
   align-items: center;
@@ -348,50 +333,74 @@ header {
   color: var(--muted);
 }
 
-.op-info {
-  padding: 8px;
+// The gradient itself. Transparent over the top 40% of the art, ~two-thirds opaque by
+// 67%, solid at the very bottom — the text lands where the art has already faded out,
+// so it stays legible without a panel behind it.
+.op-overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: flex-end;
+  background: linear-gradient(
+    to bottom,
+    transparent 40%,
+    rgb(5 5 7 / 67%) 67%,
+    #1c1c1c 100%
+  );
+}
+
+.op-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .op-name {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 // Alters ("SilverAsh the Reignfrost") get their epithet on its own line rather than
-// packed into .op-name, where it would just get truncated on a 128px card.
+// packed into .op-name, where it would just get truncated.
 .op-epithet {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 2px;
 }
 
 // Class text and rarity share one baseline row — the class/archetype glyphs already
 // carry that information visually up in the corner badge, so the text can sit quietly
-// beside the stars instead of taking a row of its own.
+// beside the rarity instead of taking a row of its own. Both are tinted by rarity,
+// which is the only colour on the card.
 .op-meta-row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 6px;
   margin-top: 2px;
+  font-size: 14px;
 }
 
 .op-class-label {
-  font-size: 11px;
-  color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+@each $tier, $spec in $rarities {
+  .op-class-label.r#{$tier} { color: var(--r#{$tier}); }
+}
+
+.op-star { margin-left: 2px; }
 
 .op-class {
   font-size: 10px;
@@ -408,71 +417,76 @@ header {
 }
 
 .op-info .op-rarity {
-  font-size: 11px;
+  font-size: 14px;
+  letter-spacing: normal;
   flex-shrink: 0;
 }
 
 // ── Card corner badges ──
 // Class glyph large, archetype glyph smaller beside it: class is the coarse filter people
-// scan for, archetype the refinement. Sits over the art in the top-left corner rather
-// than in the info panel, which keeps the text block to name + one meta line.
+// scan for, archetype the refinement. Flush into the top-left corner over the art, the
+// way the reference tucks its branch icon there.
 .op-badges {
   position: absolute;
-  top: 6px;
-  left: 6px;
+  top: 0;
+  left: 0;
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 4px 5px;
-  border-radius: 7px;
+  gap: 4px;
+  padding: 8px 9px;
+  border-bottom-right-radius: 6px;
   // The art behind these varies wildly in brightness, so the glyphs need their own
   // backing to stay legible rather than relying on the illustration being dark.
-  background: rgb(0 0 0 / 62%);
+  background: rgb(20 20 27 / 66%);
   backdrop-filter: blur(2px);
   pointer-events: none;
+  z-index: 1;
 }
 
 .op-badge-class {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: block;
 }
 
 .op-badge-archetype {
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
   display: block;
   opacity: 0.85;
 }
 
-// ── Hover call-to-action ──
-// Hidden until hover, matching the reference: the card is already a link, so this is
-// affordance rather than new function. Skipped entirely for touch/keyboard-only input,
-// where there is no hover state to reveal it.
+// ── Rarity bar / hover call-to-action ──
+// Always present as a 4px rarity-gradient rule along the card's bottom edge, and grows
+// into the "View operator" affordance on hover — same element doing both jobs, exactly
+// as the reference does it. The card is already a link, so this is affordance, not new
+// function: on touch it simply stays a rarity bar.
 .op-cta {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 7px 8px;
-  background: var(--accent);
-  color: #10131a;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  flex: 0 0 auto;
+  height: 4px;
+  overflow: hidden;
   text-align: center;
-  transform: translateY(100%);
-  transition: transform 0.15s ease;
-  pointer-events: none;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #050507;
+  transition: height 0.1s ease-in-out;
+}
+
+@each $tier, $spec in $rarities {
+  .op-card.r#{$tier} .op-cta {
+    background: linear-gradient(to right, var(--r#{$tier}), var(--r#{$tier}-dark));
+  }
 }
 
 @media (hover: hover) {
-  .op-card:hover .op-cta { transform: translateY(0); }
+  .op-card:hover .op-cta { height: 32px; }
 }
 
 // Keyboard users get the same affordance on focus, since they never trigger :hover.
-.op-card:focus-visible .op-cta { transform: translateY(0); }
+.op-card:focus-visible .op-cta { height: 32px; }
 
 // ── States ──
 .state-msg {
@@ -495,404 +509,630 @@ header {
   animation: spin 0.7s linear infinite;
 }
 
-// ── Detail ──
+// ── Detail ──────────────────────────────────────────────────────────────────
+// A clone of Sanity Gone's operator page: art column on the left under a breadcrumb,
+// one tall data panel on the right. See src/web/views/detail.ts for the markup.
 .detail {
-  // Wider than the old single-column page: the artwork and the data panels now sit side
-  // by side, and 860px split two ways left the stats tables cramped.
-  max-width: 1240px;
+  position: relative;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
 }
 
-// Artwork left, data right — so the illustration and the stats are both on screen at
-// once instead of the art pushing everything below the fold.
+// The selected artwork, washed out almost to nothing behind the whole page and faded
+// into the background colour before it reaches the bottom — the reference's page
+// treatment, and the reason the panels can be near-flat without looking empty.
+.detail-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-position: center 35%;
+  background-size: cover;
+  opacity: 0.075;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(16 16 20 / 0) 35%, rgb(16 16 20 / 75%) 55%, var(--bg) 100%);
+  }
+}
+
 .detail-body {
-  display: grid;
-  grid-template-columns: minmax(0, 440px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  margin-top: 16px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
 }
 
-// The data column is much taller than the art, so the art rides along instead of
-// scrolling off and leaving dead space. 93px clears the sticky topbar (77px) plus gap.
+.detail-body-error { display: block; }
+
 .detail-art-col {
+  flex: 1 1 auto;
+  min-width: 0;
   position: sticky;
-  top: 93px;
+  top: 93px; // clears the sticky topbar (77px) plus the gap
 }
 
+// Fixed rather than fluid, exactly as the reference sizes it: the stat rows, the skill
+// meta row and the range grids are all laid out for this width, and letting it breathe
+// with the viewport is what made them look cramped before.
 .detail-data-col {
-  min-width: 0; // lets the stats tables shrink instead of forcing the grid wider
-}
-
-// Both columns already carry their own top spacing inside .detail-body.
-.detail-body .detail-arts,
-.detail-body .detail-header {
-  margin-top: 0;
+  flex: 0 0 590px;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .crumbs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  gap: 12px;
+  font-size: 16px;
   margin-bottom: 16px;
 
   a {
-    color: var(--muted);
+    color: var(--link);
     text-decoration: none;
 
-    &:hover { color: var(--accent); }
+    &:hover { text-decoration: underline; }
   }
 }
 
-.crumb-sep { color: var(--border); }
-.crumb-current { color: var(--text); }
+.crumb-sep { color: var(--muted); }
+.crumb-current { font-weight: 700; }
 
-.detail-header {
+// ── Splash artwork ──
+.splash {
+  position: relative;
   display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.detail-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 10px;
-  object-fit: cover;
-  background: var(--surface);
-  flex-shrink: 0;
-}
-
-.detail-info { flex: 1; min-width: 0; }
-.detail-name { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
-
-.detail-meta {
-  display: flex;
-  gap: 8px;
   align-items: center;
-  margin-bottom: 6px;
-
-  .op-class { font-size: 11px; padding: 3px 8px; }
-  .op-class-icon { width: 14px; height: 14px; }
-  .op-rarity { font-size: 13px; }
+  justify-content: center;
+  min-height: 30rem;
 }
 
-.detail-sub { font-size: 13px; color: var(--muted); }
-
-.detail-lore {
-  margin-top: 16px;
-
-  p {
-    font-size: 13px;
-    line-height: 1.6;
-    margin-bottom: 8px;
-
-    &:last-child { margin-bottom: 0; }
-  }
+.splash-img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 180px);
+  object-fit: contain;
 }
 
-// ── Artwork viewer ──
-.detail-arts {
-  margin-top: 16px;
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
+.splash-empty .splash-img {
+  width: 180px;
+  border-radius: 8px;
 }
 
-.art-rail {
+// Stacked squares pinned to the top-left corner of the art, over it rather than beside
+// it — the art is the panel here, so the rail floats on top of it.
+.splash-rail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 0 0 auto;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.art-thumb {
-  width: 56px;
+.splash-thumb {
+  width: 64px;
+  height: 64px;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--surface);
+  border: none;
+  background: var(--chip);
   cursor: pointer;
-  opacity: 0.55;
-  transition: opacity 0.15s, border-color 0.15s;
+  opacity: 0.33;
+  transition: opacity 0.15s;
 
   img {
     width: 100%;
-    aspect-ratio: 1;
-    // The source art is square with the subject up top — same crop the grid cards use.
+    height: 100%;
     object-fit: cover;
     object-position: center top;
     display: block;
   }
 
-  &:hover { opacity: 0.85; }
-
-  &.on {
-    opacity: 1;
-    border-color: var(--accent);
-  }
+  &:hover { opacity: 0.7; }
+  &.on { opacity: 1; }
 }
 
-.art-stage {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--bg);
-}
-
-.art-main {
-  display: block;
-  width: 100%;
-  // Capped against the viewport rather than a fixed px so the sticky art column can
-  // never grow taller than the screen and strand its own bottom edge.
-  max-height: min(560px, calc(100vh - 140px));
-  // contain, not cover: this is the showcase view, so the whole illustration should be
-  // visible rather than cropped to fill a box.
-  object-fit: contain;
-}
-
-.art-caption {
+.splash-caption {
   position: absolute;
   left: 0;
   bottom: 0;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 6px 12px;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  border-top-right-radius: 8px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 4px;
+  background: rgb(25 25 32 / 60%);
   max-width: 100%;
 }
 
-.art-caption-label {
-  font-size: 12px;
-  font-weight: 600;
+.splash-name { font-size: 18px; font-weight: 600; line-height: 1; }
+
+.splash-artist {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--link);
+
+  .ico { width: 16px; height: 16px; flex-shrink: 0; }
 }
 
-.art-caption-artist {
-  font-size: 11px;
-  color: var(--muted);
+// ── Data panel ──
+.op-panel {
+  background: linear-gradient(to bottom, var(--surface), var(--surface2));
+  border-radius: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+// A rarity-tinted band across the top of the panel, holding the stars. The tint is the
+// rarity colour at 8% — enough to read as "this is a 6-star page" without becoming a
+// coloured header bar.
+.op-rarity-strip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 20px;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+@each $tier, $spec in $rarities {
+  .op-rarity-strip.r#{$tier} {
+    background: color-mix(in srgb, var(--r#{$tier}) 8%, transparent);
+    color: var(--r#{$tier});
+  }
+}
+
+.op-header {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  grid-template-areas:
+    'icon name'
+    'icon classes';
+  align-items: center;
+  gap: 8px 16px;
+  padding: 16px 20px;
+  background: rgb(36 36 46 / 66%);
+}
+
+.op-header-avatar {
+  grid-area: icon;
+  width: 72px;
+  height: 72px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--border);
+}
+
+// Serif, large, and light on the alter epithet — the reference's one typographic
+// flourish, and what makes the page read as a dossier rather than a spec sheet.
+.op-header-name {
+  grid-area: name;
+  font-family: Georgia, 'Times New Roman', 'Crimson Text', serif;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.1;
+
+  .alter { color: var(--dim); font-weight: 400; }
+}
+
+.op-header-classes {
+  grid-area: classes;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  flex-wrap: wrap;
+}
+
+.hdr-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdr-icon { width: 20px; height: 20px; object-fit: contain; opacity: 0.9; }
+.hdr-spacer { flex: 1 1 auto; }
+.hdr-position { color: var(--dim); .ico { width: 18px; height: 18px; } }
+
+// The class trait is the tooltip on the branch name, as in the reference; a dashed
+// underline is the only affordance it gets.
+.hdr-branch {
+  border-bottom: 1px dashed color-mix(in srgb, var(--text) 33%, transparent);
+  cursor: help;
 }
 
 // ── Tabs ──
-.tabs {
+.op-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  margin-top: 24px;
-  border-bottom: 1px solid var(--border);
+  gap: 4px;
+  padding: 0 12px;
+  background: rgb(36 36 46 / 66%);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
 }
 
-.tab {
+.op-tab {
+  position: relative;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 17px;
   font-weight: 600;
-  letter-spacing: 0.06em;
   text-transform: uppercase;
-  padding: 8px 12px;
+  padding: 8px 8px 12px;
   cursor: pointer;
+  white-space: nowrap;
 
-  &:hover { color: var(--text); }
-  &.on { color: var(--accent); border-bottom-color: var(--accent); }
+  &:hover { color: var(--dim); }
+
+  &.on {
+    color: var(--text);
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 0;
+      border-bottom: 2px solid var(--text);
+    }
+  }
 }
 
-.tab-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  padding: 16px;
+.op-tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 21px 24px 24px;
 }
 
-// ── Panel controls (elite / level / trust / potential) ──
+// ── Panel controls ──
+// Every panel opens with its own controls above a rule — elite, level, potential and so
+// on — so switching tabs never moves the controls somewhere else on the page.
 .panel-controls {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-bottom: 14px;
-  margin-bottom: 14px;
+  gap: 12px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
 }
 
-.ctl-row {
+.panel-controls-inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ctl-primary,
+.ctl-secondary {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.ctl-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  min-width: 58px;
+.ctl-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.ctl-label-2 { min-width: 0; margin-left: 8px; }
-.ctl-value { font-size: 13px; font-weight: 700; color: var(--text); min-width: 26px; text-align: right; }
-.ctl-max { font-size: 12px; color: var(--muted); }
+.ctl-cluster-end { margin-left: auto; }
 
-// Wraps because the skill-level row is ten buttons wide (Lv1–M3), which overflows a
-// phone on one line.
-.seg {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px;
-  max-width: 100%;
+.ctl-label { color: var(--muted); font-size: 15px; }
+
+.lvl-block {
+  flex: 1 1 180px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 160px;
 }
 
-.seg-btn {
-  background: none;
-  border: none;
-  border-radius: 4px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 9px;
-  cursor: pointer;
-
-  &:hover { color: var(--text); }
-  &.on { background: var(--chip); color: var(--text); }
-}
-
-#lvl {
+// Slider first, then the value in a round outlined field you can also type into — the
+// reference's level control, and the reason the panel doesn't need a separate "max"
+// button.
+#lvl,
+#skill-lvl {
   flex: 1;
-  min-width: 120px;
-  max-width: 280px;
+  min-width: 80px;
   accent-color: var(--accent);
   cursor: pointer;
 }
 
-// ── Stat grid ──
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
-  gap: 10px;
-}
-
-.stat {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 10px;
-}
-
-.stat-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 3px;
-}
-
-.stat-value { font-size: 17px; font-weight: 700; }
-
-.label-inline { color: var(--muted); }
-
-.detail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.op-tag {
-  font-size: 11px;
-  color: var(--muted);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 2px 8px;
-}
-
-// ── Modules ──
-.mod-head {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.mod-name { font-size: 15px; font-weight: 700; }
-
-.mod-code {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  background: var(--chip);
-  border-radius: 4px;
-  padding: 2px 6px;
-}
-
-.mod-unlock { font-size: 11px; color: var(--accent); }
-
-.mod-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.mod-stat {
-  font-size: 12px;
+.num-round {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: none;
+  color: var(--text);
+  font-size: 18px;
   font-weight: 600;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 3px 8px;
+  text-align: center;
+  padding: 0;
+
+  &:focus { outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent); }
 }
 
-.mod-trait { font-size: 13px; line-height: 1.5; margin-bottom: 6px; }
+// Number inputs reserve room for spinner arrows that would eat half a three-digit level
+// or trust value; the slider beside them is the coarse control, so the arrows go.
+input[type='number'] {
+  appearance: textfield;
 
-.range-block { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
-.range-label { font-size: 11px; color: var(--muted); }
-.range-grid { display: grid; gap: 2px; }
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { appearance: none; margin: 0; }
+}
+
+.num-round-static {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.num-box {
+  width: 52px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--chip);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  text-align: center;
+
+  &:disabled { opacity: 0.4; }
+}
+
+.ctl-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  user-select: none;
+
+  input { accent-color: var(--link); width: 16px; height: 16px; cursor: pointer; }
+}
+
+.pot-select select {
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--chip);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+// ── Button groups ──
+// One outlined strip; the selected button is a solid fill (yellow for elite, blue for
+// everything else), matching the reference's two variants.
+.btn-group {
+  display: inline-flex;
+  border: 1px solid var(--chip);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.btn-group-item {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color 0.15s, color 0.15s;
+
+  .ico { width: 18px; height: 16px; display: block; }
+
+  &:disabled { cursor: not-allowed; opacity: 0.4; }
+}
+
+.btn-group-pill .btn-group-item {
+  min-width: 30px;
+
+  &:hover:not(.on, :disabled) { color: var(--link); background: color-mix(in srgb, var(--link) 10%, transparent); }
+  &.on { background: var(--link); color: #050507; }
+}
+
+.btn-group-elite .btn-group-item {
+  width: 36px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover:not(.on, :disabled) { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  &.on { background: var(--accent); color: #101014; }
+}
+
+// ── Stat list ──
+// Two columns with a hairline down the middle, label left / value right in each — the
+// reference's stat block, which reads far faster than a grid of boxed tiles.
+.stat-list {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(4, auto);
+  grid-auto-flow: column;
+  column-gap: 52px;
+  row-gap: 16px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 50%;
+    border-right: 1px solid var(--border);
+  }
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  font-size: 16px;
+
+  dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+  }
+
+  dd { font-weight: 600; }
+
+  .ico { width: 16px; height: 16px; color: var(--text); flex-shrink: 0; }
+}
+
+// ── Attack range ──
+.range-block {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.range-grid {
+  display: grid;
+  gap: 2px;
+  justify-content: center;
+  justify-self: center;
+}
 
 .range-cell {
-  width: 14px;
-  height: 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
 
-  &.range-on { background: var(--accent); border-color: var(--accent); }
-  &.range-op { background: var(--text); border-color: var(--text); }
+  &.range-op     { background: var(--text); }
+  &.range-active { border: 2px solid var(--muted); }
+  &.range-added  { border: 2px solid #49b3ff; }
+
+  // A cell the new range loses: outlined and struck through, so a range change reads as
+  // a diff rather than as two unrelated grids.
+  &.range-removed {
+    position: relative;
+    border: 2px solid #f45c5c;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 3px 1px;
+      background: #f45c5c;
+    }
+  }
 }
 
-.detail-skill {
+// ── Entries (talents, modules, RIIC, misc sections) ──
+.entry-list {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
+  flex-direction: column;
+}
 
-  &:last-child { border-bottom: none; }
+.entry {
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+
+  &:first-child { border-top: none; padding-top: 0; }
+  &:last-child { padding-bottom: 0; }
+}
+
+.entry-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+
+  .ico { width: 18px; height: 24px; color: var(--text); flex-shrink: 0; }
+}
+
+.entry-name {
+  font-family: Georgia, 'Times New Roman', 'Crimson Text', serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.entry > .entry-name { margin-bottom: 12px; }
+
+.tagline {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--chip);
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+
+.unlock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--chip) 33%, transparent);
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.empty-msg { color: var(--muted); font-size: 15px; }
+
+// ── Rich description text ──
+// The game's own emphasis, kept: buffs blue, nerfs red, reminders orange, keywords bold.
+// See descriptionToHtml in src/web/format.ts.
+.rich {
+  font-size: 16px;
+  line-height: 1.5;
+
+  .value-up      { font-weight: 700; color: #83cbff; }
+  .value-down    { font-weight: 700; color: #ff9b9b; }
+  .reminder-text { color: #ffc397; }
+  .keyword       { font-weight: 700; color: #83cbff; }
+  .potential     { font-weight: 700; color: #b1afff; }
+  .skill-tooltip { color: var(--muted); }
+}
+
+.muted-text { color: var(--dim); }
+
+// ── Skills ──
+.skill-head {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  grid-template-areas:
+    'icon name'
+    'icon type';
+  align-items: center;
+  gap: 8px 16px;
 }
 
 .skill-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: var(--bg);
-  flex-shrink: 0;
+  grid-area: icon;
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  background: var(--border);
 }
 
 .skill-icon-placeholder {
@@ -900,81 +1140,188 @@ header {
   align-items: center;
   justify-content: center;
   color: var(--muted);
-  font-size: 18px;
+  font-size: 20px;
 }
 
-.skill-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-.skill-meta { font-size: 11px; color: var(--accent); margin-bottom: 4px; }
-.skill-desc { font-size: 13px; line-height: 1.5; }
+.skill-head .entry-name { grid-area: name; }
 
-.detail-talent,
-.detail-base {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-
-  &:last-child { border-bottom: none; }
-}
-
-// A talent upgrades at successive elite/potential steps; each one gets its own row
-// rather than the view silently showing only the final version.
-.talent-step {
-  margin-top: 6px;
-  padding-left: 10px;
-  border-left: 2px solid var(--border);
-}
-
-.talent-name { font-size: 14px; font-weight: 700; }
-.base-name { font-size: 13px; font-weight: 600; }
-
-.talent-unlock,
-.base-unlock { font-size: 11px; color: var(--accent); margin: 2px 0 4px; }
-
-.talent-desc,
-.base-desc { font-size: 13px; line-height: 1.5; }
-
-.detail-pot {
+.skill-type {
+  grid-area: type;
   display: flex;
+  align-items: center;
   gap: 10px;
-  align-items: baseline;
-  padding: 5px 0;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border);
+  font-size: 16px;
 
-  &:last-child { border-bottom: none; }
+  .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); }
+  .sp-auto      { color: #a7e855; }
+  .sp-offensive { color: #ff994f; }
+  .sp-defensive { color: #fed874; }
+  .sp-passive   { color: #49b3ff; }
 }
 
-.pot-rank {
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 11px;
-  flex-shrink: 0;
-  width: 24px;
+.skill-meta {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+
+  > div {
+    flex: 1 1 120px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    + div { border-left: 1px solid var(--border); padding-left: 24px; }
+  }
+
+  dt {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 16px;
+  }
+
+  dd { margin-left: auto; font-weight: 600; font-size: 16px; white-space: nowrap; }
+
+  .ico { width: 16px; height: 16px; color: var(--text); flex-shrink: 0; }
+}
+
+// ── Modules ──
+.mod-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mod-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+  background: var(--border);
+  border-radius: 4px;
+  padding: 5px 10px;
+
+  span { color: var(--muted); }
+}
+
+// ── Misc ──
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.op-tag {
+  font-size: 14px;
+  color: var(--dim);
+  background: var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+}
+
+.pot-row {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 15px;
+}
+
+.pot-rank { color: var(--accent); font-weight: 600; }
+
+.fact-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+
+  dt { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+  dd { font-size: 16px; margin-top: 2px; }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 // ── Detail: collapse to one column ──
-// Below this the data column gets too narrow for the stats tables, so the art goes back
-// on top. It also stops being sticky — a full-width image pinned to the top of a phone
-// screen would eat most of the viewport.
-@media (max-width: 900px) {
-  .detail-body {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-  }
+// Below this the data column can no longer sit beside the art at its fixed width, so the
+// art goes back on top and stops being sticky — a full-width illustration pinned to the
+// top of a narrow screen would eat most of the viewport.
+@media (max-width: 1200px) {
+  .detail-body { flex-direction: column; }
 
   .detail-art-col {
     position: static;
-    // Keeps the illustration from dominating a stacked layout the way a full-width
-    // square would.
-    max-width: 420px;
-    margin: 0 auto;
+    width: 100%;
   }
+
+  .detail-data-col { flex: 1 1 auto; width: 100%; }
+
+  .splash { min-height: 22rem; }
+  .splash-img { max-height: 60vh; }
+}
+
+// ── Detail: phone ──
+// The reference notes 500px as the width where its own stat block gives up; ours breaks
+// at the same place, so below this the two-column tables become single-column lists
+// rather than wrapping every label onto two lines.
+@media (max-width: 560px) {
+  .detail { padding: 12px; }
+  .crumbs { font-size: 14px; margin-bottom: 12px; }
+
+  .splash { min-height: 18rem; }
+  .splash-thumb { width: 48px; height: 48px; }
+  .splash-caption { padding: 8px 10px; }
+  .splash-name { font-size: 15px; }
+
+  .op-header {
+    grid-template-columns: 56px 1fr;
+    padding: 12px 16px;
+    gap: 6px 12px;
+  }
+
+  .op-header-avatar { width: 56px; height: 56px; }
+  .op-header-name { font-size: 26px; }
+  .op-header-classes { font-size: 14px; gap: 8px; }
+  .hdr-spacer { display: none; }
+
+  .op-tab { font-size: 15px; padding: 8px 6px 10px; }
+  .op-tabpanel { padding: 16px; gap: 14px; }
+
+  .stat-list {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+    row-gap: 12px;
+
+    &::after { content: none; }
+  }
+
+  .skill-meta {
+    flex-direction: column;
+    gap: 10px;
+
+    > div + div { border-left: none; padding-left: 0; }
+  }
+
+  .range-block { grid-template-columns: 1fr; justify-items: center; gap: 12px; }
+  .pot-row { grid-template-columns: 1fr; gap: 2px; }
+  .ctl-cluster-end { margin-left: 0; }
 }
 
 // ── Narrow screens ──
 // The topbar becomes a 2x2 grid rather than relying on flex-wrap, so the break always
 // lands in the same place instead of shifting with the width of the operator count.
 @media (max-width: 640px) {
-  header {
+  .topbar header {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 10px;
@@ -1018,13 +1365,17 @@ header {
   .class-row { grid-template-columns: repeat(4, 1fr); }
 
   #grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px 12px;
     padding: 12px;
   }
 
-  .op-info { padding: 6px; }
-  .op-name { font-size: 12px; }
+  .op-card { height: 220px; }
+  .op-info { padding: 8px; }
+  .op-name { font-size: 15px; }
+  .op-epithet { font-size: 13px; }
+  .op-meta-row { font-size: 12px; }
+  .op-info .op-rarity { font-size: 12px; }
   .op-avatar-placeholder { font-size: 28px; }
 
   .detail { padding: 14px; }
