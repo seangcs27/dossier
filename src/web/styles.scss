@@ -294,7 +294,9 @@ body {
 // the art, so the card never grows a solid panel.
 .op-card {
   position: relative; // anchors .op-badges and .op-overlay
-  height: 280px;
+  // Matches the portrait source's own 180x360 exactly, so `object-fit: contain` on the
+  // art below fits edge to edge with nothing letterboxed and nothing cropped away.
+  aspect-ratio: 1 / 2;
   background: var(--border);
   border-radius: 6px;
   overflow: hidden;
@@ -312,12 +314,12 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
-  // The portrait source is a fixed 180x360 half-body bust (see operatorPortraitUrl).
-  // Anchoring the crop to the bottom-right keeps the face in frame on the wider cards,
-  // and is what the reference does; the couple of ids that fall back to the square
-  // avatar crop acceptably under the same rule.
-  object-fit: cover;
-  object-position: right bottom;
+  // contain, not cover: the portrait source is a fixed 180x360 half-body bust (see
+  // operatorPortraitUrl) and the card is 1:2, so the whole illustration is shown rather
+  // than cropped. Anchored to the top so the couple of ids that fall back to the square
+  // avatar keep the face in frame instead of centring the gap.
+  object-fit: contain;
+  object-position: top;
   background: var(--bg);
   display: block;
 }
@@ -379,8 +381,7 @@ body {
 
 // Class text and rarity share one baseline row — the class/archetype glyphs already
 // carry that information visually up in the corner badge, so the text can sit quietly
-// beside the rarity instead of taking a row of its own. Both are tinted by rarity,
-// which is the only colour on the card.
+// beside the rarity instead of taking a row of its own.
 .op-meta-row {
   display: flex;
   align-items: center;
@@ -390,17 +391,15 @@ body {
   font-size: 14px;
 }
 
+// Neutral, deliberately: rarity is the one dimension colour encodes on this card, and
+// tinting the class the same hue made a 6* card read as two red labels rather than a
+// class and a rarity. See the note at the top of _tokens.scss.
 .op-class-label {
+  color: var(--dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-@each $tier, $spec in $rarities {
-  .op-class-label.r#{$tier} { color: var(--r#{$tier}); }
-}
-
-.op-star { margin-left: 2px; }
 
 .op-class {
   font-size: 10px;
@@ -416,9 +415,12 @@ body {
   letter-spacing: -1px;
 }
 
+// Six star glyphs are a wide run — at the class label's own size they pushed "Defender"
+// into an ellipsis on a 144px card. Smaller and tighter, they still read as a count
+// while leaving the class name whole.
 .op-info .op-rarity {
-  font-size: 14px;
-  letter-spacing: normal;
+  font-size: 11px;
+  letter-spacing: -0.5px;
   flex-shrink: 0;
 }
 
@@ -1394,8 +1396,6 @@ input[type='number'] {
     gap: 10px 12px;
     padding: 12px;
   }
-
-  .op-card { height: 220px; }
 
   .op-badge-class { width: 32px; height: 32px; img { width: 20px; height: 20px; } }
   .op-badge-archetype { width: 22px; height: 22px; img { width: 14px; height: 14px; } }

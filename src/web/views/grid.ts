@@ -56,8 +56,8 @@ function buildCard(op: OperatorIndexEntry): string {
           <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
           ${epithet ? `<div class="op-epithet" title="${escHtml(op.name)}">${escHtml(epithet)}</div>` : ''}
           <div class="op-meta-row">
-            <span class="op-class-label r${n}">${label}</span>
-            <span class="op-rarity r${n}">${n}<span class="op-star">${stars.slice(0, 1)}</span></span>
+            <span class="op-class-label">${label}</span>
+            <span class="op-rarity r${n}">${stars}</span>
           </div>
         </div>
         <span class="op-cta">View operator</span>
