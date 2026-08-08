@@ -29,6 +29,18 @@ npm run build:index  # Regenerate src/shared/generated/operators.json (runs auto
 npm run clean        # Remove ./dist/
 ```
 
+**Building behind an HTTP proxy** (sandboxes, some corporate networks): `build:index` fetches
+with Node's built-in `fetch`, which — unlike `curl` and `git` — **ignores `HTTPS_PROXY`**. The
+requests bypass the proxy and come back as an opaque `wiki 403` / `tree 403` rather than a
+connection error, which reads like the upstream rejecting you. Run it as:
+
+```bash
+NODE_USE_ENV_PROXY=1 npm run build:index
+```
+
+Deliberately not baked into the npm scripts: GitHub Actions has no proxy, where the plain
+fetch is correct and the flag would only add an experimental-warning banner to every build.
+
 **Loading the extension:**
 - **Firefox**: `about:debugging` → "Load Temporary Add-on" → select `dist/ext/manifest.json`
 - **Chrome**: `chrome://extensions` → Developer mode ON → "Load unpacked" → select `dist/ext/`
