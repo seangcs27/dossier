@@ -9,7 +9,9 @@
 // and all of them come from data we don't have rather than from a design preference.
 
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
-import { operatorAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl } from '../../shared/api/hella-api';
+import {
+  operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl,
+} from '../../shared/api/hella-api';
 import type {
   AttackRange,
   Blackboard,
@@ -655,6 +657,12 @@ function headerHtml(s: DetailState): string {
 // Full-size artwork viewer: one large piece with a thumbnail rail down the left edge to
 // switch between an operator's elite arts and outfits, captioned with the illustrator —
 // the reference's splash panel, minus the outfit price tag (we have no skin cost data).
+//
+// The rail renders each outfit's 55KB square avatar, NOT its illustration. Pointing 64px
+// thumbnails at the full art meant opening SilverAsh pulled 16.4MB — four inactive skins
+// at up to 6.4MB each — before the page settled. Using avatars puts that at ~2.9MB, and
+// the thumbnails appear immediately instead of trickling in. A skin whose avatar is
+// missing falls back to its illustration rather than showing a hole.
 function splashHtml(op: Operator, artIdx: number): string {
   const arts = op.arts ?? [];
   if (!arts.length) {
@@ -669,12 +677,15 @@ function splashHtml(op: Operator, artIdx: number): string {
           ${arts.map((a, j) => `
             <button class="splash-thumb${j === i ? ' on' : ''}" data-act="art" data-value="${j}"
                     role="tab" aria-selected="${j === i}" title="${escHtml(a.label)}">
-              <img src="${a.url}" alt="${escHtml(a.label)}" loading="lazy">
+              <img src="${operatorSkinAvatarUrl(op.id, a.suffix)}" alt="${escHtml(a.label)}"
+                   loading="lazy" decoding="async"
+                   onerror="this.onerror=null;this.src='${a.url.replace(/'/g, '%27')}'">
             </button>
           `).join('')}
         </div>
       ` : ''}
-      <img class="splash-img" src="${active.url}" alt="${escHtml(active.label)}">
+      <img class="splash-img" src="${active.url}" alt="${escHtml(active.label)}"
+           fetchpriority="high" decoding="async">
       <div class="splash-caption">
         <span class="splash-name">${escHtml(active.label)}</span>
         ${active.artist ? `<span class="splash-artist">${ICON_BRUSH}${escHtml(active.artist)}</span>` : ''}

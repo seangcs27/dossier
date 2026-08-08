@@ -97,6 +97,15 @@ export function operatorPortraitUrl(id: OperatorId, suffix: '1' | '2' = '1'): st
   return `${PORTRAIT_BASE}/${id}_${suffix}.png`;
 }
 
+// The square avatar for one specific outfit, keyed by the same suffix `arts[].suffix`
+// carries ('2', 'summer#4', ...). Every skin has one, and at ~55KB it is roughly a
+// hundredth of the full illustration — which matters because the detail page's skin rail
+// renders these at 64px. Suffix '1' is the base look, whose avatar carries no suffix.
+export function operatorSkinAvatarUrl(id: OperatorId, suffix: string): string {
+  const stem = suffix === '1' ? id : `${id}_${suffix}`;
+  return `${IMAGE_BASE}/avatars/${encodeURIComponent(stem)}.png`;
+}
+
 export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }
