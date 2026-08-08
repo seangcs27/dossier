@@ -34,8 +34,8 @@ const card = (id, name, cls, label, stars, sub = null) => {
   <a class="op-card r${stars}" href="#">
     <img class="op-avatar" src="${portrait(id)}" alt="${name}" loading="lazy">
     <div class="op-badges">
-      <img class="op-badge-class" src="${classIcon(cls)}" alt="${label}">
-      ${sub ? `<img class="op-badge-archetype" src="${archetypeIcon(sub)}" alt="" onerror="this.remove()">` : ''}
+      <span class="op-badge op-badge-class" title="${label}"><img src="${classIcon(cls)}" alt="${label}"></span>
+      ${sub ? `<span class="op-badge op-badge-archetype"><img src="${archetypeIcon(sub)}" alt="" onerror="this.parentElement.remove()"></span>` : ''}
     </div>
     <div class="op-overlay">
       <div class="op-info">

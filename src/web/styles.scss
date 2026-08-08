@@ -423,37 +423,51 @@ body {
 }
 
 // ── Card corner badges ──
-// Class glyph large, archetype glyph smaller beside it: class is the coarse filter people
-// scan for, archetype the refinement. Flush into the top-left corner over the art, the
-// way the reference tucks its branch icon there.
+// Class is the coarse filter people scan for, archetype the refinement — so they get two
+// separate boxes hanging off the top edge rather than one box holding both glyphs. The
+// archetype's box is visibly smaller and sits a step lower, which makes the hierarchy
+// obvious at card size instead of leaving two similar glyphs to be told apart by size
+// alone. The class box stays flush in the corner, where the reference tucks its branch
+// icon.
 .op-badges {
   position: absolute;
   top: 0;
   left: 0;
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 9px;
-  border-bottom-right-radius: 6px;
-  // The art behind these varies wildly in brightness, so the glyphs need their own
-  // backing to stay legible rather than relying on the illustration being dark.
-  background: rgb(20 20 27 / 66%);
-  backdrop-filter: blur(2px);
+  align-items: flex-start;
+  gap: 3px;
   pointer-events: none;
   z-index: 1;
 }
 
+.op-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  // The art behind these varies wildly in brightness, so the glyphs need their own
+  // backing to stay legible rather than relying on the illustration being dark.
+  background: rgb(20 20 27 / 66%);
+  backdrop-filter: blur(2px);
+
+  img { display: block; }
+}
+
 .op-badge-class {
-  width: 22px;
-  height: 22px;
-  display: block;
+  width: 38px;
+  height: 38px;
+  border-bottom-right-radius: 6px;
+
+  img { width: 24px; height: 24px; }
 }
 
 .op-badge-archetype {
-  width: 15px;
-  height: 15px;
-  display: block;
-  opacity: 0.85;
+  width: 26px;
+  height: 26px;
+  border-radius: 0 0 5px 5px;
+  opacity: 0.9;
+
+  img { width: 16px; height: 16px; }
 }
 
 // ── Rarity bar / hover call-to-action ──
@@ -471,13 +485,15 @@ body {
   line-height: 28px;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: #050507;
   transition: height 0.1s ease-in-out;
 }
 
+// The label colour comes from the tier's own `fg` rather than a fixed near-black: 6* is
+// red, and black on red is unreadable where black on the other five is fine.
 @each $tier, $spec in $rarities {
   .op-card.r#{$tier} .op-cta {
     background: linear-gradient(to right, var(--r#{$tier}), var(--r#{$tier}-dark));
+    color: #{map.get($spec, fg)};
   }
 }
 
@@ -1371,6 +1387,10 @@ input[type='number'] {
   }
 
   .op-card { height: 220px; }
+
+  .op-badge-class { width: 32px; height: 32px; img { width: 20px; height: 20px; } }
+  .op-badge-archetype { width: 22px; height: 22px; img { width: 14px; height: 14px; } }
+
   .op-info { padding: 8px; }
   .op-name { font-size: 15px; }
   .op-epithet { font-size: 13px; }
