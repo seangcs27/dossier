@@ -25,14 +25,19 @@ $surfaces: (
 
 // Rarity tier -> star colour, plus a darker partner for the gradient the card's bottom
 // accent bar and the detail header's tint are drawn with, and the foreground to pair
-// with the colour when it's used as a filled background. Same six hues Sanity Gone uses
-// (1 white, 2 green, 3 blue, 4 purple, 5 yellow, 6 orange) — the ramp people already
-// read as rarity everywhere else in the community.
+// with the colour when it's used as a filled background.
+//
+// Tiers 1-5 are Sanity Gone's hues (white / green / blue / purple / yellow) — the ramp
+// people already read as rarity everywhere else in the community. **Tier 6 is ours**: the
+// reference puts 6* at orange, one hue step from its own 5* yellow, which makes the two
+// top tiers hard to tell apart at card size. Red separates them cleanly and is this
+// project's own long-standing 6* colour. It's the one tier where `fg` is white rather
+// than near-black, because black on red is the worst pairing in the whole ramp.
 $rarities: (
   1: (color: #e8e8f2, dark: #b8b8c0, fg: #050507),
   2: (color: #d3ff9b, dark: #a7e855, fg: #050507),
   3: (color: #83cbff, dark: #49b3ff, fg: #050507),
   4: (color: #b1afff, dark: #7f6bff, fg: #050507),
   5: (color: #ffebb8, dark: #fed874, fg: #050507),
-  6: (color: #ffc397, dark: #ff994f, fg: #050507),
+  6: (color: #ef4444, dark: #b91c1c, fg: #fff),
 );

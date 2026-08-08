@@ -43,10 +43,13 @@ function buildCard(op: OperatorIndexEntry): string {
       <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
            onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
       <div class="op-badges">
-        <img class="op-badge-class" src="${classIconUrl(cls)}" alt="${label}" title="${label}" loading="lazy">
-        <img class="op-badge-archetype" src="${archetypeIconUrl(op.subProfessionId)}"
-             alt="${escHtml(op.archetype)}" title="${escHtml(op.archetype)}" loading="lazy"
-             onerror="this.remove()">
+        <span class="op-badge op-badge-class" title="${label}">
+          <img src="${classIconUrl(cls)}" alt="${label}" loading="lazy">
+        </span>
+        <span class="op-badge op-badge-archetype" title="${escHtml(op.archetype)}">
+          <img src="${archetypeIconUrl(op.subProfessionId)}" alt="${escHtml(op.archetype)}" loading="lazy"
+               onerror="this.parentElement.remove()">
+        </span>
       </div>
       <div class="op-overlay">
         <div class="op-info">
