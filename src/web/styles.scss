@@ -352,43 +352,68 @@ body {
   );
 }
 
+// Right padding clears the rarity tab so the longest names stop before it rather than
+// running underneath.
 .op-info {
-  padding: 12px;
+  padding: 12px 40px 12px 12px;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
+// Two lines, always — clamped rather than truncated so "Violet Mizutsune Orchid" reads
+// instead of eliding at the first word, and reserved even for one-line names so the
+// block below it never shifts. Alignment across the grid is the point: the name is what
+// the eye lands on, and it should land in the same place on every card.
 .op-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap;
+  line-height: 1.18;
+  min-height: calc(2 * 1.18em);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 // Alters ("SilverAsh the Reignfrost") get their epithet on its own line rather than
-// packed into .op-name, where it would just get truncated.
+// packed into .op-name. The line is rendered even when empty, so an alter and a
+// non-alter keep the same text-block height and the same baselines.
 .op-epithet {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
+  color: var(--dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-// Class text and rarity share one baseline row — the class/archetype glyphs already
-// carry that information visually up in the corner badge, so the text can sit quietly
-// beside the rarity instead of taking a row of its own.
+// Class glyph, branch glyph and class name as one unit. They used to be split — glyphs
+// floating in the top-left corner, name down here — which read as two unrelated pieces
+// of chrome. Grouped, the row says one thing: what this operator is.
 .op-meta-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 2px;
-  font-size: 14px;
+  gap: 5px;
+  margin-top: 3px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.op-meta-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.op-meta-icon-sub {
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
 }
 
 // Neutral, deliberately: rarity is the one dimension colour encodes on this card, and
@@ -415,61 +440,31 @@ body {
   letter-spacing: -1px;
 }
 
-// Six star glyphs are a wide run — at the class label's own size they pushed "Defender"
-// into an ellipsis on a 144px card. Smaller and tighter, they still read as a count
-// while leaving the class name whole.
-.op-info .op-rarity {
-  font-size: 11px;
-  letter-spacing: -0.5px;
-  flex-shrink: 0;
-}
-
-// ── Card corner badges ──
-// Class is the coarse filter people scan for, archetype the refinement — so they get two
-// separate boxes hanging off the top edge rather than one box holding both glyphs. The
-// archetype's box is visibly smaller and sits a step lower, which makes the hierarchy
-// obvious at card size instead of leaving two similar glyphs to be told apart by size
-// alone. The class box stays flush in the corner, where the reference tucks its branch
-// icon.
-.op-badges {
+// ── Rarity tab ──
+// A bookmark tab on the card's right edge, stars stacked vertically. Two reasons it
+// beats the horizontal run it replaces: six star glyphs on one line ate the width the
+// class name needed (`Specialist` became `Spec...` on a phone), and stacking them makes
+// the tab's own HEIGHT the rarity — a 6* card is legible as rare before you read
+// anything. The file-tab shape is the project's namesake, so it earns its keep twice.
+.op-stars {
   position: absolute;
-  top: 0;
-  left: 0;
+  right: 0;
+  bottom: 12px;
   display: flex;
-  align-items: flex-start;
-  gap: 3px;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.op-badge {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  // The art behind these varies wildly in brightness, so the glyphs need their own
-  // backing to stay legible rather than relying on the illustration being dark.
-  background: rgb(20 20 27 / 66%);
+  gap: 1px;
+  padding: 7px 5px;
+  border-radius: 6px 0 0 6px;
+  background: rgb(20 20 27 / 72%);
   backdrop-filter: blur(2px);
-
-  img { display: block; }
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
 }
 
-.op-badge-class {
-  width: 38px;
-  height: 38px;
-  border-bottom-right-radius: 6px;
-
-  img { width: 24px; height: 24px; }
-}
-
-.op-badge-archetype {
-  width: 26px;
-  height: 26px;
-  border-radius: 0 0 5px 5px;
-  opacity: 0.9;
-
-  img { width: 16px; height: 16px; }
+@each $tier, $spec in $rarities {
+  .op-stars.r#{$tier} { color: var(--r#{$tier}); }
 }
 
 // ── Rarity bar / hover call-to-action ──
@@ -1397,14 +1392,13 @@ input[type='number'] {
     padding: 12px;
   }
 
-  .op-badge-class { width: 32px; height: 32px; img { width: 20px; height: 20px; } }
-  .op-badge-archetype { width: 22px; height: 22px; img { width: 14px; height: 14px; } }
-
-  .op-info { padding: 8px; }
-  .op-name { font-size: 15px; }
-  .op-epithet { font-size: 13px; }
-  .op-meta-row { font-size: 12px; }
-  .op-info .op-rarity { font-size: 12px; }
+  .op-info { padding: 9px 32px 9px 9px; }
+  .op-name { font-size: 14px; }
+  .op-epithet { font-size: 12px; }
+  .op-meta-row { font-size: 11.5px; gap: 4px; }
+  .op-meta-icon { width: 15px; height: 15px; }
+  .op-meta-icon-sub { width: 11px; height: 11px; }
+  .op-stars { font-size: 9px; padding: 6px 4px; bottom: 10px; }
   .op-avatar-placeholder { font-size: 28px; }
 
   .detail { padding: 14px; }
