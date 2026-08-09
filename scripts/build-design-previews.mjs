@@ -14,11 +14,14 @@ const outDir = path.join(root, 'design', 'components');
 
 const CDN = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
 const PORTRAIT_CDN = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
-const ACESHIP_CDN = 'https://cdn.jsdelivr.net/gh/Aceship/Arknight-Images@main';
 const avatar = id => `${CDN}/avatars/${id}.png`;
 const portrait = id => `${PORTRAIT_CDN}/${id}_1.png`;
 const classIcon = slug => `${CDN}/classes/class_${slug}.png`;
-const archetypeIcon = sub => `${ACESHIP_CDN}/ui/subclass/sub_${sub}_icon.png`;
+// Mirrors archetypeIconUrl() in src/shared/api/hella-api.ts, which returns a bundle-relative
+// `branch-icons/<sub>.png` — the app self-hosts these now, no CDN involved. Previews live in
+// design/components/, so the same file is reached by hopping back to the built bundle. `npm run
+// design` runs build:web first, so dist/web/branch-icons/ is guaranteed present.
+const archetypeIcon = sub => `../../dist/web/branch-icons/${encodeURIComponent(sub)}.png`;
 
 // Mirrors src/web/format.ts's splitAlterName — alters are always "Base Name the Epithet".
 const splitAlterName = name => {
@@ -33,17 +36,16 @@ const card = (id, name, cls, label, stars, sub = null) => {
   return `
   <a class="op-card r${stars}" href="#">
     <img class="op-avatar" src="${portrait(id)}" alt="${name}" loading="lazy">
-    <div class="op-badges">
-      <span class="op-badge op-badge-class" title="${label}"><img src="${classIcon(cls)}" alt="${label}"></span>
-      ${sub ? `<span class="op-badge op-badge-archetype"><img src="${archetypeIcon(sub)}" alt="" onerror="this.parentElement.remove()"></span>` : ''}
-    </div>
     <div class="op-overlay">
+      <div class="op-stars r${stars}" aria-hidden="true">${'<span>★</span>'.repeat(stars)}</div>
+      <span class="visually-hidden">Rarity: ${stars}</span>
       <div class="op-info">
         <div class="op-name" title="${name}">${base}</div>
-        ${epithet ? `<div class="op-epithet" title="${name}">${epithet}</div>` : ''}
+        <div class="op-epithet"${epithet ? ` title="${name}"` : ''}>${epithet ?? '&nbsp;'}</div>
         <div class="op-meta-row">
-          <span class="op-class-label r${stars}">${label}</span>
-          <span class="op-rarity r${stars}">${stars}<span class="op-star">★</span></span>
+          <img class="op-meta-icon" src="${classIcon(cls)}" alt="" title="${label}">
+          ${sub ? `<img class="op-meta-icon op-meta-icon-sub" src="${archetypeIcon(sub)}" alt="" onerror="this.remove()">` : ''}
+          <span class="op-class-label">${label}</span>
         </div>
       </div>
       <span class="op-cta">View operator</span>

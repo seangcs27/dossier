@@ -17,6 +17,12 @@ Thumbs.db
 *.suo
 *.user
 
+# Claude Code local settings
+.claude/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Logs
 *.log
 npm-debug.log*

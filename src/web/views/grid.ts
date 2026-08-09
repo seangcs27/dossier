@@ -42,22 +42,17 @@ function buildCard(op: OperatorIndexEntry): string {
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
            onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
-      <div class="op-badges">
-        <span class="op-badge op-badge-class" title="${label}">
-          <img src="${classIconUrl(cls)}" alt="${label}" loading="lazy">
-        </span>
-        <span class="op-badge op-badge-archetype" title="${escHtml(op.archetype)}">
-          <img src="${archetypeIconUrl(op.subProfessionId)}" alt="${escHtml(op.archetype)}" loading="lazy"
-               onerror="this.parentElement.remove()">
-        </span>
-      </div>
       <div class="op-overlay">
+        <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
+        <span class="visually-hidden">Rarity: ${n}</span>
         <div class="op-info">
           <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
-          ${epithet ? `<div class="op-epithet" title="${escHtml(op.name)}">${escHtml(epithet)}</div>` : ''}
+          <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
           <div class="op-meta-row">
-            <span class="op-class-label">${label}</span>
-            <span class="op-rarity r${n}">${stars}</span>
+            <img class="op-meta-icon" src="${classIconUrl(cls)}" alt="" title="${label}" loading="lazy">
+            <img class="op-meta-icon op-meta-icon-sub" src="${archetypeIconUrl(op.subProfessionId)}"
+                 alt="" title="${escHtml(op.archetype)}" loading="lazy" onerror="this.remove()">
+            <span class="op-class-label" title="${label} · ${escHtml(op.archetype)}">${label}</span>
           </div>
         </div>
         <span class="op-cta">View operator</span>

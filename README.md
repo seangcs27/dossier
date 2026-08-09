@@ -1,4 +1,4 @@
-# Dossier — Arknights Operator Lookup
+# Dossier — Arknights
 
 An Arknights operator reference with two faces, built from one shared codebase:
 
@@ -18,14 +18,21 @@ from a same-origin file (~100 ms) instead of a third-party API round trip. See
 - **Operator grid** — full-art portrait cards with class/archetype badges, live search by
   name/appellation, and a filter popover (class, branch, rarity, recruitment tags). Sorted
   newest-first by default, with release/name sort options.
-- **Rich detail dossier** at `#/op/<id>` — deep-linkable, shareable URLs:
-  - Header: avatar, rarity, class/branch, archetype, position, faction
-  - Lore, tags, trait, and obtain approach
-  - **Artwork viewer** — every elite art and alternate outfit, with illustrator credit
-  - Per-elite-phase stats table (HP / ATK / DEF / RES / DP cost / block / redeploy / attack interval)
-  - Attack-range grids per elite phase
-  - Skills with icons, SP cost/recovery, and per-level descriptions
-  - Talents, modules, potentials, and RIIC base skills
+- **Operator dossier** at `#/op/<id>` — deep-linkable, shareable URLs. A two-column page
+  modelled on [Sanity Gone](https://sanitygone.help)'s operator view:
+  - **Artwork column** (left, sticky) — every elite art and alternate outfit, switched from a
+    thumbnail rail over the art, captioned with the illustrator
+  - **Data panel** (right, fixed 590px) — rarity strip, avatar, name + alter epithet, and a
+    class / branch / melee-ranged row; six tabs: Attributes, Talents, Skills, Modules, RIIC, Misc
+  - **Attributes** recomputes live from its own controls — elite button group, level slider with
+    a typed input, module checkbox + stage pills, trust checkbox with a 0–200 input, and a
+    potential dropdown — rather than showing a static per-phase table
+  - **Skills** — skill pills, a rank slider running 1–7 through M1–M3, SP cost / initial SP /
+    duration, and the skill's range overlaid on the operator's (added cells blue, removed red)
+  - Descriptions render the game's own markup with `{placeholders}` interpolated from each
+    entry's blackboard, so buff values read as the game states them instead of being stripped
+    to plain text
+  - Elite and potential are shared state across tabs, so switching tabs keeps your build
 - **Hash routing** — back/forward navigation and refresh-safe deep links, no server config needed
 
 ### Browser extension
