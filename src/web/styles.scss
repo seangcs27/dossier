@@ -298,7 +298,31 @@ body {
   // art below fits edge to edge with nothing letterboxed and nothing cropped away.
   aspect-ratio: 1 / 2;
   background: var(--border);
-  border-radius: 6px;
+
+  // Cut corners instead of rounded ones — the acrylic-bag-tag / tactical-ID silhouette.
+  // clip-path rather than border-radius, since a radius can't chamfer.
+  //
+  // Bottom-right is deliberately left square: .op-stars is pinned flush into that corner
+  // with its own fold, and a diagonal there would slice the bottom star off. The two big
+  // cuts therefore run down the left edge with a nick on the top-right, which keeps the
+  // rarity corner as the one intentional right-hand feature.
+  //
+  // Raising --cut much past ~16px starts eating into .op-info's 12px text padding at the
+  // bottom-left.
+  --cut: 14px;
+  --nick: 5px;
+  clip-path: polygon(
+    var(--cut) 0,
+    calc(100% - var(--nick)) 0,
+    100% var(--nick),
+    100% 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut)),
+    0 var(--cut)
+  );
+
+  // clip-path already bounds the box; overflow:hidden stays so the CTA bar still slides
+  // within the card, and border-radius is gone because it would fight the polygon.
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.1s;
