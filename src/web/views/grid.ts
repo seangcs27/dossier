@@ -40,23 +40,25 @@ function buildCard(op: OperatorIndexEntry): string {
   // a transparent-to-black gradient over its lower half, so nothing reads as a grey shelf.
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
-      <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
-           onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
-      <div class="op-overlay">
-        <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
-        <span class="visually-hidden">Rarity: ${n}</span>
-        <div class="op-info">
-          <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
-          <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
-          <div class="op-meta-row">
-            <img class="op-meta-icon" src="${classIconUrl(cls)}" alt="" title="${label}" loading="lazy">
-            <img class="op-meta-icon op-meta-icon-sub" src="${archetypeIconUrl(op.subProfessionId)}"
-                 alt="" title="${escHtml(op.archetype)}" loading="lazy" onerror="this.remove()">
-            <span class="op-class-label" title="${label} · ${escHtml(op.archetype)}">${label}</span>
+      <div class="op-card-body">
+        <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
+             onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
+        <div class="op-overlay">
+          <span class="visually-hidden">Rarity: ${n}</span>
+          <div class="op-info">
+            <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
+            <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
+            <div class="op-meta-row">
+              <img class="op-meta-icon" src="${classIconUrl(cls)}" alt="" title="${label}" loading="lazy">
+              <img class="op-meta-icon op-meta-icon-sub" src="${archetypeIconUrl(op.subProfessionId)}"
+                   alt="" title="${escHtml(op.archetype)}" loading="lazy" onerror="this.remove()">
+              <span class="op-class-label" title="${label} · ${escHtml(op.archetype)}">${label}</span>
+            </div>
           </div>
+          <span class="op-cta">View operator</span>
         </div>
-        <span class="op-cta">View operator</span>
       </div>
+      <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
     </a>
   `;
 }

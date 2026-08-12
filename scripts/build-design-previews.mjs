@@ -35,9 +35,9 @@ const card = (id, name, cls, label, stars, sub = null) => {
   const { base, epithet } = splitAlterName(name);
   return `
   <a class="op-card r${stars}" href="#">
+    <div class="op-card-body">
     <img class="op-avatar" src="${portrait(id)}" alt="${name}" loading="lazy">
     <div class="op-overlay">
-      <div class="op-stars r${stars}" aria-hidden="true">${'<span>★</span>'.repeat(stars)}</div>
       <span class="visually-hidden">Rarity: ${stars}</span>
       <div class="op-info">
         <div class="op-name" title="${name}">${base}</div>
@@ -50,6 +50,8 @@ const card = (id, name, cls, label, stars, sub = null) => {
       </div>
       <span class="op-cta">View operator</span>
     </div>
+    </div>
+    <div class="op-stars r${stars}" aria-hidden="true">${'<span>★</span>'.repeat(stars)}</div>
   </a>`;
 };
 

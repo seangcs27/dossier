@@ -292,23 +292,41 @@ body {
 // illustration edge to edge, with a single absolutely-positioned overlay layer on top
 // carrying the badges, the gradient, the text and the rarity bar. Nothing sits *below*
 // the art, so the card never grows a solid panel.
+// The card box itself is deliberately NOT clipped — the rarity tab breaks out past the
+// bottom-right corner, and a clip-path (or overflow:hidden) on this element would cut it
+// off. A child cannot escape an ancestor's clip-path, so the clipping lives on
+// .op-card-body instead and .op-stars sits outside it as a sibling.
 .op-card {
-  position: relative; // anchors .op-badges and .op-overlay
+  position: relative; // anchors .op-card-body and the protruding .op-stars
   // Matches the portrait source's own 180x360 exactly, so `object-fit: contain` on the
   // art below fits edge to edge with nothing letterboxed and nothing cropped away.
   aspect-ratio: 1 / 2;
-  background: var(--border);
+  cursor: pointer;
+  transition: transform 0.1s;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 
-  // Cut corners instead of rounded ones — the acrylic-bag-tag / tactical-ID silhouette.
-  // clip-path rather than border-radius, since a radius can't chamfer.
-  //
-  // Bottom-right is deliberately left square: .op-stars is pinned flush into that corner
-  // with its own fold, and a diagonal there would slice the bottom star off. The two big
-  // cuts therefore run down the left edge with a nick on the top-right, which keeps the
-  // rarity corner as the one intentional right-hand feature.
-  //
-  // Raising --cut much past ~16px starts eating into .op-info's 12px text padding at the
-  // bottom-left.
+  &:hover {
+    transform: translateY(-2px);
+    // Lifts the protruding tab over neighbouring cards while it's raised.
+    z-index: 1;
+  }
+}
+
+// Everything that stays inside the silhouette. Cut corners instead of rounded ones — the
+// acrylic-bag-tag / tactical-ID read. clip-path rather than border-radius, since a radius
+// can't chamfer.
+//
+// Bottom-right is left square because the rarity tab hangs off that corner; a diagonal
+// there would cut the very thing meant to stick out. The two deep cuts run down the left
+// edge with a nick on the top-right instead.
+//
+// Raising --cut much past ~16px starts eating into .op-info's 12px text padding.
+.op-card-body {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
   --cut: 14px;
   --nick: 5px;
   clip-path: polygon(
@@ -320,17 +338,7 @@ body {
     0 calc(100% - var(--cut)),
     0 var(--cut)
   );
-
-  // clip-path already bounds the box; overflow:hidden stays so the CTA bar still slides
-  // within the card, and border-radius is gone because it would fight the polygon.
   overflow: hidden;
-  cursor: pointer;
-  transition: transform 0.1s;
-  display: block;
-  text-decoration: none;
-  color: inherit;
-
-  &:hover { transform: translateY(-2px); }
 }
 
 .op-avatar {
@@ -470,23 +478,34 @@ body {
 // pushed "Specialist" into an ellipsis on a phone), and because the stack grows with
 // rarity the corner's own HEIGHT is the rarity — a 6* card reads as rare before you read
 // a word. The dog-eared shape is the project's namesake, so it earns its keep twice.
+// A side box appended beside the card rather than a panel inside it: most of its width
+// hangs past the right edge, tucked a few px under the card so it still reads as
+// attached. --jut is the overhang; the 24px column gutter bounds it, so much past 16px
+// starts crowding the neighbouring card.
 .op-stars {
+  --jut: 16px;
   position: absolute;
-  right: 0;
-  bottom: 4px; // sits on the rarity bar rather than floating above it
+  right: calc(var(--jut) * -1);
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   padding: 11px 6px 7px;
-  background: rgb(20 20 27 / 78%);
-  backdrop-filter: blur(2px);
+  // Opaque and a step lighter than the page, not the translucent wash it used when it
+  // sat over the art: the overhanging part now has the page behind it, and the old
+  // rgb(20 20 27 / 92%) was near-identical to --bg, so the tab vanished outside the card
+  // and left the stars looking like they were floating loose.
+  background: #1d1d25;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
   font-size: 14px;
   line-height: 1;
   pointer-events: none;
-  // The fold: the top edge rises left-to-right, so the panel reads as a corner turned up
-  // off the card rather than a rectangle parked on it.
-  clip-path: polygon(0 13px, 100% 0, 100% 100%, 0 100%);
+  // The fold, mirrored now that the box sits outside the card: the top edge falls
+  // left-to-right so the cut corner faces away from the card, not back into it. Done as
+  // a flipped polygon rather than transform: scaleX(-1), because the hover rule below
+  // already puts a translateY on this element and a second transform would replace it.
+  clip-path: polygon(0 0, 100% 13px, 100% 100%, 0 100%);
   transition: transform 0.1s ease-in-out;
 }
 
