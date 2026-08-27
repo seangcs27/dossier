@@ -302,16 +302,14 @@ body {
   // art below fits edge to edge with nothing letterboxed and nothing cropped away.
   aspect-ratio: 1 / 2;
   cursor: pointer;
-  transition: transform 0.1s;
   display: block;
   text-decoration: none;
   color: inherit;
 
-  &:hover {
-    transform: translateY(-2px);
-    // Lifts the protruding tab over neighbouring cards while it's raised.
-    z-index: 1;
-  }
+  // Only the stacking order changes here — the lift lives on .op-card-body below, so the
+  // rarity tab stays planted against the grid while the card rises off it. Raising the
+  // whole <a> moved the tab too, which made it read as painted on rather than attached.
+  &:hover { z-index: 1; }
 }
 
 // Everything that stays inside the silhouette. Cut corners instead of rounded ones — the
@@ -339,6 +337,9 @@ body {
     0 var(--cut)
   );
   overflow: hidden;
+  transition: transform 0.1s;
+
+  .op-card:hover & { transform: translateY(-2px); }
 }
 
 .op-avatar {
@@ -387,7 +388,11 @@ body {
 // Right padding clears the rarity tab so the longest names stop before it rather than
 // running underneath.
 .op-info {
-  padding: 12px 40px 12px 12px;
+  // Right padding clears only the sliver of tab that overlaps the body (its width minus
+  // --jut, ~9px), not the whole tab. It was 40px, left over from when the tab sat inside
+  // the card — which quietly cost every card ~30px of text width and put "Specialist"
+  // and "Supporter" back into an ellipsis on narrower columns.
+  padding: 12px 18px 12px 12px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -502,20 +507,10 @@ body {
   line-height: 1;
   pointer-events: none;
   // The fold, mirrored now that the box sits outside the card: the top edge falls
-  // left-to-right so the cut corner faces away from the card, not back into it. Done as
-  // a flipped polygon rather than transform: scaleX(-1), because the hover rule below
-  // already puts a translateY on this element and a second transform would replace it.
+  // left-to-right so the cut corner faces away from the card, not back into it. A flipped
+  // polygon rather than transform: scaleX(-1), which keeps `transform` free.
   clip-path: polygon(0 0, 100% 13px, 100% 100%, 0 100%);
-  transition: transform 0.1s ease-in-out;
 }
-
-// The bar underneath grows to 32px on hover to become the CTA; the corner rides up with
-// it instead of being swallowed.
-@media (hover: hover) {
-  .op-card:hover .op-stars { transform: translateY(-28px); }
-}
-
-.op-card:focus-visible .op-stars { transform: translateY(-28px); }
 
 @each $tier, $spec in $rarities {
   .op-stars.r#{$tier} { color: var(--r#{$tier}); }
