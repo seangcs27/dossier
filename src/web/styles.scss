@@ -292,10 +292,10 @@ body {
 // illustration edge to edge, with a single absolutely-positioned overlay layer on top
 // carrying the badges, the gradient, the text and the rarity bar. Nothing sits *below*
 // the art, so the card never grows a solid panel.
-// The card box itself is deliberately NOT clipped — the rarity tab breaks out past the
-// bottom-right corner, and a clip-path (or overflow:hidden) on this element would cut it
-// off. A child cannot escape an ancestor's clip-path, so the clipping lives on
-// .op-card-body instead and .op-stars sits outside it as a sibling.
+// The card box itself is deliberately NOT clipped — the rarity tab sits entirely outside
+// the right edge, and an overflow:hidden on this element would cut it off. The art's own
+// clipping lives on .op-card-body instead, with .op-stars as a sibling rather than a
+// child so it escapes it.
 .op-card {
   position: relative; // anchors .op-card-body and the protruding .op-stars
   // Matches the portrait source's own 180x360 exactly, so `object-fit: contain` on the
@@ -306,40 +306,26 @@ body {
   text-decoration: none;
   color: inherit;
 
-  // Only the stacking order changes here — the lift lives on .op-card-body below, so the
-  // rarity tab stays planted against the grid while the card rises off it. Raising the
-  // whole <a> moved the tab too, which made it read as painted on rather than attached.
-  &:hover { z-index: 1; }
+  transition: transform 0.1s;
+
+  // Card and rarity tab lift together, as one object. The tab is attached to the card,
+  // not to the grid, so it travels with it.
+  &:hover {
+    transform: translateY(-2px);
+    // Lifts the protruding tab over neighbouring cards while it's raised.
+    z-index: 1;
+  }
 }
 
-// Everything that stays inside the silhouette. Cut corners instead of rounded ones — the
-// acrylic-bag-tag / tactical-ID read. clip-path rather than border-radius, since a radius
-// can't chamfer.
-//
-// Bottom-right is left square because the rarity tab hangs off that corner; a diagonal
-// there would cut the very thing meant to stick out. The two deep cuts run down the left
-// edge with a nick on the top-right instead.
-//
-// Raising --cut much past ~16px starts eating into .op-info's 12px text padding.
+// Everything that stays inside the card's own bounds. A plain rectangle: the art, the
+// gradient and the text are the whole silhouette, with nothing chamfering the frame.
+// `overflow: hidden` keeps the portrait inside the box; it doesn't clip .op-stars,
+// which is a sibling, not a child.
 .op-card-body {
   position: absolute;
   inset: 0;
   background: var(--border);
-  --cut: 14px;
-  --nick: 5px;
-  clip-path: polygon(
-    var(--cut) 0,
-    calc(100% - var(--nick)) 0,
-    100% var(--nick),
-    100% 100%,
-    var(--cut) 100%,
-    0 calc(100% - var(--cut)),
-    0 var(--cut)
-  );
   overflow: hidden;
-  transition: transform 0.1s;
-
-  .op-card:hover & { transform: translateY(-2px); }
 }
 
 .op-avatar {
@@ -388,11 +374,11 @@ body {
 // Right padding clears the rarity tab so the longest names stop before it rather than
 // running underneath.
 .op-info {
-  // Right padding clears only the sliver of tab that overlaps the body (its width minus
-  // --jut, ~9px), not the whole tab. It was 40px, left over from when the tab sat inside
-  // the card — which quietly cost every card ~30px of text width and put "Specialist"
-  // and "Supporter" back into an ellipsis on narrower columns.
-  padding: var(--sp-12) 18px var(--sp-12) var(--sp-12);
+  // A 40px right inset. The tab sits fully outside the card now, so this isn't clearing
+  // it — it's holding the text block off the right edge so the name and class label stop
+  // short of it rather than running the full width. Costs roughly 30px of label width,
+  // which is enough to elide the longer class names on narrow columns.
+  padding: var(--sp-12) 40px var(--sp-12) var(--sp-12);
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -483,14 +469,16 @@ body {
 // pushed "Specialist" into an ellipsis on a phone), and because the stack grows with
 // rarity the corner's own HEIGHT is the rarity — a 6* card reads as rare before you read
 // a word. The dog-eared shape is the project's namesake, so it earns its keep twice.
-// A side box appended beside the card rather than a panel inside it: most of its width
-// hangs past the right edge, tucked a few px under the card so it still reads as
-// attached. --jut is the overhang; the 24px column gutter bounds it, so much past 16px
-// starts crowding the neighbouring card.
+// A side box appended beside the card rather than a panel inside it: it starts at the
+// card's right edge and extends outward, abutting rather than overlapping. Its whole
+// width eats into the 24px column gutter, so widening the padding here crowds the
+// neighbouring card.
 .op-stars {
-  --jut: 16px;
   position: absolute;
-  right: calc(var(--jut) * -1);
+  // Flush against the card's right edge — the tab's left edge starts exactly where the
+  // card ends, so it abuts rather than overlapping. The whole box sits outside the card,
+  // which is why .op-card must stay unclipped.
+  left: 100%;
   bottom: 0;
   display: flex;
   flex-direction: column;
