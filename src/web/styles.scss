@@ -280,9 +280,13 @@ body {
 }
 
 // ── Grid ──
+// The 148px floor is set by the class label, not by the art. .op-info holds a 40px right
+// inset, and below a 148px column what's left is too narrow for "Vanguard" and
+// "Supporter" — measured across all 427 cards, 0 elide at 148px, 47 at 146px, 89 at 144px.
+// Lower this and the labels start truncating; the inset would have to come down with it.
 #grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: var(--sp-16) var(--sp-24);
   padding: var(--sp-20);
 }
