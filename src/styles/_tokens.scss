@@ -41,3 +41,62 @@ $rarities: (
   5: (color: #ffebb8, dark: #fed874, fg: #050507),
   6: (color: #ef4444, dark: #b91c1c, fg: #fff),
 );
+
+// Type scale, shared by both targets. Eleven steps, read off what the stylesheets
+// already render rather than invented — a scale that doesn't match the shipped pixels
+// isn't a scale, it's a second opinion.
+//
+// Five declarations sit off-scale (17px twice, 11.5px, 26px, 28px) and stay literal
+// rather than being rounded onto a step. Snapping them would have moved real pixels —
+// .op-tab's 17px is a base rule, not a media-query override, so the detail tab bar
+// would have shrunk on every viewport. Same rule as the spacing scale below: an
+// exception reads as an exception when it's written as one.
+//
+// Deliberately NOT the Claude Design system's scale. That one predates the current UI:
+// it carries a 9px step and a `--text-sm-2` no rule uses, and has neither the 16px nor
+// the 36px this stylesheet leans on hardest. Same instinct as build-design-previews.mjs
+// inlining the real compiled CSS — the code is the source of truth, not a copy of it.
+$font-sizes: (
+  '2xs':  10px, // star glyphs, card meta row
+  'xs':   11px, // chips, filter labels, result count
+  'sm':   12px, // card CTA, rarity strip
+  'md':   13px, // sort control, alter epithet
+  'base': 14px, // search, card name, running text
+  'lg':   15px, // button groups, number boxes, tabs
+  'xl':   16px, // breadcrumbs, stat rows, skill meta
+  '2xl':  18px, // splash name, rounded number input
+  '3xl':  20px, // panel entry names
+  '4xl':  24px, // wordmark, detail name on narrow screens
+  '5xl':  36px, // detail header name, avatar placeholder glyph
+);
+
+// Spacing scale, shared by both targets. Nine steps on a 4px rhythm with 6px, 10px and
+// 2px kept because the dense controls genuinely use them — 124 of the ~156 gap/padding/
+// margin values in the SPA already land on one of these exactly, so adopting the scale
+// moved no pixels.
+//
+// Steps are named for their value rather than an ordinal (--sp-8, not --space-4). An
+// ordinal name makes every read a lookup, and the scale is short and concrete enough
+// that the number IS the meaning. The Claude Design system numbers them ordinally; that
+// scale also carries a 14px step and no 24px, so it wasn't a match to adopt wholesale.
+//
+// The ~32 remaining values are deliberately NOT snapped onto the scale. Several are
+// hand-tuned against a shape rather than a rhythm — .op-stars' `11px 6px 7px` is set
+// against the 13px clip-path fold, and rounding it would break the optical alignment
+// that padding exists to hold. Off-scale values stay literal so they read as exceptions
+// instead of hiding inside a scale that pretends to cover them.
+$spacing: (2px, 4px, 6px, 8px, 10px, 12px, 16px, 20px, 24px);
+
+// Corner radii. The one scale the Claude Design system got right and still matches the
+// shipped code exactly, so the names are borrowed from it rather than reinvented: tiny
+// chips and tags at 3-4px, inputs and buttons at 6px, cards and tab panels at 8px, the
+// detail avatar at 10px, filter chips fully pilled. A chip's radius never matches a
+// card's — that difference is what keeps the two readable as different kinds of surface.
+$radii: (
+  'xs':   3px,
+  'sm':   4px,
+  'md':   6px,
+  'lg':   8px,
+  'xl':   10px,
+  'pill': 999px,
+);

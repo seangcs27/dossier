@@ -1,7 +1,9 @@
 // Reset, custom properties, and the operator colour treatment — everything both targets
-// render identically. Sizing is NOT here: the popup is a fixed 380px panel and the SPA
+// render identically. The type scale is here too: text sizes are a shared system even
+// though layout isn't. Layout is NOT here: the popup is a fixed 380px panel and the SPA
 // is a full page, so each keeps its own layout rules.
 @use 'sass:map';
+@use 'sass:math';
 @use 'tokens' as *;
 
 :root {
@@ -11,6 +13,15 @@
   @each $tier, $spec in $rarities {
     --r#{$tier}: #{map.get($spec, color)};
     --r#{$tier}-dark: #{map.get($spec, dark)};
+  }
+  @each $step, $size in $font-sizes {
+    --fs-#{$step}: #{$size};
+  }
+  @each $size in $spacing {
+    --sp-#{math.div($size, 1px)}: #{$size};
+  }
+  @each $step, $radius in $radii {
+    --radius-#{$step}: #{$radius};
   }
 }
 
