@@ -96,8 +96,9 @@ src/
       index.ts      ← re-export barrel
 
   styles/           ← SCSS shared by both targets
-    _tokens.scss    ← palette maps: surfaces, rarities
-    _base.scss      ← :root custom properties, reset, rarity colour modifiers, spin
+    _tokens.scss    ← palette maps + type / spacing / radius scales
+    _base.scss      ← :root custom properties (colour + scale tokens), reset, rarity
+                      colour modifiers, spin
 
   extension/        ← MV3 browser extension (popup only)
     popup/
@@ -142,10 +143,17 @@ side effect (`import './styles.scss'`), which `MiniCssExtractPlugin` pulls out i
 `.css` file that the HTML shell `<link>`s — no inline `<style>` blocks, no runtime style
 injection.
 
-`src/styles/` holds what both targets render identically: the palette (as Sass maps), the
-`:root` custom properties generated from those maps, the reset, the rarity colour
-modifiers, and the spinner keyframe. Changing a rarity colour means editing **one map** in
-`_tokens.scss`.
+`src/styles/` holds what both targets render identically: the palette and the type /
+spacing / radius scales (as Sass maps), the `:root` custom properties generated from them,
+the reset, the rarity colour modifiers, and the spinner keyframe. Changing a rarity colour
+means editing **one map** in `_tokens.scss`.
+
+The scales emit `--fs-*` (11 steps, 10→36px), `--sp-*` (9 steps, named by value — `--sp-8`
+is 8px), and `--radius-*` (6 steps). They were read off the shipped stylesheet rather than
+imposed on it, so adopting them moved no pixels. **Off-scale values stay literal on
+purpose** — `.op-stars`' `11px 6px 7px` is tuned against its 13px clip-path fold, not to a
+rhythm — and an exception written as an exception is the point. `src/web/styles.scss` is
+fully on the scales; `src/extension/popup/popup.scss` is not yet.
 
 **Colour encodes rarity only.** Class is deliberately neutral — eight saturated hues on
 every card made the grid read as noise, and neither reference site colour-codes class.
@@ -158,14 +166,23 @@ backgrounds).
 **Operator card structure** (`.op-card`, web):
 - Aspect-ratio 1/2, no solid panel. `.op-avatar` is the **portrait** (`yuanyan3060`, a
   180×360 bust crop), falling back `_1` → `_2` → square avatar → `?` placeholder.
-- `.op-card-body` carries the cut-corner `clip-path` (`--cut: 14px`) and the hover lift
-  (`translateY(-2px)`). The lift lives here, not on the `<a>`, so the rarity tab stays put.
+- `.op-card-body` is a plain rectangle — `overflow: hidden`, no corner treatment. The
+  hover lift (`translateY(-2px)`) sits on the `<a>`, so card and rarity tab travel
+  together as one object.
 - `.op-overlay` paints a transparent → black gradient over the lower art and holds name,
   alter epithet, class glyph + branch glyph + class label, and `.op-cta` (a 4px bar that
   grows to 32px on hover to become the "View operator" CTA).
 - `.op-stars` is a **sibling** of `.op-card-body`, not a child — a folded-corner tab
-  appended beside the card's bottom-right, overhanging by `--jut: 16px`. Its height *is*
-  the rarity. `.op-card` itself must stay unclipped or the tab gets cut off.
+  at `left: 100%`, abutting the card's right edge with no overlap and extending into the
+  24px column gutter. Its height *is* the rarity. `.op-card` itself must stay unclipped
+  or the tab gets cut off.
+- `.op-info` holds a **40px** right inset, which is composition rather than clearance
+  (the tab no longer overlaps). It couples the card to `#grid`'s **148px** column floor:
+  below a 148px column the class label elides, so the two numbers move together.
+
+The card follows the "Web SPA Recreation Complete" Claude Design canvas rather than the
+older `Dossier Design System` project, which predates the current UI. Neither is
+authoritative on its own — the shipped CSS is.
 
 Sizing deliberately stays per-target: the popup is a fixed 380px panel and the SPA is a
 full page. `src/web/styles.scss` and `src/extension/popup/popup.scss` each own their layout.
