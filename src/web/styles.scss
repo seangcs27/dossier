@@ -371,7 +371,7 @@ body {
     to bottom,
     transparent 40%,
     rgb(5 5 7 / 67%) 67%,
-    #1c1c1c 100%
+    #242430 100%
   );
 }
 
@@ -493,7 +493,7 @@ body {
   // sat over the art: the overhanging part now has the page behind it, and the old
   // rgb(20 20 27 / 92%) was near-identical to --bg, so the tab vanished outside the card
   // and left the stars looking like they were floating loose.
-  background: #1d1d25;
+  background: #24242f;
   box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
   font-size: var(--fs-base);
   line-height: 1;

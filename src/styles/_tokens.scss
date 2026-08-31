@@ -7,15 +7,22 @@
 // read as noise, and neither reference site (Sanity Gone, AN-EN-Tags) colour-codes
 // class either.
 
-// Surfaces follow Sanity Gone's neutral ramp (their `--color-neutral-*` scale), so the
-// detail page — which is a deliberate clone of theirs — reads at the right contrast
-// without a second palette fighting the first.
+// Surfaces started as Sanity Gone's neutral ramp (their `--color-neutral-*` scale), which
+// is why the detail page — a deliberate clone of theirs — reads at the right contrast
+// without a second palette fighting the first. The steps are still theirs; the floor is
+// not, having been lifted so the page sits lighter than their near-black.
+//
+// The whole ramp moves together, not just `bg`. Lifting the page alone would have put it
+// above `surface`, which is what the topbar and every panel sit on — the ladder would
+// invert and panels would read as holes cut into the page rather than raised off it.
+// Each step keeps roughly its old distance from its neighbour, shifted about five points
+// lighter, so contrast relationships hold and only the overall floor rises.
 $surfaces: (
-  bg:       #101014, // neutral-900 — page
-  surface:  #14141b, // neutral-800 — panel top
-  surface2: #191920, // neutral-700 — panel bottom (panels are a vertical gradient)
-  border:   #24242e, // neutral-600 — dividers, inset boxes
-  chip:     #363643, // neutral-500 — control fills, class badges
+  bg:       #15151b, // page — was #101014
+  surface:  #191921, // panel top
+  surface2: #1e1e26, // panel bottom (panels are a vertical gradient)
+  border:   #292934, // dividers, inset boxes
+  chip:     #3b3b49, // control fills, class badges
   text:     #e8e8f2, // neutral-50
   muted:    #87879b, // neutral-200
   dim:      #b8b8c0, // neutral-100 — secondary body text
