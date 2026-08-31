@@ -286,8 +286,13 @@ body {
 // widest label at 58px, therefore needs 162px — measured across all 427 cards, 0 elide at
 // 160px and 47 at 158px.
 //
-// The serial is comfortable by comparison: the longest, `4055_bgsnow` at 71px, only wants
-// 135px. Both insets and this floor move together — drop either inset and the floor can come
+// The branch line under it is allowed to ellipsize and does not set the floor. The widest,
+// "Mech-accord Caster" at 113px, would want 177px — a chunkier card than the grid is worth
+// for a line of micro-print that carries its full text in `title`. 17 of 427 truncate at
+// 160px, 7 at 168px, 0 at 176px. The class label is the one that must never elide, because
+// it's the primary label rather than a footnote.
+//
+// Both insets and this floor move together — drop either inset and the floor can come
 // down with it.
 #grid {
   display: grid;
@@ -440,10 +445,16 @@ body {
   min-width: 0;
 }
 
-// Two lines, always — clamped rather than truncated so "Violet Mizutsune Orchid" reads
-// instead of eliding at the first word, and reserved even for one-line names so the
-// block below it never shifts. Alignment across the grid is the point: the name is what
-// the eye lands on, and it should land in the same place on every card.
+// Two lines reserved, three allowed. The reserve is what keeps the block below from
+// shifting between a one-line and a two-line name — alignment across the grid is the
+// point, since the name is what the eye lands on.
+//
+// Growing to a third line costs that alignment nothing: .op-overlay is anchored with
+// `justify-content: flex-end`, so a taller name extends upward and the class row and CTA
+// stay put. Exactly one operator of 427 needs it — "Violet Mizutsune Orchid", which at
+// 16px in a 96px column cannot fit two lines at any font size worth reading (the second
+// line alone wants ~133px), so a clamp was the only thing standing between it and its
+// own name.
 .op-name {
   font-size: var(--fs-xl);
   font-weight: 600;
@@ -451,8 +462,8 @@ body {
   min-height: calc(2 * 1.18em);
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
   overflow: hidden;
   overflow-wrap: anywhere;
 }
@@ -559,7 +570,7 @@ body {
   align-items: center;
   gap: var(--sp-2);
   // Top padding carries the fold, so it leads the other three.
-  padding: 16px var(--sp-6) 7px;
+  padding: 20px var(--sp-6) 7px;
   // Opaque and a step lighter than the page, not the translucent wash it used when it
   // sat over the art: the overhanging part now has the page behind it, and the old
   // rgb(20 20 27 / 92%) was near-identical to --bg, so the tab vanished outside the card
@@ -576,9 +587,13 @@ body {
   //
   // No left border — the card's own right rim is already there, and a second line on top
   // of it would read as a seam splitting one plate into two.
+  // 27px is past what the tab can actually show: the box is ~25px wide, and a radius whose
+  // horizontal component exceeds its side gets scaled down to fit, so this renders as a
+  // full-width diagonal. Asking for 27 rather than 25 means the fold stays maxed out if
+  // the tab ever gets narrower — the star glyph's width is what sets it.
   border: 1px solid var(--edge);
   border-left: 0;
-  border-radius: 0 20px 0 0;
+  border-radius: 0 27px 0 0;
   corner-shape: bevel;
 }
 
@@ -591,7 +606,9 @@ body {
   .op-stars {
     border: 0;
     border-radius: 0;
-    clip-path: polygon(0 0, 100% 20px, 100% 100%, 0 100%);
+    // clip-path has no clamping of its own, so this is the 27px above resolved to what the
+    // bevel actually renders as: a diagonal across the tab's full width.
+    clip-path: polygon(0 0, 100% 25px, 100% 100%, 0 100%);
     box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
   }
 }

@@ -41,8 +41,12 @@ function buildCard(op: OperatorIndexEntry): string {
   //
   // .op-serial and .op-edge come from Arknights' own SP Key Tag merch, which the card's
   // proportions already match almost exactly (the acrylic plate is 4.9x9.9cm; this card is
-  // 1:2). The tags carry a micro serial line under the operator name and the issuing body
-  // repeated up the plate's left edge — here that's the char id and the project name.
+  // 1:2). The tags carry a micro line under the operator name and the issuing body
+  // repeated up the plate's left edge.
+  //
+  // The micro line is the branch ("Primal Protector"), which the card otherwise only
+  // exposes as a tooltip on the class glyph — the char id that sat here first looked the
+  // part but told you nothing you'd want to know. The id stays as the line's `title`.
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <div class="op-card-body">
@@ -59,7 +63,7 @@ function buildCard(op: OperatorIndexEntry): string {
                    alt="" title="${escHtml(op.archetype)}" loading="lazy" onerror="this.remove()">
               <span class="op-class-label" title="${label} · ${escHtml(op.archetype)}">${label}</span>
             </div>
-            <div class="op-serial" title="${escHtml(op.id)}">${escHtml(op.id.replace(/^char_/, ''))}</div>
+            <div class="op-serial" title="${escHtml(op.archetype)} · ${escHtml(op.id)}">${escHtml(op.archetype)}</div>
           </div>
           <span class="op-cta">View operator</span>
         </div>
