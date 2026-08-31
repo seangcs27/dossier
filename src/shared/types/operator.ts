@@ -254,6 +254,11 @@ export interface OperatorSlim {
 }
 
 export interface OperatorIndexEntry extends OperatorSlim {
+  // Home nation's display name ('Kjerag', 'Columbia', 'Lungmen'). '' where the payload
+  // states none — 403 of 427 have one, and the rest genuinely have no stated origin
+  // rather than a missing lookup. Lives only in the full payload upstream, so
+  // build-operator-index.mjs harvests it while writing the detail files.
+  nation: string;
   // CN release date, 'YYYY-MM-DD'. null for operators with no dateable event (some
   // Integrated Strategies exclusives, a few event operators the wiki never dated).
   // '9999-12-31' is a sentinel for CN-supplement operators — known to be newer than

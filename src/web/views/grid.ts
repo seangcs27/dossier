@@ -35,6 +35,18 @@ function buildCard(op: OperatorIndexEntry): string {
   const portrait1 = operatorPortraitUrl(op.id, '1');
   const fallbacks = [operatorPortraitUrl(op.id, '2'), operatorAvatarUrl(op.id)].join('|');
 
+  // The edge strip runs the operator's home nation, repeated down the plate. Falling back
+  // to the project name keeps it from reading as a broken element on the ~24 operators
+  // with no stated origin — the strip is a texture that happens to carry a word.
+  //
+  // The repeat count is derived rather than fixed, so density stays even: a flat 4 left
+  // "Yan" as mostly empty strip while overflowing "Rim Billiton". ~55 characters is what
+  // fills the card's height at 8px with the strip's tracking; the strip crops what's left
+  // over, which is what the real tags do at their ends anyway.
+  const edgeWord = op.nation || 'Dossier';
+  const edgeText = Array(Math.max(2, Math.round(55 / (edgeWord.length + 3))))
+    .fill(edgeWord).join(' · ');
+
   // The text block is an overlay on the art, not a panel beneath it — Sanity Gone's
   // treatment: the card is one uninterrupted illustration and the name/class/rarity ride
   // a transparent-to-black gradient over its lower half, so nothing reads as a grey shelf.
@@ -67,7 +79,7 @@ function buildCard(op: OperatorIndexEntry): string {
           </div>
           <span class="op-cta">View operator</span>
         </div>
-        <div class="op-edge" aria-hidden="true">Dossier · Dossier · Dossier · Dossier</div>
+        <div class="op-edge" aria-hidden="true">${escHtml(edgeText)}</div>
       </div>
       <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
     </a>

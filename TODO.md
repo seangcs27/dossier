@@ -26,6 +26,34 @@ Known specifics to fold in:
 - Desktop layout has only ever been verified by DOM measurement, never eyeballed at full
   width (the dev preview pane was stuck narrow). Worth a real look before refactoring.
 
+### Nation and group on the detail page, with their logos
+The grid card now carries the operator's home nation up its left edge (`.op-edge`, from
+`nation` in the generated index). The **detail page shows neither nation nor group**, which
+is the bigger gap — that page is where you'd actually go looking for "where is SilverAsh
+from".
+
+Everything needed already exists; this is assembly, not investigation:
+
+- **Nation** is in the baked payload at `factions[0].nationPower.powerName` (`Kjerag`), and
+  is already surfaced in `operators.json` as `nation`. 403/427 operators have one, across
+  19 nations.
+- **Group** is right beside it at `factions[0].groupPower.powerName` — `Karlan Trade CO.,
+  LTD` for SilverAsh — and is **not** extracted anywhere yet. `teamPower` is a third tier,
+  usually null.
+- **Logos** are on the Arknight-Images CDN at `factions/logo_<id>.png` — 47 of them, keyed
+  by the same slugs the payload uses for both tiers (`logo_kjerag.png`, `logo_karlan.png`).
+  A new `factionLogoUrl()` in `hella-api.ts` alongside `classIconUrl` is the natural home.
+
+Two things to check before wiring it up:
+
+- **The slug isn't always the filename.** `Ægir` is `logo_egir.png`, so at least one id
+  needs transliterating. Diff the 47 filenames against the distinct `nationId`/`groupId`
+  values and see how many others don't match; the ones that don't need hiding on error the
+  way the branch icons already do.
+- **Where it goes.** Misc is the obvious tab, but nation is identity rather than trivia —
+  the class/branch row in the panel header may be the better home, which is a layout
+  question rather than a data one.
+
 ### Outfit / skin coverage in the detail view
 The artwork viewer lists each outfit and labels it with the skin's own name, but that's
 all the skin data currently surfaced. `skins[].displaySkin` also carries the outfit's

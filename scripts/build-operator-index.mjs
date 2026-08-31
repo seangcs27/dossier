@@ -658,6 +658,9 @@ async function buildOperatorDetails(regular, cnSupplement) {
   await mkdir(detailOutDir, { recursive: true });
 
   let written = 0;
+  // Nation is only in the full payload, never in the slim `?include=` query the index is
+  // built from, so it's harvested here rather than costing a second pass over 427 ids.
+  const nations = new Map();
   const all = [...regular, ...cnSupplement];
   await mapConcurrent(all, 12, async entry => {
     const cn = cnById.get(entry.id);
@@ -677,13 +680,21 @@ async function buildOperatorDetails(regular, cnSupplement) {
       const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
       const finalOp = { ...base, arts };
 
+      // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
+      // slug and only a fallback, title-cased, for a payload whose factions array is empty
+      // but whose nationId isn't. 403 of 427 operators have one — Rhodes Island's own
+      // recruits mostly, plus a long tail with no stated origin at all.
+      const nation = finalOp.factions?.[0]?.nationPower?.powerName
+        ?? (base.data?.nationId ? base.data.nationId[0].toUpperCase() + base.data.nationId.slice(1) : '');
+      if (nation) nations.set(entry.id, nation);
+
       await writeFile(path.join(detailOutDir, `${entry.id}.json`), JSON.stringify(finalOp));
       written++;
     } catch (e) {
       console.warn(`operator detail skipped for ${entry.id}: ${e.message}`);
     }
   });
-  return written;
+  return { written, nations };
 }
 
 const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
@@ -715,7 +726,7 @@ function releaseDateFor(name) {
 const obtainable = envelopes.filter(e => !e.value.data.isNotObtainable);
 const excluded = envelopes.length - obtainable.length;
 
-const detailsWritten = await buildOperatorDetails(
+const { written: detailsWritten, nations } = await buildOperatorDetails(
   obtainable.map(e => ({ id: e.canon, appellation: e.value.data.appellation })),
   cnSupplement,
 );
@@ -736,6 +747,9 @@ const entries = obtainable.map(e => ({
   // plus a few event operators whose debut event has no dated row on the wiki.
   releaseDate: releaseDateFor(e.value.data.name),
   releaseOrder: releaseOrders.get(e.canon) ?? null,
+  // Display name of the operator's home nation ("Kjerag"), '' where the payload states
+  // none. Harvested from the full payloads in buildOperatorDetails above.
+  nation: nations.get(e.canon) ?? '',
 }));
 
 // CN-only entries have no `archetype` field to draw on (that comes from HellaAPI), but
@@ -755,6 +769,7 @@ for (const c of cnSupplement) {
     tags: c.tags,
     releaseDate: RECENT_UNDATED,
     releaseOrder: releaseOrders.get(c.id) ?? null,
+    nation: nations.get(c.id) ?? '',
   });
 }
 
