@@ -198,7 +198,12 @@ export function mountGrid(container: HTMLElement): void {
   renderMore();
   render(container);
 
-  const refresh = () => { syncChips(); renderMore(); render(container); };
+  // Two levels of refresh. `refresh` rebuilds the grid too and is for anything that
+  // changes which operators match; `refreshChrome` leaves it alone. Opening the popover
+  // used to call the full one, which re-serialised all 427 cards into innerHTML and threw
+  // away every <img> in them — the whole grid visibly reloaded just to show a panel.
+  const refreshChrome = () => { syncChips(); renderMore(); };
+  const refresh = () => { refreshChrome(); render(container); };
 
   search.oninput = () => { state.query = search.value; render(container); };
   sort.onchange  = () => { state.sort = sort.value as SortKey; render(container); };
@@ -207,7 +212,7 @@ export function mountGrid(container: HTMLElement): void {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle');
     if (!el) return;
     state.moreOpen = !state.moreOpen;
-    refresh();
+    refreshChrome();
   };
 
   const panel = document.getElementById('more-filters')!;

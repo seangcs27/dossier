@@ -287,8 +287,8 @@ body {
 // 160px and 47 at 158px.
 //
 // The serial is comfortable by comparison: the longest, `4055_bgsnow` at 71px, only wants
-// 135px. Both insets and this floor move together — drop either inset and the floor can
-// come down with it.
+// 135px. Both insets and this floor move together — drop either inset and the floor can come
+// down with it.
 #grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -353,6 +353,13 @@ body {
   width: 15px;
   background: rgb(0 0 0 / 38%);
   border-right: 1px solid rgb(255 255 255 / 9%);
+  // Bottom-to-top. `vertical-rl` + a 180deg rotation is the portable way to get it, but
+  // the rotation is why the letters visibly nudge when the card lifts on hover: grid
+  // columns are 1fr, so cards sit at fractional x positions, and text inside a rotated
+  // box re-rasterises at a different subpixel offset the moment the parent's transform
+  // changes. `sideways-lr` produces the same reading direction with no transform at all,
+  // so there is nothing to re-rasterise. Chrome and Firefox have it; Safari does not, and
+  // falls back to the rotation below — nudge included, which beats sideways text.
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   display: flex;
@@ -365,6 +372,13 @@ body {
   white-space: nowrap;
   overflow: hidden;
   pointer-events: none;
+}
+
+@supports (writing-mode: sideways-lr) {
+  .op-edge {
+    writing-mode: sideways-lr;
+    transform: none;
+  }
 }
 
 .op-avatar {
@@ -544,7 +558,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: var(--sp-2);
-  // Top padding carries the 20px fold, so it leads the other three.
+  // Top padding carries the fold, so it leads the other three.
   padding: 16px var(--sp-6) 7px;
   // Opaque and a step lighter than the page, not the translucent wash it used when it
   // sat over the art: the overhanging part now has the page behind it, and the old
