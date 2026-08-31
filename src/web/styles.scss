@@ -280,13 +280,18 @@ body {
 }
 
 // ── Grid ──
-// The 148px floor is set by the class label, not by the art. .op-info holds a 40px right
-// inset, and below a 148px column what's left is too narrow for "Vanguard" and
-// "Supporter" — measured across all 427 cards, 0 elide at 148px, 47 at 146px, 89 at 144px.
-// Lower this and the labels start truncating; the inset would have to come down with it.
+// The 160px floor is set by the class label, not by the art. .op-info is inset 22px left
+// (clearing .op-edge) and 40px right, which with the card's own 1px rim leaves 64px of
+// chrome; the meta row's two glyphs and their gaps take another 40px. "Supporter", the
+// widest label at 58px, therefore needs 162px — measured across all 427 cards, 0 elide at
+// 160px and 47 at 158px.
+//
+// The serial is comfortable by comparison: the longest, `4055_bgsnow` at 71px, only wants
+// 135px. Both insets and this floor move together — drop either inset and the floor can
+// come down with it.
 #grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--sp-16) var(--sp-24);
   padding: var(--sp-20);
 }
@@ -336,6 +341,31 @@ body {
   overflow: hidden;
 }
 
+// The issuing body repeated up the plate's left edge, bottom to top, exactly where the
+// tags run "RHODES ISLAND". Sits on its own wash so it stays legible over any artwork,
+// and it's aria-hidden — it's texture, not content, and a screen reader reading "Dossier"
+// four times per card would be actively worse than silence.
+.op-edge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 15px;
+  background: rgb(0 0 0 / 38%);
+  border-right: 1px solid rgb(255 255 255 / 9%);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgb(232 232 242 / 50%);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+}
 
 .op-avatar {
   position: absolute;
@@ -387,7 +417,10 @@ body {
   // it — it's holding the text block off the right edge so the name and class label stop
   // short of it rather than running the full width. Costs roughly 30px of label width,
   // which is enough to elide the longer class names on narrow columns.
-  padding: var(--sp-12) 40px var(--sp-12) var(--sp-12);
+  //
+  // The 22px on the left clears .op-edge's 15px strip. Both insets bill to the same label
+  // budget, which is why #grid's column floor had to rise again when the strip landed.
+  padding: var(--sp-12) 40px var(--sp-12) 22px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -458,6 +491,23 @@ body {
   text-overflow: ellipsis;
 }
 
+// The tags print a serial under the operator name — "PERFORMER / ARKNIGHTS · B001" on the
+// 2024 set. The char id is this project's equivalent and is already the card's identity
+// everywhere else (the route, the baked payload's filename), so it isn't decoration.
+// Off-scale at 9px: the smallest step is 10px, and this has to read as print rather than
+// as a label competing with the class row above it.
+.op-serial {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .op-class {
   font-size: var(--fs-2xs);

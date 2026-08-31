@@ -38,6 +38,11 @@ function buildCard(op: OperatorIndexEntry): string {
   // The text block is an overlay on the art, not a panel beneath it — Sanity Gone's
   // treatment: the card is one uninterrupted illustration and the name/class/rarity ride
   // a transparent-to-black gradient over its lower half, so nothing reads as a grey shelf.
+  //
+  // .op-serial and .op-edge come from Arknights' own SP Key Tag merch, which the card's
+  // proportions already match almost exactly (the acrylic plate is 4.9x9.9cm; this card is
+  // 1:2). The tags carry a micro serial line under the operator name and the issuing body
+  // repeated up the plate's left edge — here that's the char id and the project name.
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <div class="op-card-body">
@@ -54,9 +59,11 @@ function buildCard(op: OperatorIndexEntry): string {
                    alt="" title="${escHtml(op.archetype)}" loading="lazy" onerror="this.remove()">
               <span class="op-class-label" title="${label} · ${escHtml(op.archetype)}">${label}</span>
             </div>
+            <div class="op-serial" title="${escHtml(op.id)}">${escHtml(op.id.replace(/^char_/, ''))}</div>
           </div>
           <span class="op-cta">View operator</span>
         </div>
+        <div class="op-edge" aria-hidden="true">Dossier · Dossier · Dossier · Dossier</div>
       </div>
       <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
     </a>
