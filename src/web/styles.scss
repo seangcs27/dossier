@@ -325,12 +325,17 @@ body {
 // gradient and the text are the whole silhouette, with nothing chamfering the frame.
 // `overflow: hidden` keeps the portrait inside the box; it doesn't clip .op-stars,
 // which is a sibling, not a child.
+// The acrylic plate. The rim is what the real key tag reads as before anything printed on
+// it does — a bright edge catching light around a dark card — so it's --edge rather than
+// --border, which would disappear against the art.
 .op-card-body {
   position: absolute;
   inset: 0;
   background: var(--border);
+  border: 1px solid var(--edge);
   overflow: hidden;
 }
+
 
 .op-avatar {
   position: absolute;
@@ -453,6 +458,7 @@ body {
   text-overflow: ellipsis;
 }
 
+
 .op-class {
   font-size: var(--fs-2xs);
   font-weight: 600;
@@ -488,20 +494,42 @@ body {
   flex-direction: column;
   align-items: center;
   gap: var(--sp-2);
-  padding: 11px var(--sp-6) 7px;
+  // Top padding carries the 20px fold, so it leads the other three.
+  padding: 16px var(--sp-6) 7px;
   // Opaque and a step lighter than the page, not the translucent wash it used when it
   // sat over the art: the overhanging part now has the page behind it, and the old
   // rgb(20 20 27 / 92%) was near-identical to --bg, so the tab vanished outside the card
   // and left the stars looking like they were floating loose.
   background: #24242f;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
   font-size: var(--fs-base);
   line-height: 1;
   pointer-events: none;
-  // The fold, mirrored now that the box sits outside the card: the top edge falls
-  // left-to-right so the cut corner faces away from the card, not back into it. A flipped
-  // polygon rather than transform: scaleX(-1), which keeps `transform` free.
-  clip-path: polygon(0 0, 100% 13px, 100% 100%, 0 100%);
+
+  // The fold, as a bevelled corner rather than a clip. This is the whole reason for
+  // corner-shape: `clip-path` clips an element's border along with its fill, so the tab
+  // could have the diagonal or the rim but never both. border-radius describes the corner
+  // and corner-shape squares it off into a chamfer, and the border follows it natively.
+  //
+  // No left border — the card's own right rim is already there, and a second line on top
+  // of it would read as a seam splitting one plate into two.
+  border: 1px solid var(--edge);
+  border-left: 0;
+  border-radius: 0 20px 0 0;
+  corner-shape: bevel;
+}
+
+// Chromium 139+ only, with no Firefox or Safari timeline as of mid-2026 — and this project
+// ships a Firefox extension. Everywhere else, keep the diagonal and lose the tab's rim:
+// the fold is the shape the card is named for, while the rim is a finish. A rounded corner
+// is what `border-radius` alone would give, and a bevel turning into a curve reads as a
+// mistake in a way that a missing hairline does not.
+@supports not (corner-shape: bevel) {
+  .op-stars {
+    border: 0;
+    border-radius: 0;
+    clip-path: polygon(0 0, 100% 20px, 100% 100%, 0 100%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
+  }
 }
 
 @each $tier, $spec in $rarities {

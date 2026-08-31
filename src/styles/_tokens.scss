@@ -23,6 +23,7 @@ $surfaces: (
   surface2: #1e1e26, // panel bottom (panels are a vertical gradient)
   border:   #292934, // dividers, inset boxes
   chip:     #3b3b49, // control fills, class badges
+  edge:     #8a8aa6, // the card's acrylic rim — brighter than `border` on purpose
   text:     #e8e8f2, // neutral-50
   muted:    #87879b, // neutral-200
   dim:      #b8b8c0, // neutral-100 — secondary body text
