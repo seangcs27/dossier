@@ -26,6 +26,26 @@ Known specifics to fold in:
 - Desktop layout has only ever been verified by DOM measurement, never eyeballed at full
   width (the dev preview pane was stuck narrow). Worth a real look before refactoring.
 
+### Filter popover needs a rework
+Everything filterable lives behind one "Filters" button, and the panel it opens is four
+stacked groups (class glyphs, branch chips, rarity chips, tag chips + any/all) with a
+Clear button. It works, but it's the least considered surface on the page:
+
+- **Class and rarity used to be one click and are now two.** Already noted under the
+  UI/UX refactor entry below; a hybrid — class and rarity inline in the topbar, branch and
+  tags in the popover — was the sketch, never built.
+- **The tag list is unbounded.** Every recruitment tag renders as a chip, so the panel is
+  mostly tags by area, and they're the least-used dimension.
+- **Branch is single-select while everything else is multi.** Inconsistent, and there's
+  no visible reason for the asymmetry beyond how it was built.
+- **No indication of what a filter would yield.** Selecting a class then a branch can
+  produce zero results with no warning until the grid empties.
+- **The panel re-renders wholesale on every click** (`renderMore()` rebuilds its
+  `innerHTML`), so chip focus is lost after each toggle — keyboard use is unpleasant.
+
+Not blocked on anything; it needs a design pass rather than investigation. Worth doing
+alongside the UI/UX refactor below rather than separately, since both touch the topbar.
+
 ### Nation and group on the detail page, with their logos
 The grid card now carries the operator's home nation up its left edge (`.op-edge`, from
 `nation` in the generated index). The **detail page shows neither nation nor group**, which
