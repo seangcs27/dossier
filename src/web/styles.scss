@@ -286,11 +286,12 @@ body {
 // widest label at 58px, therefore needs 162px — measured across all 427 cards, 0 elide at
 // 160px and 47 at 158px.
 //
-// The branch line under it is allowed to ellipsize and does not set the floor. The widest,
-// "Mech-accord Caster" at 113px, would want 177px — a chunkier card than the grid is worth
-// for a line of micro-print that carries its full text in `title`. 17 of 427 truncate at
-// 160px, 7 at 168px, 0 at 176px. The class label is the one that must never elide, because
-// it's the primary label rather than a footnote.
+// The branch line under it is allowed to ellipsize and does not set the floor. Tightening
+// its tracking to 0.04em took the widest, "Mech-accord Caster", from 113px to 103px, which
+// leaves one branch of 72 over the 96px slot here — 7 cards of 427, down from 17. Clearing
+// it outright would mean a 168px column, which is a chunkier card than the grid is worth
+// for a line of micro-print that carries its full text in `title`. The class label is the
+// one that must never elide, because it's the primary label rather than a footnote.
 //
 // Both insets and this floor move together — drop either inset and the floor can come
 // down with it.
@@ -523,7 +524,12 @@ body {
 // as a label competing with the class row above it.
 .op-serial {
   font-size: 9px;
-  letter-spacing: 0.1em;
+  // 0.04em, not the 0.1em the uppercase micro-labels elsewhere use. Three branch names
+  // of 72 overran the 96px slot at the wider tracking — "Mech-accord Caster" by 17px,
+  // "Multi-target Medic" by 9, "Incantation Medic" by 6 — and tightening buys back about
+  // 11px across a name that long, which is cheaper than widening every card in the grid
+  // to fit three of them.
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
   margin-top: 5px;
@@ -603,13 +609,35 @@ body {
 // is what `border-radius` alone would give, and a bevel turning into a curve reads as a
 // mistake in a way that a missing hairline does not.
 @supports not (corner-shape: bevel) {
+  // Firefox and Safari get the same shape and the same rim, drawn a different way. A
+  // border can't be used here — clip-path clips an element's border along with its fill,
+  // which is what corner-shape exists to avoid — and box-shadow is painted outside the
+  // clip region and vanishes entirely.
+  //
+  // So the tab is drawn twice. The element itself is filled with the rim colour and
+  // clipped to the silhouette; ::before repeats the clip one pixel inside it and fills
+  // that with the plate colour. What's left showing between the two is the rim, and it
+  // follows the diagonal because both shapes do.
   .op-stars {
     border: 0;
     border-radius: 0;
+    background: var(--edge);
     // clip-path has no clamping of its own, so this is the 27px above resolved to what the
     // bevel actually renders as: a diagonal across the tab's full width.
     clip-path: polygon(0 0, 100% 25px, 100% 100%, 0 100%);
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 9%);
+
+    // Inset on three sides only. The left edge abuts the card, whose own rim is already
+    // drawn there, and a second line on top of it would read as a seam.
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 1px 1px 1px 0;
+      background: #24242f;
+      clip-path: polygon(0 0, 100% 25px, 100% 100%, 0 100%);
+    }
+
+    // ::before is positioned and the stars are not, so without this it paints over them.
+    span { position: relative; }
   }
 }
 
