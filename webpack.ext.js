@@ -27,6 +27,11 @@ module.exports = {
         { from: 'icons/icon-48.png',    to: 'icons/icon-48.png' },
         { from: 'icons/icon-96.png',    to: 'icons/icon-96.png' },
         { from: 'src/shared/generated/operator-details', to: 'operator-details' },
+        // archetypeIconUrl() returns a bundle-relative `branch-icons/<sub>.png`, so the
+        // popup needs its own copy — without it every branch glyph 404s and removes
+        // itself, which is silent rather than broken and stayed unnoticed until the card
+        // started showing the glyph. ~58KB for all 71.
+        { from: 'src/shared/generated/branch-icons', to: 'branch-icons' },
       ],
     }),
   ],
