@@ -321,15 +321,13 @@ body {
   text-decoration: none;
   color: inherit;
 
-  transition: transform 0.1s;
-
-  // Card and rarity tab lift together, as one object. The tab is attached to the card,
-  // not to the grid, so it travels with it.
-  &:hover {
-    transform: translateY(-2px);
-    // Lifts the protruding tab over neighbouring cards while it's raised.
-    z-index: 1;
-  }
+  // No lift on hover. The card stays put and the CTA bar growing out of its bottom edge
+  // is the whole hover affordance — a 2px rise on top of that read as a twitch rather
+  // than as feedback, on a grid where hundreds of cards are one pointer-sweep apart.
+  //
+  // z-index still moves, because the rarity tab overhangs into the column gutter and
+  // would otherwise sit under the next card in DOM order.
+  &:hover { z-index: 1; }
 }
 
 // Everything that stays inside the card's own bounds. A plain rectangle: the art, the
