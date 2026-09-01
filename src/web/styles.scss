@@ -563,71 +563,46 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-2);
-  // Top padding carries the fold, so it leads the other three.
-  padding: 20px var(--sp-6) 7px;
-  // Opaque and a step lighter than the page, not the translucent wash it used when it
-  // sat over the art: the overhanging part now has the page behind it, and the old
-  // rgb(20 20 27 / 92%) was near-identical to --bg, so the tab vanished outside the card
-  // and left the stars looking like they were floating loose.
-  background: #24242f;
+  // No gap: the stars stack as one solid column, which is what makes the tab's height
+  // read as the rarity rather than as a list of six things.
+  gap: 0;
+  // Top padding carries the fold and the sides are down to 2px, which is what narrows the
+  // tab enough for both bevels to read as cuts rather than as the whole shape.
+  padding: 24px 2px 8px;
   font-size: var(--fs-base);
   line-height: 1;
   pointer-events: none;
 
-  // The fold, as a bevelled corner rather than a clip. This is the whole reason for
-  // corner-shape: `clip-path` clips an element's border along with its fill, so the tab
-  // could have the diagonal or the rim but never both. border-radius describes the corner
-  // and corner-shape squares it off into a chamfer, and the border follows it natively.
+  // The silhouette. Not a pair of corner bevels — the top edge falls from 10px on the left
+  // to 20px on the right, a slope between two heights rather than a corner being cut, and
+  // `corner-shape` can only describe corners. So this is clip-path on every browser, which
+  // also collapses the Chromium path and its fallback into one.
   //
-  // No left border — the card's own right rim is already there, and a second line on top
-  // of it would read as a seam splitting one plate into two.
-  // 27px is past what the tab can actually show: the box is ~25px wide, and a radius whose
-  // horizontal component exceeds its side gets scaled down to fit, so this renders as a
-  // full-width diagonal. Asking for 27 rather than 25 means the fold stays maxed out if
-  // the tab ever gets narrower — the star glyph's width is what sets it.
-  border: 1px solid var(--edge);
-  border-left: 0;
-  border-radius: 0 27px 0 0;
-  corner-shape: bevel;
-}
+  // The bottom cut is a percentage rather than a fixed offset, so it deepens with the tab:
+  // ~2.7px on a 1-star tab, ~7px on a 6-star one, keeping the taper proportional to a box
+  // whose height IS the rarity.
+  --tab-clip: polygon(0px 12px, 100% 24px, 100% 94%, 8px 100%, 0px 100%);
+  clip-path: var(--tab-clip);
 
-// Chromium 139+ only, with no Firefox or Safari timeline as of mid-2026 — and this project
-// ships a Firefox extension. Everywhere else, keep the diagonal and lose the tab's rim:
-// the fold is the shape the card is named for, while the rim is a finish. A rounded corner
-// is what `border-radius` alone would give, and a bevel turning into a curve reads as a
-// mistake in a way that a missing hairline does not.
-@supports not (corner-shape: bevel) {
-  // Firefox and Safari get the same shape and the same rim, drawn a different way. A
-  // border can't be used here — clip-path clips an element's border along with its fill,
-  // which is what corner-shape exists to avoid — and box-shadow is painted outside the
-  // clip region and vanishes entirely.
+  // clip-path cuts a border along with the fill, so the rim can't be one. The tab is drawn
+  // twice instead: this element filled with the rim colour and clipped, and ::before
+  // repeating the clip a pixel inside it filled with the plate colour. What shows between
+  // them is the rim, following every edge because both shapes do.
   //
-  // So the tab is drawn twice. The element itself is filled with the rim colour and
-  // clipped to the silhouette; ::before repeats the clip one pixel inside it and fills
-  // that with the plate colour. What's left showing between the two is the rim, and it
-  // follows the diagonal because both shapes do.
-  .op-stars {
-    border: 0;
-    border-radius: 0;
-    background: var(--edge);
-    // clip-path has no clamping of its own, so this is the 27px above resolved to what the
-    // bevel actually renders as: a diagonal across the tab's full width.
-    clip-path: polygon(0 0, 100% 25px, 100% 100%, 0 100%);
+  // Inset on three sides only — the left edge abuts the card, whose own rim is already
+  // there, and a second line on top of it would read as a seam.
+  background: var(--edge);
 
-    // Inset on three sides only. The left edge abuts the card, whose own rim is already
-    // drawn there, and a second line on top of it would read as a seam.
-    &::before {
-      content: '';
-      position: absolute;
-      inset: 1px 1px 1px 0;
-      background: #24242f;
-      clip-path: polygon(0 0, 100% 25px, 100% 100%, 0 100%);
-    }
-
-    // ::before is positioned and the stars are not, so without this it paints over them.
-    span { position: relative; }
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 1px 1px 1px 0;
+    background: #24242f;
+    clip-path: var(--tab-clip);
   }
+
+  // ::before is positioned and the stars are not, so without this it paints over them.
+  span { position: relative; }
 }
 
 @each $tier, $spec in $rarities {
