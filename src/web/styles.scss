@@ -280,21 +280,19 @@ body {
 }
 
 // ── Grid ──
-// The 160px floor is set by the class label, not by the art. .op-info is inset 22px left
-// (clearing .op-edge) and 40px right, which with the card's own 1px rim leaves 64px of
-// chrome; the meta row's two glyphs and their gaps take another 40px. "Supporter", the
-// widest label at 58px, therefore needs 162px — measured across all 427 cards, 0 elide at
-// 160px and 47 at 158px.
+// The 160px floor is set by the longest operator name, not by the art and no longer by
+// the class label. .op-info is inset 22px left (clearing .op-edge's 15px strip) and 12px
+// right, which with the card's own 1px rim leaves 36px of chrome. Against that, measured
+// across all 427 cards:
 //
-// The branch line under it is allowed to ellipsize and does not set the floor. Tightening
-// its tracking to 0.04em took the widest, "Mech-accord Caster", from 113px to 103px, which
-// leaves one branch of 72 over the 96px slot here — 7 cards of 427, down from 17. Clearing
-// it outright would mean a 168px column, which is a chunkier card than the grid is worth
-// for a line of micro-print that carries its full text in `title`. The class label is the
-// one that must never elide, because it's the primary label rather than a footnote.
+//   "Supporter", widest class label      58px + 40px of glyphs + 36px  -> needs 134px
+//   "Mech-accord Caster", widest branch  113px + 36px                  -> needs 149px
+//   "Violet Mizutsune Orchid" on 2 lines                               -> needs ~156px
 //
-// Both insets and this floor move together — drop either inset and the floor can come
-// down with it.
+// So everything clears at 160px with room to spare, and the binding constraint is now one
+// operator's name rather than a label that repeats on hundreds of cards. Below ~156px that
+// name takes a third line; below ~150px the longest branch starts to ellipsize, which is
+// what the phone layout does at its 120px columns and is fine there.
 #grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -431,14 +429,12 @@ body {
 // Right padding clears the rarity tab so the longest names stop before it rather than
 // running underneath.
 .op-info {
-  // A 40px right inset. The tab sits fully outside the card now, so this isn't clearing
-  // it — it's holding the text block off the right edge so the name and class label stop
-  // short of it rather than running the full width. Costs roughly 30px of label width,
-  // which is enough to elide the longer class names on narrow columns.
-  //
-  // The 22px on the left clears .op-edge's 15px strip. Both insets bill to the same label
-  // budget, which is why #grid's column floor had to rise again when the strip landed.
-  padding: var(--sp-12) 40px var(--sp-12) 22px;
+  // Symmetric-ish: 22px left to clear .op-edge's 15px strip, 12px right. The right inset
+  // used to be 40px, held back as composition from when the rarity tab still overlapped
+  // the card — the tab sits fully outside now, so it was clearing nothing and costing the
+  // text block 28px. That 28px is what pushed the longest branch names past their slot and
+  // "Violet Mizutsune Orchid" onto a third line.
+  padding: var(--sp-12) var(--sp-12) var(--sp-12) 22px;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -522,12 +518,7 @@ body {
 // as a label competing with the class row above it.
 .op-serial {
   font-size: 9px;
-  // 0.04em, not the 0.1em the uppercase micro-labels elsewhere use. Three branch names
-  // of 72 overran the 96px slot at the wider tracking — "Mech-accord Caster" by 17px,
-  // "Multi-target Medic" by 9, "Incantation Medic" by 6 — and tightening buys back about
-  // 11px across a name that long, which is cheaper than widening every card in the grid
-  // to fit three of them.
-  letter-spacing: 0.04em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
   margin-top: 5px;
@@ -1568,7 +1559,7 @@ input[type='number'] {
     padding: var(--sp-12);
   }
 
-  .op-info { padding: 9px 30px 9px 9px; }
+  .op-info { padding: 9px 9px 9px 18px; }
   .op-name { font-size: var(--fs-base); }
   .op-epithet { font-size: 11.5px; }
 
