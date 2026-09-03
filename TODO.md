@@ -26,6 +26,35 @@ Known specifics to fold in:
 - Desktop layout has only ever been verified by DOM measurement, never eyeballed at full
   width (the dev preview pane was stuck narrow). Worth a real look before refactoring.
 
+### rem migration — decide it, then do it all at once
+Every size in the project is px: the `--fs-*` and `--sp-*` scales, the grid's column
+floors, `.op-stars`' clip polygon, the card's padding. That means a reader who has set a
+larger default font size in their browser gets **no change at all** — px text responds to
+page zoom but not to font-size preference, which is the setting people with low vision
+actually use.
+
+Switching to rem would fix that, and the scales in `_tokens.scss` are the right place to
+start: they're already the single source for both targets, so `10px → 0.625rem` and so on
+is a contained edit.
+
+**The trap is partial conversion.** The pieces are tuned against each other, not against
+absolute values:
+
+- `.op-stars`' `polygon(0px 12px, 100% 24px, ...)` is matched to its own `padding: 24px 2px
+  8px` — 24px of top padding clears a 24px-deep cut. Convert one and the cut eats the first
+  star.
+- `#grid`'s 160px floor is measured against pixel text widths (`"Supporter"` at 58px,
+  `"Mech-accord Caster"` at 113px). Those measurements only hold at a 16px root.
+- `aspect-ratio: 1 / 2` is matched to a fixed 180x360 portrait asset.
+
+So the polygon should be the **last** thing converted, not the first, and the real cost is
+re-taking every measurement recorded in `styles.scss`'s comments at whatever root size is
+being targeted. Worth doing deliberately or not at all — a half-migrated stylesheet is
+worse than the px one.
+
+Open question before starting: whether the extension popup follows. It's a fixed 380px
+panel by definition, so rem buys it much less than it buys the web SPA.
+
 ### Filter popover needs a rework
 Everything filterable lives behind one "Filters" button, and the panel it opens is four
 stacked groups (class glyphs, branch chips, rarity chips, tag chips + any/all) with a
