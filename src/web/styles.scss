@@ -291,8 +291,8 @@ body {
 //
 // So everything clears at 160px with room to spare, and the binding constraint is now one
 // operator's name rather than a label that repeats on hundreds of cards. Below ~156px that
-// name takes a third line; below ~150px the longest branch starts to ellipsize, which is
-// what the phone layout does at its 120px columns and is fine there.
+// name takes a third line; below ~150px the longest branch starts to ellipsize. The phone
+// layout sits just above that at a 150px floor, chosen so a phone gets two columns.
 #grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -1528,10 +1528,29 @@ input[type='number'] {
   // Eight class glyphs across a phone width leaves each one too small to hit reliably.
   .class-row { grid-template-columns: repeat(4, 1fr); }
 
+  // The column gutter has to be wider than the rarity tab, or the next card in DOM order
+  // paints over the part that overhangs. The tab is 20px here and this gutter was 12px, so
+  // every card but the last in a row had its rarity clipped by its neighbour. 24px matches
+  // the desktop gutter and leaves the tab a few px of air rather than having it butt
+  // straight into the next card.
+  //
+  // The 150px floor is what makes a phone two columns rather than three: three would need
+  // 3*150 + 2*24 = 498px of grid, which no phone has. A small tablet still gets three, and
+  // the count follows the viewport instead of being pinned to a breakpoint.
   #grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: var(--sp-10) var(--sp-12);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--sp-12) var(--sp-24);
     padding: var(--sp-12);
+  }
+
+  // Two columns need 2*150 + 24 = 324px of grid, so auto-fill gives up below a 348px
+  // viewport and drops to one column — a 296px card is 592px tall, which is most of a
+  // small phone's screen for a single operator. Below that the count is pinned instead
+  // and the text takes the hit: at ~136px columns the longest branch names ellipsize and
+  // the longest operator name wraps to three lines. Two cramped cards beat one enormous
+  // one.
+  @media (max-width: 347px) {
+    #grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   .op-info { padding: 9px 9px 9px 18px; }
