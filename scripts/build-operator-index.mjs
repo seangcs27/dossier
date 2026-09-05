@@ -661,6 +661,9 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // Nation is only in the full payload, never in the slim `?include=` query the index is
   // built from, so it's harvested here rather than costing a second pass over 427 ids.
   const nations = new Map();
+  // The extension popup's projection, gathered in the same pass. See PopupOperator in
+  // src/shared/types/operator.ts for why this exists and what defines its shape.
+  const popup = {};
   const all = [...regular, ...cnSupplement];
   await mapConcurrent(all, 12, async entry => {
     const cn = cnById.get(entry.id);
@@ -688,12 +691,33 @@ async function buildOperatorDetails(regular, cnSupplement) {
         ?? (base.data?.nationId ? base.data.nationId[0].toUpperCase() + base.data.nationId.slice(1) : '');
       if (nation) nations.set(entry.id, nation);
 
+      const pd = finalOp.data ?? {};
+      popup[entry.id] = {
+        id: entry.id,
+        data: {
+          name: pd.name, description: pd.description ?? null, rarity: pd.rarity,
+          profession: pd.profession, subProfessionId: pd.subProfessionId,
+          position: pd.position, tagList: pd.tagList ?? null,
+          // Only maxLevel and skillId are ever read; the keyframes and skill levels behind
+          // them are the bulk of what makes a full payload 220KB at its worst.
+          phases: (pd.phases ?? []).map(ph => ({ maxLevel: ph.maxLevel })),
+          skills: (pd.skills ?? []).map(sk => ({ skillId: sk.skillId })),
+        },
+      };
+
       await writeFile(path.join(detailOutDir, `${entry.id}.json`), JSON.stringify(finalOp));
       written++;
     } catch (e) {
       console.warn(`operator detail skipped for ${entry.id}: ${e.message}`);
     }
   });
+  await writeFile(path.join(outDir, 'operator-popup.json'), JSON.stringify(popup));
+  console.log(
+    `wrote ${Object.keys(popup).length} popup projections ` +
+    `(${(JSON.stringify(popup).length / 1024).toFixed(0)}KB) -> ` +
+    `${path.relative(process.cwd(), path.join(outDir, 'operator-popup.json'))}`,
+  );
+
   return { written, nations };
 }
 

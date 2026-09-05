@@ -253,6 +253,31 @@ export interface OperatorSlim {
   subProfessionId: string;
 }
 
+// Everything the extension popup's detail view renders, and nothing else. Generated as one
+// bundled map by build-operator-index.mjs rather than as per-operator files: the whole set
+// is ~200KB against 30.5MB of full payloads, small enough to ship inside popup.js, which
+// makes the popup work with no requests at all.
+//
+// The shape is defined by what renderDetail draws today. Growing the popup — a talents
+// section, say — means growing the build script's projection too, or the field is silently
+// absent at runtime.
+export interface PopupOperatorData {
+  name: string;
+  description: string | null;
+  rarity: Rarity;
+  profession: Profession;
+  subProfessionId: string;
+  position: Position;
+  tagList: string[] | null;
+  phases: { maxLevel: number }[];
+  skills: { skillId: string }[];
+}
+
+export interface PopupOperator {
+  id: OperatorId;
+  data: PopupOperatorData;
+}
+
 export interface OperatorIndexEntry extends OperatorSlim {
   // Home nation's display name ('Kjerag', 'Columbia', 'Lungmen'). '' where the payload
   // states none — 403 of 427 have one, and the rest genuinely have no stated origin

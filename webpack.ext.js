@@ -13,6 +13,12 @@ module.exports = {
     filename: '[name].js',
     clean: true,
   },
+  // webpack's 244KB budget is a hint about network cost on a page load. popup.js carries
+  // the operator index and the detail projection (~274KB of the 280KB) and is read off
+  // local disk by an installed extension, so there is no download to budget for — the
+  // alternative it suggests, code-splitting, would mean fetching, which is the thing this
+  // bundle exists to avoid.
+  performance: { hints: false },
   plugins: [
     new MiniCssExtractPlugin({ filename: 'popup.css' }),
     new CopyPlugin({
@@ -26,11 +32,13 @@ module.exports = {
         { from: 'icons/icon-32.png',    to: 'icons/icon-32.png' },
         { from: 'icons/icon-48.png',    to: 'icons/icon-48.png' },
         { from: 'icons/icon-96.png',    to: 'icons/icon-96.png' },
-        { from: 'src/shared/generated/operator-details', to: 'operator-details' },
+        // No operator-details/ here. The popup reads a ~200KB projection bundled straight
+        // into popup.js (see PopupOperator), so the 30.5MB of full payloads the extension
+        // used to carry — to read nine fields out of — never ships.
+        //
         // archetypeIconUrl() returns a bundle-relative `branch-icons/<sub>.png`, so the
-        // popup needs its own copy — without it every branch glyph 404s and removes
-        // itself, which is silent rather than broken and stayed unnoticed until the card
-        // started showing the glyph. ~58KB for all 71.
+        // popup does need its own copy of those — without it every branch glyph 404s and
+        // removes itself, silently rather than visibly. ~250KB for all 71.
         { from: 'src/shared/generated/branch-icons', to: 'branch-icons' },
       ],
     }),

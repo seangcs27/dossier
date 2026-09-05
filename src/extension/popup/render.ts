@@ -1,4 +1,4 @@
-import type { Operator, OperatorIndexEntry, Rarity, Profession } from '../../shared/types';
+import type { PopupOperator, OperatorIndexEntry, Rarity, Profession } from '../../shared/types';
 import {
   operatorAvatarUrl, operatorPortraitUrl, classIconUrl, archetypeIconUrl,
 } from '../../shared/api/hella-api';
@@ -28,10 +28,6 @@ const PROFESSION_CSS: Record<Profession, string> = {
 
 function rarityNum(r: Rarity): number {
   return parseInt(r.replace('TIER_', ''), 10);
-}
-
-export function renderLoading(container: HTMLElement): void {
-  container.innerHTML = `<div class="state-msg"><span class="spinner"></span></div>`;
 }
 
 export function renderError(container: HTMLElement, message: string): void {
@@ -125,7 +121,7 @@ function buildCard(op: OperatorIndexEntry): string {
   `;
 }
 
-export function renderDetail(container: HTMLElement, op: Operator): void {
+export function renderDetail(container: HTMLElement, op: PopupOperator): void {
   const d      = op.data;
   const n      = rarityNum(d.rarity);
   const stars  = '★'.repeat(n);
