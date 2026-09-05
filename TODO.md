@@ -26,6 +26,44 @@ Known specifics to fold in:
 - Desktop layout has only ever been verified by DOM measurement, never eyeballed at full
   width (the dev preview pane was stuck narrow). Worth a real look before refactoring.
 
+### Collab filter, and a category for each collab
+There's no `isCollab` flag in the data, but `data.teamId` is one in all but name — and the
+investigation is done, so this is assembly rather than research.
+
+**Collab characters** — people from another franchise, not from Terra. Each collab has its
+own `teamId`, and every operator carrying one has `nationId: null`, because they aren't
+from anywhere on Terra:
+
+| `teamId` | Collab | Ops | `displayNumber` |
+|---|---|---|---|
+| `rainbow` | Rainbow Six Siege | 8 | `RS**` |
+| `mujica` | BanG Dream! Ave Mujica | 5 | `AM**` |
+| `laios` | Delicious in Dungeon | 4 | `DD**` |
+| `sees` | Persona 3 | 4 | `PS**` |
+
+The two signals agree exactly — no operator with one of those `teamId`s has a nation, and
+no operator outside the group carries the prefix — so either works and checking both is a
+free consistency assertion at build time.
+
+**Collab-themed alters are a different thing** and shouldn't land in the same bucket.
+Monster Hunter (`MH**`, 6 ops — Kirin R Yato, Rathalos S Noir Corne, Violet Mizutsune
+Orchid, Zinogre S Catapult…) are Terra operators in a collab's costume: they keep their
+`nationId` and their `teamId` is whatever it always was (`action4`, `reserve6`, empty). A
+filter that says "collab" needs to decide whether it means the franchise crossover or the
+event, because these are the same event and not the same kind of operator.
+
+Two things to be careful of:
+
+- **`nationId: null` alone is not the test.** 28 operators have no nation; 21 are collab
+  and 7 aren't — Wiš'adel, W, Ines and Hoederer (no team at all), plus the three Followers.
+- **The list needs a line per new collab.** `teamId` is a stable slug, but nothing in the
+  data marks it as belonging to a crossover, so a curated set is unavoidable. Sanity Gone
+  and the wiki both categorise collabs, so a build-time cross-check against
+  arknights.wiki.gg is the alternative to hand-maintaining it.
+
+Neither field is in `operators.json` yet — `teamId` and `displayNumber` would be harvested
+the same way `nation` already is, in `buildOperatorDetails`, at no extra request cost.
+
 ### rem migration — decide it, then do it all at once
 Every size in the project is px: the `--fs-*` and `--sp-*` scales, the grid's column
 floors, `.op-stars`' clip polygon, the card's padding. That means a reader who has set a
