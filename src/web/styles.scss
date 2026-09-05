@@ -1537,10 +1537,13 @@ input[type='number'] {
   // The 150px floor is what makes a phone two columns rather than three: three would need
   // 3*150 + 2*24 = 498px of grid, which no phone has. A small tablet still gets three, and
   // the count follows the viewport instead of being pinned to a breakpoint.
+  // Right padding has to clear the rarity tab, not just look like a margin. The tab hangs
+  // 20px past the last column in every row, so at 12px the page became horizontally
+  // scrollable and the tab was cut off at the screen edge on a phone.
   #grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: var(--sp-12) var(--sp-24);
-    padding: var(--sp-12);
+    padding: var(--sp-12) var(--sp-24) var(--sp-12) var(--sp-12);
   }
 
   // Two columns need 2*150 + 24 = 324px of grid, so auto-fill gives up below a 348px
@@ -1563,8 +1566,15 @@ input[type='number'] {
   .op-meta-row { font-size: var(--fs-2xs); gap: 3px; }
   .op-meta-icon { width: 13px; height: 13px; }
   .op-meta-icon-sub { width: 10px; height: 10px; }
-  .op-stars { font-size: var(--fs-sm); padding: 9px 5px var(--sp-6); gap: 1px; }
   .op-avatar-placeholder { font-size: 28px; }
+
+  // .op-stars deliberately has NO override here. It used to — `padding: 9px 5px 6px` with
+  // a 1px gap, from when phone columns were 120px — and that outlived every change to the
+  // tab. The clip cuts 12px to 24px off the top, tuned against the 24px of top padding the
+  // base rule gives it; with only 9px here the cut went straight through the first star,
+  // and the wider sides made the tab 20px against the desktop's 16, so the fixed offsets
+  // in the polygon landed in the wrong places. Phone columns are 150px+ now, near enough
+  // to desktop that the base rule is simply correct.
 
   .detail { padding: 14px; }
 
