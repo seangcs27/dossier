@@ -27,6 +27,7 @@ export interface OperatorFilter {
   subclass: string; // subProfessionId, '' for any
   tags: ReadonlySet<string>;
   tagMode: TagMode;
+  collabs: ReadonlySet<string>; // collab display names, empty for no restriction
 }
 
 export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): OperatorIndexEntry[] {
@@ -35,6 +36,7 @@ export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): Operato
     if (f.classes.size && !f.classes.has(op.profession)) return false;
     if (f.rarities.size && !f.rarities.has(rarityNum(op.rarity))) return false;
     if (f.subclass && op.subProfessionId !== f.subclass) return false;
+    if (f.collabs.size && !f.collabs.has(op.collab)) return false;
     if (f.tags.size) {
       const hit = [...f.tags].filter(t => op.tags.includes(t)).length;
       if (f.tagMode === 'all' ? hit < f.tags.size : hit === 0) return false;
@@ -60,6 +62,19 @@ export function subclassesFor(
 
 export function allTags(ops: OperatorIndexEntry[]): string[] {
   return [...new Set(ops.flatMap(op => op.tags))].sort();
+}
+
+// Collabs present in the roster, in release order rather than alphabetical — a new
+// crossover is the one people go looking for, so it belongs at the end where it's the
+// obvious addition, not buried under A.
+export function allCollabs(ops: OperatorIndexEntry[]): string[] {
+  const first = new Map<string, number>();
+  for (const op of ops) {
+    if (!op.collab) continue;
+    const order = op.releaseOrder ?? 0;
+    if (!first.has(op.collab) || order < first.get(op.collab)!) first.set(op.collab, order);
+  }
+  return [...first].sort((a, b) => a[1] - b[1]).map(([name]) => name);
 }
 
 const byName = (a: OperatorIndexEntry, b: OperatorIndexEntry) => a.name.localeCompare(b.name);

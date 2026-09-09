@@ -284,6 +284,15 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // rather than a missing lookup. Lives only in the full payload upstream, so
   // build-operator-index.mjs harvests it while writing the detail files.
   nation: string;
+  // Display name of the crossover this operator came from ('Persona 3'), '' for the
+  // regular roster. Resolved at build time from a curated prefix table in
+  // build-operator-index.mjs — there is no isCollab flag in the source data, so the table
+  // is the only place that knowledge lives, and it stays out of the runtime bundle.
+  //
+  // One bucket by choice: it holds both the franchise crossovers, whose operators are
+  // outsiders with no nation, and Monster Hunter, whose operators are Terra natives in a
+  // collab's costume and keep theirs.
+  collab: string;
   // CN release date, 'YYYY-MM-DD'. null for operators with no dateable event (some
   // Integrated Strategies exclusives, a few event operators the wiki never dated).
   // '9999-12-31' is a sentinel for CN-supplement operators — known to be newer than

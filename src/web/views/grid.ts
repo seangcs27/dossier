@@ -6,6 +6,7 @@ import {
   sortOps,
   subclassesFor,
   allTags,
+  allCollabs,
   type SortKey,
   type TagMode,
 } from '../operator-index';
@@ -19,6 +20,7 @@ const state = {
   subclass: '',
   tags: new Set<string>(),
   tagMode: 'any' as TagMode,
+  collabs: new Set<string>(),
   moreOpen: false,
 };
 
@@ -35,15 +37,18 @@ function buildCard(op: OperatorIndexEntry): string {
   const portrait1 = operatorPortraitUrl(op.id, '1');
   const fallbacks = [operatorPortraitUrl(op.id, '2'), operatorAvatarUrl(op.id)].join('|');
 
-  // The edge strip runs the operator's home nation, repeated down the plate. Falling back
-  // to the project name keeps it from reading as a broken element on the ~24 operators
-  // with no stated origin — the strip is a texture that happens to carry a word.
+  // The edge strip runs where the operator is from, repeated down the plate. Nation
+  // first, then the crossover: collab characters have no nation because they aren't from
+  // Terra, so the crossover answers the same question for them. The order matters —
+  // Monster Hunter operators are Terra natives in costume and keep their real nation, so
+  // they must not fall through to the collab. The project name is the last resort, for
+  // the handful with neither, and keeps the strip from reading as a broken element.
   //
   // The repeat count is derived rather than fixed, so density stays even: a flat 4 left
   // "Yan" as mostly empty strip while overflowing "Rim Billiton". ~55 characters is what
   // fills the card's height at 8px with the strip's tracking; the strip crops what's left
   // over, which is what the real tags do at their ends anyway.
-  const edgeWord = op.nation || 'Dossier';
+  const edgeWord = op.nation || op.collab || 'Dossier';
   const edgeText = Array(Math.max(2, Math.round(55 / (edgeWord.length + 3))))
     .fill(edgeWord).join(' · ');
 
@@ -97,7 +102,8 @@ function render(container: HTMLElement): void {
 }
 
 function activeCount(): number {
-  return state.classes.size + state.rarities.size + state.tags.size + (state.subclass ? 1 : 0);
+  return state.classes.size + state.rarities.size + state.tags.size + state.collabs.size
+    + (state.subclass ? 1 : 0);
 }
 
 // ── Filter popover: every dimension in one panel, opened from the topbar ──
@@ -114,6 +120,7 @@ function renderMore(): void {
   if (!state.moreOpen) return;
 
   const subs = subclassesFor(getOperators(), state.classes);
+  const collabs = allCollabs(getOperators());
   // A subclass from a now-deselected class would filter everything out.
   if (state.subclass && !subs.some(s => s.id === state.subclass)) state.subclass = '';
 
@@ -153,6 +160,19 @@ function renderMore(): void {
         `).join('')}
       </div>
     </div>
+
+    ${collabs.length ? `
+      <div class="filter-group">
+        <div class="filter-label">Collab</div>
+        <div class="collab-row">
+          ${collabs.map(c => `
+            <button class="chip${state.collabs.has(c) ? ' active' : ''}" data-collab="${escHtml(c)}">
+              ${escHtml(c)}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
 
     <div class="filter-group">
       <div class="filter-label">
@@ -197,6 +217,7 @@ function clearAll(): void {
   state.classes.clear();
   state.rarities.clear();
   state.tags.clear();
+  state.collabs.clear();
   state.subclass = '';
 }
 
@@ -242,6 +263,12 @@ export function mountGrid(container: HTMLElement): void {
     if (sub !== undefined) {
       // Branch is single-select — clicking the active one clears it.
       state.subclass = state.subclass === sub ? '' : sub;
+      refresh();
+      return;
+    }
+    const collab = el.dataset.collab;
+    if (collab) {
+      if (state.collabs.has(collab)) state.collabs.delete(collab); else state.collabs.add(collab);
       refresh();
       return;
     }

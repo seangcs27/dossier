@@ -263,6 +263,30 @@ async function mapConcurrent(items, limit, fn) {
 // Sentinel "release date" for CN-supplement operators — see the header note. Sorts
 // after every real ISO date (all real ones fall in 2019-2026), never displayed anywhere
 // (releaseDate only drives sort order, checked with `grep -rn releaseDate src/`).
+// Collab operators, keyed by the letter prefix of `data.displayNumber` — the only field
+// that separates them. There is no isCollab flag anywhere in the source data.
+//
+// The prefix partitions them exactly: no operator outside each group carries its prefix,
+// and for the four franchise crossovers `data.teamId` (rainbow/sees/laios/mujica) and a
+// null `data.nationId` agree with it operator for operator. Prefix is used rather than
+// teamId because it also catches Monster Hunter, whose operators are Terra natives in a
+// collab's costume — they keep their own nation and team, so teamId can't see them.
+//
+// Curated because nothing in the data marks a prefix as belonging to a crossover. A new
+// collab needs a line here; the build logs the tally so a missing one is visible.
+const COLLAB_BY_PREFIX = {
+  RS: 'Rainbow Six Siege',
+  PS: 'Persona 3',
+  DD: 'Delicious in Dungeon',
+  AM: 'Ave Mujica',
+  MH: 'Monster Hunter',
+};
+
+const collabFor = displayNumber => {
+  const prefix = (String(displayNumber ?? '').match(/^[A-Za-z]+/) ?? [''])[0];
+  return COLLAB_BY_PREFIX[prefix] ?? '';
+};
+
 const RECENT_UNDATED = '9999-12-31';
 
 // CN recruitment-tag text -> the exact English string HellaAPI already uses for the
@@ -661,6 +685,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // Nation is only in the full payload, never in the slim `?include=` query the index is
   // built from, so it's harvested here rather than costing a second pass over 427 ids.
   const nations = new Map();
+  const collabs = new Map();
   // The extension popup's projection, gathered in the same pass. See PopupOperator in
   // src/shared/types/operator.ts for why this exists and what defines its shape.
   const popup = {};
@@ -691,6 +716,9 @@ async function buildOperatorDetails(regular, cnSupplement) {
         ?? (base.data?.nationId ? base.data.nationId[0].toUpperCase() + base.data.nationId.slice(1) : '');
       if (nation) nations.set(entry.id, nation);
 
+      const collab = collabFor(base.data?.displayNumber);
+      if (collab) collabs.set(entry.id, collab);
+
       const pd = finalOp.data ?? {};
       popup[entry.id] = {
         id: entry.id,
@@ -718,7 +746,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
     `${path.relative(process.cwd(), path.join(outDir, 'operator-popup.json'))}`,
   );
 
-  return { written, nations };
+  return { written, nations, collabs };
 }
 
 const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
@@ -750,7 +778,7 @@ function releaseDateFor(name) {
 const obtainable = envelopes.filter(e => !e.value.data.isNotObtainable);
 const excluded = envelopes.length - obtainable.length;
 
-const { written: detailsWritten, nations } = await buildOperatorDetails(
+const { written: detailsWritten, nations, collabs } = await buildOperatorDetails(
   obtainable.map(e => ({ id: e.canon, appellation: e.value.data.appellation })),
   cnSupplement,
 );
@@ -774,6 +802,8 @@ const entries = obtainable.map(e => ({
   // Display name of the operator's home nation ("Kjerag"), '' where the payload states
   // none. Harvested from the full payloads in buildOperatorDetails above.
   nation: nations.get(e.canon) ?? '',
+  // Display name of the crossover this operator came from, '' for the regular roster.
+  collab: collabs.get(e.canon) ?? '',
 }));
 
 // CN-only entries have no `archetype` field to draw on (that comes from HellaAPI), but
@@ -794,6 +824,7 @@ for (const c of cnSupplement) {
     releaseDate: RECENT_UNDATED,
     releaseOrder: releaseOrders.get(c.id) ?? null,
     nation: nations.get(c.id) ?? '',
+    collab: collabs.get(c.id) ?? '',
   });
 }
 
@@ -828,6 +859,13 @@ console.log(
   `wrote ${entries.length} operators (${dated} dated, ${cnSupplement.length} recent-undated ` +
   `(sort first), ${genuinelyUndated} genuinely undated (sort last), ${excluded} unobtainable ` +
   `excluded, ${withOrder} with a Sanity Gone releaseOrder) -> ${path.relative(process.cwd(), outFile)}`,
+);
+// A collab that stops matching — a renamed prefix, a new crossover nobody added a line
+// for — shows up as a missing or shrunken group here rather than as an empty filter.
+const collabTally = new Map();
+for (const o of entries) if (o.collab) collabTally.set(o.collab, (collabTally.get(o.collab) ?? 0) + 1);
+console.log(
+  `collabs: ${[...collabTally].map(([n, c]) => `${n} (${c})`).join(', ') || 'NONE MATCHED'}`,
 );
 console.log(
   `wrote ${detailsWritten}/${entries.length} baked operator details -> ` +
