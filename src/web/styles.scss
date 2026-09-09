@@ -369,6 +369,43 @@ body {
   &[hidden] { display: none; }
 }
 
+// The Any/All toggle that sits inline in the Tags label. It has been in the markup since
+// the tag filter was built and never had a rule, so it rendered as two default browser
+// buttons — the only unstyled control on the page, and conspicuous now that Advanced
+// options puts it in an otherwise finished panel.
+//
+// Same construction as .rarity-row: one bordered group with segments inside rather than
+// two loose buttons, because "any" and "all" are two settings of one switch. Sized down to
+// label scale since it rides the heading rather than sitting in the group's body, and
+// pushed to the right so the heading reads "Tags ......... ANY | ALL".
+.seg {
+  display: inline-flex;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.seg-btn {
+  padding: 2px var(--sp-8);
+  border: 0;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  cursor: pointer;
+
+  & + .seg-btn { border-left: 1px solid var(--border); }
+
+  &:hover { background: var(--surface2); color: var(--text); }
+
+  &.on {
+    background: var(--chip);
+    color: var(--text);
+  }
+}
+
 .sort-row {
   display: flex;
   flex-wrap: wrap;
