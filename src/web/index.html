@@ -13,21 +13,20 @@
   <div class="topbar">
     <header>
       <h1><a href="#/" id="home"><img class="logo-mark" src="icons/icon-96.png" alt="" width="44" height="44">DOSSIER</a></h1>
-      <div class="search-wrap">
-        <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="7"></circle>
-          <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-        </svg>
-        <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
-      </div>
       <div class="topbar-actions">
-        <button class="chip chip-action" id="more-toggle" aria-controls="more-filters" aria-expanded="false">Filters</button>
-        <select id="sort" aria-label="Sort operators">
-          <option value="release-desc" selected>Newest</option>
-          <option value="release-asc">Oldest</option>
-          <option value="name-asc">Name A–Z</option>
-          <option value="name-desc">Name Z–A</option>
-        </select>
+        <div class="search-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+          </svg>
+          <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
+        </div>
+        <button class="chip chip-action" id="more-toggle" aria-controls="more-filters" aria-expanded="false">
+          <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M1.5 3.5h13M4 8h8M6.5 12.5h3"></path>
+          </svg>
+          <span id="more-label">Filters</span>
+        </button>
       </div>
       <span id="count"></span>
     </header>

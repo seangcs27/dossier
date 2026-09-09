@@ -22,6 +22,9 @@ const state = {
   tagMode: 'any' as TagMode,
   collabs: new Set<string>(),
   moreOpen: false,
+  // Tags and sort live behind a disclosure. They're the least-reached-for controls and
+  // the tag list alone is longer than everything above it put together.
+  advancedOpen: false,
 };
 
 function buildCard(op: OperatorIndexEntry): string {
@@ -124,6 +127,12 @@ function renderMore(): void {
   // A subclass from a now-deselected class would filter everything out.
   if (state.subclass && !subs.some(s => s.id === state.subclass)) state.subclass = '';
 
+  // release-desc/asc and name-asc/desc collapse to a field plus a direction, which is what
+  // the control actually offers: pick a field, click it again to flip. Newest-first and
+  // A-Z are each their own key's "natural" first press.
+  const sortField = state.sort.startsWith('release') ? 'release' : 'name';
+  const sortDesc = state.sort === 'release-desc' || state.sort === 'name-desc';
+
   panel.innerHTML = `
     <div class="filter-group">
       <div class="filter-label">Class</div>
@@ -139,24 +148,27 @@ function renderMore(): void {
     </div>
 
     <div class="filter-group">
-      <div class="filter-label">Branch${state.classes.size ? '' : ' <span class="filter-hint">— pick a class first</span>'}</div>
-      <div class="branch-row">
-        ${subs.length
-          ? subs.map(s => `
-              <button class="chip${s.id === state.subclass ? ' active' : ''}" data-sub="${escHtml(s.id)}">
+      <div class="filter-label">Archetype / Subclass</div>
+      ${state.classes.size
+        ? `<div class="branch-row">
+            ${subs.map(s => `
+              <button class="chip chip-icon-label${s.id === state.subclass ? ' active' : ''}" data-sub="${escHtml(s.id)}">
+                <img src="${archetypeIconUrl(s.id)}" alt="" loading="lazy" onerror="this.remove()">
                 ${escHtml(s.label)}
               </button>
-            `).join('')
-          : '<span class="filter-hint">All branches</span>'}
-      </div>
+            `).join('')}
+          </div>`
+        : '<div class="filter-empty">Select a class</div>'}
     </div>
 
     <div class="filter-group">
       <div class="filter-label">Rarity</div>
       <div class="rarity-row">
-        ${[6, 5, 4, 3, 2, 1].map(r => `
-          <button class="chip r${r}${state.rarities.has(r) ? ' active' : ''}"
-                  data-kind="rarity" data-value="${r}">${r}★</button>
+        ${[1, 2, 3, 4, 5, 6].map(r => `
+          <button class="rarity-btn r${r}${state.rarities.has(r) ? ' on' : ''}"
+                  data-kind="rarity" data-value="${r}" aria-pressed="${state.rarities.has(r)}">
+            ${r}<span class="rarity-star">★</span>
+          </button>
         `).join('')}
       </div>
     </div>
@@ -174,18 +186,42 @@ function renderMore(): void {
       </div>
     ` : ''}
 
-    <div class="filter-group">
-      <div class="filter-label">
-        Tags
-        <span class="seg" id="tag-mode">
-          <button class="seg-btn${state.tagMode === 'any' ? ' on' : ''}" data-mode="any">Any</button>
-          <button class="seg-btn${state.tagMode === 'all' ? ' on' : ''}" data-mode="all">All</button>
-        </span>
+    <button class="filter-disclosure${state.advancedOpen ? ' open' : ''}" id="advanced-toggle"
+            aria-expanded="${state.advancedOpen}" aria-controls="advanced-options">
+      Advanced options
+      <svg class="disclosure-caret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5 8 10.5l4-4"></path></svg>
+    </button>
+
+    <div class="filter-advanced" id="advanced-options"${state.advancedOpen ? '' : ' hidden'}>
+      <div class="filter-group">
+        <div class="filter-label">Sort</div>
+        <div class="sort-row">
+          ${[{ id: 'release', label: 'Release order' }, { id: 'name', label: 'Name' }].map(o => `
+            <button class="chip sort-btn${sortField === o.id ? ' active' : ''}" data-sort="${o.id}"
+                    title="${sortField === o.id ? 'Click again to reverse' : ''}">
+              ${o.label}
+              ${sortField === o.id ? `
+                <svg class="sort-dir${sortDesc ? ' desc' : ''}" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M8 3v10M4.5 9.5 8 13l3.5-3.5"></path>
+                </svg>` : ''}
+            </button>
+          `).join('')}
+        </div>
       </div>
-      <div class="tag-chips">
-        ${allTags(getOperators()).map(t => `
-          <button class="chip${state.tags.has(t) ? ' active' : ''}" data-tag="${escHtml(t)}">${escHtml(t)}</button>
-        `).join('')}
+
+      <div class="filter-group">
+        <div class="filter-label">
+          Tags
+          <span class="seg" id="tag-mode">
+            <button class="seg-btn${state.tagMode === 'any' ? ' on' : ''}" data-mode="any">Any</button>
+            <button class="seg-btn${state.tagMode === 'all' ? ' on' : ''}" data-mode="all">All</button>
+          </span>
+        </div>
+        <div class="tag-chips">
+          ${allTags(getOperators()).map(t => `
+            <button class="chip${state.tags.has(t) ? ' active' : ''}" data-tag="${escHtml(t)}">${escHtml(t)}</button>
+          `).join('')}
+        </div>
       </div>
     </div>
 
@@ -197,7 +233,11 @@ function syncChips(): void {
   const more = document.getElementById('more-toggle');
   if (!more) return;
   const n = activeCount();
-  more.textContent = n ? `Filters · ${n}` : 'Filters';
+  // Write to the label span, not the button. The button also holds an inline <svg>, and
+  // setting textContent on it replaces every child node — which silently deleted the icon
+  // on the first mount, before it was ever painted.
+  const label = document.getElementById('more-label');
+  if (label) label.textContent = n ? `Filters · ${n}` : 'Filters';
   more.classList.toggle('active', state.moreOpen || n > 0);
   more.setAttribute('aria-expanded', String(state.moreOpen));
 }
@@ -223,14 +263,12 @@ function clearAll(): void {
 
 export function mountGrid(container: HTMLElement): void {
   const search  = document.getElementById('search') as HTMLInputElement;
-  const sort    = document.getElementById('sort') as HTMLSelectElement;
   const actions = document.querySelector<HTMLElement>('.topbar-actions')!;
   const wrap    = document.querySelector<HTMLElement>('.search-wrap')!;
   wrap.style.display = '';
   actions.style.display = '';
 
   search.value = state.query;
-  sort.value = state.sort;
   syncChips();
   renderMore();
   render(container);
@@ -243,7 +281,6 @@ export function mountGrid(container: HTMLElement): void {
   const refresh = () => { refreshChrome(); render(container); };
 
   search.oninput = () => { state.query = search.value; render(container); };
-  sort.onchange  = () => { state.sort = sort.value as SortKey; render(container); };
 
   actions.onclick = (ev) => {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle');
@@ -257,6 +294,18 @@ export function mountGrid(container: HTMLElement): void {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!el) return;
     if (el.id === 'clear-filters') { clearAll(); refresh(); return; }
+    if (el.id === 'advanced-toggle') { state.advancedOpen = !state.advancedOpen; refreshChrome(); return; }
+    const sortField = el.dataset.sort;
+    if (sortField) {
+      // Selecting the field already in use reverses it; switching fields starts at that
+      // field's natural direction — newest first for release, A-Z for name.
+      const active = state.sort.startsWith(sortField);
+      const desc = state.sort === 'release-desc' || state.sort === 'name-desc';
+      const next = active ? !desc : sortField === 'release';
+      state.sort = `${sortField}-${next ? 'desc' : 'asc'}` as SortKey;
+      refresh();
+      return;
+    }
     if (el.dataset.mode) { state.tagMode = el.dataset.mode as TagMode; refresh(); return; }
     if (el.dataset.kind) { toggleChip(el); refresh(); return; }
     const sub = el.dataset.sub;
@@ -279,14 +328,14 @@ export function mountGrid(container: HTMLElement): void {
     }
   };
 
-  // Click-away close, matching how the reference popover behaves. Registered on the
-  // document rather than the panel so it also catches clicks on the grid below.
-  document.onclick = (ev) => {
-    if (!state.moreOpen) return;
-    const t = ev.target as HTMLElement;
-    if (t.closest('#more-filters') || t.closest('#more-toggle')) return;
+  // No click-away close. Filtering is a back-and-forth between the panel and the grid —
+  // pick a class, look, narrow it, look again — and dismissing the panel on the first
+  // glance at the results meant reopening it every time. It closes on the toggle, or on
+  // Escape, and otherwise stays where it was put.
+  document.onkeydown = (ev) => {
+    if (ev.key !== 'Escape' || !state.moreOpen) return;
     state.moreOpen = false;
-    syncChips();
-    renderMore();
+    refreshChrome();
+    document.getElementById('more-toggle')?.focus();
   };
 }
