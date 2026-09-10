@@ -327,11 +327,16 @@ Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid
 ### Grid (`src/web/views/grid.ts`)
 
 Reads the bundled index through `src/web/operator-index.ts` and makes **no network requests
-for data** (only images). Topbar carries live search and a sort dropdown
-(release/name/rarity/class, default newest-first); class and rarity chips plus a "More"
-popover holding single-select branch and multi-select recruitment tags with an any/all
-mode. Click-away closes the popover. Operators without a `releaseDate` sort last in both
-release directions.
+for data** (only images). The topbar's search box and a Filters button form one right-aligned
+cluster; the button opens a popover that stays open until toggled or dismissed with Escape —
+**deliberately no click-away close**, since filtering is a back-and-forth with the grid.
+
+Inside the popover: class glyphs; Archetype / Subclass chips with branch glyphs, shown only
+once a class is picked (single-select); a six-segment rarity group tinted by rarity; collab
+chips; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
+active one reverses it) and multi-select recruitment tags with an any/all mode.
+`renderMore()` rebuilds the panel on every change and restores focus to the equivalent
+control afterwards. Operators without a `releaseDate` sort last in both release directions.
 
 ### Detail view (`src/web/views/detail.ts`)
 

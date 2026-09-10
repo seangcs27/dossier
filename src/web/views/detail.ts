@@ -776,9 +776,9 @@ function errorHtml(id: string, label: string): string {
 
 export async function mountDetail(container: HTMLElement, id: string): Promise<void> {
   const seq = ++mountSeq;
-  // The grid's controls have no meaning on a detail page — hide the search box and the
-  // whole actions cluster (filters/sort/count), but leave the logo bar standing so the
-  // header stays put across routes instead of the page visibly restructuring.
+  // The grid's controls have no meaning on a detail page — hide the search + Filters
+  // cluster and blank the count, but leave the logo bar standing so the header stays put
+  // across routes instead of the page visibly restructuring.
   document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
   document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
   document.getElementById('more-filters')!.hidden = true;

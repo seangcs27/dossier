@@ -55,25 +55,24 @@ worse than the px one.
 Open question before starting: whether the extension popup follows. It's a fixed 380px
 panel by definition, so rem buys it much less than it buys the web SPA.
 
-### Filter popover needs a rework
-Everything filterable lives behind one "Filters" button, and the panel it opens is four
-stacked groups (class glyphs, branch chips, rarity chips, tag chips + any/all) with a
-Clear button. It works, but it's the least considered surface on the page:
+### Filter popover — what the rework left
+The panel was rebuilt around the search box — Archetype / Subclass with branch glyphs, a
+six-segment rarity group, sort and tags under Advanced options, no click-away close — and
+focus now survives `renderMore()`'s wholesale rebuild. Three of the original complaints
+still stand:
 
-- **Class and rarity used to be one click and are now two.** Already noted under the
-  UI/UX refactor entry below; a hybrid — class and rarity inline in the topbar, branch and
-  tags in the popover — was the sketch, never built.
-- **The tag list is unbounded.** Every recruitment tag renders as a chip, so the panel is
-  mostly tags by area, and they're the least-used dimension.
-- **Branch is single-select while everything else is multi.** Inconsistent, and there's
-  no visible reason for the asymmetry beyond how it was built.
-- **No indication of what a filter would yield.** Selecting a class then a branch can
-  produce zero results with no warning until the grid empties.
-- **The panel re-renders wholesale on every click** (`renderMore()` rebuilds its
-  `innerHTML`), so chip focus is lost after each toggle — keyboard use is unpleasant.
+- **Class and rarity are still two clicks away.** They live inside the popover; the hybrid
+  sketch — class and rarity inline in the topbar, the rest in the popover — was never built.
+- **Archetype / Subclass is single-select while everything else is multi.** No reason for
+  the asymmetry beyond how it was built.
+- **No indication of what a filter would yield.** A class plus an archetype can produce zero
+  results with no warning until the grid empties.
 
-Not blocked on anything; it needs a design pass rather than investigation. Worth doing
-alongside the UI/UX refactor below rather than separately, since both touch the topbar.
+Also stale: `scripts/build-design-previews.mjs` hand-writes the old markup — six loose rarity
+pills and a topbar `<select id="sort">` — so `npm run design` regenerates previews of a UI
+that no longer exists.
+
+Not blocked on anything; needs a design pass rather than investigation.
 
 ### Nation and group on the detail page, with their logos
 The grid card now carries the operator's home nation up its left edge (`.op-edge`, from
