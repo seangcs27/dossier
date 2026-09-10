@@ -91,12 +91,17 @@ body {
 // Search and Filters are one cluster: narrowing by name and narrowing by class are the
 // same job, and the button used to sit at the far end of the bar away from the box it
 // works with.
+//
+// Right-aligned, like the actions it replaced. #more-filters is anchored to the topbar's
+// right edge, so a left-aligned cluster left the popover opening up to ~630px from the
+// button that opened it on a wide screen.
 .topbar-actions {
   display: flex;
   align-items: center;
   gap: var(--sp-8);
   flex: 1;
   max-width: 640px;
+  margin-left: auto;
 }
 
 // ── Filter chips ──
@@ -123,15 +128,6 @@ body {
     color: var(--text);
   }
 
-  // Rarity is the one dimension colour actually encodes, so its chips light up in the
-  // same colour the stars use.
-  @each $tier, $spec in $rarities {
-    &.r#{$tier}.active {
-      background: var(--r#{$tier});
-      border-color: transparent;
-      color: #{map.get($spec, fg)};
-    }
-  }
 }
 
 // The class glyph is white-on-transparent, same as everywhere else it's used — it just
@@ -261,7 +257,8 @@ body {
 }
 
 // Archetype chips carry the same branch glyph the cards do, so the picker and the grid
-// name the thing the same way. The icon removes itself where there isn't one (71 of 72).
+// name the thing the same way. The icon removes itself where the wiki has none — coverage
+// is 71 of the 72 branches.
 .chip-icon-label {
   gap: var(--sp-6);
 
@@ -274,9 +271,10 @@ body {
   &.active img { opacity: 1; }
 }
 
-// Branch only means something once a class narrows it — all 72 at once is unusable — so
-// the group holds its place with a prompt instead of collapsing and moving everything
-// below it up and down as classes are picked.
+// With no class picked there's nothing sensible to offer — all 72 at once is unusable — so
+// the group says what unlocks it rather than disappearing, which keeps the section findable.
+// It doesn't stop the panel reflowing when the chips arrive; the prompt and a row of chips
+// are different heights.
 .filter-empty {
   padding: var(--sp-12);
   border: 1px dashed var(--border);
@@ -314,6 +312,8 @@ body {
 
   &:last-child { border-right: 0; }
   &:hover { background: var(--surface2); }
+  // Inset: .rarity-row clips with overflow:hidden, which ate the default outside ring.
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
   .rarity-star { font-size: var(--fs-sm); }
 
@@ -394,9 +394,14 @@ body {
   font: inherit;
   font-size: var(--fs-2xs);
   font-weight: 600;
+  // Buttons don't inherit text-transform, so without these the segments read "Any | All"
+  // beside an uppercase TAGS.
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   cursor: pointer;
 
   & + .seg-btn { border-left: 1px solid var(--border); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
   &:hover { background: var(--surface2); color: var(--text); }
 
