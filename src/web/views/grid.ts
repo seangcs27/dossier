@@ -117,6 +117,17 @@ const CLASS_ORDER: Profession[] = [
   'PIONEER', 'WARRIOR', 'TANK', 'SNIPER', 'CASTER', 'MEDIC', 'SUPPORT', 'SPECIAL',
 ];
 
+// A selector that finds the same control again after renderMore() rebuilds the panel.
+// Every panel control is identified by its id or by its data-* attributes.
+function focusSelector(el: HTMLElement): string | null {
+  const control = el.closest<HTMLElement>('button');
+  if (!control) return null;
+  if (control.id) return `#${CSS.escape(control.id)}`;
+  const attrs = Object.entries(control.dataset)
+    .map(([k, v]) => `[data-${k}="${CSS.escape(v ?? '')}"]`).join('');
+  return attrs ? `button${attrs}` : null;
+}
+
 function renderMore(): void {
   const panel = document.getElementById('more-filters')!;
   panel.hidden = !state.moreOpen;
@@ -124,14 +135,19 @@ function renderMore(): void {
 
   const subs = subclassesFor(getOperators(), state.classes);
   const collabs = allCollabs(getOperators());
-  // A subclass from a now-deselected class would filter everything out.
-  if (state.subclass && !subs.some(s => s.id === state.subclass)) state.subclass = '';
 
   // release-desc/asc and name-asc/desc collapse to a field plus a direction, which is what
   // the control actually offers: pick a field, click it again to flip. Newest-first and
   // A-Z are each their own key's "natural" first press.
   const sortField = state.sort.startsWith('release') ? 'release' : 'name';
   const sortDesc = state.sort === 'release-desc' || state.sort === 'name-desc';
+
+  // The rebuild below detaches whatever control was just used, which drops keyboard focus
+  // to <body> — on every class, rarity, sort and tag toggle, in a panel that now stays open
+  // for exactly that kind of repeated use. Note the focused control and put focus back on
+  // its replacement.
+  const focused = document.activeElement as HTMLElement | null;
+  const refocus = focused && panel.contains(focused) ? focusSelector(focused) : null;
 
   panel.innerHTML = `
     <div class="filter-group">
@@ -196,16 +212,26 @@ function renderMore(): void {
       <div class="filter-group">
         <div class="filter-label">Sort</div>
         <div class="sort-row">
-          ${[{ id: 'release', label: 'Release order' }, { id: 'name', label: 'Name' }].map(o => `
-            <button class="chip sort-btn${sortField === o.id ? ' active' : ''}" data-sort="${o.id}"
-                    title="${sortField === o.id ? 'Click again to reverse' : ''}">
-              ${o.label}
-              ${sortField === o.id ? `
-                <svg class="sort-dir${sortDesc ? ' desc' : ''}" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M8 3v10M4.5 9.5 8 13l3.5-3.5"></path>
-                </svg>` : ''}
-            </button>
-          `).join('')}
+          ${[
+            { id: 'release', label: 'Release order', asc: 'oldest first', desc: 'newest first' },
+            { id: 'name', label: 'Name', asc: 'A to Z', desc: 'Z to A' },
+          ].map(o => {
+            const on = sortField === o.id;
+            // The arrow is aria-hidden, so the direction has to be in the name too — the
+            // <select> this replaced said "Newest" or "Oldest" out loud.
+            const name = on ? `${o.label}, ${sortDesc ? o.desc : o.asc}` : o.label;
+            return `
+              <button class="chip sort-btn${on ? ' active' : ''}" data-sort="${o.id}"
+                      aria-pressed="${on}" aria-label="${name}"
+                      title="${on ? 'Click again to reverse' : ''}">
+                ${o.label}
+                ${on ? `
+                  <svg class="sort-dir${sortDesc ? ' desc' : ''}" viewBox="0 0 16 16" aria-hidden="true">
+                    <path d="M8 3v10M4.5 9.5 8 13l3.5-3.5"></path>
+                  </svg>` : ''}
+              </button>
+            `;
+          }).join('')}
         </div>
       </div>
 
@@ -213,8 +239,8 @@ function renderMore(): void {
         <div class="filter-label">
           Tags
           <span class="seg" id="tag-mode">
-            <button class="seg-btn${state.tagMode === 'any' ? ' on' : ''}" data-mode="any">Any</button>
-            <button class="seg-btn${state.tagMode === 'all' ? ' on' : ''}" data-mode="all">All</button>
+            <button class="seg-btn${state.tagMode === 'any' ? ' on' : ''}" data-mode="any" aria-pressed="${state.tagMode === 'any'}">Any</button>
+            <button class="seg-btn${state.tagMode === 'all' ? ' on' : ''}" data-mode="all" aria-pressed="${state.tagMode === 'all'}">All</button>
           </span>
         </div>
         <div class="tag-chips">
@@ -227,6 +253,14 @@ function renderMore(): void {
 
     <button class="filter-clear" id="clear-filters"${activeCount() ? '' : ' disabled'}>Clear Filters</button>
   `;
+
+  if (refocus) {
+    // Clear Filters disables itself once there's nothing left to clear, and a disabled
+    // button can't take focus, so hand it to the toggle rather than letting it fall away.
+    const target = panel.querySelector<HTMLButtonElement>(refocus);
+    if (target && !target.disabled) target.focus();
+    else document.getElementById('more-toggle')?.focus();
+  }
 }
 
 function syncChips(): void {
@@ -247,6 +281,15 @@ function toggleChip(chip: HTMLButtonElement): void {
   if (kind === 'class') {
     const p = value as Profession;
     if (state.classes.has(p)) state.classes.delete(p); else state.classes.add(p);
+    // Drop a subclass the class change has orphaned. It has to happen here, before the
+    // refresh counts active filters, and it has to treat "no classes" as orphaning too:
+    // subclassesFor() returns every subclass for an empty set, and with no class picked the
+    // panel shows a prompt instead of chips — a leftover subclass would keep filtering the
+    // grid with nothing on screen to turn it off.
+    if (state.subclass && (!state.classes.size
+        || !subclassesFor(getOperators(), state.classes).some(s => s.id === state.subclass))) {
+      state.subclass = '';
+    }
   } else {
     const r = Number(value);
     if (state.rarities.has(r)) state.rarities.delete(r); else state.rarities.add(r);
@@ -332,10 +375,20 @@ export function mountGrid(container: HTMLElement): void {
   // pick a class, look, narrow it, look again — and dismissing the panel on the first
   // glance at the results meant reopening it every time. It closes on the toggle, or on
   // Escape, and otherwise stays where it was put.
+  //
+  // Escape acts only while the panel is actually on screen — the detail page hides it
+  // without resetting state, and this handler outlives the grid. It also leaves the search
+  // box alone: moving focus mid-keydown there let the native clear empty the field without
+  // firing `input`, so the grid stayed filtered by text that was gone. And focus returns to
+  // the toggle only when it started inside the panel, instead of being pulled from wherever
+  // the user was.
   document.onkeydown = (ev) => {
-    if (ev.key !== 'Escape' || !state.moreOpen) return;
+    if (ev.key !== 'Escape' || document.getElementById('more-filters')!.hidden) return;
+    const target = ev.target as HTMLElement;
+    if (target.id === 'search') return;
+    const fromPanel = !!target.closest('#more-filters');
     state.moreOpen = false;
     refreshChrome();
-    document.getElementById('more-toggle')?.focus();
+    if (fromPanel) document.getElementById('more-toggle')?.focus();
   };
 }
