@@ -317,13 +317,14 @@ body {
 
   .rarity-star { font-size: var(--fs-sm); }
 
+  // On the button, not the star alone: tinting only the glyph left six white digits that
+  // read as one neutral row. The star inherits, so it follows the fill when picked too.
   @each $tier, $spec in $rarities {
-    &.r#{$tier} .rarity-star { color: var(--r#{$tier}); }
+    &.r#{$tier} { color: var(--r#{$tier}); }
 
     &.r#{$tier}.on {
       background: var(--r#{$tier});
       color: #{map.get($spec, fg)};
-      .rarity-star { color: #{map.get($spec, fg)}; }
     }
   }
 }
