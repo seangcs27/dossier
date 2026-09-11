@@ -69,8 +69,8 @@ still stand:
   results with no warning until the grid empties.
 
 Also stale: `scripts/build-design-previews.mjs` hand-writes the old markup — six loose rarity
-pills and a topbar `<select id="sort">` — so `npm run design` regenerates previews of a UI
-that no longer exists.
+pills, a topbar `<select id="sort">`, and a card with the branch glyph still in the class row
+and no branch line — so `npm run design` regenerates previews of a UI that no longer exists.
 
 Not blocked on anything; needs a design pass rather than investigation.
 

@@ -170,7 +170,8 @@ backgrounds).
   hover lift (`translateY(-2px)`) sits on the `<a>`, so card and rarity tab travel
   together as one object.
 - `.op-overlay` paints a transparent → black gradient over the lower art and holds name,
-  alter epithet, class glyph + branch glyph + class label, and `.op-cta` (a 4px bar that
+  alter epithet, class glyph + class label, the branch line (`.op-serial`: branch glyph +
+  branch name, so each glyph sits beside the name it stands for), and `.op-cta` (a 4px bar that
   grows to 32px on hover to become the "View operator" CTA).
 - `.op-stars` is a **sibling** of `.op-card-body`, not a child — a folded-corner tab
   at `left: 100%`, abutting the card's right edge with no overlap and extending into the

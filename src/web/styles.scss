@@ -462,14 +462,16 @@ body {
 // right, which with the card's own 1px rim leaves 36px of chrome. Against that, measured
 // across all 427 cards:
 //
-//   "Supporter", widest class label      58px + 40px of glyphs + 36px  -> needs 134px
-//   "Mech-accord Caster", widest branch  113px + 36px                  -> needs 149px
+//   "Supporter", widest class label      58px + 22px of glyph + 36px   -> needs 116px
+//   "Mech-accord Caster", widest branch  112px + 15px of glyph + 36px  -> needs 163px
 //   "Violet Mizutsune Orchid" on 2 lines                               -> needs ~156px
 //
-// So everything clears at 160px with room to spare, and the binding constraint is now one
+// So the floor clears every name and class label, and the binding constraint is one
 // operator's name rather than a label that repeats on hundreds of cards. Below ~156px that
-// name takes a third line; below ~150px the longest branch starts to ellipsize. The phone
-// layout sits just above that at a 150px floor, chosen so a phone gets two columns.
+// name takes a third line. The branch line is the exception: its glyph means "Mech-accord
+// Caster", alone of the 72 branches, ellipsizes by 3px at the floor — accepted when the
+// glyph moved there, over raising the floor and changing column counts everywhere. The
+// phone layout sits at a 150px floor, chosen so a phone gets two columns.
 #grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -653,9 +655,9 @@ body {
   text-overflow: ellipsis;
 }
 
-// Class glyph, branch glyph and class name as one unit. They used to be split — glyphs
-// floating in the top-left corner, name down here — which read as two unrelated pieces
-// of chrome. Grouped, the row says one thing: what this operator is.
+// Class glyph and class name as one unit. They used to be split — glyphs floating in the
+// top-left corner, name down here — which read as two unrelated pieces of chrome. Grouped,
+// the row says one thing: what this operator is. The branch glyph leads .op-serial below.
 .op-meta-row {
   display: flex;
   align-items: center;
@@ -670,12 +672,6 @@ body {
   height: 17px;
   flex-shrink: 0;
   display: block;
-}
-
-.op-meta-icon-sub {
-  width: 13px;
-  height: 13px;
-  opacity: 0.8;
 }
 
 // Neutral, deliberately: rarity is the one dimension colour encodes on this card, and
@@ -694,6 +690,9 @@ body {
 // Off-scale at 9px: the smallest step is 10px, and this has to read as print rather than
 // as a label competing with the class row above it.
 .op-serial {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 9px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -702,6 +701,22 @@ body {
   padding-top: 5px;
   border-top: 1px solid rgb(255 255 255 / 12%);
   white-space: nowrap;
+  overflow: hidden;
+}
+
+// 11px fits inside the 9px caps' line box, so the line doesn't grow. 60% keeps the glyph at
+// the line's --muted weight rather than the brighter class row's.
+.op-serial-icon {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+// The ellipsis lives on the text rather than on .op-serial: a flex container can't elide
+// its items, only a text box can.
+.op-serial-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1736,12 +1751,11 @@ input[type='number'] {
   .op-name { font-size: var(--fs-base); }
   .op-epithet { font-size: 11.5px; }
 
-  // Smaller than the name deliberately: this row has the two glyphs and the rarity
-  // corner competing for the same line, and the class name is the part that must never
-  // elide.
-  .op-meta-row { font-size: var(--fs-2xs); gap: 3px; }
+  // The epithet's size, as on desktop, where the two match. It sat at 10px while this row
+  // held two glyphs, which left the class name reading no larger than .op-serial's 9px caps
+  // below it. With one glyph it has the room, and the class name still must never elide.
+  .op-meta-row { font-size: 11.5px; gap: 3px; }
   .op-meta-icon { width: 13px; height: 13px; }
-  .op-meta-icon-sub { width: 10px; height: 10px; }
   .op-avatar-placeholder { font-size: 28px; }
 
   // .op-stars deliberately has NO override here. It used to — `padding: 9px 5px 6px` with
