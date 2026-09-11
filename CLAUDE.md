@@ -214,8 +214,9 @@ IMAGE_BASE
 ```
 
 Branch icons are self-hosted because the old source (Aceship's mirror) stopped updating in
-2022. Coverage is 71/72 — "Supportive Ranger" has no wiki icon yet, so callers still hide
-the `<img>` on error.
+2022. Coverage is 72/72. The wiki's `Category:Branch icons` isn't exhaustive — "Supportive
+Ranger Supporter.png" was never filed under it — so a branch the listing misses is fetched by
+filename; callers still hide the `<img>` on error for anything the build couldn't get.
 
 ### Generated Operator Index (`src/shared/generated/`)
 
@@ -253,7 +254,8 @@ minutes, twice, before this).
   added using CN's own `appellation` (a pre-romanized name the game data carries before
   official localization — this is how Sanity Gone displays brand-new operators too; some,
   like `Вий`, are Cyrillic by design, not a translation gap). `archetype` is looked up by
-  matching `subProfessionId` against an operator HellaAPI already knows; `tags` come from a
+  matching `subProfessionId` against an operator HellaAPI already knows, falling back to the
+  wiki's `Operators.branch` when none shares it (Supportive Ranger); `tags` come from a
   static CN→EN table (recruitment tags are a frozen ~18-value vocabulary). Filtered to the
   real 8-class set — `character_table.json` also includes summons, traps and RIIC
   assistants (`TOKEN`/`TRAP`). `isSpChar` looks like a junk-data flag but isn't — it's set

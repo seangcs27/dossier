@@ -189,7 +189,11 @@ async function fetchBranchIcons(entries) {
       const cls = PROFESSION_EN[e.profession] ?? '';
       const url = [`${e.archetype} ${cls}`, e.archetype]
         .map(c => byName.get(c.trim().toLowerCase()))
-        .find(Boolean);
+        .find(Boolean)
+        // The category isn't exhaustive: "Supportive Ranger Supporter.png" is on the wiki but
+        // was never filed under it. A branch the listing misses is asked for by its
+        // conventional filename instead, which 404s into `unmatched` if the wiki has none.
+        ?? (e.archetype && new URL(`/wiki/Special:Redirect/file/${encodeURIComponent(`${e.archetype} ${cls}.png`)}`, WIKI_API).href);
       if (!url) { unmatched.push(`${e.subProfessionId} (${e.archetype || 'no archetype name'})`); return; }
       try {
         const imgRes = await fetchWithRetry(url);
@@ -572,7 +576,7 @@ async function fetchWikiTraits(names) {
     // rows wouldn't help if the query itself excludes them.
     const queryNames = new Set(names);
     for (const n of names) if (n.includes('·')) queryNames.add(n.replace(/·/g, ' - '));
-    const rows = await cargo({ tables: 'Operators', fields: 'name,trait,description', where: `name IN (${[...queryNames].map(n => `"${n.replace(/"/g, '')}"`).join(',')})` });
+    const rows = await cargo({ tables: 'Operators', fields: 'name,trait,description,branch', where: `name IN (${[...queryNames].map(n => `"${n.replace(/"/g, '')}"`).join(',')})` });
     return new Map(rows.map(r => [normalizeWikiName(r.name), {
       // Both fields can carry [[page|display]] wikilink syntax (confirmed on
       // Kal'tsit·Esperanta's trait, not just the bio blurb this was first written for)
@@ -580,6 +584,7 @@ async function fetchWikiTraits(names) {
       // so this needs to happen here or "[[Take Off|Take Off]]" shows up literally.
       trait: r.trait ? stripWikiMarkup(r.trait) : null,
       itemUsage: r.description ? stripWikiMarkup(r.description) : null,
+      branch: r.branch || null,
     }]));
   } catch (e) {
     console.warn(`wiki trait fetch skipped: ${e.message}`);
@@ -746,7 +751,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
     `${path.relative(process.cwd(), path.join(outDir, 'operator-popup.json'))}`,
   );
 
-  return { written, nations, collabs };
+  return { written, nations, collabs, traitByName };
 }
 
 const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
@@ -778,7 +783,7 @@ function releaseDateFor(name) {
 const obtainable = envelopes.filter(e => !e.value.data.isNotObtainable);
 const excluded = envelopes.length - obtainable.length;
 
-const { written: detailsWritten, nations, collabs } = await buildOperatorDetails(
+const { written: detailsWritten, nations, collabs, traitByName } = await buildOperatorDetails(
   obtainable.map(e => ({ id: e.canon, appellation: e.value.data.appellation })),
   cnSupplement,
 );
@@ -819,7 +824,11 @@ for (const c of cnSupplement) {
     rarity: c.rarity,
     profession: c.profession,
     subProfessionId: c.subProfessionId,
-    archetype: archetypeBySubclass.get(c.subProfessionId) ?? '',
+    // A subclass no HellaAPI operator shares has nothing to borrow — Supportive Ranger's only
+    // operators, Pedro and Yukari Takeba, are both CN-supplement — so the wiki's own branch
+    // field names it instead. Without a name the branch icon can't be matched either.
+    archetype: archetypeBySubclass.get(c.subProfessionId)
+      ?? traitByName.get(normalizeWikiName(c.appellation))?.branch ?? '',
     tags: c.tags,
     releaseDate: RECENT_UNDATED,
     releaseOrder: releaseOrders.get(c.id) ?? null,

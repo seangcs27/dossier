@@ -257,8 +257,7 @@ body {
 }
 
 // Archetype chips carry the same branch glyph the cards do, so the picker and the grid
-// name the thing the same way. The icon removes itself where the wiki has none — coverage
-// is 71 of the 72 branches.
+// name the thing the same way. The icon removes itself where the build couldn't get one.
 .chip-icon-label {
   gap: var(--sp-6);
 

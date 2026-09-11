@@ -144,13 +144,6 @@ upstream projects catch up.
 - **Newer CN operators are largely untranslated** (roughly GALLUS² onward). The community
   translation project works in order and hasn't reached them.
 - **Ботани, Укусик, Вий** have no arknights.wiki.gg page, so no English trait or bio.
-- **Pedro has no archetype badge or archetype name.** His branch, "Supportive Ranger", is
-  new enough that arknights.wiki.gg hasn't made a branch icon for it (71 of our 72
-  branches are covered). Separately his `archetype` is an empty string: CN-supplement
-  operators inherit that label by matching `subProfessionId` against an operator HellaAPI
-  already knows, and he's the only one whose branch no existing operator shares. The wiki's
-  `Operators.branch` Cargo field does have it — worth using as a fallback for blank
-  archetypes.
 
 ## Housekeeping
 

@@ -120,8 +120,8 @@ export function classIconUrl(slug: string): string {
 // `Category:Branch icons` at build time (see fetchBranchIcons in
 // scripts/build-operator-index.mjs) and served from our own origin — the previous source,
 // Aceship's mirror, stopped updating in 2022 and was missing every branch added since.
-// Coverage is 71 of 72; "Supportive Ranger" is new enough that the wiki has no icon for it
-// yet, so callers still hide the <img> on error rather than showing a broken one.
+// The download is best-effort — a branch the wiki has no icon for, or a failed fetch, just
+// leaves a gap — so callers still hide the <img> on error rather than showing a broken one.
 export function archetypeIconUrl(subProfessionId: string): string {
   return `branch-icons/${encodeURIComponent(subProfessionId)}.png`;
 }

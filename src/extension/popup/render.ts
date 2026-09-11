@@ -69,8 +69,8 @@ export function bindAvatarFallbacks(container: HTMLElement): void {
     });
   });
 
-  // Branch glyph coverage is 71 of 72 — "Supportive Ranger" is newer than the wiki's icon
-  // set — so the one that has no icon removes itself rather than showing a broken image.
+  // Branch glyphs are downloaded best-effort at build time, so one the build couldn't get
+  // removes itself rather than showing a broken image.
   container.querySelectorAll<HTMLImageElement>('.op-meta-icon-sub').forEach(img => {
     img.addEventListener('error', () => img.remove());
   });
