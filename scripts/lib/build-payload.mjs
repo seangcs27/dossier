@@ -38,9 +38,14 @@ export async function buildPayload(charId, server = 'en') {
   // `infoParam` ("Guard", "Medic"), which is how the golden payloads got "Amiya (Guard)".
   const patched = patch.patchChars?.[charId];
   const form = patch.patchDetailInfoList?.[charId]?.infoParam;
-  const data = chars[charId]
+  const raw = chars[charId]
     ?? (patched && { ...patched, name: form ? `${patched.name} (${form})` : patched.name });
-  if (!data) return null;
+  if (!raw) return null;
+
+  // Normalised here and not only on the way out, because the joins in later tasks read
+  // `data.skills` and `data.phases` directly — and an operator with no skills (12F) has
+  // `{}` there, which has no .filter.
+  const data = normalizeEmptyArrays(raw);
 
   const uni = await table(server, 'uniequip_table');
 
