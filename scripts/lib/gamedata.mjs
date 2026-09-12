@@ -24,12 +24,18 @@ async function timedFetch(url) {
 export async function table(server, name) {
   const key = `${server}/${name}`;
   if (!cache.has(key)) {
-    cache.set(key, (async () => {
+    const promise = (async () => {
       const url = `${BASE}/${server}/gamedata/excel/${name}.json`;
       const res = await timedFetch(url);
       if (!res.ok) throw new Error(`${res.status} ${url}`);
       return res.json();
-    })());
+    })();
+    // If the fetch fails, remove the promise from cache so the next call retries.
+    // Success is cached for the lifetime of the process.
+    cache.set(key, promise.catch(err => {
+      cache.delete(key);
+      throw err;
+    }));
   }
   return cache.get(key);
 }
