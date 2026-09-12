@@ -242,8 +242,12 @@ and the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which were never relea
 flag is used rather than a name match because the Integrated Strategies trainer "Mechanist"
 (`char_610_acfend`) shares its name with a real 6★ operator, as does "Raidian".
 
-**Seven sources are joined at build time.** Only HellaAPI is load-bearing — its failure
-stops the build; every other fetch degrades with a `console.warn`. Every request goes
+**Seven sources are joined at build time.** Only HellaAPI is load-bearing — every other
+fetch degrades with a `console.warn`. When HellaAPI itself is unreachable, both index
+scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
+overwriting it with an empty bundle; CI restores that data from the last run's cache (see
+`.github/workflows/deploy-pages.yml`). With nothing on disk to keep, the build still
+fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
 minutes, twice, before this).
 

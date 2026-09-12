@@ -35,7 +35,7 @@
 //                           deploy, so it's discovered by chasing the reference chain from
 //                           their live page (page -> OperatorList.[hash].js ->
 //                           operators-index.json.[hash].js) rather than hardcoded.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -754,13 +754,38 @@ async function buildOperatorDetails(regular, cnSupplement) {
   return { written, nations, collabs, traitByName };
 }
 
-const [hellaRes, releaseDates, releaseOrders] = await Promise.all([
-  timedFetch(HELLA_URL), // hard-fail: no operator list, no point building
+// How many operators the previous build left on disk; 0 if there's nothing usable there.
+async function previousOperatorCount() {
+  try {
+    const prev = JSON.parse(await readFile(path.join(outDir, 'operators.json'), 'utf8'));
+    return Array.isArray(prev) ? prev.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// HellaAPI is the one source nothing else stands in for, but its host spent days serving a
+// self-signed certificate in September 2026, and a build that can't reach it blocked every
+// deploy — including deploys of changes that have nothing to do with operator data. So an
+// unreachable HellaAPI now keeps the previous build's generated data and stops there:
+// slightly stale data ships, which beats not shipping. CI restores that data from the last
+// run's cache before this runs (see .github/workflows/deploy-pages.yml). With nothing on
+// disk to keep it still hard-fails, because an empty bundle is worse than a failed build.
+const [hella, releaseDates, releaseOrders] = await Promise.all([
+  timedFetch(HELLA_URL).then(res => (res.ok ? res : new Error(`${res.status} ${HELLA_URL}`)), e => e),
   fetchReleaseDates(),
   fetchReleaseOrder(),
 ]);
-if (!hellaRes.ok) throw new Error(`${hellaRes.status} ${HELLA_URL}`);
-const envelopes = await hellaRes.json();
+if (hella instanceof Error) {
+  const kept = await previousOperatorCount();
+  if (!kept) throw hella;
+  console.warn(
+    `HellaAPI unreachable (${hella.message}) — keeping the last build's ${kept} operators in ` +
+    `${path.relative(process.cwd(), outDir)}`,
+  );
+  process.exit(0);
+}
+const envelopes = await hella.json();
 
 const cnSupplement = await fetchCnSupplement(new Set(envelopes.map(e => e.canon)));
 

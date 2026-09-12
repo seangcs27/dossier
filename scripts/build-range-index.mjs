@@ -76,6 +76,15 @@ async function collectRangeIds() {
   return ids;
 }
 
+// How many ranges the previous build left on disk; 0 if there's nothing usable there.
+async function previousRangeCount() {
+  try {
+    return Object.keys(JSON.parse(await readFile(path.join(outDir, 'ranges.json'), 'utf8'))).length;
+  } catch {
+    return 0;
+  }
+}
+
 const rangeIds = await collectRangeIds();
 
 const ranges = {};
@@ -95,6 +104,18 @@ await Promise.all([...rangeIds].map(async id => {
     console.warn(`range ${id} skipped: ${e.message}`);
   }
 }));
+
+// Nothing came back at all, which means HellaAPI is unreachable rather than a range or two
+// having moved. Writing the empty result would send every detail page back to a live
+// per-range fetch, so keep whatever the last build wrote instead — the same fallback the
+// operator index takes, restored from the same CI cache.
+if (rangeIds.size && !Object.keys(ranges).length) {
+  const kept = await previousRangeCount();
+  if (kept) {
+    console.warn(`no ranges fetched (${failed} failed) — keeping the last build's ${kept}`);
+    process.exit(0);
+  }
+}
 
 await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'ranges.json');
