@@ -315,6 +315,14 @@ const CN_OBTAIN_EN = {
 // fail the build rather than silently deploying a broken sort order.
 const MIN_DATED = 300;
 
+// Below this many written operator details, assume one of the tables buildPayload fetches
+// lazily (uniequip_table, skill_table, battle_equip_table, building_data,
+// handbook_team_table, range_table, skin_table) is permanently unreachable — that failure
+// lands in buildOperatorDetails' per-operator try/catch, not the fatal enChars/enPatch
+// check above, so `written` can collapse to near-zero while the script still reaches this
+// line and would otherwise exit 0 having overwritten a good build with an almost-empty one.
+const MIN_DETAILS_WRITTEN = 400;
+
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated',
 );
@@ -731,14 +739,11 @@ async function buildOperatorDetails(regular, cnSupplement) {
       console.warn(`operator detail skipped for ${entry.id}: ${e.message}`);
     }
   });
-  await writeFile(path.join(outDir, 'operator-popup.json'), JSON.stringify(popup));
-  console.log(
-    `wrote ${Object.keys(popup).length} popup projections ` +
-    `(${(JSON.stringify(popup).length / 1024).toFixed(0)}KB) -> ` +
-    `${path.relative(process.cwd(), path.join(outDir, 'operator-popup.json'))}`,
-  );
-
-  return { written, nations, collabs, archetypes, traitByName };
+  // Written by the caller, after the MIN_DETAILS_WRITTEN floor check: `popup` is
+  // accumulated across every operator and would otherwise get flushed here even when
+  // `written` collapses to near-zero, silently overwriting a good popup.json before that
+  // check ever runs.
+  return { written, nations, collabs, archetypes, traitByName, popup };
 }
 
 // How many operators the previous build left on disk; 0 if there's nothing usable there.
@@ -813,9 +818,32 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-const { written: detailsWritten, nations, collabs, archetypes, traitByName } = await buildOperatorDetails(
+const { written: detailsWritten, nations, collabs, archetypes, traitByName, popup } = await buildOperatorDetails(
   roster.map(r => ({ id: r.id, appellation: r.data.appellation })),
   cnSupplement,
+);
+
+// Same fallback as the enChars/enPatch check above, for the failure mode that check can't
+// see: a table buildPayload fetches lazily died, so every per-operator call warned and
+// failed inside its own try/catch instead of throwing here.
+if (detailsWritten < MIN_DETAILS_WRITTEN) {
+  const kept = await previousOperatorCount();
+  if (!kept) {
+    throw new Error(`only ${detailsWritten} operator details written (expected >= ${MIN_DETAILS_WRITTEN}) and no previous build to fall back on`);
+  }
+  console.warn(
+    `only ${detailsWritten} operator details written (expected >= ${MIN_DETAILS_WRITTEN}) — keeping the last build's ${kept} operators ` +
+    `in ${path.relative(process.cwd(), outDir)}`,
+  );
+  process.exit(0);
+}
+
+const popupFile = path.join(outDir, 'operator-popup.json');
+await writeFile(popupFile, JSON.stringify(popup));
+console.log(
+  `wrote ${Object.keys(popup).length} popup projections ` +
+  `(${(JSON.stringify(popup).length / 1024).toFixed(0)}KB) -> ` +
+  `${path.relative(process.cwd(), popupFile)}`,
 );
 
 const entries = roster.map(r => ({
