@@ -48,6 +48,7 @@ export async function buildPayload(charId, server = 'en') {
   const data = normalizeEmptyArrays(raw);
 
   const uni = await table(server, 'uniequip_table');
+  const skillTable = await table(server, 'skill_table');
 
   // Wrapping the whole payload means every field a later task adds is normalised too.
   return normalizeEmptyArrays({
@@ -56,5 +57,10 @@ export async function buildPayload(charId, server = 'en') {
     // Readable branch name: 'craftsman' -> 'Artificer'. CN data names it in Chinese, so a
     // CN-only branch keeps '' here and build-operator-index.mjs fills it from the wiki.
     archetype: server === 'en' ? uni.subProfDict[data.subProfessionId]?.subProfessionName ?? '' : '',
+    // Each of the character's skill refs paired with the skill's own entry. HellaAPI called
+    // these `deploy` and `excel`, and the detail view still reads both names.
+    skills: (data.skills ?? [])
+      .filter(ref => skillTable[ref.skillId])
+      .map(ref => ({ deploy: ref, excel: skillTable[ref.skillId] })),
   });
 }
