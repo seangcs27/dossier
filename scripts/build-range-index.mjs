@@ -7,25 +7,6 @@ import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const BASE_URL = 'https://awedtan.ca/api';
-
-// Plain `fetch` has no timeout — a stalled connection on a shared CI runner would hang
-// this indefinitely with no error. See build-operator-index.mjs for the same fix and
-// the outage that prompted it.
-const FETCH_TIMEOUT_MS = 20_000;
-async function timedFetch(url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  try {
-    return await fetch(url, { signal: controller.signal });
-  } catch (e) {
-    if (e.name === 'AbortError') throw new Error(`timed out after ${FETCH_TIMEOUT_MS / 1000}s: ${url}`);
-    throw e;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated',
 );
@@ -63,16 +44,10 @@ async function collectRangeIds() {
     return ids;
   }
 
-  // Standalone `npm run build:index:ranges` with no baked details on disk. Phase ranges
-  // only — the list endpoint can't reach into skill levels — but better than nothing.
-  console.warn('no baked operator details found; falling back to phase ranges only');
-  const listRes = await timedFetch(`${BASE_URL}/operator?include=data.phases.rangeId`);
-  if (!listRes.ok) throw new Error(`${listRes.status} fetching operator range ids`);
-  for (const e of await listRes.json()) {
-    for (const phase of e.value?.data?.phases ?? []) {
-      if (phase.rangeId) ids.add(phase.rangeId);
-    }
-  }
+  // Standalone `npm run build:index:ranges` with no baked details on disk. There is no
+  // longer a live list query to fall back to (see hella-api.ts) — collect nothing rather
+  // than reach for a source this build no longer fetches from.
+  console.warn('no baked operator details found; collecting no range ids');
   return ids;
 }
 
@@ -85,41 +60,31 @@ async function previousRangeCount() {
   }
 }
 
+import { table } from './lib/gamedata.mjs';
+
 const rangeIds = await collectRangeIds();
 
-const ranges = {};
-let failed = 0;
-await Promise.all([...rangeIds].map(async id => {
-  try {
-    const res = await timedFetch(`${BASE_URL}/range/${encodeURIComponent(id)}`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    const envelope = await res.json();
-    if (!envelope?.value) throw new Error('empty envelope');
-    ranges[id] = envelope.value;
-  } catch (e) {
-    // Non-fatal: the runtime cache falls back to a live fetch for any range missing
-    // from the bundle, so a handful of failures here degrade gracefully rather than
-    // blocking the build.
-    failed++;
-    console.warn(`range ${id} skipped: ${e.message}`);
-  }
-}));
-
-// Nothing came back at all, which means HellaAPI is unreachable rather than a range or two
-// having moved. Writing the empty result would send every detail page back to a live
-// per-range fetch, so keep whatever the last build wrote instead — the same fallback the
-// operator index takes, restored from the same CI cache.
-if (rangeIds.size && !Object.keys(ranges).length) {
+// Unreachable source: keep the ranges the last build wrote rather than failing or, worse,
+// writing an empty bundle that sends every detail page back to a live per-range fetch.
+const rangeTable = await table('en', 'range_table').catch(e => e);
+if (rangeTable instanceof Error) {
   const kept = await previousRangeCount();
-  if (kept) {
-    console.warn(`no ranges fetched (${failed} failed) — keeping the last build's ${kept}`);
-    process.exit(0);
-  }
+  if (!kept) throw rangeTable;
+  console.warn(`range table unreachable (${rangeTable.message}) — keeping the last build's ${kept}`);
+  process.exit(0);
 }
+
+const ranges = {};
+const missing = [];
+for (const id of rangeIds) {
+  if (rangeTable[id]) ranges[id] = rangeTable[id];
+  else missing.push(id);
+}
+if (missing.length) console.warn(`ranges not in range_table: ${missing.join(', ')}`);
 
 await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'ranges.json');
 await writeFile(outFile, JSON.stringify(ranges));
 console.log(
-  `wrote ${Object.keys(ranges).length} ranges (${failed} failed) -> ${path.relative(process.cwd(), outFile)}`,
+  `wrote ${Object.keys(ranges).length} ranges (${missing.length} failed) -> ${path.relative(process.cwd(), outFile)}`,
 );
