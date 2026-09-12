@@ -54,6 +54,7 @@ export async function buildPayload(charId, server = 'en') {
 
   const uni = await table(server, 'uniequip_table');
   const skillTable = await table(server, 'skill_table');
+  const battleEquip = await table(server, 'battle_equip_table');
 
   // Wrapping the whole payload means every field a later task adds is normalised too.
   return normalizeEmptyArrays({
@@ -67,5 +68,11 @@ export async function buildPayload(charId, server = 'en') {
     skills: (data.skills ?? [])
       .filter(ref => skillTable[ref.skillId])
       .map(ref => ({ deploy: ref, excel: skillTable[ref.skillId] })),
+    // uniequip_001_* is the "Original" placeholder every operator carries and no module UI
+    // shows — none of the 400 payloads checked contained one.
+    modules: (uni.charEquip?.[charId] ?? [])
+      .filter(id => !id.startsWith('uniequip_001_'))
+      .map(id => ({ info: uni.equipDict[id], data: battleEquip[id] ?? null }))
+      .filter(m => m.info),
   });
 }
