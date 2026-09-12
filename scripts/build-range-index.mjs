@@ -75,12 +75,24 @@ if (rangeTable instanceof Error) {
 }
 
 const ranges = {};
-const missing = [];
+let missing = [];
 for (const id of rangeIds) {
   if (rangeTable[id]) ranges[id] = rangeTable[id];
   else missing.push(id);
 }
-if (missing.length) console.warn(`ranges not in range_table: ${missing.join(', ')}`);
+
+// CN-frontier operators reach for ranges the EN table doesn't carry yet — Kal'tsit·Esperanta's
+// skill uses y-11, which is CN-only — so the CN table supplements it, exactly as it does for
+// the operator index. Fetched only when something is actually missing.
+if (missing.length) {
+  const cnRanges = await table('cn', 'range_table').catch(() => ({}));
+  missing = missing.filter(id => {
+    if (!cnRanges[id]) return true;
+    ranges[id] = cnRanges[id];
+    return false;
+  });
+}
+if (missing.length) console.warn(`ranges in neither range_table: ${missing.join(', ')}`);
 
 await mkdir(outDir, { recursive: true });
 const outFile = path.join(outDir, 'ranges.json');
