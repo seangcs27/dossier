@@ -19,20 +19,34 @@ const STRICT = flag('--strict');
 const goldenDir = path.join(process.cwd(), '.golden', 'operator-details');
 
 // Walks both sides together. Returns { structural: [...paths], drift: [...paths] }.
-function diff(a, b, at = '', out = { structural: [], drift: [] }) {
+function diff(a, b, at = '', out = { structural: [], drift: [] }, depth = 0) {
   if (a === b) return out;
   const type = v => (v === null ? 'null' : Array.isArray(v) ? 'array' : typeof v);
-  if (type(a) !== type(b)) { out.structural.push(`${at}: ${type(a)} vs ${type(b)}`); return out; }
+  if (type(a) !== type(b)) {
+    // A null on one side, deep inside the record, is the game emptying a field between the
+    // snapshot and now: Makoto's third talent lost its candidates array, Aigis's first
+    // talent lost its name. That is content, not a broken join. At depth 0 — the payload's
+    // own fields — a null would mean we failed to build one, so it stays structural.
+    const nulled = a === null || b === null;
+    (nulled && depth > 0 ? out.drift : out.structural).push(`${at}: ${type(a)} vs ${type(b)}`);
+    return out;
+  }
   if (Array.isArray(a)) {
     if (a.length !== b.length) { out.structural.push(`${at}: length ${a.length} vs ${b.length}`); return out; }
-    a.forEach((v, i) => diff(v, b[i], `${at}[${i}]`, out));
+    a.forEach((v, i) => diff(v, b[i], `${at}[${i}]`, out, depth + 1));
     return out;
   }
   if (a && typeof a === 'object') {
     const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
     for (const k of keys) {
-      if (!(k in a) || !(k in b)) { out.structural.push(`${at}.${k}: present on one side only`); continue; }
-      diff(a[k], b[k], `${at}.${k}`, out);
+      // `a` is what we built, `b` is the golden payload, and the two sides mean different
+      // things. A key only the golden has is a field we failed to produce — exactly what
+      // this gate exists to catch. A key only we have is the game having added something
+      // since the golden was baked (teleportImmune and groundBoundImmune arrived that way),
+      // which the app ignores.
+      if (!(k in b)) { out.drift.push(`${at}.${k}: new upstream key`); continue; }
+      if (!(k in a)) { out.structural.push(`${at}.${k}: missing from built payload`); continue; }
+      diff(a[k], b[k], `${at}.${k}`, out, depth + 1);
     }
     return out;
   }
