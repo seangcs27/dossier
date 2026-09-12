@@ -88,8 +88,8 @@ src/
       operator-cache.ts  ← 1hr TTL in-memory cache; ranges served from the bundle
     generated/      ← ALL gitignored, rebuilt every build
       operators.json          ← slim grid index, bundled into both targets
-      operator-details/<id>.json  ← 427 full Operator payloads, copied as static files
-      ranges.json             ← every attack range in use (~51), bundled
+      operator-details/<id>.json  ← 431 full Operator payloads, copied as static files
+      ranges.json             ← every attack range in use (~55), bundled
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
@@ -227,11 +227,11 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 { id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder }
 ```
 
-`operator-details/<id>.json` — the full `Operator` payload for **every** operator (427),
+`operator-details/<id>.json` — the full `Operator` payload for **every** operator (431),
 copied as static files rather than bundled. This is what makes a detail page load from a
 same-origin file (~100 ms) instead of a live API call (~2.3 s).
 
-`ranges.json` — every attack range referenced by any operator (~51 unique; operators share
+`ranges.json` — every attack range referenced by any operator (~55 unique; operators share
 them heavily), a few KB, bundled.
 
 Operators flagged `isNotObtainable` are **dropped** (~28): the `Reserve Operator - *` set
@@ -297,8 +297,9 @@ a Sanity Gone `releaseOrder`.
 
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
 
-Module-level in-memory cache with 1-hour TTL. `getRange` checks the bundled `ranges.json`
-first and only caches what it had to fetch live.
+Module-level in-memory cache with a 1-hour TTL, for `getOperator` only. `getRange` has no
+cache of its own — it reads straight from the bundled `ranges.json` and throws if the id
+isn't there; there's no live fallback left to cache the result of.
 
 ```ts
 getOperator(id): Promise<Operator>
