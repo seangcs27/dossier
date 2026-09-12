@@ -463,8 +463,9 @@ async function fetchCnSupplement(knownIds) {
 // these operators haven't had an official EN localization pass yet, so this is the
 // best available English until they release on Global. Keyed by skillId (skills) and
 // by operator id (talents, as an array-of-arrays matching data.talents[j].candidates[k]
-// positionally). Supplemental only: a fetch failure here degrades to the existing raw-
-// Chinese CN fallback in hella-api.ts, it doesn't block the index build.
+// positionally). Supplemental only: a fetch failure here just leaves these operators with
+// the raw CN text buildCnOperatorPayload started from (untranslated), it doesn't block the
+// index build.
 async function fetchAceTranslations() {
   try {
     const [skillsRes, talentsRes] = await Promise.all([
@@ -660,11 +661,11 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 // Fetches and bakes a full Operator detail object for EVERY operator (not just CN-
 // supplement ones) to src/shared/generated/operator-details/<id>.json — CN-supplement
 // operators get the shape-normalize + translate treatment above; regular operators are
-// already complete, correctly-shaped, English data straight from HellaAPI's global
-// endpoint. This is what makes every detail page load from a same-origin static file
-// instead of a live third-party API call (see hella-api.ts's static-first lookup),
-// with the live fetch kept only as a fallback for an id this build doesn't know about
-// yet. Best-effort per operator: one bad fetch shouldn't cost the others.
+// already complete, correctly-shaped, English data straight from the EN excel tables.
+// This is what makes every detail page load from a same-origin static file — there is no
+// live fallback left for an id this build doesn't know about (see hella-api.ts); it's a
+// wait for the next rebuild instead. Best-effort per operator: one bad fetch shouldn't
+// cost the others.
 async function buildOperatorDetails(regular, cnSupplement) {
   const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex] = await Promise.all([
     fetchAceTranslations(),

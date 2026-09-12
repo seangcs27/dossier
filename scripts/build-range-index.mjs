@@ -1,6 +1,6 @@
 // Generates src/shared/generated/ranges.json — every attack range referenced by any
 // operator, bundled at build time so the detail view's range grid never needs a live
-// HellaAPI call. There are only ~35 unique ranges across the whole roster (operators
+// network call. There are only ~35 unique ranges across the whole roster (operators
 // share them heavily — most "Melee 1-tile" operators point at the same range id), so
 // this is a few KB, not per-operator data.
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
@@ -16,17 +16,17 @@ const outDir = path.join(
 // S3s — carry their own rangeId, and the view draws it over the operator's).
 //
 // Collected from the baked per-operator details that build:index:operators has already
-// written, rather than from a `?include=` list query: those files are the exact input
-// the runtime reads, so nothing can be needed at runtime and absent here. Skipping this
-// left 20 of 47 skill ranges unbundled, and 56 operators made a blocking live HellaAPI
-// call before their page could paint.
+// written: those files are the exact input the runtime reads, so nothing can be needed at
+// runtime and absent here. Skipping this once left 20 of 47 skill ranges unbundled, and 56
+// operators made a blocking live call before their page could paint — back when there was
+// still a live source to fall back to; there no longer is (see below).
 async function collectRangeIds() {
   const detailDir = path.join(outDir, 'operator-details');
   const ids = new Set();
   let files = [];
   try {
     files = (await readdir(detailDir)).filter(f => f.endsWith('.json'));
-  } catch { /* details not built yet — fall back to the list query below */ }
+  } catch { /* operator-details/ doesn't exist yet — treated as zero files below */ }
 
   if (files.length) {
     for (const file of files) {
