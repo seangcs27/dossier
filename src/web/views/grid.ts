@@ -17,7 +17,7 @@ const state = {
   sort: 'release-desc' as SortKey,
   classes: new Set<Profession>(),
   rarities: new Set<number>(),
-  subclass: '',
+  subclasses: new Set<string>(),
   tags: new Set<string>(),
   tagMode: 'any' as TagMode,
   collabs: new Set<string>(),
@@ -110,7 +110,7 @@ function render(container: HTMLElement): void {
 
 function activeCount(): number {
   return state.classes.size + state.rarities.size + state.tags.size + state.collabs.size
-    + (state.subclass ? 1 : 0);
+    + state.subclasses.size;
 }
 
 // ── Filter popover: every dimension in one panel, opened from the topbar ──
@@ -132,13 +132,48 @@ function focusSelector(el: HTMLElement): string | null {
   return attrs ? `button${attrs}` : null;
 }
 
+// One picked class's branches, as tiles under a header. "1 of 9" in the header is the cue
+// that a pick narrows this class only; "All branches" says nothing narrows it yet. Labels drop
+// the class word the header already carries ("Mech-accord", not "Mech-accord Caster"), so the
+// full name goes in the tooltip and the accessible name, with the operator count. A branch at
+// zero under the other active filters dims rather than disabling: loosening another filter
+// can bring it back.
+function branchGroup(cls: Profession, counts: ReadonlyMap<string, number>): string {
+  const subs = subclassesFor(getOperators(), new Set([cls]));
+  const picked = subs.filter(s => state.subclasses.has(s.id)).length;
+  const classWord = new RegExp(`\\s${PROFESSION_LABEL[cls]}$`);
+  return `
+    <div class="branch-group">
+      <div class="branch-head">
+        <img src="${classIconUrl(PROFESSION_CSS[cls])}" alt="">${PROFESSION_LABEL[cls]}
+        <span>${picked ? `${picked} of ${subs.length}` : 'All branches'}</span>
+      </div>
+      <div class="branch-tiles">
+        ${subs.map(s => {
+          const n = counts.get(s.id) ?? 0;
+          const on = state.subclasses.has(s.id);
+          return `
+            <button class="branch-tile${on ? ' on' : ''}${n ? '' : ' zero'}" data-sub="${escHtml(s.id)}"
+                    aria-pressed="${on}" aria-label="${escHtml(s.label)}, ${n} operators" title="${escHtml(s.label)} · ${n}">
+              <img src="${archetypeIconUrl(s.id)}" alt="" loading="lazy" onerror="this.remove()">
+              <span>${escHtml(s.label.replace(classWord, ''))}</span>
+            </button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
 function renderMore(): void {
   const panel = document.getElementById('more-filters')!;
   panel.hidden = !state.moreOpen;
   if (!state.moreOpen) return;
 
-  const subs = subclassesFor(getOperators(), state.classes);
   const collabs = allCollabs(getOperators());
+  // Operators per branch under every other active filter — what each branch tile would yield.
+  const branchCounts = new Map<string, number>();
+  for (const op of filterOps(getOperators(), { ...state, subclasses: new Set() })) {
+    branchCounts.set(op.subProfessionId, (branchCounts.get(op.subProfessionId) ?? 0) + 1);
+  }
 
   // release-desc/asc and name-asc/desc collapse to a field plus a direction, which is what
   // the control actually offers: pick a field, click it again to flip. Newest-first and
@@ -159,9 +194,9 @@ function renderMore(): void {
       <div class="class-row">
         ${CLASS_ORDER.map(p => `
           <button class="class-btn${state.classes.has(p) ? ' on' : ''}"
-                  data-kind="class" data-value="${p}" title="${PROFESSION_LABEL[p]}"
-                  aria-pressed="${state.classes.has(p)}">
-            <img src="${classIconUrl(PROFESSION_CSS[p])}" alt="${PROFESSION_LABEL[p]}">
+                  data-kind="class" data-value="${p}" aria-pressed="${state.classes.has(p)}">
+            <img src="${classIconUrl(PROFESSION_CSS[p])}" alt="">
+            <span>${PROFESSION_LABEL[p]}</span>
           </button>
         `).join('')}
       </div>
@@ -170,14 +205,7 @@ function renderMore(): void {
     <div class="filter-group">
       <div class="filter-label">Archetype / Subclass</div>
       ${state.classes.size
-        ? `<div class="branch-row">
-            ${subs.map(s => `
-              <button class="chip chip-icon-label${s.id === state.subclass ? ' active' : ''}" data-sub="${escHtml(s.id)}">
-                <img src="${archetypeIconUrl(s.id)}" alt="" loading="lazy" onerror="this.remove()">
-                ${escHtml(s.label)}
-              </button>
-            `).join('')}
-          </div>`
+        ? CLASS_ORDER.filter(p => state.classes.has(p)).map(p => branchGroup(p, branchCounts)).join('')
         : '<div class="filter-empty">Select a class</div>'}
     </div>
 
@@ -290,9 +318,9 @@ function toggleChip(chip: HTMLButtonElement): void {
     // subclassesFor() returns every subclass for an empty set, and with no class picked the
     // panel shows a prompt instead of chips — a leftover subclass would keep filtering the
     // grid with nothing on screen to turn it off.
-    if (state.subclass && (!state.classes.size
-        || !subclassesFor(getOperators(), state.classes).some(s => s.id === state.subclass))) {
-      state.subclass = '';
+    const live = new Set(subclassesFor(getOperators(), state.classes).map(s => s.id));
+    for (const id of state.subclasses) {
+      if (!state.classes.size || !live.has(id)) state.subclasses.delete(id);
     }
   } else {
     const r = Number(value);
@@ -305,7 +333,7 @@ function clearAll(): void {
   state.rarities.clear();
   state.tags.clear();
   state.collabs.clear();
-  state.subclass = '';
+  state.subclasses.clear();
 }
 
 export function mountGrid(container: HTMLElement): void {
@@ -357,8 +385,7 @@ export function mountGrid(container: HTMLElement): void {
     if (el.dataset.kind) { toggleChip(el); refresh(); return; }
     const sub = el.dataset.sub;
     if (sub !== undefined) {
-      // Branch is single-select — clicking the active one clears it.
-      state.subclass = state.subclass === sub ? '' : sub;
+      if (state.subclasses.has(sub)) state.subclasses.delete(sub); else state.subclasses.add(sub);
       refresh();
       return;
     }

@@ -58,15 +58,13 @@ panel by definition, so rem buys it much less than it buys the web SPA.
 ### Filter popover — what the rework left
 The panel was rebuilt around the search box — Archetype / Subclass with branch glyphs, a
 six-segment rarity group, sort and tags under Advanced options, no click-away close — and
-focus now survives `renderMore()`'s wholesale rebuild. Three of the original complaints
-still stand:
+focus now survives `renderMore()`'s wholesale rebuild. Two of the original complaints still
+stand:
 
 - **Class and rarity are still two clicks away.** They live inside the popover; the hybrid
   sketch — class and rarity inline in the topbar, the rest in the popover — was never built.
-- **Archetype / Subclass is single-select while everything else is multi.** No reason for
-  the asymmetry beyond how it was built.
-- **No indication of what a filter would yield.** A class plus an archetype can produce zero
-  results with no warning until the grid empties.
+- **Only the branch tiles say what a filter would yield.** They dim at zero; a rarity, tag or
+  collab combination can still empty the grid with no warning until it does.
 
 Also stale: `scripts/build-design-previews.mjs` hand-writes the old markup — six loose rarity
 pills, a topbar `<select id="sort">`, and a card with the branch glyph still in the class row

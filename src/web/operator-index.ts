@@ -24,7 +24,7 @@ export interface OperatorFilter {
   query: string;
   classes: ReadonlySet<Profession>;
   rarities: ReadonlySet<number>;
-  subclass: string; // subProfessionId, '' for any
+  subclasses: ReadonlySet<string>; // subProfessionIds; each narrows only its own class
   tags: ReadonlySet<string>;
   tagMode: TagMode;
   collabs: ReadonlySet<string>; // collab display names, empty for no restriction
@@ -32,10 +32,15 @@ export interface OperatorFilter {
 
 export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): OperatorIndexEntry[] {
   const q = f.query.toLowerCase().trim();
+  // A picked branch narrows its own class and leaves the other picked classes whole: Caster +
+  // Supporter + Mech-accord Caster is every Supporter plus the Mech-accord Casters. Matching
+  // the branch against every operator instead dropped Supporter entirely the moment a Caster
+  // branch was picked, with its class tile still lit.
+  const narrowed = new Set(ops.filter(op => f.subclasses.has(op.subProfessionId)).map(op => op.profession));
   return ops.filter(op => {
     if (f.classes.size && !f.classes.has(op.profession)) return false;
     if (f.rarities.size && !f.rarities.has(rarityNum(op.rarity))) return false;
-    if (f.subclass && op.subProfessionId !== f.subclass) return false;
+    if (narrowed.has(op.profession) && !f.subclasses.has(op.subProfessionId)) return false;
     if (f.collabs.size && !f.collabs.has(op.collab)) return false;
     if (f.tags.size) {
       const hit = [...f.tags].filter(t => op.tags.includes(t)).length;

@@ -214,60 +214,101 @@ body {
   color: var(--muted);
 }
 
-// Class is picked by its glyph alone — the eight icons are the game's own shorthand
-// and read faster than eight text labels wrapping across rows.
+// Class and branch are picked the same way, one level apart: a tile with the glyph over its
+// name. Four across keeps the eight classes in two even rows at any width — the labels don't
+// fit eight across in the panel — and the tiles size to their content instead of to a
+// square, which is what used to make the class row tower on a phone.
 .class-row {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--sp-6);
 }
 
-.class-btn {
-  aspect-ratio: 1;
+// Four across, in the same columns as .class-row above, so the two levels line up. The
+// min() floor is what caps it at four rather than letting auto-fill add a fifth on a wide
+// panel: each column asks for a quarter of the row, and only falls back to 68px — three
+// across — on a panel too narrow for four, where branch names longer than any class name
+// would spill out of a 61px tile.
+.branch-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(68px, calc((100% - 3 * var(--sp-6)) / 4)), 1fr));
+  gap: var(--sp-6);
+}
+
+.class-btn,
+.branch-tile {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  gap: 5px;
+  min-width: 0;
+  padding: var(--sp-8) 2px 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1.15;
   cursor: pointer;
 
+  // contain: several branch glyphs aren't square, and a fixed box would stretch them.
   img {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
     opacity: 0.65;
   }
 
+  span { text-align: center; }
+
   &:hover { border-color: var(--accent); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
   &.on {
     background: var(--chip);
     border-color: var(--accent);
+    color: var(--text);
     img { opacity: 1; }
   }
 }
 
-.branch-row,
+.branch-tile.zero { opacity: 0.45; }
+
+.branch-group + .branch-group { margin-top: var(--sp-8); }
+
+// Which class the tiles below belong to, and how far it's narrowed.
+.branch-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-6);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+
+  img {
+    width: 13px;
+    height: 13px;
+    opacity: 0.7;
+  }
+
+  span {
+    margin-left: auto;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+}
+
 .collab-row,
 .tag-chips {
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-6);
-}
-
-// Archetype chips carry the same branch glyph the cards do, so the picker and the grid
-// name the thing the same way. The icon removes itself where the build couldn't get one.
-.chip-icon-label {
-  gap: var(--sp-6);
-
-  img {
-    width: 14px;
-    height: 14px;
-    opacity: 0.8;
-  }
-
-  &.active img { opacity: 1; }
 }
 
 // With no class picked there's nothing sensible to offer — all 72 at once is unusable — so
@@ -1715,9 +1756,6 @@ input[type='number'] {
     left: 12px;
     width: auto;
   }
-
-  // Eight class glyphs across a phone width leaves each one too small to hit reliably.
-  .class-row { grid-template-columns: repeat(4, 1fr); }
 
   // The column gutter has to be wider than the rarity tab, or the next card in DOM order
   // paints over the part that overhangs. The tab is 20px here and this gutter was 12px, so

@@ -334,8 +334,11 @@ for data** (only images). The topbar's search box and a Filters button form one 
 cluster; the button opens a popover that stays open until toggled or dismissed with Escape —
 **deliberately no click-away close**, since filtering is a back-and-forth with the grid.
 
-Inside the popover: class glyphs; Archetype / Subclass chips with branch glyphs, shown only
-once a class is picked (single-select); a six-segment rarity group tinted by rarity; collab
+Inside the popover: class tiles (glyph over name, four across); Archetype / Subclass tiles in
+the same style, grouped under a header per picked class and shown only once a class is picked
+— multi-select, where a picked branch narrows only its own class (Caster + Supporter + Mech-accord
+Caster is every Supporter plus the Mech-accord Casters), and a branch that would yield nothing
+under the other filters dims; a six-segment rarity group tinted by rarity; collab
 chips; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
 active one reverses it) and multi-select recruitment tags with an any/all mode.
 `renderMore()` rebuilds the panel on every change and restores focus to the equivalent
