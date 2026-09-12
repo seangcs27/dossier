@@ -16,7 +16,12 @@ import { table } from './gamedata.mjs';
 // catches that: such a field reports as `array vs object` against the golden payload, and
 // its key goes in KEEP_AS_OBJECT. A roster-wide run with zero structural mismatches is the
 // proof that this set is complete.
-const KEEP_AS_OBJECT = new Set([]);
+const KEEP_AS_OBJECT = new Set([
+  // A module phase's per-token overrides: a dictionary keyed by token id, not a list. The
+  // golden payloads keep it as `{}` because HellaAPI didn't coerce it either, so flattening
+  // it to `[]` would diverge from the shape the app was built against.
+  'tokenAttributeBlackboard',
+]);
 
 function normalizeEmptyArrays(value, key = '') {
   if (Array.isArray(value)) return value.map(v => normalizeEmptyArrays(v));
