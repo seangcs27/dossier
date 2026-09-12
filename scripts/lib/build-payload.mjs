@@ -56,6 +56,8 @@ export async function buildPayload(charId, server = 'en') {
   const skillTable = await table(server, 'skill_table');
   const battleEquip = await table(server, 'battle_equip_table');
   const building = await table(server, 'building_data');
+  const teams = await table(server, 'handbook_team_table');
+  const ranges = await table(server, 'range_table');
 
   // Wrapping the whole payload means every field a later task adds is normalised too.
   return normalizeEmptyArrays({
@@ -82,5 +84,21 @@ export async function buildPayload(charId, server = 'en') {
       .flatMap(entry => entry.buffData ?? [])
       .filter(buff => building.buffs[buff.buffId])
       .map(buff => ({ condition: buff, skill: building.buffs[buff.buffId] })),
+    // An operator can hold more than one affiliation: Amiya is Rhodes Island and, by birth,
+    // Rim Billiton. The record carries that as `mainPower` plus a `subPower` list — 81 EN
+    // operators have one, and 88 of the 431 payloads show more than one entry — so reading
+    // the bare nationId/groupId/teamId would silently drop the extras. This is how HellaAPI
+    // built the field too (scripts/load.ts in HellaOrg/HellaAPI). `powerName` is what the
+    // grid's edge strip and the index's `nation` read.
+    factions: [data.mainPower, ...(data.subPower ?? [])]
+      .filter(Boolean)
+      .map(power => ({
+        nationPower: teams[power.nationId] ?? null,
+        groupPower: teams[power.groupId] ?? null,
+        teamPower: teams[power.teamId] ?? null,
+      })),
+    // The last phase's range — E2's for anyone who promotes that far. True of all 400
+    // payloads checked, and it's what the detail view draws as the base grid.
+    range: ranges[data.phases?.at(-1)?.rangeId] ?? null,
   });
 }
