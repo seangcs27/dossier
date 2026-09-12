@@ -64,6 +64,18 @@ import { table } from './lib/gamedata.mjs';
 
 const rangeIds = await collectRangeIds();
 
+// No detail files to collect ids from at all (operator-details/ missing or empty, e.g.
+// build:index:ranges run standalone before build:index:operators has written anything) —
+// collectRangeIds() returns an empty set for that case, and the table fetch below would
+// still succeed, so without this it writes an empty ranges.json over a good one. Keep
+// whatever the last build wrote instead, same as the unreachable-source guard below.
+if (!rangeIds.size) {
+  const kept = await previousRangeCount();
+  if (!kept) throw new Error('no range ids collected and no previous build to fall back on');
+  console.warn(`no range ids collected — keeping the last build's ${kept}`);
+  process.exit(0);
+}
+
 // Unreachable source: keep the ranges the last build wrote rather than failing or, worse,
 // writing an empty bundle that sends every detail page back to a live per-range fetch.
 const rangeTable = await table('en', 'range_table').catch(e => e);
