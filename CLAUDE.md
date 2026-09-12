@@ -292,7 +292,7 @@ minutes, twice, before this).
 
 The script hard-fails below **300** genuinely-dated operators (the `9999-12-31` sentinel
 doesn't count toward it), so a wiki schema change breaks the build instead of silently
-shipping a wrong order. Current state: ~427 operators, ~399 with a real CN date, ~426 with
+shipping a wrong order. Current state: ~431 operators, ~401 with a real CN date, ~430 with
 a Sanity Gone `releaseOrder`.
 
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
