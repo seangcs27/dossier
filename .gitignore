@@ -51,3 +51,9 @@ PRODUCT.md
 
 # Impeccable design-hook config (local tooling, like .claude/)
 .impeccable/
+
+# Subagent-driven development scratch
+.superpowers/
+
+# Golden payloads for scripts/compare-payloads.mjs
+.golden/
