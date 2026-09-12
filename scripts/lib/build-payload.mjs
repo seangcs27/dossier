@@ -58,6 +58,7 @@ export async function buildPayload(charId, server = 'en') {
   const building = await table(server, 'building_data');
   const teams = await table(server, 'handbook_team_table');
   const ranges = await table(server, 'range_table');
+  const skinTable = await table(server, 'skin_table');
 
   // Wrapping the whole payload means every field a later task adds is normalised too.
   return normalizeEmptyArrays({
@@ -100,5 +101,13 @@ export async function buildPayload(charId, server = 'en') {
     // The last phase's range — E2's for anyone who promotes that far. True of all 400
     // payloads checked, and it's what the detail view draws as the base grid.
     range: ranges[data.phases?.at(-1)?.rangeId] ?? null,
+    // Not rendered directly: buildArtsList pairs these with the art repo's file listing to
+    // label each illustration and credit displaySkin.drawerList.
+    // Amiya's three forms share one charId here — all ten Amiya-family skins say
+    // char_002_amiya — and `tmplId` is what separates them. Every other operator has a null
+    // tmplId, so this falls back to charId. Checked across all 431 payloads: this rule
+    // reproduces every skin count, where charId alone gets the three Amiya forms wrong.
+    skins: Object.values(skinTable.charSkins ?? {})
+      .filter(skin => (skin.tmplId ?? skin.charId) === charId),
   });
 }
