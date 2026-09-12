@@ -35,7 +35,7 @@
 //                           deploy, so it's discovered by chasing the reference chain from
 //                           their live page (page -> OperatorList.[hash].js ->
 //                           operators-index.json.[hash].js) rather than hardcoded.
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -85,19 +85,11 @@ async function fetchWithRetry(url, attempts = 4) {
   }
 }
 
-const HELLA_URL =
-  'https://awedtan.ca/api/operator' +
-  '?include=data.name&include=data.appellation&include=data.rarity' +
-  '&include=data.profession&include=data.subProfessionId' +
-  '&include=data.tagList&include=archetype&include=data.isNotObtainable';
-
 const CN_CHARACTER_TABLE_URL =
-  'https://raw.githubusercontent.com/Kengxxiao/ArknightsGameData/master/zh_CN/gamedata/excel/character_table.json';
+  'https://raw.githubusercontent.com/ArknightsAssets/ArknightsGamedata/master/cn/gamedata/excel/character_table.json';
 
 const WIKI_API = 'https://arknights.wiki.gg/api.php';
 const SANITYGONE_BASE = 'https://sanitygone.help';
-const HELLA_OPERATOR_BASE = 'https://awedtan.ca/api/operator';
-const HELLA_CN_OPERATOR_BASE = 'https://awedtan.ca/api/cn/operator';
 const AN_EN_TAGS_JSON_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/AN-EN-Tags/main/json';
 const AN_EN_TAGS_BASE = `${AN_EN_TAGS_JSON_BASE}/ace`;
 const ARKNIGHT_IMAGES_TREE_URL =
@@ -456,23 +448,6 @@ async function fetchCnSupplement(knownIds) {
   }
 }
 
-// HellaAPI's /cn/operator returns `skills` as bare excel objects (no `deploy` wrapper)
-// whenever an operator actually has skills — unlike /operator, which nests each as
-// `{ deploy, excel }`. Mirrors normalizeCnSkills() in src/shared/api/hella-api.ts;
-// duplicated here rather than shared because this is a standalone Node script, not
-// bundled through the TS build.
-function normalizeCnSkills(op) {
-  const raw = op.skills ?? [];
-  return raw.map(entry => {
-    if ('excel' in entry) return entry;
-    const ref = (op.data.skills ?? []).find(r => r.skillId === entry.skillId);
-    return {
-      deploy: { skillId: entry.skillId, unlockCond: ref?.unlockCond ?? { phase: 'PHASE_0', level: 1 } },
-      excel: entry,
-    };
-  });
-}
-
 // English fan translations for skill/talent text, sourced from Aceship's community
 // translation project (the same repo CN_TAG_EN above is already verified against) —
 // these operators haven't had an official EN localization pass yet, so this is the
@@ -600,7 +575,10 @@ async function fetchWikiTraits(names) {
 // upgrade numbers, not the trait text detail.ts actually renders — so it's left as
 // raw CN rather than force a bad match.
 function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords) {
-  const skills = normalizeCnSkills(op).map(s => {
+  // buildPayload always pairs a skill with its excel entry as { deploy, excel }, for both
+  // servers — unlike HellaAPI's /cn/operator, which returned bare excel objects. Nothing
+  // to reconstruct here any more.
+  const skills = (op.skills ?? []).map(s => {
     const tl = skillTl[s.excel.skillId];
     if (!tl) return s;
     return {
@@ -687,10 +665,14 @@ async function buildOperatorDetails(regular, cnSupplement) {
   await mkdir(detailOutDir, { recursive: true });
 
   let written = 0;
-  // Nation is only in the full payload, never in the slim `?include=` query the index is
-  // built from, so it's harvested here rather than costing a second pass over 427 ids.
+  // Nation is only in the full payload, never in the slim roster read at the top of the
+  // script, so it's harvested here rather than costing a second pass over 427 ids.
   const nations = new Map();
   const collabs = new Map();
+  // Same reasoning: the raw character_table only has subProfessionId, not the resolved
+  // subProfessionName buildPayload's uniequip join produces — harvested here instead of
+  // re-fetching uniequip_table a second time just for the slim index.
+  const archetypes = new Map();
   // The extension popup's projection, gathered in the same pass. See PopupOperator in
   // src/shared/types/operator.ts for why this exists and what defines its shape.
   const popup = {};
@@ -698,20 +680,17 @@ async function buildOperatorDetails(regular, cnSupplement) {
   await mapConcurrent(all, 12, async entry => {
     const cn = cnById.get(entry.id);
     try {
-      const url = cn
-        ? `${HELLA_CN_OPERATOR_BASE}/${encodeURIComponent(entry.id)}`
-        : `${HELLA_OPERATOR_BASE}/${encodeURIComponent(entry.id)}`;
-      const res = await timedFetch(url);
-      if (!res.ok) throw new Error(`${res.status}`);
-      const envelope = await res.json();
-      if (!envelope?.value) throw new Error('empty response');
-      const op = envelope.value;
-
-      const base = cn
-        ? buildCnOperatorPayload(op, entry.id, entry.appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords)
-        : op;
+      const base = await buildPayload(entry.id, cn ? 'cn' : 'en');
+      if (!base) throw new Error('not in the character table');
+      const op = cn
+        ? buildCnOperatorPayload(base, entry.id, entry.appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords)
+        : base;
       const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
-      const finalOp = { ...base, arts };
+      // `op`, not `base`: for a CN-supplement operator `op` is buildCnOperatorPayload's
+      // translated overlay. Spreading `base` here would silently ship the raw Chinese
+      // buildPayload returns instead of the fan translations, in both this file and the
+      // popup projection below (`pd` reads from finalOp too).
+      const finalOp = { ...op, arts };
 
       // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
       // slug and only a fallback, title-cased, for a payload whose factions array is empty
@@ -723,6 +702,8 @@ async function buildOperatorDetails(regular, cnSupplement) {
 
       const collab = collabFor(base.data?.displayNumber);
       if (collab) collabs.set(entry.id, collab);
+
+      if (base.archetype) archetypes.set(entry.id, base.archetype);
 
       const pd = finalOp.data ?? {};
       popup[entry.id] = {
@@ -751,43 +732,48 @@ async function buildOperatorDetails(regular, cnSupplement) {
     `${path.relative(process.cwd(), path.join(outDir, 'operator-popup.json'))}`,
   );
 
-  return { written, nations, collabs, traitByName };
+  return { written, nations, collabs, archetypes, traitByName };
 }
 
-// How many operators the previous build left on disk; 0 if there's nothing usable there.
-async function previousOperatorCount() {
-  try {
-    const prev = JSON.parse(await readFile(path.join(outDir, 'operators.json'), 'utf8'));
-    return Array.isArray(prev) ? prev.length : 0;
-  } catch {
-    return 0;
-  }
-}
+import { table } from './lib/gamedata.mjs';
+import { buildPayload } from './lib/build-payload.mjs';
 
-// HellaAPI is the one source nothing else stands in for, but its host spent days serving a
-// self-signed certificate in September 2026, and a build that can't reach it blocked every
-// deploy — including deploys of changes that have nothing to do with operator data. So an
-// unreachable HellaAPI now keeps the previous build's generated data and stops there:
-// slightly stale data ships, which beats not shipping. CI restores that data from the last
-// run's cache before this runs (see .github/workflows/deploy-pages.yml). With nothing on
-// disk to keep it still hard-fails, because an empty bundle is worse than a failed build.
-const [hella, releaseDates, releaseOrders] = await Promise.all([
-  timedFetch(HELLA_URL).then(res => (res.ok ? res : new Error(`${res.status} ${HELLA_URL}`)), e => e),
+const VALID_PROFESSION = new Set([
+  'CASTER', 'MEDIC', 'PIONEER', 'SNIPER', 'SPECIAL', 'SUPPORT', 'TANK', 'WARRIOR',
+]);
+const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
+
+const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
+  table('en', 'character_table'),
+  table('en', 'char_patch_table'),
   fetchReleaseDates(),
   fetchReleaseOrder(),
 ]);
-if (hella instanceof Error) {
-  const kept = await previousOperatorCount();
-  if (!kept) throw hella;
-  console.warn(
-    `HellaAPI unreachable (${hella.message}) — keeping the last build's ${kept} operators in ` +
-    `${path.relative(process.cwd(), outDir)}`,
-  );
-  process.exit(0);
-}
-const envelopes = await hella.json();
 
-const cnSupplement = await fetchCnSupplement(new Set(envelopes.map(e => e.canon)));
+// Tutorial and Integrated Strategies trainer units — the "Reserve Operator - *" set plus
+// the Sharp/Pith/Touch/Stormeye/Tulip families. They were never released, so they have no
+// release date and only pad the end of the grid. Both reference sites omit them too.
+//
+// `isNotObtainable` is the flag rather than a name match, because name matching would
+// confuse the IS trainer "Mechanist" (char_610_acfend) with the real 6* operator of the
+// same name, and likewise for "Raidian".
+//
+// The roster HellaAPI used to return: real operators, minus the tutorial and Integrated
+// Strategies trainers that were never released. Amiya's Guard and Medic forms come from the
+// patch table — they are operators like any other here, and dropping them would lose two
+// from the grid.
+const roster = Object.entries({ ...enChars, ...(enPatch.patchChars ?? {}) })
+  .filter(([, c]) => VALID_PROFESSION.has(c.profession) && VALID_RARITY.has(c.rarity))
+  .filter(([, c]) => !c.isNotObtainable)
+  .map(([id, c]) => ({ id, data: c }));
+
+// Diagnostic only, for the summary log below: how many otherwise operator-shaped (valid
+// profession/rarity) records the isNotObtainable filter above dropped.
+const excluded = Object.values({ ...enChars, ...(enPatch.patchChars ?? {}) })
+  .filter(c => VALID_PROFESSION.has(c.profession) && VALID_RARITY.has(c.rarity) && c.isNotObtainable)
+  .length;
+
+const cnSupplement = await fetchCnSupplement(new Set(roster.map(r => r.id)));
 
 // The wiki lists Japanese collab operators surname-first ("Togawa Sakiko"); HellaAPI
 // gives given-name-first ("Sakiko Togawa").
@@ -798,42 +784,40 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-// Tutorial and Integrated Strategies trainer units — the "Reserve Operator - *" set plus
-// the Sharp/Pith/Touch/Stormeye/Tulip families. They were never released, so they have no
-// release date and only pad the end of the grid. Both reference sites omit them too.
-//
-// `isNotObtainable` is the flag rather than a name match, because name matching would
-// confuse the IS trainer "Mechanist" (char_610_acfend) with the real 6* operator of the
-// same name, and likewise for "Raidian".
-const obtainable = envelopes.filter(e => !e.value.data.isNotObtainable);
-const excluded = envelopes.length - obtainable.length;
-
-const { written: detailsWritten, nations, collabs, traitByName } = await buildOperatorDetails(
-  obtainable.map(e => ({ id: e.canon, appellation: e.value.data.appellation })),
+const { written: detailsWritten, nations, collabs, archetypes, traitByName } = await buildOperatorDetails(
+  roster.map(r => ({ id: r.id, appellation: r.data.appellation })),
   cnSupplement,
 );
 
-const entries = obtainable.map(e => ({
-  // With include=data.* the operator id is only on the envelope, as `canon`.
-  id: e.canon,
-  name: e.value.data.name,
-  appellation: e.value.data.appellation,
-  rarity: e.value.data.rarity,
-  profession: e.value.data.profession,
-  subProfessionId: e.value.data.subProfessionId,
-  // Readable subclass name — 'splashcaster' -> 'Splash Caster'.
-  archetype: e.value.archetype ?? '',
+const entries = roster.map(r => ({
+  id: r.id,
+  // Amiya's Guard/Medic patch-table forms are both named plain "Amiya" in the raw record —
+  // the bracket comes from patchDetailInfoList's own infoParam. Gated on the id being
+  // absent from the base table, same as build-payload.mjs's data.name: patchDetailInfoList
+  // also carries an entry for the base id (Amiya's own "Caster" form), which must NOT be
+  // bracketed here or the grid card would disagree with that operator's own detail page.
+  name: !enChars[r.id] && enPatch.patchDetailInfoList?.[r.id]?.infoParam
+    ? `${r.data.name} (${enPatch.patchDetailInfoList[r.id].infoParam})`
+    : r.data.name,
+  appellation: r.data.appellation,
+  rarity: r.data.rarity,
+  profession: r.data.profession,
+  subProfessionId: r.data.subProfessionId,
+  // Readable subclass name — 'splashcaster' -> 'Splash Caster'. Harvested from the full
+  // payloads in buildOperatorDetails above, same as nation/collab below: the raw table only
+  // has subProfessionId, not the resolved name buildPayload's uniequip join produces.
+  archetype: archetypes.get(r.id) ?? '',
   // Recruitment tags. A few operators carry an empty-string tag; drop those.
-  tags: (e.value.data.tagList ?? []).filter(t => t && t.trim()),
+  tags: (r.data.tagList ?? []).filter(t => t && t.trim()),
   // null for tutorial / Integrated Strategies trainer units that were never released,
   // plus a few event operators whose debut event has no dated row on the wiki.
-  releaseDate: releaseDateFor(e.value.data.name),
-  releaseOrder: releaseOrders.get(e.canon) ?? null,
+  releaseDate: releaseDateFor(r.data.name),
+  releaseOrder: releaseOrders.get(r.id) ?? null,
   // Display name of the operator's home nation ("Kjerag"), '' where the payload states
   // none. Harvested from the full payloads in buildOperatorDetails above.
-  nation: nations.get(e.canon) ?? '',
+  nation: nations.get(r.id) ?? '',
   // Display name of the crossover this operator came from, '' for the regular roster.
-  collab: collabs.get(e.canon) ?? '',
+  collab: collabs.get(r.id) ?? '',
 }));
 
 // CN-only entries have no `archetype` field to draw on (that comes from HellaAPI), but
