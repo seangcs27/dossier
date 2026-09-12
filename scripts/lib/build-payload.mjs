@@ -55,6 +55,7 @@ export async function buildPayload(charId, server = 'en') {
   const uni = await table(server, 'uniequip_table');
   const skillTable = await table(server, 'skill_table');
   const battleEquip = await table(server, 'battle_equip_table');
+  const building = await table(server, 'building_data');
 
   // Wrapping the whole payload means every field a later task adds is normalised too.
   return normalizeEmptyArrays({
@@ -74,5 +75,12 @@ export async function buildPayload(charId, server = 'en') {
       .filter(id => !id.startsWith('uniequip_001_'))
       .map(id => ({ info: uni.equipDict[id], data: battleEquip[id] ?? null }))
       .filter(m => m.info),
+    // RIIC base skills: each buffData entry names its unlock condition, the buff itself
+    // lives in building_data.buffs. The CN payloads overlay a translation onto
+    // skill.description later, in build-operator-index.mjs.
+    bases: (building.chars?.[charId]?.buffChar ?? [])
+      .flatMap(entry => entry.buffData ?? [])
+      .filter(buff => building.buffs[buff.buffId])
+      .map(buff => ({ condition: buff, skill: building.buffs[buff.buffId] })),
   });
 }
