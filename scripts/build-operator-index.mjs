@@ -3,11 +3,13 @@
 // this list at runtime.
 //
 // Three sources:
-//   HellaAPI              — primary operator identity (name, rarity, class, resolved
-//                           archetype, tags, isNotObtainable). Lags the CN release
+//   EN game data tables   — primary operator identity (name, rarity, class, resolved
+//                           archetype, tags, isNotObtainable), read from
+//                           ArknightsAssets/ArknightsGamedata and joined into full
+//                           payloads by lib/build-payload.mjs. Lags the CN release
 //                           frontier by roughly one patch (~10-15 operators).
-//   raw CN game data      — supplements HellaAPI for that lag only: operators CN
-//                           already has that HellaAPI hasn't ingested yet. Names come
+//   raw CN game data      — supplements the EN tables for that lag only: operators CN
+//                           already has that the EN tables don't carry yet. Names come
 //                           from CN's own `appellation` field, a pre-romanized name the
 //                           game data carries even before official localization (this
 //                           is how Sanity Gone displays brand-new operators too — see
@@ -19,8 +21,8 @@
 //                           newer), so they do NOT track release order. CN-supplement
 //                           operators have no dateable event yet (too new for the wiki,
 //                           no gacha banner in gacha_table.json either), but by
-//                           construction they ARE newer than everything HellaAPI has
-//                           ingested — that's the only reason they needed supplementing
+//                           construction they ARE newer than everything the EN tables
+//                           carry — that's the only reason they needed supplementing
 //                           at all. RECENT_UNDATED encodes that: not a real date, but
 //                           guaranteed to sort as newest, so these operators surface at
 //                           the top instead of being buried in the genuinely-undated
@@ -35,7 +37,7 @@
 //                           deploy, so it's discovered by chasing the reference chain from
 //                           their live page (page -> OperatorList.[hash].js ->
 //                           operators-index.json.[hash].js) rather than hardcoded.
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -285,7 +287,7 @@ const collabFor = displayNumber => {
 
 const RECENT_UNDATED = '9999-12-31';
 
-// CN recruitment-tag text -> the exact English string HellaAPI already uses for the
+// CN recruitment-tag text -> the exact English string the EN tables already use for the
 // same tag (verified against AN-EN-Tags' tl-tags.json, reconciled to our spelling —
 // e.g. "Crowd-Control" hyphenated, not "Crowd Control"). This vocabulary is small and
 // essentially frozen (new tags ship maybe once a year), so it's a static table instead
@@ -414,7 +416,7 @@ async function fetchReleaseOrder() {
 
 // Supplemental only — never blocks the build. A GitHub raw-content hiccup should not
 // fail a weekly deploy over ~10 operators that are already tolerably handled by sorting
-// last; HellaAPI is the source that matters.
+// last; the game data tables are the source that matters.
 async function fetchCnSupplement(knownIds) {
   try {
     const res = await timedFetch(CN_CHARACTER_TABLE_URL);
@@ -429,7 +431,7 @@ async function fetchCnSupplement(knownIds) {
     ]);
     const supplement = [];
     for (const [id, c] of Object.entries(table)) {
-      if (knownIds.has(id)) continue; // HellaAPI already covers this one
+      if (knownIds.has(id)) continue; // the EN tables already cover this one
       if (c.isNotObtainable) continue;
       // `isSpChar` looks like a "special/junk" flag but isn't one — every alter
       // (SilverAsh the Reignfrost, Ch'en the Dawnstreak, ...) carries it too. Real
@@ -735,6 +737,16 @@ async function buildOperatorDetails(regular, cnSupplement) {
   return { written, nations, collabs, archetypes, traitByName };
 }
 
+// How many operators the previous build left on disk; 0 if there's nothing usable there.
+async function previousOperatorCount() {
+  try {
+    const prev = JSON.parse(await readFile(path.join(outDir, 'operators.json'), 'utf8'));
+    return Array.isArray(prev) ? prev.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 import { table } from './lib/gamedata.mjs';
 import { buildPayload } from './lib/build-payload.mjs';
 
@@ -744,11 +756,24 @@ const VALID_PROFESSION = new Set([
 const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
 
 const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
-  table('en', 'character_table'),
-  table('en', 'char_patch_table'),
+  table('en', 'character_table').catch(e => e),
+  table('en', 'char_patch_table').catch(e => e),
   fetchReleaseDates(),
   fetchReleaseOrder(),
 ]);
+
+// GitHub raw is a steadier source than the self-hosted API this replaced, but the reason
+// the fallback exists hasn't changed — only what it guards.
+const tableError = [enChars, enPatch].find(t => t instanceof Error);
+if (tableError) {
+  const kept = await previousOperatorCount();
+  if (!kept) throw tableError;
+  console.warn(
+    `game data unreachable (${tableError.message}) — keeping the last build's ${kept} operators ` +
+    `in ${path.relative(process.cwd(), outDir)}`,
+  );
+  process.exit(0);
+}
 
 // Tutorial and Integrated Strategies trainer units — the "Reserve Operator - *" set plus
 // the Sharp/Pith/Touch/Stormeye/Tulip families. They were never released, so they have no
@@ -758,7 +783,7 @@ const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
 // confuse the IS trainer "Mechanist" (char_610_acfend) with the real 6* operator of the
 // same name, and likewise for "Raidian".
 //
-// The roster HellaAPI used to return: real operators, minus the tutorial and Integrated
+// The roster the site ships: real operators, minus the tutorial and Integrated
 // Strategies trainers that were never released. Amiya's Guard and Medic forms come from the
 // patch table — they are operators like any other here, and dropping them would lose two
 // from the grid.
@@ -820,8 +845,8 @@ const entries = roster.map(r => ({
   collab: collabs.get(r.id) ?? '',
 }));
 
-// CN-only entries have no `archetype` field to draw on (that comes from HellaAPI), but
-// their subProfessionId is the same stable slug either way — if any HellaAPI operator
+// CN-only entries have no English `archetype` to draw on (the CN table names branches in
+// Chinese), but their subProfessionId is the same stable slug either way — if any EN operator
 // already shares it, reuse that translation instead of showing the raw id.
 const archetypeBySubclass = new Map(entries.map(o => [o.subProfessionId, o.archetype]).filter(([, a]) => a));
 

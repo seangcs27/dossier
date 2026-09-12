@@ -5,6 +5,28 @@ picking one up later doesn't need re-investigation.
 
 ## Planned
 
+### What the raw-gamedata migration left behind
+The build no longer touches HellaAPI: `scripts/lib/gamedata.mjs` loads the game's excel
+tables from `ArknightsAssets/ArknightsGamedata`, and `scripts/lib/build-payload.mjs` joins
+them into the payload shape the app already read. Three loose ends:
+
+- **The runtime has no live fallback.** `fetchOperator` reads the baked file and throws if it
+  isn't there, so an operator released since the last build simply isn't on the site until
+  the weekly rebuild. That was already the common path — the old fallback only covered the
+  gap — but it is now the only path.
+- **`.golden/` and `scripts/compare-payloads.mjs` are migration scaffolding.** The 431
+  payloads in `.golden/` came from HellaAPI and are what proved the join correct, field by
+  field. They are gitignored and drift further from the live tables every week, so the gate
+  is worth keeping only while the join is still being changed. Delete both once it settles,
+  or re-snapshot from a known-good build.
+- **Three encoding rules are load-bearing and unobvious**, each found by the gate rather than
+  by reading: the game writes an empty array as `{}` (so every empty object becomes `[]`,
+  except `tokenAttributeBlackboard`, which is a real dictionary); Amiya's Guard and Medic
+  forms live in `char_patch_table` and take their bracketed names from
+  `patchDetailInfoList[id].infoParam`; and her skins are selected by `tmplId`, not `charId`.
+  Changing `build-payload.mjs` without the gate risks silently undoing one.
+
+
 ### UI/UX refactor (thorough)
 The topbar, filter popover, grid card and detail layout have each been adjusted
 incrementally rather than designed together, and it shows — spacing, type scale and

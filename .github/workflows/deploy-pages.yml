@@ -26,10 +26,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # HellaAPI (awedtan.ca) is the one build source with no stand-in, and it has been
-      # unreachable for days at a time. Restoring the last run's generated data gives the
-      # build something to fall back on instead of failing; a run that reaches HellaAPI
-      # regenerates the data and saves it under this run's own key.
+      # The build downloads ~60 MB of game-data tables from GitHub. Restoring the last run's
+      # generated data means a bad fetch falls back to it instead of failing the deploy.
       - uses: actions/cache@v4
         with:
           path: src/shared/generated

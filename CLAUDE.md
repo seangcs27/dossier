@@ -11,8 +11,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
-runtime both targets read same-origin static files; HellaAPI is only touched as a fallback
-for an operator id the last build didn't know about.
+runtime both targets read same-origin static files and nothing else — there is no API behind
+them, so an operator the last build didn't know about waits for the next rebuild.
 
 `TODO.md` is the running backlog — read it before starting feature work; it records what's
 blocking each item so you don't re-investigate.
@@ -196,15 +196,12 @@ full page. `src/web/styles.scss` and `src/extension/popup/popup.scss` each own t
 
 ### hella-api.ts
 
-Static-first. `fetchOperator` tries the baked `operator-details/<id>.json` first; only if
-that 404s does it hit HellaAPI's `/operator/:id`, and only if *that* returns `200 {}` (an
-id HellaAPI knows but hasn't ingested global data for) does it fall through to
-`/cn/operator/:id`, normalising the CN skill shape and swapping `appellation` in for
-`data.name`.
+Static only. `fetchOperator` reads the baked `operator-details/<id>.json` and throws if it
+isn't there — no API sits behind it. The module name is historical; what is left beside that
+one read is the image URL helpers.
 
 ```ts
-fetchOperator(id): Promise<Operator>       // baked file → /operator → /cn/operator
-fetchRange(id): Promise<AttackRange>       // fallback only; ranges.json covers the rest
+fetchOperator(id): Promise<Operator>       // baked file, same origin; throws if absent
 operatorAvatarUrl(id)                      // square crop      — Arknight-Images CDN
 operatorPortraitUrl(id, '1' | '2')         // 180x360 bust     — yuanyan3060 CDN
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
@@ -242,8 +239,8 @@ and the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which were never relea
 flag is used rather than a name match because the Integrated Strategies trainer "Mechanist"
 (`char_610_acfend`) shares its name with a real 6★ operator, as does "Raidian".
 
-**Seven sources are joined at build time.** Only HellaAPI is load-bearing — every other
-fetch degrades with a `console.warn`. When HellaAPI itself is unreachable, both index
+**Seven sources are joined at build time.** Only the game's own excel tables are load-bearing
+— every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
 `.github/workflows/deploy-pages.yml`). With nothing on disk to keep, the build still
@@ -251,15 +248,20 @@ fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
 minutes, twice, before this).
 
-- **HellaAPI** (`awedtan.ca/api`) — primary operator identity via a slim `?include=` query,
-  plus the per-operator detail payloads.
-- **raw CN game data** (`Kengxxiao/ArknightsGameData`, `zh_CN/.../character_table.json`) —
-  supplements HellaAPI, which lags the CN release frontier by roughly one patch (~10–15
-  operators). For any id in CN data but not in HellaAPI's response, a minimal entry is
+- **`ArknightsAssets/ArknightsGamedata`** — the game's own excel tables (`en/gamedata/excel/`),
+  joined by `scripts/lib/build-payload.mjs` into the same `Operator` payload the app has
+  always read: `character_table` (plus `char_patch_table`, which is where Amiya's Guard and
+  Medic forms live), `skill_table`, `uniequip_table` + `battle_equip_table`, `building_data`,
+  `handbook_team_table`, `range_table`, `skin_table`. This replaced HellaAPI (`awedtan.ca`), a
+  single self-hosted server whose certificate expired in September 2026 and blocked every
+  deploy until the migration landed.
+- **raw CN game data** (the same repo's `cn/gamedata/excel/character_table.json`) —
+  supplements the EN tables, which lag the CN release frontier by roughly one patch (~10–15
+  operators). For any id in CN data but not in the EN tables, a minimal entry is
   added using CN's own `appellation` (a pre-romanized name the game data carries before
   official localization — this is how Sanity Gone displays brand-new operators too; some,
   like `Вий`, are Cyrillic by design, not a translation gap). `archetype` is looked up by
-  matching `subProfessionId` against an operator HellaAPI already knows, falling back to the
+  matching `subProfessionId` against an operator the EN tables already name, falling back to the
   wiki's `Operators.branch` when none shares it (Supportive Ranger); `tags` come from a
   static CN→EN table (recruitment tags are a frozen ~18-value vocabulary). Filtered to the
   real 8-class set — `character_table.json` also includes summons, traps and RIIC
@@ -273,7 +275,7 @@ minutes, twice, before this).
   (`Sakiko Togawa` ↔ `Togawa Sakiko`); and a fuzzy prefix match against known event names
   when `Operators.event` is blank but `obtain`'s wikitext links a real place.
   CN-supplemented operators have no dateable event yet, but are known to be newer than
-  everything HellaAPI has, so they get the `9999-12-31` sentinel and sort **first**.
+  everything the EN tables carry, so they get the `9999-12-31` sentinel and sort **first**.
 - **sanitygone.help** — `releaseOrder`, a PRTS-scraped ordinal baked into Sanity Gone's own
   bundle. Near-universal coverage and verified accurate, including for operators the wiki
   can't date at all, so it's the **preferred** sort signal at runtime; `releaseDate` is the
@@ -382,7 +384,7 @@ renders as the raw token rather than vanishing.
 
 Not cloned, for lack of data: promotion/mastery **material costs** (`evolveCost` and module
 `itemCost` are in the payloads, but there are no item names or icons yet), **summon/token**
-stat blocks, the reference's handbook-driven Misc tab (HellaAPI exposes no handbook; ours
+stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
 shows tags, trait, archive blurb, obtain source, the potential ladder and a fact list), and
 outfit prices. `src/web/icons.ts` draws the stat/skill/elite glyphs inline rather than
 fetching them.
