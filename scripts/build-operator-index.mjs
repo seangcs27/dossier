@@ -630,6 +630,10 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 
   return {
     ...op,
+    // buildPayload's EN uniequip_table lookup already resolves 75 of 76 branches; the one
+    // it doesn't (Supportive Ranger) falls back to the wiki's own branch field, already
+    // fetched into traitByName for the trait/itemUsage overlay above.
+    archetype: op.archetype || wikiText?.branch || '',
     data: {
       ...op.data,
       name: appellation,

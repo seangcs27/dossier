@@ -64,9 +64,13 @@ export async function buildPayload(charId, server = 'en') {
   return normalizeEmptyArrays({
     id: charId,
     data,
-    // Readable branch name: 'craftsman' -> 'Artificer'. CN data names it in Chinese, so a
-    // CN-only branch keeps '' here and build-operator-index.mjs fills it from the wiki.
-    archetype: server === 'en' ? uni.subProfDict[data.subProfessionId]?.subProfessionName ?? '' : '',
+    // Readable branch name: 'craftsman' -> 'Artificer'. CN data names branches in Chinese,
+    // so a CN payload borrows the same subProfessionId's name from the EN table instead —
+    // it knows 75 of the 76 branches. build-operator-index.mjs fills the last one
+    // (Supportive Ranger) from the wiki.
+    archetype: server === 'en'
+      ? uni.subProfDict[data.subProfessionId]?.subProfessionName ?? ''
+      : (await table('en', 'uniequip_table')).subProfDict[data.subProfessionId]?.subProfessionName ?? '',
     // Each of the character's skill refs paired with the skill's own entry. HellaAPI called
     // these `deploy` and `excel`, and the detail view still reads both names.
     skills: (data.skills ?? [])
