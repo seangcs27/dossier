@@ -56,7 +56,12 @@ export async function buildPayload(charId, server = 'en') {
   const skillTable = await table(server, 'skill_table');
   const battleEquip = await table(server, 'battle_equip_table');
   const building = await table(server, 'building_data');
-  const teams = await table(server, 'handbook_team_table');
+  // Faction names come from the EN table first, whatever server the payload is built for:
+  // the CN table names them in Chinese (玻利瓦尔 for Bolívar) and these strings are display
+  // text — the grid's edge strip and the index's `nation`. CN only fills a faction EN lacks.
+  const teams = await table('en', 'handbook_team_table');
+  const cnTeams = server === 'cn' ? await table('cn', 'handbook_team_table') : {};
+  const faction = id => teams[id] ?? cnTeams[id] ?? null;
   const ranges = await table(server, 'range_table');
   const skinTable = await table(server, 'skin_table');
 
@@ -98,9 +103,9 @@ export async function buildPayload(charId, server = 'en') {
     factions: [data.mainPower, ...(data.subPower ?? [])]
       .filter(Boolean)
       .map(power => ({
-        nationPower: teams[power.nationId] ?? null,
-        groupPower: teams[power.groupId] ?? null,
-        teamPower: teams[power.teamId] ?? null,
+        nationPower: faction(power.nationId),
+        groupPower: faction(power.groupId),
+        teamPower: faction(power.teamId),
       })),
     // The last phase's range — E2's for anyone who promotes that far. True of all 400
     // payloads checked, and it's what the detail view draws as the base grid.
