@@ -876,6 +876,176 @@ body {
 // Keyboard users get the same affordance on focus, since they never trigger :hover.
 .op-card:focus-visible .op-cta { height: 32px; }
 
+// ── Spin ──
+// The card is a plate you can turn: .op-card-body is its front face, .op-card-back its
+// back, and .op-stars rides along beside both, so the rarity tab keeps its shape and
+// reads mirrored from behind exactly as a real acrylic tag would. Behaviour lives in
+// src/web/card-spin.ts; the angles arrive as --rx / --ry.
+//
+// `perspective()` is inside the transform rather than on #grid, so every card owns its
+// vanishing point. One perspective on the grid would give the cards at the edges a
+// skewed, off-axis turn.
+//
+// Nothing here may gain `overflow`, `filter`, `contain: paint` or `isolation` — each of
+// those silently flattens `transform-style: preserve-3d`, and the card would spin as a
+// mirrored flat image with no back. The clipping stays on the two faces.
+.op-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  // The page keeps vertical scrolling; only sideways drags reach the spin code.
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+// preserve-3d and the back face cost a compositor layer per card, so they are switched
+// on only while a card is hovered or moving — a live layer on each of ~430 cards is not
+// worth a rest state nobody is looking at.
+.op-card.is-live { transform-style: preserve-3d; z-index: 3; }
+.op-card.is-spinning { transition: none; will-change: transform; cursor: grabbing; }
+
+.op-card-body {
+  backface-visibility: hidden;
+  transform: translateZ(1px);   // 1px off the plane, so the two faces never z-fight edge-on
+}
+
+// The back of the plate: the art shows through mirrored and dimmed, the issuing-body
+// strip that runs up the front's left edge now runs up the right, and what is printed
+// is the dossier line — class glyph, full name, branch, id, recruitment tags, origin.
+.op-card-back {
+  display: none;
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg) translateZ(1px);
+  backface-visibility: hidden;
+  overflow: hidden;
+  background: #1a1a22;
+  border: 1px solid var(--edge);
+}
+.op-card.is-live .op-card-back { display: block; }
+
+.op-avatar-ghost { transform: scaleX(-1); opacity: 0.28; filter: blur(1.5px) saturate(0.7); }
+
+.op-back-frost {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 80% 0%, rgb(255 255 255 / 10%), transparent 55%),
+    linear-gradient(to bottom, rgb(26 26 34 / 35%), rgb(16 16 20 / 80%));
+}
+
+.op-edge-back {
+  left: auto;
+  right: 0;
+  border-right: 0;
+  border-left: 1px solid rgb(255 255 255 / 9%);
+}
+
+.op-back-print {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  // 22px right clears .op-edge-back's 15px strip, mirroring .op-info's left inset.
+  padding: var(--sp-12) 22px var(--sp-12) var(--sp-12);
+  min-width: 0;
+}
+.bk-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-6); }
+.bk-brand {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+// 8px, off-scale like .op-serial's 9px: this is the plate's printed small type, and at
+// the 10px step it competes with the operator name below it.
+.bk-serial {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.bk-mid { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-6); }
+.bk-glyph { width: 44%; max-width: 72px; opacity: 0.92; filter: drop-shadow(0 2px 6px rgb(0 0 0 / 60%)); }
+.bk-name { font-size: var(--fs-base); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.bk-arch { font-size: var(--fs-2xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+.bk-foot { display: flex; flex-direction: column; gap: var(--sp-6); }
+.bk-tags { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
+.bk-tag {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding: var(--sp-2) var(--sp-6);
+  border-radius: var(--radius-xs);
+  background: rgb(255 255 255 / 9%);
+  color: var(--dim);
+  white-space: nowrap;
+}
+.bk-nation {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 5px;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+// ── Card light ──
+// A lit card carries two layers: a highlight over everything, and the shadow it implies
+// directly on the art. --lx / --ly place both; the card under the pointer sets them from
+// the pointer's position inside it, and a phone's tilt sets one pair on :root that every
+// card reads, since there is no pointer to follow there.
+//
+// The highlight is a small bright core inside a much wider faint spill — one circle at
+// the same total brightness reads as a grey smudge. Radii are percentages of the card,
+// so the light scales with the grid's column width instead of being a fixed blob.
+// `screen` can only brighten and `multiply` can only darken, so the art stays itself
+// under both.
+.op-light {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  background:
+    radial-gradient(34% 17% at var(--lx, 50%) var(--ly, 32%), rgb(255 255 255 / 42%), transparent 72%),
+    radial-gradient(88% 44% at var(--lx, 50%) var(--ly, 32%), rgb(255 255 255 / 15%), transparent 76%);
+  mix-blend-mode: screen;
+}
+
+// The other half of a lit surface, and the reason the highlight reads at all: the side
+// facing away from the light darkens. It sits on the art and under .op-overlay, so the
+// name and class never dim with it, and it is clear out to 30% of the way from the light
+// so the core of the highlight is untouched.
+.op-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+  background: radial-gradient(112% 56% at var(--lx, 50%) var(--ly, 32%), rgb(0 0 0 / 0%) 30%, rgb(0 0 0 / 55%) 100%);
+  mix-blend-mode: multiply;
+}
+
+.op-card.is-lit .op-light,
+.op-card.is-lit .op-shade,
+.sensor .op-light,
+.sensor .op-shade { opacity: 1; }
+
+// A drag still turns the card 1:1 with the finger, which is motion the person is making
+// themselves; what stops is everything the card does on its own.
+@media (prefers-reduced-motion: reduce) {
+  .op-card { transition: none; }
+}
+
 // ── States ──
 .state-msg {
   grid-column: 1 / -1;

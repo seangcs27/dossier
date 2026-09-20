@@ -11,6 +11,7 @@ import {
   type TagMode,
 } from '../operator-index';
 import { PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
+import { mountCardSpin } from '../card-spin';
 
 const state = {
   query: '',
@@ -70,11 +71,16 @@ function buildCard(op: OperatorIndexEntry): string {
   //
   // The branch glyph leads that line rather than sitting in the class row, so each glyph is
   // beside the name it stands for. In the class row it read as a second class icon.
+  // .op-shade and .op-light are the card's lighting, and .op-card-back is the plate seen
+  // from behind once it turns past a quarter. All three are inert until src/web/card-spin.ts
+  // mounts: the back face is display:none and both light layers are transparent, so a card
+  // nobody is touching carries no extra cost.
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
       <div class="op-card-body">
         <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
              onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
+        <div class="op-shade" aria-hidden="true"></div>
         <div class="op-overlay">
           <span class="visually-hidden">Rarity: ${n}</span>
           <div class="op-info">
@@ -92,6 +98,27 @@ function buildCard(op: OperatorIndexEntry): string {
           <span class="op-cta">View operator</span>
         </div>
         <div class="op-edge" aria-hidden="true">${escHtml(edgeText)}</div>
+        <div class="op-light" aria-hidden="true"></div>
+      </div>
+      <div class="op-card-back" aria-hidden="true">
+        <img class="op-avatar op-avatar-ghost" data-src="${portrait1}" data-fallback="${fallbacks}" alt=""
+             onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.remove()}">
+        <div class="op-shade"></div>
+        <div class="op-back-frost"></div>
+        <div class="op-back-print">
+          <div class="bk-head"><span class="bk-brand">Dossier</span><span class="bk-serial">${escHtml(op.id)}</span></div>
+          <div class="bk-mid">
+            <img class="bk-glyph" src="${classIconUrl(cls)}" alt="" loading="lazy">
+            <div class="bk-name">${escHtml(op.name)}</div>
+            <div class="bk-arch">${label} · ${escHtml(op.archetype)}</div>
+          </div>
+          <div class="bk-foot">
+            <div class="bk-tags">${op.tags.map(t => `<span class="bk-tag">${escHtml(t)}</span>`).join('')}</div>
+            <div class="bk-nation">${escHtml(edgeWord)}</div>
+          </div>
+        </div>
+        <div class="op-edge op-edge-back">${escHtml(edgeText)}</div>
+        <div class="op-light"></div>
       </div>
       <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
     </a>
@@ -106,6 +133,7 @@ function render(container: HTMLElement): void {
     return;
   }
   container.innerHTML = `<div id="grid">${ops.map(buildCard).join('')}</div>`;
+  mountCardSpin(container);
 }
 
 function activeCount(): number {
