@@ -77,6 +77,7 @@ function buildCard(op: OperatorIndexEntry): string {
   // nobody is touching carries no extra cost.
   return `
     <a class="op-card r${n}" href="#/op/${encodeURIComponent(op.id)}">
+      <div class="op-plate">
       <div class="op-card-body">
         <img class="op-avatar" src="${portrait1}" data-fallback="${fallbacks}" alt="${escHtml(op.name)}" loading="lazy"
              onerror="const l=(this.dataset.fallback||'').split('|').filter(Boolean);if(l.length){this.src=l.shift();this.dataset.fallback=l.join('|')}else{this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'}">
@@ -120,7 +121,18 @@ function buildCard(op: OperatorIndexEntry): string {
         <div class="op-edge op-edge-back">${escHtml(edgeText)}</div>
         <div class="op-light"></div>
       </div>
-      <div class="op-stars r${n}" aria-hidden="true">${stars.split('').map(s => `<span>${s}</span>`).join('')}</div>
+      <div class="op-side op-side-l" aria-hidden="true"></div>
+      <div class="op-side op-side-r" aria-hidden="true"></div>
+      <div class="op-stars r${n}" aria-hidden="true">
+        <div class="op-tab-slice op-tab-front"></div>
+        <div class="op-tab-slice op-tab-back"></div>
+        <div class="op-tab-edge op-tab-edge-top"></div>
+        <div class="op-tab-edge op-tab-edge-right"></div>
+        <div class="op-tab-edge op-tab-edge-taper"></div>
+        <div class="op-tab-edge op-tab-edge-bottom"></div>
+        ${stars.split('').map(s => `<span>${s}</span>`).join('')}
+      </div>
+      </div>
     </a>
   `;
 }

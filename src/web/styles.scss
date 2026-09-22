@@ -1,6 +1,7 @@
 // Web SPA stylesheet. Shared palette, reset, and operator colour modifiers come from
 // src/styles/; everything below is full-page layout the extension popup doesn't share.
 @use 'sass:map';
+@use 'sass:math';
 @use '../styles/base';
 @use '../styles/tokens' as *;
 
@@ -815,16 +816,43 @@ body {
   // ~2.7px on a 1-star tab, ~7px on a 6-star one, keeping the taper proportional to a box
   // whose height IS the rarity.
   --tab-clip: polygon(0px 12px, 100% 24px, 100% 94%, 8px 100%, 0px 100%);
-  clip-path: var(--tab-clip);
+  // Pinned rather than left to the star glyph's own advance width, because the extruded
+  // edges below are positioned against this number at compile time. It is 0.33px wider
+  // than the text measured, which nothing can see.
+  width: 16px;
 
-  // clip-path cuts a border along with the fill, so the rim can't be one. The tab is drawn
-  // twice instead: this element filled with the rim colour and clipped, and ::before
-  // repeating the clip a pixel inside it filled with the plate colour. What shows between
-  // them is the rim, following every edge because both shapes do.
+  // The tab carries no fill and no clip of its own any more — .op-tab-slice children do
+  // both. This element is only the box the slices size themselves against, and the flex
+  // column whose star count still sets the height. It must stay unclipped: `clip-path` is
+  // one of the properties that force `transform-style: flat`, so a clip here would
+  // collapse the slab below into a single flat shape.
   //
-  // Inset on three sides only — the left edge abuts the card, whose own rim is already
-  // there, and a second line on top of it would read as a seam.
+  // The stars ride on the front slice rather than in the middle of the slab.
+  span {
+    position: relative;
+    transform: translateZ(calc(var(--thick) / 2 + 0.5px));
+  }
+}
+
+// The tab is cut from the same sheet as the card, so it has the same thickness. CSS cannot
+// extrude an arbitrary polygon, so the slab is built the way a laser-cut acrylic stack is:
+// identical copies of the silhouette at even depths through the plate. Five of them across
+// 11px leaves 2.75px between slices, which reads as solid at every angle the card reaches.
+// Only the front slice exists at rest; the rest appear with the rest of the 3D setup.
+.op-tab-slice {
+  position: absolute;
+  inset: 0;
+  clip-path: var(--tab-clip);
+}
+
+// The front face, drawn exactly as the flat tab always was: clip-path cuts a border along
+// with the fill, so the rim cannot be one. The slice is filled with the rim colour and its
+// ::before repeats the clip a pixel inside, filled with the plate colour — what shows
+// between them is the rim, following every edge because both shapes do. Inset on three
+// sides only: the left edge abuts the card, whose own rim is already there.
+.op-tab-front {
   background: var(--edge);
+  transform: translateZ(calc(var(--thick) / 2));
 
   &::before {
     content: '';
@@ -833,9 +861,87 @@ body {
     background: #24242f;
     clip-path: var(--tab-clip);
   }
+}
 
-  // ::before is positioned and the stars are not, so without this it paints over them.
-  span { position: relative; }
+.op-tab-back {
+  background: #24242f;
+  transform: translateZ(calc(var(--thick) / -2));
+}
+
+// ── The tab's cut edges ──
+// A real extrusion, not a stack of copies: one flat quad stood along each side of the
+// silhouette, which is what the shape's edges actually are. Each quad is a rectangle as
+// long as its edge and as tall as the plate is thick, moved to the edge's start, turned
+// in the plane to the edge's angle, then tipped 90° so it stands through the plate, and
+// finally shifted half the thickness so it straddles the two faces rather than hanging
+// off the back.
+//
+// The silhouette's corners are fixed in px except the two that follow the tab's height,
+// and that height is exact: 24px of top padding + 8px of bottom + one 14px line per star.
+// So every length and angle is known per rarity tier and is worked out below at compile
+// time. The left edge is deliberately missing — it abuts the card, where the card's own
+// side face already is, and two coincident quads would z-fight.
+$tab-w: 16px;              // pinned on .op-stars, so the geometry is not font-dependent
+$tab-fold: 12px;           // where the top slope starts on the left
+$tab-fold-right: 24px;     // and where it lands on the right
+$tab-nick: 8px;            // the bottom-left cut
+$tab-taper: 0.94;          // the bottom slope starts at this share of the height
+
+@mixin tab-edge($x, $y, $len, $angle) {
+  width: $len;
+  transform:
+    translate($x, $y)
+    rotate($angle)
+    rotateX(-90deg)
+    translateY(calc(var(--thick) / -2));
+}
+
+.op-tab-edge {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: var(--thick);
+  transform-origin: 0 0;
+  // Runs through the plate's depth after the quad is tipped upright, so the cut is
+  // brighter toward the face you are looking at.
+  background: linear-gradient(to bottom, rgb(176 184 204 / 22%), rgb(104 110 140 / 12%));
+}
+.op-card.is-live .op-tab-edge { display: block; }
+
+// The top slope is the one edge that never moves: (0, 12) to (16, 24) on every tab.
+.op-tab-edge-top {
+  @include tab-edge(
+    0,
+    $tab-fold,
+    math.sqrt(math.div($tab-w * $tab-w + ($tab-fold-right - $tab-fold) * ($tab-fold-right - $tab-fold), 1px * 1px)) * 1px,
+    math.atan2($tab-fold-right - $tab-fold, $tab-w)
+  );
+}
+
+// The other three follow the tab's height, so they are resolved per rarity tier.
+@each $tier, $spec in $rarities {
+  $h: 32px + 14px * $tier;
+  $taper-y: $h * $tab-taper;
+  $run: $tab-w - $tab-nick;        // the bottom slope's horizontal travel, leftward
+  $rise: $h - $taper-y;            // and its vertical travel
+
+  .op-stars.r#{$tier} {
+    .op-tab-edge-right {
+      @include tab-edge($tab-w, $tab-fold-right, $taper-y - $tab-fold-right, 90deg);
+    }
+    .op-tab-edge-taper {
+      @include tab-edge(
+        $tab-w,
+        $taper-y,
+        math.sqrt(math.div($run * $run + $rise * $rise, 1px * 1px)) * 1px,
+        math.atan2($rise, -$run)
+      );
+    }
+    .op-tab-edge-bottom {
+      @include tab-edge($tab-nick, $h, $tab-nick, 180deg);
+    }
+  }
 }
 
 @each $tier, $spec in $rarities {
@@ -889,28 +995,75 @@ body {
 // Nothing here may gain `overflow`, `filter`, `contain: paint` or `isolation` — each of
 // those silently flattens `transform-style: preserve-3d`, and the card would spin as a
 // mirrored flat image with no back. The clipping stays on the two faces.
+// The <a> itself never rotates — .op-plate inside it does. That split is what keeps a
+// card grabbable at every angle: the link keeps its full flat rectangle as a hit area,
+// so a plate resting nearly edge-on is still as easy to catch as a plate facing you.
+// Rotating the link instead would shrink its hit area to the width of the plate's edge,
+// which at rest is a few pixels and effectively unclickable.
 .op-card {
   --rx: 0deg;
   --ry: 0deg;
-  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  // Plate thickness, as the acrylic key tag has: the faces sit half of this either side
+  // of centre and the two side faces are this wide, so the card reads as a slab rather
+  // than a sheet of paper once it turns. Thin enough to read as a cut sheet at about 6%
+  // of the card's width; it does not have to carry the grab area, because the link
+  // underneath keeps its full rectangle whatever the plate is doing.
+  --thick: 11px;
+  perspective: 900px;
   // The page keeps vertical scrolling; only sideways drags reach the spin code.
   touch-action: pan-y;
   user-select: none;
   -webkit-user-drag: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.op-plate {
+  position: absolute;
+  inset: 0;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
   transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 // preserve-3d and the back face cost a compositor layer per card, so they are switched
 // on only while a card is hovered or moving — a live layer on each of ~430 cards is not
 // worth a rest state nobody is looking at.
-.op-card.is-live { transform-style: preserve-3d; z-index: 3; }
-.op-card.is-spinning { transition: none; will-change: transform; cursor: grabbing; }
+.op-card.is-live { z-index: 3; }
+.op-card.is-live .op-plate,
+.op-card.is-live .op-stars { transform-style: preserve-3d; }
+.op-card.is-spinning { cursor: grabbing; }
+.op-card.is-spinning .op-plate { transition: none; will-change: transform; }
 
 .op-card-body {
   backface-visibility: hidden;
-  transform: translateZ(1px);   // 1px off the plane, so the two faces never z-fight edge-on
+  transform: translateZ(calc(var(--thick) / 2));
 }
+
+// The plate's two cut edges. Each is a strip the thickness of the plate, stood on end at
+// the card's left and right border: invisible head-on, widening as the card turns, which
+// is what actually sells the thickness. Centred on the border (a negative inset of half
+// its width) so rotating it about its own axis lands it flush between the two faces.
+// Only the left and right edges exist — the X tilt is small and springs back, so a top or
+// bottom edge would never be seen.
+.op-side {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--thick);
+  transform: rotateY(90deg);
+  // Dim: a cut acrylic edge is frosted, not chromed. Bright enough to separate the plate
+  // from the page behind it, dark enough that a turning card never flashes.
+  background: linear-gradient(
+    to bottom,
+    rgb(176 184 204 / 20%),
+    rgb(104 110 140 / 13%) 45%,
+    rgb(176 184 204 / 17%)
+  );
+  pointer-events: none;
+}
+.op-side-l { left: calc(var(--thick) / -2); }
+.op-side-r { right: calc(var(--thick) / -2); }
+.op-card.is-live .op-side { display: block; }
 
 // The back of the plate: the art shows through mirrored and dimmed, the issuing-body
 // strip that runs up the front's left edge now runs up the right, and what is printed
@@ -919,7 +1072,7 @@ body {
   display: none;
   position: absolute;
   inset: 0;
-  transform: rotateY(180deg) translateZ(1px);
+  transform: rotateY(180deg) translateZ(calc(var(--thick) / 2));
   backface-visibility: hidden;
   overflow: hidden;
   background: #1a1a22;
@@ -1043,7 +1196,7 @@ body {
 // A drag still turns the card 1:1 with the finger, which is motion the person is making
 // themselves; what stops is everything the card does on its own.
 @media (prefers-reduced-motion: reduce) {
-  .op-card { transition: none; }
+  .op-plate { transition: none; }
 }
 
 // ── States ──
