@@ -70,7 +70,7 @@ Requires repo Settings → Pages → Source = "GitHub Actions" (one-time).
 
 ```
 scripts/
-  build-operator-index.mjs   ← operators.json + operator-details/ + branch-icons/
+  build-operator-index.mjs   ← operators.json + operator-details/ + branch-icons/ + portraits/
   build-range-index.mjs      ← ranges.json
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
 
@@ -91,6 +91,7 @@ src/
       operator-details/<id>.json  ← 431 full Operator payloads, copied as static files
       ranges.json             ← every attack range in use (~55), bundled
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
+      portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
       index.ts      ← re-export barrel
@@ -113,7 +114,7 @@ src/
   web/              ← SPA
     index.ts        ← app entry: random logo, hash-router dispatch (grid ↔ detail)
     router.ts       ← hash routing (#/ , #/op/<id>)
-    logo.ts         ← picks one of 7 Wiš'adel icon variants per page load
+    logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
@@ -131,7 +132,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/` and `branch-icons/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/` and `portraits/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -157,15 +158,19 @@ fully on the scales; `src/extension/popup/popup.scss` is not yet.
 
 **Colour encodes rarity only.** Class is deliberately neutral — eight saturated hues on
 every card made the grid read as noise, and neither reference site colour-codes class.
-Surfaces follow **Sanity Gone's** `neutral-*` ramp (`bg` #101014 → `chip` #363643). Rarity
-tiers 1–5 are their hues (white/green/blue/purple/yellow); **tier 6 is ours — red, not
+Surfaces are mineral blue and gold leaf, from five named pigments (石青沉 #1A3550, 石青
+#2D5A7C, 群青 #3A6BAA, 金藍 #7C9CC0, 泥金箔 #E8C870 — `_tokens.scss` says which role gets
+which). A few colours in `styles.scss` / `popup.scss` are literal copies of these (tab fills,
+card back, overlay gradients) and have to move with the map. Rarity
+tiers 1–5 are Sanity Gone's hues (white/green/blue/purple/yellow); **tier 6 is ours — red, not
 their orange**, which sat one hue step from 5★ yellow and was hard to tell apart at card
 size. Each tier carries a `dark` partner (for gradients) and an `fg` (for filled
 backgrounds).
 
 **Operator card structure** (`.op-card`, web):
 - Aspect-ratio 1/2, no solid panel. `.op-avatar` is the **portrait** (`yuanyan3060`, a
-  180×360 bust crop), falling back `_1` → `_2` → square avatar → `?` placeholder.
+  180×360 bust crop), served as the baked `portraits/<id>.webp` and falling back to the
+  CDN's `_1` → `_2` → square avatar → `?` placeholder.
 - `.op-card-body` is a plain rectangle — `overflow: hidden`, no corner treatment. The
   hover lift (`translateY(-2px)`) sits on the `<a>`, so card and rarity tab travel
   together as one object.
@@ -204,6 +209,7 @@ one read is the image URL helpers.
 fetchOperator(id): Promise<Operator>       // baked file, same origin; throws if absent
 operatorAvatarUrl(id)                      // square crop      — Arknight-Images CDN
 operatorPortraitUrl(id, '1' | '2')         // 180x360 bust     — yuanyan3060 CDN
+operatorPortraitLocalUrl(id)               // the same bust, bundle-relative portraits/ WebP
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 skillIconUrl(skillId)                      // Arknight-Images CDN
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
@@ -288,7 +294,12 @@ minutes, twice, before this).
   potential descriptions are templated strings from a closed vocabulary, not prose).
 - **PuppiizSunniiz/Arknight-Images** — the character-art tree, read at build time to know
   which outfit illustrations actually exist before listing them in `arts`.
-- **yuanyan3060/ArknightsGameResource** — 180×360 bust portraits, the card art.
+- **yuanyan3060/ArknightsGameResource** — 180×360 bust portraits, the card art. Downloaded
+  and re-encoded to WebP q80 with `sharp` (117 KB PNG → ~20 KB), because the win is latency:
+  each portrait is wanted by one card, so it is almost always a cold CDN miss (~800–1200 ms
+  against ~30 ms same-origin). Existing files are kept, not refetched — CI restores them from
+  the generated-data cache — so upstream re-drawing a portrait never reaches us; delete
+  `portraits/` to force a refresh.
 
 The script hard-fails below **300** genuinely-dated operators (the `9999-12-31` sentinel
 doesn't count toward it), so a wiki schema change breaks the build instead of silently
@@ -337,7 +348,9 @@ Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid
 ### Grid (`src/web/views/grid.ts`)
 
 Reads the bundled index through `src/web/operator-index.ts` and makes **no network requests
-for data** (only images). The topbar's search box and a Filters button form one right-aligned
+for data** (only images). Cards are built 48 at a time as the page nears the end of what
+exists: all ~430 at once was ~550 ms of paint and layerize before first paint, and held
+back every portrait request until it finished. The topbar's search box and a Filters button form one right-aligned
 cluster; the button opens a popover that stays open until toggled or dismissed with Escape —
 **deliberately no click-away close**, since filtering is a back-and-forth with the grid.
 
