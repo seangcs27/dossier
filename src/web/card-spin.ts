@@ -15,6 +15,8 @@
 //  · Opening the operator is gated by the anchor's own href, not by cancelling clicks:
 //    a spin removes the href outright, so no click, whenever a browser chooses to fire
 //    one, can follow a link that is not there.
+//  · Dragging one card sweeps the rest: the dragged card holds pointer capture, so it
+//    looks up whatever card is under the pointer and flicks it at the pointer's speed.
 
 const SLOP = 6;           // px before a press becomes a drag rather than a click
 const DEG_PER_PX = 0.6;   // half a turn per 300px of drag
@@ -27,6 +29,9 @@ const VMAX = 3;           // deg/ms cap on a flick, about eight turns a second
 const TURN_EPS = 2;       // deg of movement during a press that suppresses opening
 
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Each mounted card's way to be flicked by a drag passing over it, in deg/ms.
+const kicks = new WeakMap<HTMLElement, (v: number) => void>();
 
 /** Turns one card into a spinnable object. Safe to call once per card, per render. */
 function mountCard(card: HTMLElement): void {
@@ -123,7 +128,9 @@ function mountCard(card: HTMLElement): void {
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
       if (Math.abs(dx) < SLOP && Math.abs(dy) < SLOP) return;
-      if (Math.abs(dy) > Math.abs(dx)) { state = 'idle'; return; }   // the page scrolls instead
+      // On touch the page scrolls instead. A mouse has nothing to hand back, and a sweep
+      // down a column needs vertical drags to count.
+      if (e.pointerType === 'touch' && Math.abs(dy) > Math.abs(dx)) { state = 'idle'; return; }
       state = 'drag';
       moved = true;
       tiltX = tiltY = 0;
@@ -140,6 +147,12 @@ function mountCard(card: HTMLElement): void {
       rx = Math.max(-TILT_MAX, Math.min(TILT_MAX, rx + dX));
       vy = Math.max(-VMAX, Math.min(VMAX, vy * 0.6 + (dY / dt) * 0.4));
       vx = Math.max(-VMAX / 4, Math.min(VMAX / 4, vx * 0.6 + (dX / dt) * 0.4));
+      const under = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('.op-card');
+      if (under && under !== card) {
+        const dx = e.clientX - lastX;
+        const speed = Math.hypot(dx, e.clientY - lastY) / dt * DEG_PER_PX;
+        kicks.get(under)?.((dx < 0 ? -1 : 1) * Math.min(VMAX, speed));
+      }
       lastX = e.clientX;
       lastY = e.clientY;
       lastT = e.timeStamp;
@@ -164,6 +177,18 @@ function mountCard(card: HTMLElement): void {
     lastT = performance.now();
     frame = requestAnimationFrame(coast);
   };
+  kicks.set(card, (v) => {
+    if (reduceMotion || state === 'drag' || Math.abs(v) <= Math.abs(vy)) return;
+    cancelAnimationFrame(frame);
+    goLive();
+    card.removeAttribute('href');
+    card.classList.add('is-spinning', 'is-lit');
+    vy = v;
+    state = 'coast';
+    lastT = performance.now();
+    frame = requestAnimationFrame(coast);
+  });
+
   card.addEventListener('pointerup', release);
   card.addEventListener('pointercancel', release);
 
