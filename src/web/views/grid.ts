@@ -1,4 +1,6 @@
-import { operatorAvatarUrl, operatorPortraitUrl, classIconUrl, archetypeIconUrl } from '../../shared/api/hella-api';
+import {
+  operatorAvatarUrl, operatorPortraitUrl, operatorPortraitLocalUrl, classIconUrl, archetypeIconUrl,
+} from '../../shared/api/hella-api';
 import type { OperatorIndexEntry, Profession } from '../../shared/types';
 import {
   getOperators,
@@ -38,8 +40,11 @@ function buildCard(op: OperatorIndexEntry): string {
   // to how sites like Sanity Gone present it), but not every id has both elite-art
   // suffixes — a couple of alter forms only ship `_2`. This chain tries `_1`, then
   // `_2`, then falls back to the avatar crop, before giving up on a placeholder.
-  const portrait1 = operatorPortraitUrl(op.id, '1');
-  const fallbacks = [operatorPortraitUrl(op.id, '2'), operatorAvatarUrl(op.id)].join('|');
+  // Baked WebP first, then the CDN chain for anything the build could not fetch.
+  const portrait1 = operatorPortraitLocalUrl(op.id);
+  const fallbacks = [
+    operatorPortraitUrl(op.id, '1'), operatorPortraitUrl(op.id, '2'), operatorAvatarUrl(op.id),
+  ].join('|');
 
   // The edge strip runs where the operator is from, repeated down the plate. Nation
   // first, then the crossover: collab characters have no nation because they aren't from

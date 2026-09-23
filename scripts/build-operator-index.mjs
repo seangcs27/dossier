@@ -37,9 +37,10 @@
 //                           deploy, so it's discovered by chasing the reference chain from
 //                           their live page (page -> OperatorList.[hash].js ->
 //                           operators-index.json.[hash].js) rather than hardcoded.
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 // Plain `fetch` has no timeout, and this script now makes 400+ live requests to
 // third-party hosts. Locally that's fine; on GitHub's shared runners a single stalled
@@ -97,6 +98,9 @@ const AN_EN_TAGS_BASE = `${AN_EN_TAGS_JSON_BASE}/ace`;
 const ARKNIGHT_IMAGES_TREE_URL =
   'https://api.github.com/repos/PuppiizSunniiz/Arknight-Images/git/trees/main?recursive=1';
 const ARKNIGHT_IMAGES_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+// Mirrors PORTRAIT_BASE in src/shared/api/hella-api.ts — the 180x360 bust crops the grid
+// bakes into the bundle.
+const PORTRAIT_BASE = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
 
 // Every characters/<id>_<suffix>.png in the asset repo, grouped by operator id — base
 // art (`1`), elite 2 art (`2`), and any alternate-outfit/promo variant (`sale#14`,
@@ -204,6 +208,61 @@ async function fetchBranchIcons(entries) {
     console.warn(`branch icons skipped: ${e.message}`);
     return { written: 0, total: 0 };
   }
+}
+
+// Downloads every operator's card portrait and re-encodes it to WebP in the bundle, so
+// the grid serves its own images instead of hotlinking ~50 MB of PNG from a CDN.
+//
+// The problem this solves is latency, not bandwidth. On a quiet personal site each
+// operator's portrait is requested by exactly one card, so it is almost always a cold miss
+// at the CDN edge: measured ~800-1200 ms cold against ~160-180 ms warm. Same-origin files
+// have no such cliff, and WebP q80 takes a 117 KB PNG to about 21 KB on top of that.
+//
+// Existing files are kept rather than refetched: CI restores this directory from the last
+// run's cache, so a weekly build downloads only the operators it has never seen. The cost
+// is that upstream re-drawing an existing portrait never reaches us — an acceptable trade
+// against ~50 MB of downloads every build. Delete the directory to force a full refresh.
+//
+// Every failure is survivable: the card keeps the CDN chain (_1 -> _2 -> avatar -> '?') as
+// its onerror fallback, so an id this misses still renders.
+async function fetchPortraits(entries) {
+  const portraitDir = path.join(outDir, 'portraits');
+  await mkdir(portraitDir, { recursive: true });
+
+  const existing = new Set(await readdir(portraitDir).catch(() => []));
+  const missing = entries.filter(e => !existing.has(`${e.id}.webp`));
+  if (missing.length === 0) {
+    console.log(`portraits: all ${entries.length} already baked -> ${path.relative(process.cwd(), portraitDir)}`);
+    return;
+  }
+
+  let written = 0;
+  const failed = [];
+  await mapConcurrent(missing, 8, async e => {
+    // `_1` is the base look and `_2` the E2 one; a couple of alter forms only ship `_2`.
+    for (const suffix of ['1', '2']) {
+      try {
+        const res = await timedFetch(`${PORTRAIT_BASE}/${e.id}_${suffix}.png`);
+        if (!res.ok) continue;
+        // Encode effort 4, not the maximum: effort 6 measured ~55x slower for ~2% smaller
+        // files, which on 431 images is minutes of CI time for nothing anyone can see.
+        const webp = await sharp(Buffer.from(await res.arrayBuffer()))
+          .webp({ quality: 80, effort: 4 })
+          .toBuffer();
+        await writeFile(path.join(portraitDir, `${e.id}.webp`), webp);
+        written++;
+        return;
+      } catch { /* try the next suffix, then give up on this operator */ }
+    }
+    failed.push(e.id);
+  });
+
+  const total = existing.size + written;
+  console.log(
+    `portraits: baked ${written} new (${total}/${entries.length} total` +
+    `${failed.length ? `, ${failed.length} unavailable: ${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '…' : ''}` : ''}) ` +
+    `-> ${path.relative(process.cwd(), portraitDir)}`,
+  );
 }
 
 // Human labels for the suffix vocabulary actually seen in the repo. '1'/'2' are the
@@ -929,6 +988,7 @@ await writeFile(outFile, JSON.stringify(entries));
 // Runs off the finished entry list so it sees CN-supplement operators too — several of
 // the branches missing from the old icon source belong exclusively to them.
 const branchIcons = await fetchBranchIcons(entries);
+await fetchPortraits(entries);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 const withOrder = entries.filter(o => o.releaseOrder != null).length;
 console.log(

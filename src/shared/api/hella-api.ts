@@ -32,6 +32,17 @@ export function operatorPortraitUrl(id: OperatorId, suffix: '1' | '2' = '1'): st
   return `${PORTRAIT_BASE}/${id}_${suffix}.png`;
 }
 
+// The same portrait, baked into the bundle as WebP by scripts/build-operator-index.mjs and
+// copied beside the page like branch-icons/. The grid asks for this first and keeps the CDN
+// chain above as its fallback, because the build cannot guarantee every id was fetched.
+//
+// Why bother: a 117 KB PNG becomes ~21 KB, and more importantly the request stops being a
+// cold CDN edge miss. On a quiet site each portrait is wanted by exactly one card, so it is
+// almost never warm at the edge — measured ~800-1200 ms cold against ~160-180 ms warm.
+export function operatorPortraitLocalUrl(id: OperatorId): string {
+  return `portraits/${encodeURIComponent(id)}.webp`;
+}
+
 // The square avatar for one specific outfit, keyed by the same suffix `arts[].suffix`
 // carries ('2', 'summer#4', ...). Every skin has one, and at ~55KB it is roughly a
 // hundredth of the full illustration — which matters because the detail page's skin rail
