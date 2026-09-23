@@ -145,8 +145,8 @@ header {
   background: linear-gradient(
     to bottom,
     transparent 35%,
-    rgb(5 5 7 / 67%) 70%,
-    #1c1c1c 100%
+    rgb(11 22 34 / 67%) 70%,
+    #21415f 100%
   );
 }
 
@@ -241,7 +241,7 @@ header {
     content: '';
     position: absolute;
     inset: 1px 1px 1px 0;
-    background: #24242f;
+    background: #21415f;
     clip-path: var(--tab-clip);
   }
 

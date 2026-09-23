@@ -17,18 +17,31 @@
 // invert and panels would read as holes cut into the page rather than raised off it.
 // Each step keeps roughly its old distance from its neighbour, shifted about five points
 // lighter, so contrast relationships hold and only the overall floor rises.
+// The ramp is now mineral blue and gold leaf, from the five named pigments:
+//   #1A3550 石青沉 · #2D5A7C 石青 · #3A6BAA 群青 · #7C9CC0 金藍 · #E8C870 泥金箔
+//
+// Five colours cannot fill eleven roles, so three are derived and the rest are used
+// literally. `bg` is 石青沉 taken down toward black: the page sits behind operator art,
+// and the pigment itself is bright enough at full strength to compete with it. `surface2`
+// is the midpoint between 石青沉 and 石青, because panels are a vertical gradient between
+// the two and need a step that exists. `text` and `dim` are near-whites pulled a few
+// degrees toward the same blue so nothing on the page reads as neutral grey.
+//
+// The four named blues keep their natural order as the ramp climbs, and the two that do
+// specific jobs land where they belong: 金藍 is the card's acrylic rim, which is exactly
+// what a pale blue-white is for, and 泥金箔 is the accent.
 $surfaces: (
-  bg:       #15151b, // page — was #101014
-  surface:  #191921, // panel top
-  surface2: #1e1e26, // panel bottom (panels are a vertical gradient)
-  border:   #292934, // dividers, inset boxes
-  chip:     #3b3b49, // control fills, class badges
-  edge:     #8a8aa6, // the card's acrylic rim — brighter than `border` on purpose
-  text:     #e8e8f2, // neutral-50
-  muted:    #87879b, // neutral-200
-  dim:      #b8b8c0, // neutral-100 — secondary body text
-  accent:   #fed874, // yellow — the elite/level controls' active colour
-  link:     #83cbff, // blue-light — breadcrumbs, buff values
+  bg:       #132539, // page — 石青沉 darkened, so art still reads against it
+  surface:  #1a3550, // panel top — 石青沉
+  surface2: #21415f, // panel bottom — between 石青沉 and 石青 (panels are a gradient)
+  border:   #2d5a7c, // dividers, inset boxes — 石青
+  chip:     #3a6baa, // control fills, class badges — 群青
+  edge:     #7c9cc0, // the card's acrylic rim — 金藍, brighter than `border` on purpose
+  text:     #eaf1f8, // near-white, carrying the blue
+  muted:    #7c9cc0, // 金藍
+  dim:      #b9cce0, // secondary body text
+  accent:   #e8c870, // 泥金箔 — the elite/level controls' active colour
+  link:     #8fb8e8, // 群青 lightened for text on a dark ground
 );
 
 // Rarity tier -> star colour, plus a darker partner for the gradient the card's bottom

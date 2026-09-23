@@ -642,8 +642,8 @@ body {
   background: linear-gradient(
     to bottom,
     transparent 40%,
-    rgb(5 5 7 / 67%) 67%,
-    #242430 100%
+    rgb(11 22 34 / 67%) 67%,
+    #21415f 100%
   );
 }
 
@@ -858,13 +858,13 @@ body {
     content: '';
     position: absolute;
     inset: 1px 1px 1px 0;
-    background: #24242f;
+    background: #21415f;
     clip-path: var(--tab-clip);
   }
 }
 
 .op-tab-back {
-  background: #24242f;
+  background: #21415f;
   transform: translateZ(calc(var(--thick) / -2));
 }
 
@@ -1075,7 +1075,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   transform: rotateY(180deg) translateZ(calc(var(--thick) / 2));
   backface-visibility: hidden;
   overflow: hidden;
-  background: #1a1a22;
+  background: #1a3550;
   border: 1px solid var(--edge);
 }
 .op-card.is-live .op-card-back { display: block; }
@@ -1087,7 +1087,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   inset: 0;
   background:
     radial-gradient(120% 80% at 80% 0%, rgb(255 255 255 / 10%), transparent 55%),
-    linear-gradient(to bottom, rgb(26 26 34 / 35%), rgb(16 16 20 / 80%));
+    linear-gradient(to bottom, rgb(26 53 80 / 35%), rgb(19 37 57 / 80%));
 }
 
 .op-edge-back {
@@ -1246,7 +1246,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgb(16 16 20 / 0) 35%, rgb(16 16 20 / 75%) 55%, var(--bg) 100%);
+    background: linear-gradient(180deg, rgb(19 37 57 / 0) 35%, rgb(19 37 57 / 75%) 55%, var(--bg) 100%);
   }
 }
 
@@ -1656,7 +1656,7 @@ input[type='number'] {
   min-width: 30px;
 
   &:hover:not(.on, :disabled) { color: var(--link); background: color-mix(in srgb, var(--link) 10%, transparent); }
-  &.on { background: var(--link); color: #050507; }
+  &.on { background: var(--link); color: #0b1622; }
 }
 
 .btn-group-elite .btn-group-item {
@@ -1667,7 +1667,7 @@ input[type='number'] {
   justify-content: center;
 
   &:hover:not(.on, :disabled) { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-  &.on { background: var(--accent); color: #101014; }
+  &.on { background: var(--accent); color: #132539; }
 }
 
 // ── Stat list ──
