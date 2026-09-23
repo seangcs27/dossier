@@ -1156,12 +1156,15 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 // the pointer's position inside it, and a phone's tilt sets one pair on :root that every
 // card reads, since there is no pointer to follow there.
 //
-// The highlight is a small bright core inside a much wider faint spill — one circle at
-// the same total brightness reads as a grey smudge. Radii are percentages of the card,
-// so the light scales with the grid's column width instead of being a fixed blob.
+// The highlight is a diagonal streak, like a lamp's reflection across glass: a soft core
+// inside a much wider faint band. Both fade in through an intermediate stop rather than
+// from a hard edge, so the streak reads as light on a surface, not a line drawn on it. At 115deg the gradient runs about 0.9 across and 0.4 down, so the streak's
+// position is --lx and --ly blended in roughly that ratio. Widths are percentages of the
+// card, so the light scales with the grid's column width.
 // `screen` can only brighten and `multiply` can only darken, so the art stays itself
 // under both.
 .op-light {
+  --at: calc(var(--lx, 50%) * 0.7 + var(--ly, 32%) * 0.3);
   position: absolute;
   inset: 0;
   z-index: 5;
@@ -1169,8 +1172,8 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   opacity: 0;
   transition: opacity 0.25s;
   background:
-    radial-gradient(34% 17% at var(--lx, 50%) var(--ly, 32%), rgb(255 255 255 / 42%), transparent 72%),
-    radial-gradient(88% 44% at var(--lx, 50%) var(--ly, 32%), rgb(255 255 255 / 15%), transparent 76%);
+    linear-gradient(115deg, transparent calc(var(--at) - 8%), rgb(255 255 255 / 8%) calc(var(--at) - 3%), rgb(255 255 255 / 22%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 3%), transparent calc(var(--at) + 8%)),
+    linear-gradient(115deg, transparent calc(var(--at) - 20%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 20%));
   mix-blend-mode: screen;
 }
 
