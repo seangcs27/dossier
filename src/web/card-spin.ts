@@ -259,8 +259,8 @@ function mountTiltLight(): void {
 
 let tiltMounted = false;
 
-/** Makes every card inside `container` spinnable. Call after each grid render. */
-export function mountCardSpin(container: HTMLElement): void {
+/** Makes every card inside `container` spinnable. Call once per batch of new cards. */
+export function mountCardSpin(container: ParentNode): void {
   container.querySelectorAll<HTMLElement>('.op-card').forEach(mountCard);
   if (!tiltMounted) { mountTiltLight(); tiltMounted = true; }
 }

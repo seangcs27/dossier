@@ -142,15 +142,43 @@ function buildCard(op: OperatorIndexEntry): string {
   `;
 }
 
+// Cards are built in batches as the page nears the end of what exists. All ~430 at once
+// was about 550 ms of main-thread work (paint and layerize over 22k nodes) before the first
+// paint, and the portraits could not even be requested until it finished. 48 is more than
+// one screen at 2000px wide; the 1500px margin keeps a few rows built ahead of the scroll.
+const BATCH = 48;
+let more: IntersectionObserver | undefined;
+
 function render(container: HTMLElement): void {
+  more?.disconnect();
   const ops = sortOps(filterOps(getOperators(), state), state.sort);
   document.getElementById('count')!.textContent = `${ops.length} operators`;
   if (ops.length === 0) {
     container.innerHTML = `<div class="state-msg"><div class="label">No results</div>Try a different name or filter.</div>`;
     return;
   }
-  container.innerHTML = `<div id="grid">${ops.map(buildCard).join('')}</div>`;
-  mountCardSpin(container);
+  container.innerHTML = `<div id="grid"></div><div id="grid-end"></div>`;
+  const grid = document.getElementById('grid')!;
+  const end = document.getElementById('grid-end')!;
+  let shown = 0;
+  const append = (): void => {
+    const batch = document.createElement('template');
+    batch.innerHTML = ops.slice(shown, shown += BATCH).map(buildCard).join('');
+    mountCardSpin(batch.content);
+    grid.append(batch.content);
+  };
+  append();
+  if (shown >= ops.length) return;
+  const observer = new IntersectionObserver((entries) => {
+    if (!entries[0].isIntersecting) return;
+    append();
+    // Re-observing reports the marker's position afresh, so a tall screen keeps filling
+    // until the marker is out of range, rather than waiting for a scroll that won't come.
+    observer.unobserve(end);
+    if (shown < ops.length) observer.observe(end);
+  }, { rootMargin: '1500px' });
+  observer.observe(end);
+  more = observer;
 }
 
 function activeCount(): number {
