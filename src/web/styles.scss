@@ -1009,6 +1009,11 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   // of the card's width; it does not have to carry the grab area, because the link
   // underneath keeps its full rectangle whatever the plate is doing.
   --thick: 11px;
+  // Where the light band sits, as a share of the card's height. The band is horizontal,
+  // so only the vertical component of the pointer or the tilt moves it. Declared here
+  // rather than on .op-light because .op-shade is a different element and has to darken
+  // around the same line.
+  --at: var(--ly, 32%);
   perspective: 900px;
   // The page keeps vertical scrolling; only sideways drags reach the spin code.
   touch-action: pan-y;
@@ -1126,10 +1131,31 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   text-overflow: ellipsis;
   min-width: 0;
 }
-.bk-mid { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-6); }
-.bk-glyph { width: 44%; max-width: 72px; opacity: 0.92; filter: drop-shadow(0 2px 6px rgb(0 0 0 / 60%)); }
-.bk-name { font-size: var(--fs-base); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
-.bk-arch { font-size: var(--fs-2xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
+// The faction badge, and the only thing on the middle of the plate: the operator's name,
+// class and branch are all on the front, and repeating them here made the back a second
+// label rather than the back of the same object.
+.bk-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 auto; }
+// The badge is painted, not drawn: --logo carries the faction's alpha mask and the colour
+// comes from here, so the same file serves every tint. --dim at 60% keeps it as a
+// watermark on the plate rather than a second subject competing with the art behind it.
+.bk-glyph {
+  width: 80%;
+  aspect-ratio: 1;
+  max-width: 140px;
+  // Tinted per rarity below; --dim is the fallback for anything that lands here without
+  // a tier class.
+  background: var(--dim);
+  opacity: 0.6;
+  -webkit-mask: var(--logo) center / contain no-repeat;
+          mask: var(--logo) center / contain no-repeat;
+}
+
+// The badge takes the card's rarity colour. It is the one place on the back that carries
+// any colour, and rarity is the only thing colour encodes here, so the back keeps saying
+// the same thing as the front's tab without repeating a word of it.
+@each $tier, $spec in $rarities {
+  .op-card.r#{$tier} .bk-glyph { background: var(--r#{$tier}); }
+}
 .bk-foot { display: flex; flex-direction: column; gap: var(--sp-6); }
 .bk-tags { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
 .bk-tag {
@@ -1141,15 +1167,6 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   color: var(--dim);
   white-space: nowrap;
 }
-.bk-nation {
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding-top: 5px;
-  border-top: 1px solid rgb(255 255 255 / 12%);
-}
-
 // ── Card light ──
 // A lit card carries two layers: a highlight over everything, and the shadow it implies
 // directly on the art. --lx / --ly place both; the card under the pointer sets them from
@@ -1164,16 +1181,18 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 // `screen` can only brighten and `multiply` can only darken, so the art stays itself
 // under both.
 .op-light {
-  --at: calc(var(--lx, 50%) * 0.7 + var(--ly, 32%) * 0.3);
   position: absolute;
   inset: 0;
   z-index: 5;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.25s;
+  // 185deg, not 180: five degrees off level reads as a raked reflection rather than a
+  // printed rule, and stays shallow enough to still scan as horizontal. The shade below
+  // uses the same angle, so the lit band and the darkening it implies stay parallel.
   background:
-    linear-gradient(115deg, transparent calc(var(--at) - 8%), rgb(255 255 255 / 8%) calc(var(--at) - 3%), rgb(255 255 255 / 22%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 3%), transparent calc(var(--at) + 8%)),
-    linear-gradient(115deg, transparent calc(var(--at) - 20%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 20%));
+    linear-gradient(185deg, transparent calc(var(--at) - 8%), rgb(255 255 255 / 8%) calc(var(--at) - 3%), rgb(255 255 255 / 24%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 3%), transparent calc(var(--at) + 8%)),
+    linear-gradient(185deg, transparent calc(var(--at) - 22%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 22%));
   mix-blend-mode: screen;
 }
 
@@ -1187,7 +1206,16 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.25s;
-  background: radial-gradient(112% 56% at var(--lx, 50%) var(--ly, 32%), rgb(0 0 0 / 0%) 30%, rgb(0 0 0 / 55%) 100%);
+  // Matches the light's own axis: the band stays clear and the card darkens away from it,
+  // upward and downward, which is what makes a horizontal streak read as a lit band rather
+  // than a white stripe painted on.
+  background: linear-gradient(
+    183deg,
+    rgb(0 0 0 / 55%) 0%,
+    rgb(0 0 0 / 0%) calc(var(--at) - 7%),
+    rgb(0 0 0 / 0%) calc(var(--at) + 7%),
+    rgb(0 0 0 / 55%) 100%
+  );
   mix-blend-mode: multiply;
 }
 

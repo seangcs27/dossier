@@ -26,6 +26,7 @@ module.exports = {
         // build on a machine that has never baked them still succeeds — the cards fall
         // back to the CDN.
         { from: 'src/shared/generated/portraits', to: 'portraits', noErrorOnMissing: true },
+        { from: 'src/shared/generated/faction-logos', to: 'faction-logos', noErrorOnMissing: true },
       ],
     }),
   ],

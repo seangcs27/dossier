@@ -1,5 +1,6 @@
 import {
   operatorAvatarUrl, operatorPortraitUrl, operatorPortraitLocalUrl, classIconUrl, archetypeIconUrl,
+  factionLogoUrl,
 } from '../../shared/api/hella-api';
 import type { OperatorIndexEntry, Profession } from '../../shared/types';
 import {
@@ -113,14 +114,13 @@ function buildCard(op: OperatorIndexEntry): string {
         <div class="op-back-frost"></div>
         <div class="op-back-print">
           <div class="bk-head"><span class="bk-brand">Dossier</span><span class="bk-serial">${escHtml(op.id)}</span></div>
-          <div class="bk-mid">
-            <img class="bk-glyph" src="${classIconUrl(cls)}" alt="" loading="lazy">
-            <div class="bk-name">${escHtml(op.name)}</div>
-            <div class="bk-arch">${label} · ${escHtml(op.archetype)}</div>
-          </div>
+          <div class="bk-mid">${op.nationId
+            // A mask rather than an <img>: the baked file is the logo's alpha channel, so
+            // the card supplies the colour. Operators with no stated faction get nothing.
+            ? `<div class="bk-glyph" style="--logo: url(${factionLogoUrl(op.nationId)})" title="${escHtml(edgeWord)}"></div>`
+            : ''}</div>
           <div class="bk-foot">
             <div class="bk-tags">${op.tags.map(t => `<span class="bk-tag">${escHtml(t)}</span>`).join('')}</div>
-            <div class="bk-nation">${escHtml(edgeWord)}</div>
           </div>
         </div>
         <div class="op-edge op-edge-back">${escHtml(edgeText)}</div>

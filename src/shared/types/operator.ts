@@ -284,6 +284,11 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // rather than a missing lookup. Lives only in the full payload upstream, so
   // build-operator-index.mjs harvests it while writing the detail files.
   nation: string;
+  // The same faction as the game's own id ('rim', 'kjerag', 'rhodes'), '' where there is
+  // none. It exists separately from `nation` because the faction badge files are named
+  // after it, and slugifying the display name does not reproduce it for five of the
+  // nineteen nations.
+  nationId: string;
   // Display name of the crossover this operator came from ('Persona 3'), '' for the
   // regular roster. Resolved at build time from a curated prefix table in
   // build-operator-index.mjs — there is no isCollab flag in the source data, so the table

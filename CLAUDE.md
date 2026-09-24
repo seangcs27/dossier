@@ -92,6 +92,7 @@ src/
       ranges.json             ← every attack range in use (~55), bundled
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
       portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
+      faction-logos/<id>.webp ← one nation badge per faction, printed on the card back
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
       index.ts      ← re-export barrel
@@ -210,6 +211,8 @@ fetchOperator(id): Promise<Operator>       // baked file, same origin; throws if
 operatorAvatarUrl(id)                      // square crop      — Arknight-Images CDN
 operatorPortraitUrl(id, '1' | '2')         // 180x360 bust     — yuanyan3060 CDN
 operatorPortraitLocalUrl(id)               // the same bust, bundle-relative portraits/ WebP
+factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — an alpha mask
+artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 skillIconUrl(skillId)                      // Arknight-Images CDN
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
@@ -230,7 +233,7 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 `operators.json` — one slim entry per operator, bundled into both JS bundles:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, collab }
 ```
 
 `operator-details/<id>.json` — the full `Operator` payload for **every** operator (431),

@@ -54,8 +54,8 @@ function mountCard(card: HTMLElement): void {
     // the card turns under: the highlight sweeps across the face and crosses the middle
     // as the card goes edge-on.
     if (state === 'drag' || state === 'coast') {
-      setVar('--lx', `${(50 + 42 * Math.sin(y * Math.PI / 180)).toFixed(1)}%`);
-      setVar('--ly', `${(30 - 8 * Math.cos(y * Math.PI / 180)).toFixed(1)}%`);
+      setVar('--lx', '50%');
+      setVar('--ly', `${(50 + 42 * Math.sin(y * Math.PI / 180)).toFixed(1)}%`);
     }
   };
 
@@ -64,11 +64,10 @@ function mountCard(card: HTMLElement): void {
   // turned to yet. It is fetched the first time this card is touched.
   const goLive = (): void => {
     card.classList.add('is-live');
-    const ghost = card.querySelector<HTMLImageElement>('.op-card-back img[data-src]');
-    if (ghost?.dataset.src) {
-      ghost.src = ghost.dataset.src;
-      delete ghost.dataset.src;
-    }
+    card.querySelectorAll<HTMLImageElement>('.op-card-back img[data-src]').forEach((img) => {
+      img.src = img.dataset.src ?? '';
+      delete img.dataset.src;
+    });
   };
 
   // Only sleeps a card that is square-on and still: with preserve-3d off, a card resting

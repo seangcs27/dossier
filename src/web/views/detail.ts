@@ -10,7 +10,7 @@
 
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
 import {
-  operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl,
+  operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
 } from '../../shared/api/hella-api';
 import type {
   AttackRange,
@@ -684,8 +684,9 @@ function splashHtml(op: Operator, artIdx: number): string {
           `).join('')}
         </div>
       ` : ''}
-      <img class="splash-img" src="${active.url}" alt="${escHtml(active.label)}"
-           fetchpriority="high" decoding="async">
+      <img class="splash-img" src="${artUrl(active.url, 1024)}" alt="${escHtml(active.label)}"
+           fetchpriority="high" decoding="async"
+           onerror="this.onerror=null;this.src='${active.url.replace(/'/g, '%27')}'">
       <div class="splash-caption">
         <span class="splash-name">${escHtml(active.label)}</span>
         ${active.artist ? `<span class="splash-artist">${ICON_BRUSH}${escHtml(active.artist)}</span>` : ''}
@@ -701,7 +702,11 @@ function shellHtml(s: DetailState): string {
 
   return `
     <div class="detail">
-      ${bgUrl ? `<div class="detail-bg" style="background-image:url('${bgUrl.replace(/'/g, '%27')}')"></div>` : ''}
+      ${bgUrl
+        // The backdrop is the same art at 7.5% opacity behind the whole page, so it never
+        // needs the detail the splash does: 640px is 34 KB against the source's megabytes.
+        ? `<div class="detail-bg" style="background-image:url('${artUrl(bgUrl, 640, 70).replace(/'/g, '%27')}')"></div>`
+        : ''}
       <div class="detail-body">
         <div class="detail-art-col">
           <nav class="crumbs">

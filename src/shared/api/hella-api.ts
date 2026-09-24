@@ -43,6 +43,14 @@ export function operatorPortraitLocalUrl(id: OperatorId): string {
   return `portraits/${encodeURIComponent(id)}.webp`;
 }
 
+// The faction badge printed on the back of a card, keyed by the game's own faction id
+// ('rim', 'kjerag'). Baked into the bundle by the build like branch-icons/, and held as
+// an alpha mask rather than a picture, so the card can tint it. About 4 KB each, one per
+// faction rather than one per operator.
+export function factionLogoUrl(nationId: string): string {
+  return `faction-logos/${encodeURIComponent(nationId)}.webp`;
+}
+
 // The square avatar for one specific outfit, keyed by the same suffix `arts[].suffix`
 // carries ('2', 'summer#4', ...). Every skin has one, and at ~55KB it is roughly a
 // hundredth of the full illustration — which matters because the detail page's skin rail
@@ -50,6 +58,22 @@ export function operatorPortraitLocalUrl(id: OperatorId): string {
 export function operatorSkinAvatarUrl(id: OperatorId, suffix: string): string {
   const stem = suffix === '1' ? id : `${id}_${suffix}`;
   return `${IMAGE_BASE}/avatars/${encodeURIComponent(stem)}.png`;
+}
+
+// The detail page's artwork, resized on the way through a public image proxy.
+//
+// The source files are the reason a detail page is slow: they are full-size square PNGs,
+// and SilverAsh's E2 is 3.4 MB and took 2.8 s to arrive when measured. The same image at
+// 1024px WebP is 186 KB and lands in about 0.1 s. Baking these like the card portraits
+// would mean ~1,360 illustrations and hundreds of megabytes in the bundle, so this is the
+// one image set that stays remote.
+//
+// wsrv.nl caches a year, so only the first visitor to an operator pays. Callers keep the
+// raw URL as an onerror fallback — if the proxy ever disappears the page is merely slow
+// again rather than broken.
+export function artUrl(rawUrl: string, width: number, quality = 82): string {
+  const source = rawUrl.replace(/^https?:\/\//, '');
+  return `https://wsrv.nl/?url=${encodeURIComponent(source)}&w=${width}&output=webp&q=${quality}`;
 }
 
 export function skillIconUrl(skillId: string): string {

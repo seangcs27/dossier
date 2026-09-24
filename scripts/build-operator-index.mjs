@@ -155,6 +155,47 @@ const PROFESSION_EN = {
 // class ("Primal Caster.png", "Multi-target Medic.png"), so both forms are tried. Match
 // is case-insensitive — our archetype text says "Mech-accord Caster", the wiki file says
 // "Mech-Accord Caster".
+// One faction badge per nation, for the back of a card. Same deal as the branch icons and
+// the portraits: fetched once at build time and served from our own origin afterwards.
+//
+// The upstream files are 510x510 white silhouettes on transparency, so the colour channels
+// carry nothing — the shape lives entirely in the alpha. The card renders them as a CSS
+// mask so the badge can be tinted instead of being stuck white, and a mask matches its
+// source's ALPHA by default: dropping to a single greyscale channel would make the file
+// fully opaque and mask nothing, which renders as a filled square. So the alpha is what
+// has to survive the re-encode, and the resize to 256px is where the saving comes from.
+//
+// Nineteen requests, not one per operator: operators share factions heavily.
+async function fetchFactionLogos(entries) {
+  const logoDir = path.join(outDir, 'faction-logos');
+  await mkdir(logoDir, { recursive: true });
+
+  const ids = [...new Set(entries.map(e => e.nationId).filter(Boolean))];
+  let written = 0;
+  const missing = [];
+  await mapConcurrent(ids, 4, async id => {
+    try {
+      const res = await fetchWithRetry(`${ARKNIGHT_IMAGES_BASE}/factions/logo_${id}.png`);
+      if (!res.ok) throw new Error(String(res.status));
+      const webp = await sharp(Buffer.from(await res.arrayBuffer()))
+        .resize(256)
+        .webp({ quality: 82, effort: 4, alphaQuality: 100 })
+        .toBuffer();
+      await writeFile(path.join(logoDir, `${id}.webp`), webp);
+      written++;
+    } catch (err) {
+      missing.push(`${id} (${err.message})`);
+    }
+  });
+
+  console.log(
+    `faction logos: ${written}/${ids.length}` +
+    `${missing.length ? ` — missing ${missing.join(', ')}` : ''} ` +
+    `-> ${path.relative(process.cwd(), logoDir)}`,
+  );
+  return written;
+}
+
 async function fetchBranchIcons(entries) {
   const iconDir = path.join(outDir, 'branch-icons');
   try {
@@ -742,6 +783,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // Nation is only in the full payload, never in the slim roster read at the top of the
   // script, so it's harvested here rather than costing a second pass over 427 ids.
   const nations = new Map();
+  const nationIds = new Map();
   const collabs = new Map();
   // Same reasoning: the raw character_table only has subProfessionId, not the resolved
   // subProfessionName buildPayload's uniequip join produces — harvested here instead of
@@ -773,6 +815,11 @@ async function buildOperatorDetails(regular, cnSupplement) {
       const nation = finalOp.factions?.[0]?.nationPower?.powerName
         ?? (base.data?.nationId ? base.data.nationId[0].toUpperCase() + base.data.nationId.slice(1) : '');
       if (nation) nations.set(entry.id, nation);
+      // The same faction as an id rather than prose ('rim', not 'Rim Billiton'). It is what
+      // the upstream logo files are named after, and slugifying the display name does not
+      // reproduce it for five of the nineteen.
+      const nationId = finalOp.factions?.[0]?.nationPower?.powerId ?? base.data?.nationId ?? '';
+      if (nationId) nationIds.set(entry.id, nationId);
 
       const collab = collabFor(base.data?.displayNumber);
       if (collab) collabs.set(entry.id, collab);
@@ -803,7 +850,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // accumulated across every operator and would otherwise get flushed here even when
   // `written` collapses to near-zero, silently overwriting a good popup.json before that
   // check ever runs.
-  return { written, nations, collabs, archetypes, traitByName, popup };
+  return { written, nations, nationIds, collabs, archetypes, traitByName, popup };
 }
 
 // How many operators the previous build left on disk; 0 if there's nothing usable there.
@@ -878,7 +925,7 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-const { written: detailsWritten, nations, collabs, archetypes, traitByName, popup } = await buildOperatorDetails(
+const { written: detailsWritten, nations, nationIds, collabs, archetypes, traitByName, popup } = await buildOperatorDetails(
   roster.map(r => ({ id: r.id, appellation: r.data.appellation })),
   cnSupplement,
 );
@@ -933,6 +980,8 @@ const entries = roster.map(r => ({
   // Display name of the operator's home nation ("Kjerag"), '' where the payload states
   // none. Harvested from the full payloads in buildOperatorDetails above.
   nation: nations.get(r.id) ?? '',
+  // The faction's own id, which names its logo file.
+  nationId: nationIds.get(r.id) ?? '',
   // Display name of the crossover this operator came from, '' for the regular roster.
   collab: collabs.get(r.id) ?? '',
 }));
@@ -959,6 +1008,7 @@ for (const c of cnSupplement) {
     releaseDate: RECENT_UNDATED,
     releaseOrder: releaseOrders.get(c.id) ?? null,
     nation: nations.get(c.id) ?? '',
+    nationId: nationIds.get(c.id) ?? '',
     collab: collabs.get(c.id) ?? '',
   });
 }
@@ -989,6 +1039,7 @@ await writeFile(outFile, JSON.stringify(entries));
 // the branches missing from the old icon source belong exclusively to them.
 const branchIcons = await fetchBranchIcons(entries);
 await fetchPortraits(entries);
+await fetchFactionLogos(entries);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 const withOrder = entries.filter(o => o.releaseOrder != null).length;
 console.log(
