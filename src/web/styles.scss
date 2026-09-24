@@ -1036,13 +1036,15 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 .op-card.is-live .op-plate,
 .op-card.is-live .op-stars { transform-style: preserve-3d; }
 
-// Hiding back faces only makes sense while the card is a 3D object. Left on permanently
-// it is a way for a card to vanish: once preserve-3d is gone the faces are flattened into
-// one plane, and a browser that still resolves this against the accumulated matrix can
-// decide the FRONT face is pointing away and paint nothing. Firefox does; Chrome does not,
-// which is exactly the shape of the reported bug.
-.op-card.is-live .op-card-body,
-.op-card.is-live .op-card-back { backface-visibility: hidden; }
+// No `backface-visibility` anywhere, deliberately. It was how the two faces used to hide
+// each other, and in Firefox it took the card with it: sweeping the pointer across the
+// grid left cards whose faces had stopped painting entirely, while the rarity tab beside
+// them — the one part of the plate that never carried the property — stayed put. That
+// asymmetry is what identified it.
+//
+// Both faces are opaque and sit 11px apart along the plate's depth, so the 3D engine's
+// own depth sorting already shows whichever is nearer the viewer. The separation is also
+// what stops them fighting for the same pixels edge-on. Nothing needs hiding.
 .op-card.is-spinning { cursor: grabbing; }
 .op-card.is-spinning .op-plate { transition: none; will-change: transform; }
 

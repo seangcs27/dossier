@@ -9,9 +9,9 @@
 //    the card the wrong way.
 //  · `touch-action: pan-y` (see styles.scss) leaves vertical scrolling to the browser,
 //    so only sideways drags reach this code. A vertical drag is handed straight back.
-//  · The 3D setup and the back face cost a compositor layer per card, so they are only
-//    switched on (`is-live`) while a card is hovered or moving. A grid of ~430 cards
-//    with all of them live is not something to ship.
+//  · The 3D setup and the back face cost a compositor layer per card, so a card only
+//    gets them (`is-live`) once the pointer has actually reached it, and keeps them
+//    afterwards. Taking them away again is what made Firefox lose the faces entirely.
 //  · Opening the operator is gated by the anchor's own href, not by cancelling clicks:
 //    a spin removes the href outright, so no click, whenever a browser chooses to fire
 //    one, can follow a link that is not there.
@@ -28,7 +28,13 @@ const FRAME = 1000 / 60;
 const VMAX = 3;           // deg/ms cap on a flick, about eight turns a second
 const TURN_EPS = 2;       // deg of movement during a press that suppresses opening
 
+// Windows' "Animation effects" switch and macOS' "Reduce motion" both land here, and on
+// Windows it is off for a lot of people who simply dislike window animations. So this
+// damps rather than forbids: motion the visitor is causing right now with their own
+// pointer still happens, it just stops sooner. What it does not do is spin a card the
+// visitor never touched.
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const REDUCED_DAMP = 0.3;
 
 // Each mounted card's way to be flicked by a drag passing over it, in deg/ms.
 const kicks = new WeakMap<HTMLElement, (v: number) => void>();
@@ -59,33 +65,22 @@ function mountCard(card: HTMLElement): void {
     }
   };
 
-  let sleepTimer = 0;
-
   // The back face's images carry `data-src` rather than `src`: a hidden image still
   // downloads, which doubled the grid's image traffic for a face nobody had turned to
   // yet. They are fetched the first time this card is touched.
+  //
+  // Going live is one-way. A card that has been touched keeps its 3D setup for the rest
+  // of the page's life, because taking it away again is what broke Firefox: switching
+  // `transform-style` back to flat destroyed the faces' compositor layers and they never
+  // came back, leaving an empty slot with a rarity tab floating beside it. The cost is a
+  // layer per card the pointer has actually visited rather than per card on screen, which
+  // is the thing the batching and the lazy back face were protecting against.
   const goLive = (): void => {
-    clearTimeout(sleepTimer);   // a card being touched again must not sleep mid-gesture
     card.classList.add('is-live');
     card.querySelectorAll<HTMLImageElement>('.op-card-back img[data-src]').forEach((img) => {
       img.src = img.dataset.src ?? '';
       delete img.dataset.src;
     });
-  };
-
-  // Only sleeps a card that is square-on and still: with preserve-3d off, a card resting
-  // at half a turn would flatten and show its own front face mirrored.
-  //
-  // And only once it has finished MOVING there. The angles reach zero in this code the
-  // moment the pointer leaves, while the plate is still easing back over the next quarter
-  // second — dropping the 3D setup inside that window leaves a visibly rotated card in a
-  // flattened context, which is where Firefox loses the face entirely. The timer is a
-  // backstop for the cases where no transition runs at all, such as reduced motion.
-  const sleepIfSettled = (): void => {
-    clearTimeout(sleepTimer);
-    sleepTimer = window.setTimeout(() => {
-      if (!hovering && state === 'idle' && norm(ry) === 0 && rx === 0) card.classList.remove('is-live');
-    }, 300);
   };
 
   card.addEventListener('dragstart', (e) => e.preventDefault());
@@ -107,7 +102,6 @@ function mountCard(card: HTMLElement): void {
     card.classList.remove('is-lit');
     if (state === 'pending') state = 'idle';
     paint();
-    sleepIfSettled();
   });
 
   card.addEventListener('pointerdown', (e) => {
@@ -183,13 +177,16 @@ function mountCard(card: HTMLElement): void {
   const release = (e: PointerEvent): void => {
     if (state !== 'drag') { state = 'idle'; return; }
     try { card.releasePointerCapture(e.pointerId); } catch { /* already released */ }
-    if (reduceMotion) vy = vx = 0;
+    if (reduceMotion) { vy *= REDUCED_DAMP; vx *= REDUCED_DAMP; }
     state = 'coast';
     lastT = performance.now();
     frame = requestAnimationFrame(coast);
   };
-  kicks.set(card, (v) => {
-    if (reduceMotion || state === 'drag' || Math.abs(v) <= Math.abs(vy)) return;
+  kicks.set(card, (rawV) => {
+    // The sweep is the pointer physically crossing this card, so it survives reduced
+    // motion; it just carries less of a spin.
+    const v = reduceMotion ? rawV * REDUCED_DAMP : rawV;
+    if (state === 'drag' || Math.abs(v) <= Math.abs(vy)) return;
     cancelAnimationFrame(frame);
     goLive();
     card.removeAttribute('href');
@@ -220,8 +217,7 @@ function mountCard(card: HTMLElement): void {
       if (!hovering) card.classList.remove('is-lit');
       state = 'idle';
       if (href && !card.hasAttribute('href')) card.setAttribute('href', href);
-      sleepIfSettled();
-      return;
+        return;
     }
     paint();
     frame = requestAnimationFrame(coast);
