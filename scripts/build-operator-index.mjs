@@ -170,30 +170,42 @@ async function fetchFactionLogos(entries) {
   const logoDir = path.join(outDir, 'faction-logos');
   await mkdir(logoDir, { recursive: true });
 
+  const have = new Set(await readdir(logoDir).catch(() => []));
   const ids = [...new Set(entries.map(e => e.nationId).filter(Boolean))];
+  const wanted = ids.filter(id => !have.has(`${id}.webp`));
   let written = 0;
   const missing = [];
-  await mapConcurrent(ids, 4, async id => {
-    try {
-      const res = await fetchWithRetry(`${ARKNIGHT_IMAGES_BASE}/factions/logo_${id}.png`);
-      if (!res.ok) throw new Error(String(res.status));
-      const webp = await sharp(Buffer.from(await res.arrayBuffer()))
-        .resize(256)
-        .webp({ quality: 82, effort: 4, alphaQuality: 100 })
-        .toBuffer();
-      await writeFile(path.join(logoDir, `${id}.webp`), webp);
-      written++;
-    } catch (err) {
-      missing.push(`${id} (${err.message})`);
+  await mapConcurrent(wanted, 4, async id => {
+    // jsDelivr is first because it is what the rest of the project uses, but it is also
+    // the flakier of the two from a CI runner: a first run lost four of nineteen logos to
+    // two timeouts, a 403 and a 404, none of which reproduced locally. GitHub's raw host
+    // serves the same bytes and fails at different times, so trying both turns a lost
+    // logo into a retry. Anything already on disk is left alone, so a later build fills
+    // gaps rather than re-fetching what worked.
+    for (const base of [ARKNIGHT_IMAGES_BASE, 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main']) {
+      try {
+        const res = await fetchWithRetry(`${base}/factions/logo_${id}.png`);
+        if (!res.ok) throw new Error(String(res.status));
+        const webp = await sharp(Buffer.from(await res.arrayBuffer()))
+          .resize(256)
+          .webp({ quality: 82, effort: 4, alphaQuality: 100 })
+          .toBuffer();
+        await writeFile(path.join(logoDir, `${id}.webp`), webp);
+        written++;
+        return;
+      } catch (err) {
+        if (base !== ARKNIGHT_IMAGES_BASE) missing.push(`${id} (${err.message})`);
+      }
     }
   });
 
+  const total = have.size + written;
   console.log(
-    `faction logos: ${written}/${ids.length}` +
+    `faction logos: ${total}/${ids.length} (${written} new)` +
     `${missing.length ? ` — missing ${missing.join(', ')}` : ''} ` +
     `-> ${path.relative(process.cwd(), logoDir)}`,
   );
-  return written;
+  return total;
 }
 
 async function fetchBranchIcons(entries) {
