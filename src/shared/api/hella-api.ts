@@ -82,8 +82,13 @@ export function skillIconUrl(skillId: string): string {
 
 // White monochrome glyph on transparency. Takes the CSS slug ('defender', 'vanguard'),
 // not the game enum — there are only eight, so they cache across the whole grid.
+// Baked into the bundle like the branch icons, and for the same reason: an icon almost
+// nobody requests is almost never warm at a CDN edge, so it was costing between half a
+// second and nearly three on a first view. With these local the grid touches no third
+// party at all. Takes the CSS slug ('vanguard', 'defender') — the game's own enum values
+// do not name the upstream files.
 export function classIconUrl(slug: string): string {
-  return `${IMAGE_BASE}/classes/class_${encodeURIComponent(slug)}.png`;
+  return `class-icons/${encodeURIComponent(slug)}.webp`;
 }
 
 // Archetype/branch glyph, keyed by subProfessionId. Downloaded from arknights.wiki.gg's

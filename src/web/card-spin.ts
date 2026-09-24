@@ -59,10 +59,13 @@ function mountCard(card: HTMLElement): void {
     }
   };
 
-  // The back face's copy of the portrait carries `data-src` rather than `src`: a hidden
-  // image still downloads, which doubled the grid's image traffic for a face nobody had
-  // turned to yet. It is fetched the first time this card is touched.
+  let sleepTimer = 0;
+
+  // The back face's images carry `data-src` rather than `src`: a hidden image still
+  // downloads, which doubled the grid's image traffic for a face nobody had turned to
+  // yet. They are fetched the first time this card is touched.
   const goLive = (): void => {
+    clearTimeout(sleepTimer);   // a card being touched again must not sleep mid-gesture
     card.classList.add('is-live');
     card.querySelectorAll<HTMLImageElement>('.op-card-back img[data-src]').forEach((img) => {
       img.src = img.dataset.src ?? '';
@@ -72,8 +75,17 @@ function mountCard(card: HTMLElement): void {
 
   // Only sleeps a card that is square-on and still: with preserve-3d off, a card resting
   // at half a turn would flatten and show its own front face mirrored.
+  //
+  // And only once it has finished MOVING there. The angles reach zero in this code the
+  // moment the pointer leaves, while the plate is still easing back over the next quarter
+  // second — dropping the 3D setup inside that window leaves a visibly rotated card in a
+  // flattened context, which is where Firefox loses the face entirely. The timer is a
+  // backstop for the cases where no transition runs at all, such as reduced motion.
   const sleepIfSettled = (): void => {
-    if (!hovering && state === 'idle' && norm(ry) === 0 && rx === 0) card.classList.remove('is-live');
+    clearTimeout(sleepTimer);
+    sleepTimer = window.setTimeout(() => {
+      if (!hovering && state === 'idle' && norm(ry) === 0 && rx === 0) card.classList.remove('is-live');
+    }, 300);
   };
 
   card.addEventListener('dragstart', (e) => e.preventDefault());

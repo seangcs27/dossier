@@ -166,12 +166,12 @@ const PROFESSION_EN = {
 // has to survive the re-encode, and the resize to 256px is where the saving comes from.
 //
 // Nineteen requests, not one per operator: operators share factions heavily.
-async function fetchFactionLogos(entries) {
-  const logoDir = path.join(outDir, 'faction-logos');
+async function bakeIcons(label, dirName, names, pathFor) {
+  const logoDir = path.join(outDir, dirName);
   await mkdir(logoDir, { recursive: true });
 
   const have = new Set(await readdir(logoDir).catch(() => []));
-  const ids = [...new Set(entries.map(e => e.nationId).filter(Boolean))];
+  const ids = [...new Set(names.filter(Boolean))];
   const wanted = ids.filter(id => !have.has(`${id}.webp`));
   let written = 0;
   const missing = [];
@@ -184,7 +184,7 @@ async function fetchFactionLogos(entries) {
     // gaps rather than re-fetching what worked.
     for (const base of [ARKNIGHT_IMAGES_BASE, 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main']) {
       try {
-        const res = await fetchWithRetry(`${base}/factions/logo_${id}.png`);
+        const res = await fetchWithRetry(`${base}/${pathFor(id)}`);
         if (!res.ok) throw new Error(String(res.status));
         const webp = await sharp(Buffer.from(await res.arrayBuffer()))
           .resize(256)
@@ -201,12 +201,25 @@ async function fetchFactionLogos(entries) {
 
   const total = have.size + written;
   console.log(
-    `faction logos: ${total}/${ids.length} (${written} new)` +
+    `${label}: ${total}/${ids.length} (${written} new)` +
     `${missing.length ? ` — missing ${missing.join(', ')}` : ''} ` +
     `-> ${path.relative(process.cwd(), logoDir)}`,
   );
   return total;
 }
+
+// The eight class glyphs, which every card and both filter panels show. Baking them is
+// what lets the grid render without touching a CDN at all: they were the last remote
+// image left on it, and a rarely-requested icon is almost always a cold edge miss —
+// measured between 0.5 s and 2.7 s, against ~30 ms from our own origin.
+//
+// The filenames upstream are the DISPLAY names: class_vanguard, class_guard,
+// class_defender, class_supporter, class_specialist. The game's own enum values
+// (pioneer, warrior, tank, support, special) all 404, and a jsDelivr 404 is never cached,
+// so a wrong slug here costs a full round trip on every single build.
+const CLASS_SLUGS = [
+  'vanguard', 'guard', 'defender', 'sniper', 'caster', 'medic', 'supporter', 'specialist',
+];
 
 async function fetchBranchIcons(entries) {
   const iconDir = path.join(outDir, 'branch-icons');
@@ -1051,7 +1064,8 @@ await writeFile(outFile, JSON.stringify(entries));
 // the branches missing from the old icon source belong exclusively to them.
 const branchIcons = await fetchBranchIcons(entries);
 await fetchPortraits(entries);
-await fetchFactionLogos(entries);
+await bakeIcons('faction logos', 'faction-logos', entries.map(e => e.nationId), id => `factions/logo_${id}.png`);
+await bakeIcons('class icons', 'class-icons', CLASS_SLUGS, slug => `classes/class_${slug}.png`);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 const withOrder = entries.filter(o => o.releaseOrder != null).length;
 console.log(

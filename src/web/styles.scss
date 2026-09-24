@@ -1035,11 +1035,18 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 .op-card.is-live { z-index: 3; }
 .op-card.is-live .op-plate,
 .op-card.is-live .op-stars { transform-style: preserve-3d; }
+
+// Hiding back faces only makes sense while the card is a 3D object. Left on permanently
+// it is a way for a card to vanish: once preserve-3d is gone the faces are flattened into
+// one plane, and a browser that still resolves this against the accumulated matrix can
+// decide the FRONT face is pointing away and paint nothing. Firefox does; Chrome does not,
+// which is exactly the shape of the reported bug.
+.op-card.is-live .op-card-body,
+.op-card.is-live .op-card-back { backface-visibility: hidden; }
 .op-card.is-spinning { cursor: grabbing; }
 .op-card.is-spinning .op-plate { transition: none; will-change: transform; }
 
 .op-card-body {
-  backface-visibility: hidden;
   transform: translateZ(calc(var(--thick) / 2));
 }
 
@@ -1078,7 +1085,6 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   position: absolute;
   inset: 0;
   transform: rotateY(180deg) translateZ(calc(var(--thick) / 2));
-  backface-visibility: hidden;
   overflow: hidden;
   background: #1a3550;
   border: 1px solid var(--edge);
@@ -1187,12 +1193,13 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.25s;
-  // 185deg, not 180: five degrees off level reads as a raked reflection rather than a
-  // printed rule, and stays shallow enough to still scan as horizontal. The shade below
+  // 170deg, not 180: ten degrees off level reads as a raked reflection rather than a
+  // printed rule, and stays shallow enough to still scan as horizontal. Under 180 rather
+  // than over, so the band rises to the left. The shade below
   // uses the same angle, so the lit band and the darkening it implies stay parallel.
   background:
-    linear-gradient(185deg, transparent calc(var(--at) - 8%), rgb(255 255 255 / 8%) calc(var(--at) - 3%), rgb(255 255 255 / 24%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 3%), transparent calc(var(--at) + 8%)),
-    linear-gradient(185deg, transparent calc(var(--at) - 22%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 22%));
+    linear-gradient(170deg, transparent calc(var(--at) - 8%), rgb(255 255 255 / 8%) calc(var(--at) - 3%), rgb(255 255 255 / 24%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 3%), transparent calc(var(--at) + 8%)),
+    linear-gradient(170deg, transparent calc(var(--at) - 22%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 22%));
   mix-blend-mode: screen;
 }
 

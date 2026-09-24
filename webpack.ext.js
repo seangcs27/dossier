@@ -40,6 +40,7 @@ module.exports = {
         // popup does need its own copy of those — without it every branch glyph 404s and
         // removes itself, silently rather than visibly. ~250KB for all 71.
         { from: 'src/shared/generated/branch-icons', to: 'branch-icons' },
+        { from: 'src/shared/generated/class-icons', to: 'class-icons', noErrorOnMissing: true },
       ],
     }),
   ],
