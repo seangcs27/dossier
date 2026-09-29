@@ -83,9 +83,23 @@ export async function buildPayload(charId, server = 'en') {
       .map(ref => ({ deploy: ref, excel: skillTable[ref.skillId] })),
     // uniequip_001_* is the "Original" placeholder every operator carries and no module UI
     // shows — none of the 400 payloads checked contained one.
+    //
+    // `info.missionList` holds only mission ids; the text they stand for sits in the same
+    // table's own missionList, so it is resolved here rather than shipping ids nothing can
+    // read. A CN payload resolves against the CN table, so its missions stay Chinese — the
+    // same limit its module trait text already has.
     modules: (uni.charEquip?.[charId] ?? [])
       .filter(id => !id.startsWith('uniequip_001_'))
-      .map(id => ({ info: uni.equipDict[id], data: battleEquip[id] ?? null }))
+      .map(id => ({
+        info: uni.equipDict[id],
+        data: battleEquip[id] ?? null,
+        // Flattened and filtered to strings rather than `?? []`: a module with no missions
+        // has `{}` here (see the top of this file), which is truthy and has no .map.
+        missions: [uni.equipDict[id]?.missionList].flat()
+          .filter(missionId => typeof missionId === 'string')
+          .map(missionId => uni.missionList?.[missionId]?.desc)
+          .filter(Boolean),
+      }))
       .filter(m => m.info),
     // RIIC base skills: each buffData entry names its unlock condition, the buff itself
     // lives in building_data.buffs. The CN payloads overlay a translation onto

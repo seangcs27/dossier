@@ -105,10 +105,24 @@ export interface SkillLevel {
   spData: SkillSpData;
 }
 
+// Ranks 2-7 share one cost table per operator (OperatorData.allSkillLvlup), while M1-M3
+// are priced per skill (OperatorSkillDetail.deploy.levelUpCostCond), with a training time.
+export interface SkillRankCost {
+  unlockCond: UnlockCondition;
+  lvlUpCost: ItemCost[] | null;
+}
+
+export interface SkillMasteryCost {
+  unlockCond: UnlockCondition;
+  lvlUpTime: number; // seconds
+  levelUpCost: ItemCost[] | null;
+}
+
 export interface OperatorSkillDetail {
   deploy: {
     skillId: string;
     unlockCond: UnlockCondition;
+    levelUpCostCond?: SkillMasteryCost[] | null;
   };
   excel: {
     skillId: string;
@@ -176,6 +190,9 @@ export interface OperatorModule {
     showEvolvePhase: string;
   };
   data: { phases: ModulePhase[] } | null;
+  // Official text of the missions that unlock the module, resolved from the bare ids in
+  // uniequip_table's equipDict against its missionList at build time.
+  missions?: string[];
 }
 
 export interface OperatorData {
@@ -210,6 +227,27 @@ export interface OperatorData {
   potentialRanks?: PotentialRank[];
   // Trust bonus. Two frames: level 0 (all zeroes) and the maximum at full trust.
   favorKeyFrames?: AttributeKeyFrame[] | null;
+  // allSkillLvlup[0] is the cost of reaching skill rank 2, through [5] for rank 7.
+  allSkillLvlup?: SkillRankCost[] | null;
+}
+
+// The outfit fields the detail view reads. `skinName` is null for the default elite
+// outfits, which is how a real costume is told apart from them.
+export interface SkinDisplay {
+  skinName: string | null;
+  skinGroupName: string | null;  // the series, "EPOQUE/V"
+  description: string | null;    // a one-line tagline
+  dialog: string | null;         // the flavour text, plain
+  content: string | null;        // the same text wrapped in <color> markup
+  obtainApproach: string | null;
+  drawerList: string[] | null;   // illustrators
+  designerList: string[] | null;
+}
+
+export interface OperatorSkin {
+  // `<charId>_<suffix>` — the same key buildArtsList joins an art piece to its outfit by.
+  portraitId: string | null;
+  displaySkin: SkinDisplay | null;
 }
 
 export interface OperatorArt {
@@ -233,6 +271,7 @@ export interface Operator {
   // operator. Not present on data fetched via the live HellaAPI fallback path (only
   // the static per-operator bundle has it), so always optional.
   arts?: OperatorArt[];
+  skins?: OperatorSkin[];
 }
 
 export interface OperatorSummary {

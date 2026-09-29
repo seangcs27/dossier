@@ -391,8 +391,10 @@ set and information architecture all follow theirs, so read
   trust checkbox + 0–200 input, potential dropdown; the trust bonus scales by
   `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule.
 - **Skills** — skill pills + a 1–10 rank slider labelled `1…7, M1–M3`, an SP-cost /
-  initial-SP / duration row, the description, and the skill's range overlaid on the
-  operator's (added cells blue, removed cells red).
+  initial-SP / duration row, the description, the skill's range overlaid on the
+  operator's (added cells blue, removed cells red), and what reaching the selected rank
+  takes: its elite/level requirement and, for M1–M3, the training time.
+- **Modules** — the module's stats and trait per stage, then the missions that unlock it.
 
 Descriptions are rendered by `descriptionToHtml` in `format.ts`, not `cleanText`: the game
 data is a markup language (`<@ba.vup>+{atk:0%}</>`), so tags become styled spans and
@@ -402,8 +404,8 @@ renders as the raw token rather than vanishing.
 Not cloned, for lack of data: promotion/mastery **material costs** (`evolveCost` and module
 `itemCost` are in the payloads, but there are no item names or icons yet), **summon/token**
 stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
-shows tags, trait, archive blurb, obtain source, the potential ladder and a fact list), and
-outfit prices. `src/web/icons.ts` draws the stat/skill/elite glyphs inline rather than
+shows tags, trait, archive blurb, obtain source, the potential ladder, every named outfit
+and a fact list), and outfit prices. `src/web/icons.ts` draws the stat/skill/elite glyphs inline rather than
 fetching them.
 
 ## Testing

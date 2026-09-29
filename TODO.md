@@ -123,10 +123,10 @@ Two things to check before wiring it up:
   question rather than a data one.
 
 ### Outfit / skin coverage in the detail view
-The artwork viewer lists each outfit and labels it with the skin's own name, but that's
-all the skin data currently surfaced. `skins[].displaySkin` also carries the outfit's
-description, obtain method, availability window and designer credits — none of it shown.
-A proper skins section (rather than art-only) is the obvious next step.
+The Misc tab now lists every named outfit — series, tagline, flavour text, obtain method,
+illustrator and designer — and each name switches the art viewer to it; the viewer's
+caption carries the series. Still unshown: the availability window (`getTime`, `onPeriod`),
+left out because it isn't clear which server's dates the EN table carries.
 
 Also one confirmed upstream art gap: **Windscoot**'s `epoque#49` outfit exists in the skin
 table but has no image in PuppiizSunniiz/Arknight-Images, so it silently doesn't appear.

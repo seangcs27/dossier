@@ -22,6 +22,7 @@ import type {
   OperatorSkillDetail,
   OperatorTalent,
   TalentCandidate,
+  UnlockCondition,
 } from '../../shared/types';
 import {
   PROFESSION_LABEL,
@@ -406,6 +407,35 @@ const SKILL_TYPE: Record<string, string> = {
 
 const skillLevelLabel = (i: number): string => (i < 7 ? `${i + 1}` : `M${i - 6}`);
 
+// What reaching the selected rank takes. Ranks 2-7 share one table per operator; M1-M3
+// are priced per skill and carry a training time. Rank 1 is where every skill starts.
+interface RankStep {
+  cond: UnlockCondition;
+  hours: number | null;
+}
+
+function rankStep(s: DetailState, skill: OperatorSkillDetail, idx: number): RankStep | null {
+  if (idx >= 7) {
+    const m = skill.deploy.levelUpCostCond?.[idx - 7];
+    return m ? { cond: m.unlockCond, hours: m.lvlUpTime / 3600 } : null;
+  }
+  const r = idx > 0 ? s.op.data.allSkillLvlup?.[idx - 1] : undefined;
+  return r ? { cond: r.unlockCond, hours: null } : null;
+}
+
+function rankUpHtml(s: DetailState, skill: OperatorSkillDetail, idx: number): string {
+  const step = rankStep(s, skill, idx);
+  if (!step) return '';
+  const target = idx >= 7 ? `Mastery ${idx - 6}` : `Rank ${idx + 1}`;
+  return `
+    <div class="rank-up">
+      <span class="section-label">To reach ${target}</span>
+      <span class="unlock-badge">${eliteIcon(phaseNum(step.cond.phase))}Lv${step.cond.level}</span>
+      ${step.hours ? `<span class="rank-up-time">${ICON_DURATION}${step.hours}h training</span>` : ''}
+    </div>
+  `;
+}
+
 function skillsPanel(s: DetailState): string {
   const skills = visibleSkills(s.op);
   const skillIdx = Math.min(s.skillIdx, skills.length - 1);
@@ -457,6 +487,7 @@ function skillBodyHtml(s: DetailState, skill: OperatorSkillDetail, idx: number):
     </dl>
     <p class="rich">${descriptionToHtml(lv.description, lv.blackboard ?? [])}</p>
     ${range ? rangeBlock(range, operatorRange(s)) : ''}
+    ${rankUpHtml(s, skill, idx)}
   `;
 }
 
@@ -513,6 +544,12 @@ function modulesPanel(s: DetailState): string {
       ${mod.info.uniEquipDesc ? `<p class="rich muted-text">${cleanText(mod.info.uniEquipDesc)}</p>` : ''}
       ${stats ? `<div class="mod-stats">${stats}</div>` : ''}
       ${trait}
+      ${mod.missions?.length ? `
+        <div class="mod-missions">
+          <span class="section-label">Unlock missions</span>
+          <ol class="mission-list">${mod.missions.map(m => `<li>${cleanText(m)}</li>`).join('')}</ol>
+        </div>
+      ` : ''}
     </section>
   `;
 }
@@ -566,11 +603,52 @@ function riicPanel(s: DetailState): string {
 
 // ── Misc ─────────────────────────────────────────────────────────────────────
 
+// The operator's own art rail labels each outfit but says nothing about it. The skin
+// records in the payload carry the rest — series, tagline, flavour text, how it's
+// obtained, who drew it — so they get their own section here. Default elite outfits have
+// no skinName and generic text, and are left out.
+function outfitsHtml(op: Operator): string {
+  const arts = op.arts ?? [];
+  const outfits = (op.skins ?? []).filter(skin => skin.displaySkin?.skinName);
+  if (!outfits.length) return '';
+
+  const items = outfits.map(skin => {
+    const d = skin.displaySkin!;
+    // Same join buildArtsList uses to credit each art piece, so a name here can switch the
+    // viewer to its outfit. An outfit with no art upstream still gets its entry, unlinked.
+    const artIdx = arts.findIndex(a => `${op.id}_${a.suffix}` === skin.portraitId);
+    const name = escHtml(d.skinName!);
+    const text = d.dialog ?? d.content;
+    const facts: [string, string][] = [];
+    if (d.obtainApproach) facts.push(['Obtained from', d.obtainApproach]);
+    const artists = (d.drawerList ?? []).filter(Boolean).join(', ');
+    if (artists) facts.push(['Illustrator', artists]);
+    const designers = (d.designerList ?? []).filter(Boolean).join(', ');
+    if (designers) facts.push(['Designer', designers]);
+
+    return `
+      <article class="outfit">
+        ${d.skinGroupName ? `<span class="section-label">${escHtml(d.skinGroupName)}</span>` : ''}
+        ${artIdx >= 0
+          ? `<button class="outfit-name" data-act="art" data-value="${artIdx}">${name}</button>`
+          : `<span class="outfit-name">${name}</span>`}
+        ${d.description ? `<p class="outfit-quote">${cleanText(d.description)}</p>` : ''}
+        ${text ? `<p class="rich muted-text">${cleanText(text)}</p>` : ''}
+        ${facts.length ? `<dl class="outfit-facts">${facts.map(([label, value]) =>
+          `<div><dt>${escHtml(label)}</dt><dd>${escHtml(value)}</dd></div>`).join('')}</dl>` : ''}
+      </article>
+    `;
+  }).join('');
+
+  return `<section class="entry"><h2 class="entry-name">Outfits</h2><div class="outfit-list">${items}</div></section>`;
+}
+
 // The reference's Misc tab is built on the operator handbook (profile, physical exam,
 // voice actor, artist). HellaAPI doesn't expose the handbook, so this collects what we
 // do have that has no home in the other tabs: recruitment tags, the class trait, the
-// archive blurb, how the operator is obtained, faction, and the potential ladder — which
-// the reference surfaces through the potential dropdown's own tooltips instead.
+// archive blurb, how the operator is obtained, faction, the potential ladder — which
+// the reference surfaces through the potential dropdown's own tooltips instead — and
+// the operator's outfits.
 function miscPanel(s: DetailState): string {
   const d = s.op.data;
   const tags = (d.tagList ?? []).map(t => `<span class="op-tag">${escHtml(t)}</span>`).join('');
@@ -598,6 +676,7 @@ function miscPanel(s: DetailState): string {
     ${d.itemUsage ? `<section class="entry"><h2 class="entry-name">Archive</h2><p class="rich muted-text">${cleanText(d.itemUsage)}</p></section>` : ''}
     ${d.itemObtainApproach ? `<section class="entry"><h2 class="entry-name">Obtained from</h2><p class="rich">${escHtml(d.itemObtainApproach)}</p></section>` : ''}
     ${pots ? `<section class="entry"><h2 class="entry-name">Potentials</h2>${pots}</section>` : ''}
+    ${outfitsHtml(s.op)}
     <dl class="fact-list">
       ${facts.map(([k, v]) => `<div><dt>${escHtml(k)}</dt><dd>${escHtml(v)}</dd></div>`).join('')}
     </dl>
@@ -670,6 +749,10 @@ function splashHtml(op: Operator, artIdx: number): string {
   }
   const i = Math.min(artIdx, arts.length - 1);
   const active = arts[i];
+  // An outfit's series ("EPOQUE/V") over its name; the default elite arts have no skinName
+  // and so no series worth naming.
+  const skin = op.skins?.find(k => k.portraitId === `${op.id}_${active.suffix}`)?.displaySkin;
+  const series = skin?.skinName ? skin.skinGroupName : null;
   return `
     <div class="splash">
       ${arts.length > 1 ? `
@@ -688,6 +771,7 @@ function splashHtml(op: Operator, artIdx: number): string {
            fetchpriority="high" decoding="async"
            onerror="this.onerror=null;this.src='${active.url.replace(/'/g, '%27')}'">
       <div class="splash-caption">
+        ${series ? `<span class="section-label">${escHtml(series)}</span>` : ''}
         <span class="splash-name">${escHtml(active.label)}</span>
         ${active.artist ? `<span class="splash-artist">${ICON_BRUSH}${escHtml(active.artist)}</span>` : ''}
       </div>
@@ -850,8 +934,14 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
     switch (el.dataset.act) {
       case 'tab': state.tab = value as TabId; renderAll(container); return;
       // The artwork viewer lives in the shell, not the tab panel, so it needs the full
-      // re-render — renderPanel() below would leave it untouched.
-      case 'art': state.artIdx = Number(value); renderAll(container); return;
+      // re-render — renderPanel() below would leave it untouched. An outfit picked from the
+      // Misc tab is below the viewer on a one-column layout, so the viewer is brought into
+      // view; picked from the rail, it is already there and nothing moves.
+      case 'art':
+        state.artIdx = Number(value);
+        renderAll(container);
+        container.querySelector('.splash')?.scrollIntoView({ block: 'nearest' });
+        return;
       case 'phase': {
         state.phaseIdx = Number(value);
         state.level = state.op.data.phases[state.phaseIdx].maxLevel;
