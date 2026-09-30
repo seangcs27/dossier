@@ -28,6 +28,7 @@ module.exports = {
         // back to the CDN.
         { from: 'src/shared/generated/portraits', to: 'portraits', noErrorOnMissing: true },
         { from: 'src/shared/generated/faction-logos', to: 'faction-logos', noErrorOnMissing: true },
+        { from: 'src/shared/generated/item-icons', to: 'item-icons', noErrorOnMissing: true },
       ],
     }),
   ],

@@ -188,6 +188,8 @@ export interface OperatorModule {
     typeName2: string | null; // "Y"  -> displayed as GUA-Y
     unlockLevel: number;
     showEvolvePhase: string;
+    // Keyed by stage ("1", "2", "3"), matching ModulePhase.equipLevel.
+    itemCost?: Record<string, ItemCost[]> | null;
   };
   data: { phases: ModulePhase[] } | null;
   // Official text of the missions that unlock the module, resolved from the bare ids in

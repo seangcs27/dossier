@@ -76,6 +76,13 @@ export function artUrl(rawUrl: string, width: number, quality = 82): string {
   return `https://wsrv.nl/?url=${encodeURIComponent(source)}&w=${width}&output=webp&q=${quality}`;
 }
 
+// A material's icon, keyed by item_table's iconId ('MTL_SL_BN'), which is not the item id
+// ('30125'). Baked at 96px for the costs the detail page prices; the build only fetches the
+// ~90 a payload actually references, so callers hide the <img> on error for any it missed.
+export function itemIconUrl(iconId: string): string {
+  return `item-icons/${encodeURIComponent(iconId)}.webp`;
+}
+
 export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }

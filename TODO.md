@@ -146,8 +146,11 @@ in Chrome). The toolbar icon and the popup's own sizing can only really be confi
 
 ## Feature backlog
 
-- **Promotion / module material costs** on the detail view. `evolveCost` and module
-  `itemCost` are already present in the baked payloads; needs item icons and names.
+- **The last ~2% of keyword tooltips.** `game-consts.json` defines 6,113 of the 6,213 `$`
+  keyword uses across the payloads. The misses (`ba.triggereffect`, `ba.airprotect`,
+  `ba.sees`, `ba.slowdown`, `ba.groundbind`, `ba.magicarcane`, `ba.costlowerbound` and a few
+  `cc.*`) are newer terms the EN table doesn't carry yet. AN-EN-Tags' `json/named_effects.json`
+  holds an 11-term superset that would cover most of them, at the cost of one more source.
 - **Voice lines.** AN-EN-Tags carries `charword_table.json` and `tl-voiceline.json`.
 - **Framework decision:** stay vanilla TS or move to Astro. Currently vanilla, no blocker.
 

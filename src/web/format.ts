@@ -1,4 +1,5 @@
 import type { Blackboard, Rarity, Profession, OperatorData } from '../shared/types';
+import gameConsts from '../shared/generated/game-consts.json';
 
 export const PROFESSION_LABEL: Record<Profession, string> = {
   CASTER:   'Caster',
@@ -46,9 +47,9 @@ export function cleanText(s: string): string {
 // reads as "ATK +". This renders it the way the game and Sanity Gone do: tags become
 // styled spans, `{placeholders}` are interpolated from the entry's own blackboard.
 
-// Two tag families: @ba.* on operator text, @cc.* on RIIC base text. Anything else
-// beginning with `$` is a status/keyword tooltip in the game client; we have no tooltip
-// content for those, so they render as muted text rather than being dropped.
+// Two tag families: @ba.* on operator text, @cc.* on RIIC base text. Anything beginning
+// with `$` is a keyword the game client explains on tap ("Slow", "Bind"); those render
+// muted, with the game's own definition from gamedata_const as a hover title.
 const TAG_CLASS: Record<string, string> = {
   '@ba.vup':         'value-up',
   '@ba.vdown':       'value-down',
@@ -64,6 +65,20 @@ const TAG_CLASS: Record<string, string> = {
 
 function tagClass(tag: string): string {
   return TAG_CLASS[tag] ?? 'skill-tooltip';
+}
+
+const TERMS: Record<string, { name: string; description: string } | undefined> = gameConsts.terms;
+
+// ` title="Slow: -80% Movement Speed" data-term` for a `$` keyword the glossary knows, else
+// nothing. Definitions carry their own markup ("<$ba.stun>Stun</>"), which cleanText strips
+// before it escapes the text for the attribute. Their line breaks become `&#10;`, which a
+// tooltip still shows as a break: left raw, descriptionToHtml's closing newline pass would
+// turn them into a literal "<br>" inside the attribute.
+function termAttrs(tag: string): string {
+  const term = tag.startsWith('$') ? TERMS[tag.slice(1)] : undefined;
+  if (!term) return '';
+  const text = cleanText(`${term.name}: ${term.description}`).replace(/\r?\n|\\n/g, '&#10;');
+  return ` title="${text}" data-term`;
 }
 
 const PLACEHOLDER = /-?\{-?([^}:]+?)(?::([^}]+))?\}/g;
@@ -105,7 +120,7 @@ export function descriptionToHtml(text: string | null | undefined, bb: Blackboar
     if (m[1] === '/') {
       if (depth > 0) { out += '</span>'; depth--; }
     } else {
-      out += `<span class="${tagClass(m[1])}">`;
+      out += `<span class="${tagClass(m[1])}"${termAttrs(m[1])}>`;
       depth++;
     }
   }

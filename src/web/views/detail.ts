@@ -11,10 +11,14 @@
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
 import {
   operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
+  itemIconUrl,
 } from '../../shared/api/hella-api';
+import itemIndex from '../../shared/generated/items.json';
+import gameConsts from '../../shared/generated/game-consts.json';
 import type {
   AttackRange,
   Blackboard,
+  ItemCost,
   ModulePhase,
   Operator,
   OperatorAttributes,
@@ -237,6 +241,47 @@ function checkbox(act: string, label: string, on: boolean): string {
   `;
 }
 
+// ── Costs ────────────────────────────────────────────────────────────────────
+
+// Only the ~90 materials a payload references, baked by the build from item_table. An id
+// missing here (the item source was down at build time) still shows its count, unnamed,
+// rather than the cost silently looking cheaper than it is.
+const ITEMS: Record<string, { name: string; iconId: string; rarity: string } | undefined> = itemIndex;
+
+// Promotion LMD, [rarity - 1][elite - 1]; -1 where that rarity can't reach that elite.
+// The game keeps it here rather than in the phase's own evolveCost.
+const PROMOTION_GOLD: number[][] = gameConsts.evolveGoldCost;
+
+// Each material as its icon over a count, named in the tooltip and for screen readers.
+// Counts of ten thousand and up read as "30K" at icon size, which only LMD reaches.
+function costListHtml(costs: ItemCost[]): string {
+  return `<ul class="cost-list">${costs.map(c => {
+    const item = ITEMS[c.id];
+    const name = item?.name ?? c.id;
+    const count = c.count >= 10000 ? `${c.count / 1000}K` : String(c.count);
+    const tier = item ? ` cost-r${item.rarity.replace('TIER_', '')}` : '';
+    return `
+      <li class="cost${tier}" title="${escHtml(`${name} ×${c.count.toLocaleString('en-US')}`)}">
+        ${item ? `<img class="cost-icon" src="${itemIconUrl(item.iconId)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+        <span class="cost-count">${count}</span>
+        <span class="visually-hidden">${escHtml(name)}</span>
+      </li>
+    `;
+  }).join('')}</ul>`;
+}
+
+// A labelled cost under a rule: "To reach Elite 2", "To reach Mastery 3", "To unlock".
+function upgradeRowHtml(label: string, extra: string, costs: ItemCost[]): string {
+  if (!extra && !costs.length) return '';
+  return `
+    <div class="upgrade-row">
+      <span class="section-label">${escHtml(label)}</span>
+      ${extra}
+      ${costs.length ? costListHtml(costs) : ''}
+    </div>
+  `;
+}
+
 // ── Attack range ─────────────────────────────────────────────────────────────
 
 type Cell = 'empty' | 'active' | 'op' | 'added' | 'removed';
@@ -336,14 +381,30 @@ function attributesPanel(s: DetailState): string {
     </div>
   `).join('');
 
-  // The reference also lists the LMD + material cost of each promotion here. The API
-  // gives us item ids and counts but no item names or icons, so a cost table would read
-  // as "30135 x4"; it's left out rather than shipped unreadable.
   return `
     <div class="panel-controls">${controls}</div>
     <dl class="stat-list">${statList}</dl>
     ${rangeBlock(operatorRange(s))}
+    ${promotionHtml(s)}
   `;
+}
+
+// What promoting into the selected elite costs, as the reference lists it: the LMD first,
+// then the phase's own materials. Elite 0 has nothing to promote from.
+//
+// An empty evolveCost and a null one mean different things. `[]` is a 3-star's Elite 1,
+// which costs LMD and nothing else. `null` is an operator who promotes for free — only
+// Raidian, an Integrated Strategies unit — and pricing that at the rarity's LMD would
+// invent a cost the game doesn't charge.
+function promotionHtml(s: DetailState): string {
+  const materials = s.op.data.phases[s.phaseIdx].evolveCost;
+  if (s.phaseIdx === 0 || materials == null) return '';
+  const gold = PROMOTION_GOLD[rarityNum(s.op.data.rarity) - 1]?.[s.phaseIdx - 1] ?? -1;
+  const costs: ItemCost[] = [
+    ...(gold > 0 ? [{ id: '4001', count: gold, type: 'GOLD' }] : []),
+    ...materials,
+  ];
+  return upgradeRowHtml(`To reach Elite ${s.phaseIdx}`, '', costs);
 }
 
 // ── Talents ──────────────────────────────────────────────────────────────────
@@ -412,28 +473,27 @@ const skillLevelLabel = (i: number): string => (i < 7 ? `${i + 1}` : `M${i - 6}`
 interface RankStep {
   cond: UnlockCondition;
   hours: number | null;
+  costs: ItemCost[];
 }
 
 function rankStep(s: DetailState, skill: OperatorSkillDetail, idx: number): RankStep | null {
   if (idx >= 7) {
     const m = skill.deploy.levelUpCostCond?.[idx - 7];
-    return m ? { cond: m.unlockCond, hours: m.lvlUpTime / 3600 } : null;
+    return m ? { cond: m.unlockCond, hours: m.lvlUpTime / 3600, costs: m.levelUpCost ?? [] } : null;
   }
   const r = idx > 0 ? s.op.data.allSkillLvlup?.[idx - 1] : undefined;
-  return r ? { cond: r.unlockCond, hours: null } : null;
+  return r ? { cond: r.unlockCond, hours: null, costs: r.lvlUpCost ?? [] } : null;
 }
 
 function rankUpHtml(s: DetailState, skill: OperatorSkillDetail, idx: number): string {
   const step = rankStep(s, skill, idx);
   if (!step) return '';
   const target = idx >= 7 ? `Mastery ${idx - 6}` : `Rank ${idx + 1}`;
-  return `
-    <div class="rank-up">
-      <span class="section-label">To reach ${target}</span>
-      <span class="unlock-badge">${eliteIcon(phaseNum(step.cond.phase))}Lv${step.cond.level}</span>
-      ${step.hours ? `<span class="rank-up-time">${ICON_DURATION}${step.hours}h training</span>` : ''}
-    </div>
+  const requires = `
+    <span class="unlock-badge">${eliteIcon(phaseNum(step.cond.phase))}Lv${step.cond.level}</span>
+    ${step.hours ? `<span class="upgrade-time">${ICON_DURATION}${step.hours}h training</span>` : ''}
   `;
+  return upgradeRowHtml(`To reach ${target}`, requires, step.costs);
 }
 
 function skillsPanel(s: DetailState): string {
@@ -544,6 +604,11 @@ function modulesPanel(s: DetailState): string {
       ${mod.info.uniEquipDesc ? `<p class="rich muted-text">${cleanText(mod.info.uniEquipDesc)}</p>` : ''}
       ${stats ? `<div class="mod-stats">${stats}</div>` : ''}
       ${trait}
+      ${upgradeRowHtml(
+        phase.equipLevel === 1 ? 'To unlock' : `To reach stage ${phase.equipLevel}`,
+        '',
+        mod.info.itemCost?.[String(phase.equipLevel)] ?? [],
+      )}
       ${mod.missions?.length ? `
         <div class="mod-missions">
           <span class="section-label">Unlock missions</span>

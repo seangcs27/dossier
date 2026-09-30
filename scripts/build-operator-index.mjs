@@ -166,7 +166,7 @@ const PROFESSION_EN = {
 // has to survive the re-encode, and the resize to 256px is where the saving comes from.
 //
 // Nineteen requests, not one per operator: operators share factions heavily.
-async function bakeIcons(label, dirName, names, pathFor) {
+async function bakeIcons(label, dirName, names, pathFor, size = 256) {
   const logoDir = path.join(outDir, dirName);
   await mkdir(logoDir, { recursive: true });
 
@@ -187,7 +187,7 @@ async function bakeIcons(label, dirName, names, pathFor) {
         const res = await fetchWithRetry(`${base}/${pathFor(id)}`);
         if (!res.ok) throw new Error(String(res.status));
         const webp = await sharp(Buffer.from(await res.arrayBuffer()))
-          .resize(256)
+          .resize(size)
           .webp({ quality: 82, effort: 4, alphaQuality: 100 })
           .toBuffer();
         await writeFile(path.join(logoDir, `${id}.webp`), webp);
@@ -817,6 +817,9 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // The extension popup's projection, gathered in the same pass. See PopupOperator in
   // src/shared/types/operator.ts for why this exists and what defines its shape.
   const popup = {};
+  // LMD is seeded: a promotion's LMD comes from gamedata_const rather than any payload, so
+  // nothing else guarantees the item map knows it.
+  const itemIds = new Set(['4001']);
   const all = [...regular, ...cnSupplement];
   await mapConcurrent(all, 12, async entry => {
     const cn = cnById.get(entry.id);
@@ -865,6 +868,8 @@ async function buildOperatorDetails(regular, cnSupplement) {
         },
       };
 
+      for (const id of costItemIds(finalOp)) itemIds.add(id);
+
       await writeFile(path.join(detailOutDir, `${entry.id}.json`), JSON.stringify(finalOp));
       written++;
     } catch (e) {
@@ -875,7 +880,89 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // accumulated across every operator and would otherwise get flushed here even when
   // `written` collapses to near-zero, silently overwriting a good popup.json before that
   // check ever runs.
-  return { written, nations, nationIds, collabs, archetypes, traitByName, popup };
+  return { written, nations, nationIds, collabs, archetypes, traitByName, popup, itemIds };
+}
+
+// Every item id a detail page can price: promotions, skill ranks 2-7, masteries, and each
+// module stage. Collected while the payloads are written, so the item map ships only what
+// is referenced — about ninety entries against the table's 1,425.
+function costItemIds(op) {
+  const d = op.data ?? {};
+  return [
+    ...(d.phases ?? []).flatMap(p => p.evolveCost ?? []),
+    ...(d.allSkillLvlup ?? []).flatMap(r => r.lvlUpCost ?? []),
+    ...(d.skills ?? []).flatMap(s => (s.levelUpCostCond ?? []).flatMap(m => m.levelUpCost ?? [])),
+    ...(op.modules ?? []).flatMap(m => Object.values(m.info?.itemCost ?? {}).flat()),
+  ].map(cost => cost?.id).filter(Boolean);
+}
+
+// Keeps what the last build wrote when a source is down, or writes `empty` if there is
+// nothing to keep. The runtime imports these files, so one has to exist for the bundle to
+// build at all; an empty one costs the page its prices or tooltips, not the deploy.
+async function keepOrWrite(file, empty, reason) {
+  const kept = await readFile(file, 'utf8').then(() => true, () => false);
+  if (!kept) await writeFile(file, JSON.stringify(empty));
+  console.warn(`${path.basename(file)} ${kept ? 'kept from the last build' : 'written empty'}: ${reason}`);
+}
+
+const ITEMS_FILE = path.join(outDir, 'items.json');
+const CONSTS_FILE = path.join(outDir, 'game-consts.json');
+const EMPTY_ITEMS = {};
+const EMPTY_CONSTS = { terms: {}, evolveGoldCost: [] };
+
+// For the two "keep the last build" exits below. They leave before writeItemIndex and
+// writeGameConsts ever run, and data kept from a build that predates those files — CI
+// restores the last cache, which may be older than this code — would then fail the bundle
+// outright rather than just losing its prices and tooltips.
+async function ensureCostFiles(reason) {
+  await keepOrWrite(ITEMS_FILE, EMPTY_ITEMS, reason);
+  await keepOrWrite(CONSTS_FILE, EMPTY_CONSTS, reason);
+}
+
+// Names and icons for the materials a detail page prices. From item_table, on the host
+// the payloads already come from. EN first; the few materials only the CN client has yet
+// fall back to their CN names rather than showing as bare ids.
+async function writeItemIndex(itemIds) {
+  const file = ITEMS_FILE;
+  let en, cn;
+  try {
+    [en, cn] = await Promise.all([table('en', 'item_table'), table('cn', 'item_table').catch(() => ({}))]);
+  } catch (e) {
+    await keepOrWrite(file, EMPTY_ITEMS, e.message);
+    return;
+  }
+  const items = {};
+  for (const id of itemIds) {
+    const item = en.items?.[id] ?? cn.items?.[id];
+    if (item) items[id] = { name: item.name, iconId: item.iconId, rarity: item.rarity };
+  }
+  await writeFile(file, JSON.stringify(items));
+  const unnamed = [...itemIds].filter(id => !items[id]);
+  console.log(
+    `wrote ${Object.keys(items).length}/${itemIds.size} priced items` +
+    `${unnamed.length ? ` — unnamed ${unnamed.join(', ')}` : ''} -> ${path.relative(process.cwd(), file)}`,
+  );
+  // 96px: shown at 40, so this is 2x with room to spare. The upstream files are ~180px.
+  await bakeIcons('item icons', 'item-icons', Object.values(items).map(i => i.iconId), iconId => `items/${iconId}.png`, 96);
+}
+
+// Two things from gamedata_const: the keyword glossary the game shows as tooltips on
+// terms like "Slow" or "Bind", and the LMD a promotion costs, which the phase's own
+// evolveCost leaves out. evolveGoldCost is indexed [rarity - 1][elite - 1]; -1 means the
+// rarity can't reach that elite.
+async function writeGameConsts() {
+  const file = CONSTS_FILE;
+  let consts;
+  try {
+    consts = await table('en', 'gamedata_const');
+  } catch (e) {
+    await keepOrWrite(file, EMPTY_CONSTS, e.message);
+    return;
+  }
+  const terms = Object.fromEntries(Object.entries(consts.termDescriptionDict ?? {})
+    .map(([id, t]) => [id, { name: t.termName, description: t.description }]));
+  await writeFile(file, JSON.stringify({ terms, evolveGoldCost: consts.evolveGoldCost ?? [] }));
+  console.log(`wrote ${Object.keys(terms).length} keyword terms -> ${path.relative(process.cwd(), file)}`);
 }
 
 // How many operators the previous build left on disk; 0 if there's nothing usable there.
@@ -913,6 +1000,7 @@ if (tableError) {
     `game data unreachable (${tableError.message}) — keeping the last build's ${kept} operators ` +
     `in ${path.relative(process.cwd(), outDir)}`,
   );
+  await ensureCostFiles('game data unreachable');
   process.exit(0);
 }
 
@@ -950,7 +1038,7 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-const { written: detailsWritten, nations, nationIds, collabs, archetypes, traitByName, popup } = await buildOperatorDetails(
+const { written: detailsWritten, nations, nationIds, collabs, archetypes, traitByName, popup, itemIds } = await buildOperatorDetails(
   roster.map(r => ({ id: r.id, appellation: r.data.appellation })),
   cnSupplement,
 );
@@ -967,6 +1055,7 @@ if (detailsWritten < MIN_DETAILS_WRITTEN) {
     `only ${detailsWritten} operator details written (expected >= ${MIN_DETAILS_WRITTEN}) — keeping the last build's ${kept} operators ` +
     `in ${path.relative(process.cwd(), outDir)}`,
   );
+  await ensureCostFiles('too few operator details written');
   process.exit(0);
 }
 
@@ -977,6 +1066,8 @@ console.log(
   `(${(JSON.stringify(popup).length / 1024).toFixed(0)}KB) -> ` +
   `${path.relative(process.cwd(), popupFile)}`,
 );
+await writeItemIndex(itemIds);
+await writeGameConsts();
 
 const entries = roster.map(r => ({
   id: r.id,

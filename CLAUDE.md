@@ -93,6 +93,9 @@ src/
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
       portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
       faction-logos/<id>.webp ← one nation badge per faction, printed on the card back
+      items.json              ← name/icon/rarity of the ~90 materials any payload prices, bundled
+      item-icons/<iconId>.webp  ← those materials' icons at 96px, copied as static files
+      game-consts.json        ← keyword glossary + promotion LMD, from gamedata_const, bundled
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
       index.ts      ← re-export barrel
@@ -133,7 +136,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/` and `portraits/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/` and `item-icons/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -214,6 +217,7 @@ operatorPortraitLocalUrl(id)               // the same bust, bundle-relative por
 factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — an alpha mask
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
+itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
 skillIconUrl(skillId)                      // Arknight-Images CDN
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
 archetypeIconUrl(subProfessionId)          // bundle-relative branch-icons/ — self-hosted
@@ -261,7 +265,10 @@ minutes, twice, before this).
   joined by `scripts/lib/build-payload.mjs` into the same `Operator` payload the app has
   always read: `character_table` (plus `char_patch_table`, which is where Amiya's Guard and
   Medic forms live), `skill_table`, `uniequip_table` + `battle_equip_table`, `building_data`,
-  `handbook_team_table`, `range_table`, `skin_table`. This replaced HellaAPI (`awedtan.ca`), a
+  `handbook_team_table`, `range_table`, `skin_table`. Two more feed the detail page's costs
+  and tooltips rather than the payload — `item_table` (→ `items.json` + `item-icons/`) and
+  `gamedata_const` (→ `game-consts.json`); both are non-load-bearing, and on failure keep the
+  last build's file or write an empty one so the bundle still builds. This replaced HellaAPI (`awedtan.ca`), a
   single self-hosted server whose certificate expired in September 2026 and blocked every
   deploy until the migration landed.
 - **raw CN game data** (the same repo's `cn/gamedata/excel/character_table.json`) —
@@ -389,21 +396,29 @@ set and information architecture all follow theirs, so read
   the reference, which resets them per tab.
 - **Attributes** — elite button group, level slider + typed input, module checkbox/pills,
   trust checkbox + 0–200 input, potential dropdown; the trust bonus scales by
-  `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule.
+  `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule, then what
+  promoting into the selected elite costs: LMD (from `gamedata_const.evolveGoldCost`, which
+  the phase's own `evolveCost` leaves out) followed by the materials.
 - **Skills** — skill pills + a 1–10 rank slider labelled `1…7, M1–M3`, an SP-cost /
   initial-SP / duration row, the description, the skill's range overlaid on the
   operator's (added cells blue, removed cells red), and what reaching the selected rank
-  takes: its elite/level requirement and, for M1–M3, the training time.
-- **Modules** — the module's stats and trait per stage, then the missions that unlock it.
+  takes: its elite/level requirement, for M1–M3 the training time, and the materials.
+- **Modules** — the module's stats and trait per stage, what unlocking or reaching that stage
+  costs, then the missions that unlock it.
+
+Costs render as one tile per material (`costListHtml` in `detail.ts`): the baked icon, the
+count, and a bottom edge in the item's rarity colour. The names come from `items.json`,
+which holds only the materials some payload references; an id it lacks still shows its
+count, unnamed, rather than the cost silently looking cheaper.
 
 Descriptions are rendered by `descriptionToHtml` in `format.ts`, not `cleanText`: the game
 data is a markup language (`<@ba.vup>+{atk:0%}</>`), so tags become styled spans and
 `{placeholders}` are interpolated from the entry's own `blackboard`. An unresolvable key
-renders as the raw token rather than vanishing.
+renders as the raw token rather than vanishing. `$` tags (`<$ba.sluggish>`) are game keywords:
+they render muted with the game's own definition as a `title` ("Slow: -80% Movement Speed"),
+from `game-consts.json`. That covers ~98% of keyword uses; the rest render without one.
 
-Not cloned, for lack of data: promotion/mastery **material costs** (`evolveCost` and module
-`itemCost` are in the payloads, but there are no item names or icons yet), **summon/token**
-stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
+Not cloned, for lack of data: **summon/token** stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
 shows tags, trait, archive blurb, obtain source, the potential ladder, every named outfit
 and a fact list), and outfit prices. `src/web/icons.ts` draws the stat/skill/elite glyphs inline rather than
 fetching them.

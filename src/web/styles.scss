@@ -1298,6 +1298,11 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 
 .detail-body-error { display: block; }
 
+// Picking an outfit from the Misc tab scrolls the viewer into view. Without this it lands
+// at the very top of the viewport, under the sticky topbar, which hides the first rail
+// thumbnail. Same clearance as the sticky column's own `top` below.
+.splash { scroll-margin-top: 93px; }
+
 .detail-art-col {
   flex: 1 1 auto;
   min-width: 0;
@@ -1873,6 +1878,14 @@ input[type='number'] {
   .keyword       { font-weight: 700; color: #83cbff; }
   .potential     { font-weight: 700; color: #b1afff; }
   .skill-tooltip { color: var(--muted); }
+
+  // A keyword with a definition behind it. Dotted rather than solid, so it reads as "hover
+  // for more" and not as a link.
+  [data-term] {
+    cursor: help;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.2em;
+  }
 }
 
 .muted-text { color: var(--dim); }
@@ -1956,9 +1969,11 @@ input[type='number'] {
   .ico { width: 16px; height: 16px; color: var(--text); flex-shrink: 0; }
 }
 
-// What reaching the selected rank takes. Sits under a rule at the foot of the skill body,
-// below the range, because it's about getting the skill rather than using it.
-.rank-up {
+// What getting to the selected elite, skill rank or module stage takes: requirement badge,
+// training time and materials. Sits under a rule at the foot of its panel because it's
+// about getting the thing rather than using it. The label owns the first line; the cost
+// tiles wrap onto the next on a narrow panel rather than crushing it.
+.upgrade-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1966,10 +1981,10 @@ input[type='number'] {
   padding-top: var(--sp-16);
   border-top: 1px solid var(--border);
 
-  .section-label { margin-right: auto; }
+  .section-label { flex-basis: 100%; }
 }
 
-.rank-up-time {
+.upgrade-time {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-6);
@@ -1977,6 +1992,49 @@ input[type='number'] {
   font-size: var(--fs-base);
 
   .ico { width: 16px; height: 16px; color: var(--text); flex-shrink: 0; }
+}
+
+// One tile per material: the icon on a dark plate with the count in its corner, the way the
+// game draws a cost. The bottom edge takes the item's rarity colour — the one thing colour
+// means anywhere on this site — so a rare material reads as rare before its name does.
+.cost-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+
+.cost {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--border);
+  border-bottom: 2px solid var(--muted);
+}
+
+@each $tier, $spec in $rarities {
+  .cost-r#{$tier} { border-bottom-color: var(--r#{$tier}); }
+}
+
+.cost-icon {
+  position: absolute;
+  inset: 4px;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+// Right-aligned over the icon's lower corner, with a shadow rather than a plate so it
+// stays legible on light and dark icons alike without hiding them.
+.cost-count {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 3px #000, 0 0 2px #000;
 }
 
 // ── Modules ──
