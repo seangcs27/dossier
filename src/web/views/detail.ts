@@ -11,7 +11,7 @@
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
 import {
   operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
-  itemIconUrl,
+  itemIconUrl, potentialIconUrl,
 } from '../../shared/api/hella-api';
 import itemIndex from '../../shared/generated/items.json';
 import gameConsts from '../../shared/generated/game-consts.json';
@@ -22,6 +22,7 @@ import type {
   ModulePhase,
   Operator,
   OperatorAttributes,
+  OperatorData,
   OperatorModule,
   OperatorSkillDetail,
   OperatorTalent,
@@ -40,7 +41,7 @@ import {
 } from '../format';
 import {
   ICON_HP, ICON_ATK, ICON_DEF, ICON_RES, ICON_ASPD, ICON_BLOCK, ICON_DP, ICON_REDEPLOY,
-  ICON_SP_COST, ICON_SP_INIT, ICON_DURATION, ICON_MELEE, ICON_RANGED, ICON_BRUSH,
+  ICON_SP_COST, ICON_SP_INIT, ICON_DURATION, ICON_MELEE, ICON_RANGED, ICON_MELEE_AND_RANGED, ICON_BRUSH,
   eliteIcon,
 } from '../icons';
 
@@ -232,6 +233,34 @@ function potentialSelect(count: number, current: number): string {
   `;
 }
 
+// The Attributes tab's potential control: the game's rank badges alone, no words. As in the
+// reference, it offers Potential 1 plus only the ranks that change a stat this panel shows —
+// Makoto Yuki gets 1, 2, 4 and 6 — since picking any other would move no number. Potential
+// is shared with the Talents tab, which can select a rank this list omits; the trigger
+// shows the real current rank either way, so the two never disagree about the state.
+//
+// A native <select> can't show an image in its options, hence a small menu button.
+function potentialMenu(s: DetailState): string {
+  if (!maxPotential(s.op)) return '';
+  const values = [0, ...(s.op.data.potentialRanks ?? []).flatMap((rank, i) =>
+    (rank.buff?.attributes?.attributeModifiers ?? []).some(m => POTENTIAL_ATTR[m.attributeType]) ? [i + 1] : [])];
+  const badge = (v: number) => `<img class="pot-icon" src="${potentialIconUrl(v + 1)}" alt="">`;
+  return `
+    <div class="pot-menu">
+      <button class="pot-trigger" data-act="pot-toggle" aria-haspopup="menu" aria-expanded="false"
+              aria-label="Potential ${s.potential + 1}" title="Potential ${s.potential + 1}"${values.length < 2 ? ' disabled' : ''}>
+        ${badge(s.potential)}<span class="pot-caret" aria-hidden="true"></span>
+      </button>
+      <div class="pot-options" role="menu" hidden>
+        ${values.map(v => `
+          <button role="menuitemradio" aria-checked="${v === s.potential}" data-act="pot-pick" data-value="${v}"
+                  aria-label="Potential ${v + 1}" title="Potential ${v + 1}">${badge(v)}</button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function checkbox(act: string, label: string, on: boolean): string {
   return `
     <label class="ctl-check">
@@ -252,13 +281,16 @@ const ITEMS: Record<string, { name: string; iconId: string; rarity: string } | u
 // The game keeps it here rather than in the phase's own evolveCost.
 const PROMOTION_GOLD: number[][] = gameConsts.evolveGoldCost;
 
-// Each material as its icon over a count, named in the tooltip and for screen readers.
-// Counts of ten thousand and up read as "30K" at icon size, which only LMD reaches.
+// "180K", "12.5K", "4" — the reference's own formatting, and what fits a badge on a 52px disc.
+const COMPACT = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 2 });
+
+// Each material as its icon in a disc ringed by the item's rarity, with the count in a
+// badge — the reference's layout — named in the tooltip and for screen readers.
 function costListHtml(costs: ItemCost[]): string {
   return `<ul class="cost-list">${costs.map(c => {
     const item = ITEMS[c.id];
     const name = item?.name ?? c.id;
-    const count = c.count >= 10000 ? `${c.count / 1000}K` : String(c.count);
+    const count = COMPACT.format(c.count);
     const tier = item ? ` cost-r${item.rarity.replace('TIER_', '')}` : '';
     return `
       <li class="cost${tier}" title="${escHtml(`${name} ×${c.count.toLocaleString('en-US')}`)}">
@@ -369,7 +401,7 @@ function attributesPanel(s: DetailState): string {
         ${checkbox('trust-on', 'Trust', s.trustOn)}
         <input type="number" id="trust-num" class="num-box" min="0" max="200" value="${s.trust}"
                aria-label="Trust"${s.trustOn ? '' : ' disabled'}>
-        ${potentialSelect(maxPotential(op), s.potential)}
+        ${potentialMenu(s)}
       </div>
     </div>
   `;
@@ -723,7 +755,7 @@ function miscPanel(s: DetailState): string {
 
   const facts: [string, string][] = [];
   if (s.op.archetype ?? d.subProfessionId) facts.push(['Branch', s.op.archetype ?? d.subProfessionId]);
-  facts.push(['Position', d.position === 'MELEE' ? 'Melee' : 'Ranged']);
+  facts.push(['Position', positionOf(d).label]);
   if (faction) facts.push(['Faction', faction]);
   if (d.displayNumber) facts.push(['Operator code', d.displayNumber]);
 
@@ -761,6 +793,15 @@ function panelHtml(s: DetailState): string {
 
 // ── Shell ────────────────────────────────────────────────────────────────────
 
+// The reference's rule: a trait that lets the operator deploy on ranged tiles makes them
+// both, whatever `position` says. Shared by the header and the Misc tab's facts, so the
+// page never calls one operator two things.
+function positionOf(d: OperatorData): { icon: string; label: string } {
+  const both = (traitInfo(d)?.text ?? d.description ?? '').toLowerCase().includes('can be deployed on ranged');
+  if (both) return { icon: ICON_MELEE_AND_RANGED, label: 'Melee & Ranged' };
+  return d.position === 'MELEE' ? { icon: ICON_MELEE, label: 'Melee' } : { icon: ICON_RANGED, label: 'Ranged' };
+}
+
 function headerHtml(s: DetailState): string {
   const d = s.op.data;
   const n = rarityNum(d.rarity);
@@ -769,11 +810,13 @@ function headerHtml(s: DetailState): string {
   const info = traitInfo(d);
   const traitTip = cleanText(info?.text ?? d.description ?? '').replace(/<br>/g, ' ');
   const branch = s.op.archetype ?? d.subProfessionId;
+  const position = positionOf(d);
 
   return `
     <div class="op-rarity-strip r${n}">
       <span class="visually-hidden">Rarity: ${n}</span>
       ${'<span class="strip-star">★</span>'.repeat(n)}
+      ${s.op.limited ? '<span class="strip-limited">Limited</span>' : ''}
     </div>
     <div class="op-header">
       <img class="op-header-avatar" src="${operatorAvatarUrl(s.op.id)}" alt="" loading="lazy"
@@ -790,8 +833,8 @@ function headerHtml(s: DetailState): string {
         </span>
         <span class="hdr-spacer"></span>
         <span class="hdr-item hdr-position">
-          ${d.position === 'MELEE' ? ICON_MELEE : ICON_RANGED}
-          ${d.position === 'MELEE' ? 'Melee' : 'Ranged'}
+          ${position.icon}
+          ${position.label}
         </span>
       </div>
     </div>
@@ -917,6 +960,35 @@ function updateSkillBody(container: HTMLElement): void {
   if (out) out.textContent = skillLevelLabel(idx);
 }
 
+// The potential menu opens and closes in place: re-rendering the panel just to show it would
+// rebuild the controls under the pointer for nothing. Opening moves focus to the current
+// rank; closing with Escape returns it to the trigger.
+function setPotentialMenu(open: boolean, focusTrigger = false): void {
+  const trigger = document.querySelector<HTMLButtonElement>('.pot-trigger');
+  const options = document.querySelector<HTMLElement>('.pot-options');
+  if (!trigger || !options) return;
+  options.hidden = !open;
+  trigger.setAttribute('aria-expanded', String(open));
+  if (open) options.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
+  else if (focusTrigger) trigger.focus();
+}
+
+const potentialMenuOpen = (): boolean => !!document.querySelector('.pot-trigger[aria-expanded="true"]');
+
+// Closing is the document's job, not the view's: the menu can lose focus to, or be clicked
+// away from, the sticky topbar, which sits outside main#view where the view's own handlers
+// never hear about it. Registered once for the page's life; with no menu on the page they
+// find nothing and do nothing.
+document.addEventListener('pointerdown', ev => {
+  if (potentialMenuOpen() && !(ev.target as Element).closest?.('.pot-menu')) setPotentialMenu(false);
+});
+document.addEventListener('focusin', ev => {
+  if (potentialMenuOpen() && !(ev.target as Element).closest?.('.pot-menu')) setPotentialMenu(false);
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && potentialMenuOpen()) setPotentialMenu(false, true);
+});
+
 function errorHtml(id: string, label: string): string {
   return `
     <div class="detail">
@@ -1020,6 +1092,15 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
                         state.moduleLevel = Math.max(0, (visibleModules(state.op)[state.moduleIdx]?.data?.phases.length ?? 1) - 1);
                         break;
       case 'module-lv': state.moduleLevel = Number(value); break;
+      case 'pot-toggle':
+        setPotentialMenu(el.getAttribute('aria-expanded') !== 'true');
+        return;
+      case 'pot-pick':
+        state.potential = Number(value);
+        renderPanel(container);
+        // The re-render replaced the focused option; without this, focus falls to <body>.
+        container.querySelector<HTMLElement>('.pot-trigger')?.focus();
+        return;
       default: return;
     }
     renderPanel(container);

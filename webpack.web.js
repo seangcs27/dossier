@@ -29,6 +29,8 @@ module.exports = {
         { from: 'src/shared/generated/portraits', to: 'portraits', noErrorOnMissing: true },
         { from: 'src/shared/generated/faction-logos', to: 'faction-logos', noErrorOnMissing: true },
         { from: 'src/shared/generated/item-icons', to: 'item-icons', noErrorOnMissing: true },
+        { from: 'src/shared/generated/elite-icons', to: 'elite-icons', noErrorOnMissing: true },
+        { from: 'src/shared/generated/potential-icons', to: 'potential-icons', noErrorOnMissing: true },
       ],
     }),
   ],

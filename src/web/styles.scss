@@ -1438,6 +1438,18 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   letter-spacing: 1px;
 }
 
+// After the stars, in the strip's own rarity colour, as the reference sets it: heavy,
+// italic, capitals.
+.strip-limited {
+  margin-left: var(--sp-8);
+  font-size: var(--fs-sm);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 12px;
+}
+
 @each $tier, $spec in $rarities {
   .op-rarity-strip.r#{$tier} {
     background: color-mix(in srgb, var(--r#{$tier}) 8%, transparent);
@@ -1495,7 +1507,9 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 
 .hdr-icon { width: 20px; height: 20px; object-fit: contain; opacity: 0.9; }
 .hdr-spacer { flex: 1 1 auto; }
-.hdr-position { color: var(--dim); .ico { width: 18px; height: 18px; } }
+// The deployment-tile glyphs are 16 wide on the reference's grid and grey there, a step
+// quieter than the label beside them.
+.hdr-position { color: var(--dim); .ico { width: 16px; height: 16px; color: var(--muted); } }
 
 // The class trait is the tooltip on the branch name, as in the reference; a dashed
 // underline is the only affordance it gets.
@@ -1659,6 +1673,64 @@ input[type='number'] {
   user-select: none;
 
   input { accent-color: var(--link); width: 16px; height: 16px; cursor: pointer; }
+}
+
+// The Attributes tab's potential control: badge-only trigger and a row of badges, since the
+// game's own rank art says which potential it is without a word. See potentialMenu().
+.pot-menu { position: relative; }
+
+.pot-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-8);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--chip);
+  background: var(--bg);
+  cursor: pointer;
+
+  &:disabled { cursor: default; opacity: 0.6; }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+.pot-caret {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--muted);
+}
+
+.pot-icon { display: block; width: 24px; height: 24px; }
+
+// A column, as the reference's is. A row of six badges was 212px wide, and at phone width —
+// where this control moves to the left of its row — it ran off the panel's left edge and
+// was clipped by .op-panel's overflow. A column is one badge wide wherever it opens.
+.pot-options {
+  position: absolute;
+  top: calc(100% + var(--sp-4));
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--chip);
+  background: var(--surface2);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+
+  &[hidden] { display: none; }
+
+  button {
+    padding: var(--sp-4);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+
+    &:hover { background: color-mix(in srgb, var(--chip) 60%, transparent); }
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+    &[aria-checked='true'] { background: var(--chip); }
+  }
 }
 
 .pot-select select {
@@ -1851,9 +1923,34 @@ input[type='number'] {
   color: var(--accent);
   font-size: var(--fs-base);
   line-height: 1;
+
+  // The badge's elite glyph matches its "Lv60" in size and gold wherever the badge sits.
+  // Inside a Modules or RIIC entry header, `.entry-head .ico` (the talent heading's 18x24,
+  // white) would otherwise win, and the badge would grow to fit it.
+  .ico-mask { width: 1.15em; height: 1em; color: inherit; }
 }
 
 .empty-msg { color: var(--muted); font-size: var(--fs-lg); }
+
+// The game's elite badge, painted in the text colour through its alpha (see eliteIcon in
+// src/web/icons.ts). A default size for where no caller rule sets one — an unlock badge —
+// and callers that do size `.ico` still win on specificity.
+.ico-mask {
+  display: inline-block;
+  width: 1.15em;
+  height: 1em;
+  flex-shrink: 0;
+  background: currentColor;
+  -webkit-mask: var(--ico) center / contain no-repeat;
+          mask: var(--ico) center / contain no-repeat;
+}
+
+// High-contrast modes replace author backgrounds with the page colour, which would paint
+// the badge in the colour of whatever it sits on. Opting this one element out, and filling
+// it with the system text colour, keeps it visible in every high-contrast theme.
+@media (forced-colors: active) {
+  .ico-mask { forced-color-adjust: none; background: CanvasText; }
+}
 
 // A small caps label over a group: an outfit's series, "To reach M2", "Unlock missions".
 // The same voice as .fact-list's terms, so every label on the page reads as one system.
@@ -2000,41 +2097,53 @@ input[type='number'] {
 .cost-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-6);
+  gap: var(--sp-8);
+  // A <ul> for screen readers' sake, so the reset's zeroed padding still leaves each
+  // tile's bullet marker hanging off its left edge unless it's turned off here.
+  list-style: none;
 }
 
+// The reference's material tile: a 52px disc, ringed and faintly washed in the item's
+// rarity colour, the icon filling it, the count in a dark badge on the lower right. Our
+// --r1..--r5 are the reference's own item hues; only operator 6★ differs, and no material
+// is tier 6.
 .cost {
   position: relative;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-sm);
-  background: var(--border);
-  border-bottom: 2px solid var(--muted);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
 }
 
 @each $tier, $spec in $rarities {
-  .cost-r#{$tier} { border-bottom-color: var(--r#{$tier}); }
+  .cost-r#{$tier} {
+    border-color: var(--r#{$tier});
+    background: color-mix(in srgb, var(--r#{$tier}) 30%, transparent);
+  }
 }
 
+// Positioned against the disc's outer edge (-2px undoes the border), so the icon fills the
+// whole 52px the way the reference's does rather than shrinking inside the ring.
 .cost-icon {
   position: absolute;
-  inset: 4px;
-  width: 40px;
-  height: 40px;
+  inset: -2px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
 }
 
-// Right-aligned over the icon's lower corner, with a shadow rather than a plate so it
-// stays legible on light and dark icons alike without hiding them.
 .cost-count {
   position: absolute;
-  right: 3px;
-  bottom: 1px;
-  font-size: var(--fs-sm);
-  font-weight: 700;
+  right: -4px;
+  bottom: -4px;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-lg);
+  background: #050507;
+  font-size: var(--fs-base);
+  font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 3px #000, 0 0 2px #000;
 }
 
 // ── Modules ──

@@ -792,12 +792,13 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 // wait for the next rebuild instead. Best-effort per operator: one bad fetch shouldn't
 // cost the others.
 async function buildOperatorDetails(regular, cnSupplement) {
-  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex] = await Promise.all([
+  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds] = await Promise.all([
     fetchAceTranslations(),
     fetchWikiTraits(cnSupplement.map(c => c.appellation)),
     fetchRiicTranslations(),
     fetchPotentialKeywords(),
     fetchCharacterArtIndex(),
+    fetchLimitedIds(),
   ]);
   const cnById = new Map(cnSupplement.map(c => [c.id, c]));
 
@@ -834,7 +835,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
       // translated overlay. Spreading `base` here would silently ship the raw Chinese
       // buildPayload returns instead of the fan translations, in both this file and the
       // popup projection below (`pd` reads from finalOp too).
-      const finalOp = { ...op, arts };
+      const finalOp = { ...op, arts, limited: limitedIds.has(entry.id) };
 
       // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
       // slug and only a fallback, title-cased, for a payload whose factions array is empty
@@ -881,6 +882,28 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // `written` collapses to near-zero, silently overwriting a good popup.json before that
   // check ever runs.
   return { written, nations, nationIds, collabs, archetypes, traitByName, popup, itemIds };
+}
+
+// Operators only ever sold on limited banners, for the detail page's LIMITED tag. The CN
+// banner table names each limited pool's operator in limitParam.limitedCharId: keyed by
+// char id, so no name join, and it already covers the CN-only operators this build
+// supplements. Collab banners are LINKAGE pools rather than LIMITED ones, so collab
+// operators are deliberately absent — the game itself doesn't class them as limited.
+// Under 20 hits means the table changed shape, and no tags at all beats wrong ones.
+async function fetchLimitedIds() {
+  try {
+    const gacha = await table('cn', 'gacha_table');
+    const ids = new Set((gacha.gachaPoolClient ?? [])
+      .filter(pool => pool.gachaRuleType === 'LIMITED')
+      .map(pool => pool.limitParam?.limitedCharId)
+      .filter(Boolean));
+    if (ids.size < 20) throw new Error(`only ${ids.size} limited operators found`);
+    console.log(`limited operators: ${ids.size}`);
+    return ids;
+  } catch (e) {
+    console.warn(`limited flags skipped: ${e.message}`);
+    return new Set();
+  }
 }
 
 // Every item id a detail page can price: promotions, skill ranks 2-7, masteries, and each
@@ -992,6 +1015,18 @@ const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
 
 // GitHub raw is a steadier source than the self-hosted API this replaced, but the reason
 // the fallback exists hasn't changed — only what it guards.
+// The game's own elite badges and potential ranks, for the detail page's controls. The
+// elite files are white on transparent, so the page paints them as masks in the text
+// colour. Potential ranks are told apart by which strokes are blue, so a mask would make
+// all six the same star; those stay full-colour images.
+//
+// Baked here, ahead of the "keep the last build" exits below, because the lists are fixed
+// and need no game data. After those exits they would never run for kept data older than
+// these icons — which is what CI restores on its first run — and every elite button and
+// potential badge on the page would come up empty.
+await bakeIcons('elite icons', 'elite-icons', ['0', '1', '2'], n => `ui/elite/${n}-s.png`, 40);
+await bakeIcons('potential icons', 'potential-icons', ['1', '2', '3', '4', '5', '6'], n => `ui/potential/${n}.png`, 48);
+
 const tableError = [enChars, enPatch].find(t => t instanceof Error);
 if (tableError) {
   const kept = await previousOperatorCount();

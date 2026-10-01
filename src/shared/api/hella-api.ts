@@ -83,6 +83,18 @@ export function itemIconUrl(iconId: string): string {
   return `item-icons/${encodeURIComponent(iconId)}.webp`;
 }
 
+// The game's own elite badge (0, 1, 2), baked at 40px. White on transparent: callers use
+// it as a CSS mask so it takes the text colour.
+export function eliteIconUrl(phase: number): string {
+  return `elite-icons/${phase}.webp`;
+}
+
+// The game's own potential rank badge (1-6), baked at 48px. Full colour — the rank is in
+// which strokes are blue — so it's shown as an image, never masked.
+export function potentialIconUrl(rank: number): string {
+  return `potential-icons/${rank}.webp`;
+}
+
 export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }

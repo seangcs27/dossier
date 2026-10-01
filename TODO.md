@@ -5,6 +5,24 @@ picking one up later doesn't need re-investigation.
 
 ## Planned
 
+### Detail page — match Sanity Gone, one tab at a time
+Done tab by tab against the live reference (https://sanitygone.help/en/operators/makoto-yuki/
+is a good specimen: limited, module, four-potential dropdown), so each pass can be reviewed
+on its own. Attributes is done: stat glyphs, the game's elite and potential badges, the
+position icon, circular material tiles, and the LIMITED tag. Still to do, in order:
+
+- **Talents** — compare the talent cards, their elite/potential unlock badges, and how the
+  reference marks a talent that changes with potential.
+- **Skills** — the skill header, SP/duration row, rank slider labels, and the cost row's
+  requirement badge against the reference's own skill-upgrade layout.
+- **Modules** — module header (type badge, stage selector), stat chips, trait text, and
+  the unlock cost and missions.
+- **RIIC** — base skill cards, room-type icons, and the elite selector.
+- **Misc** — the reference's handbook-driven layout. Ours now has outfits; the handbook
+  text itself (Basic Info, Physical Exam, Profile, Archive Files 1-4, Promotion Record) is in
+  `en/gamedata/excel/handbook_info_table.json`, 6.4 MB, 420 operators, and is worth landing
+  before restyling this tab around it.
+
 ### What the raw-gamedata migration left behind
 The build no longer touches HellaAPI: `scripts/lib/gamedata.mjs` loads the game's excel
 tables from `ArknightsAssets/ArknightsGamedata`, and `scripts/lib/build-payload.mjs` joins

@@ -274,6 +274,9 @@ export interface Operator {
   // the static per-operator bundle has it), so always optional.
   arts?: OperatorArt[];
   skins?: OperatorSkin[];
+  // Only ever sold on limited banners, from the CN gacha table's LIMITED pools. Collab
+  // operators come from LINKAGE pools and are not limited by the game's own definition.
+  limited?: boolean;
 }
 
 export interface OperatorSummary {

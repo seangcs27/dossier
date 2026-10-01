@@ -95,6 +95,8 @@ src/
       faction-logos/<id>.webp ← one nation badge per faction, printed on the card back
       items.json              ← name/icon/rarity of the ~90 materials any payload prices, bundled
       item-icons/<iconId>.webp  ← those materials' icons at 96px, copied as static files
+      elite-icons/<0-2>.webp    ← the game's elite badges, 40px, painted as CSS masks
+      potential-icons/<1-6>.webp  ← the game's potential rank badges, 48px, full colour
       game-consts.json        ← keyword glossary + promotion LMD, from gamedata_const, bundled
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
@@ -136,7 +138,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/` and `item-icons/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `item-icons/`, `elite-icons/` and `potential-icons/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -218,6 +220,8 @@ factionLogoUrl(nationId)                   // bundle-relative faction-logos/ —
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
+eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a mask, see eliteIcon()
+potentialIconUrl(rank)                     // bundle-relative potential-icons/ — full colour, never masked
 skillIconUrl(skillId)                      // Arknight-Images CDN
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
 archetypeIconUrl(subProfessionId)          // bundle-relative branch-icons/ — self-hosted
@@ -388,14 +392,20 @@ set and information architecture all follow theirs, so read
 - **Skin rail** — renders each outfit's **55 KB square avatar**, not its illustration.
   Pointing 64px thumbnails at full art meant SilverAsh pulled 16.4 MB before the page
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
-- **Panel** — rarity-tinted strip with stars, then avatar + serif operator name (the alter
-  epithet in `--dim`) + class / branch / melee-ranged row. The branch name carries the
-  class trait as its `title` tooltip.
+- **Panel** — rarity-tinted strip with stars (and **LIMITED** for the 26 operators the CN
+  gacha table's LIMITED pools name; collab operators come from LINKAGE pools and are not
+  limited by the game's definition), then avatar + serif operator name (the alter
+  epithet in `--dim`) + class / branch / position row. The branch name carries the
+  class trait as its `title` tooltip. Position is Melee, Ranged, or — the reference's rule —
+  Melee & Ranged when the trait says the operator "can be deployed on ranged" tiles.
 - **Tabs** — Attributes, Talents, Skills, Modules, RIIC, Misc. Every panel opens with its
   own controls above a rule. **Elite and potential are shared state across panels**, unlike
   the reference, which resets them per tab.
 - **Attributes** — elite button group, level slider + typed input, module checkbox/pills,
-  trust checkbox + 0–200 input, potential dropdown; the trust bonus scales by
+  trust checkbox + 0–200 input, and a potential menu of the game's rank badges with no words
+  (a menu button, since a native `<select>` can't show images). Like the reference it offers
+  Potential 1 plus only the ranks that change a stat shown here — Makoto Yuki gets 1, 2, 4, 6;
+  the Talents tab still has the full native dropdown. The trust bonus scales by
   `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule, then what
   promoting into the selected elite costs: LMD (from `gamedata_const.evolveGoldCost`, which
   the phase's own `evolveCost` leaves out) followed by the materials.
@@ -406,8 +416,9 @@ set and information architecture all follow theirs, so read
 - **Modules** — the module's stats and trait per stage, what unlocking or reaching that stage
   costs, then the missions that unlock it.
 
-Costs render as one tile per material (`costListHtml` in `detail.ts`): the baked icon, the
-count, and a bottom edge in the item's rarity colour. The names come from `items.json`,
+Costs render as the reference's material discs (`costListHtml` in `detail.ts`): a 52px circle
+ringed and washed in the item's rarity colour, the baked icon filling it, and the count in
+a dark badge formatted compact ("180K"). The names come from `items.json`,
 which holds only the materials some payload references; an id it lacks still shows its
 count, unnamed, rather than the cost silently looking cheaper.
 
@@ -420,8 +431,10 @@ from `game-consts.json`. That covers ~98% of keyword uses; the rest render witho
 
 Not cloned, for lack of data: **summon/token** stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
 shows tags, trait, archive blurb, obtain source, the potential ladder, every named outfit
-and a fact list), and outfit prices. `src/web/icons.ts` draws the stat/skill/elite glyphs inline rather than
-fetching them.
+and a fact list), and outfit prices. `src/web/icons.ts` draws the stat, skill and position
+glyphs inline rather than fetching them — ATK, attack interval, block, DP cost and the three
+position glyphs are Sanity Gone's own drawings (GPL-2.0 via iansjk/sanity-gone), since the game
+ships none. The elite and potential badges are the game's own art, baked by the build.
 
 ## Testing
 
