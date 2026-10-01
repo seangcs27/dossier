@@ -22,7 +22,7 @@ from a same-origin file (~100 ms) instead of a third-party API round trip. See
   modelled on [Sanity Gone](https://sanitygone.help)'s operator view:
   - **Artwork column** (left, sticky) — every elite art and alternate outfit, switched from a
     thumbnail rail over the art, captioned with the illustrator
-  - **Data panel** (right, fixed 590px) — rarity strip, avatar, name + alter epithet, and a
+  - **Data panel** (right, fixed 590px) — rarity strip, faction badge, name + alter epithet, and a
     class / branch / melee-ranged row; six tabs: Attributes, Talents, Skills, Modules, RIIC, Misc
   - **Attributes** recomputes live from its own controls — elite button group, level slider with
     a typed input, module checkbox + stage pills, trust checkbox with a 0–200 input, and a

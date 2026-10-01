@@ -155,17 +155,21 @@ const PROFESSION_EN = {
 // class ("Primal Caster.png", "Multi-target Medic.png"), so both forms are tried. Match
 // is case-insensitive — our archetype text says "Mech-accord Caster", the wiki file says
 // "Mech-Accord Caster".
-// One faction badge per nation, for the back of a card. Same deal as the branch icons and
-// the portraits: fetched once at build time and served from our own origin afterwards.
+// One badge per faction: each nation for the back of a card, and each operator's most
+// specific faction (team, group or nation) for the detail page's header. Same deal as the
+// branch icons and the portraits: fetched once at build time and served from our own
+// origin afterwards.
 //
-// The upstream files are 510x510 white silhouettes on transparency, so the colour channels
-// carry nothing — the shape lives entirely in the alpha. The card renders them as a CSS
-// mask so the badge can be tinted instead of being stuck white, and a mask matches its
-// source's ALPHA by default: dropping to a single greyscale channel would make the file
-// fully opaque and mask nothing, which renders as a filled square. So the alpha is what
-// has to survive the re-encode, and the resize to 256px is where the saving comes from.
+// The upstream files are 510x510 white silhouettes on transparency, and the pages render
+// them as a CSS mask so the badge can be tinted instead of being stuck white. For most the
+// shape lives entirely in the alpha, but four (rainbow, sees, mujica, laios) draw opaque
+// black detail inside it, which is why both badges set mask-mode: luminance. So the
+// re-encode has to keep BOTH the alpha and the colour: dropping to a single greyscale
+// channel would make the file fully opaque, which renders as a filled square, and
+// flattening the colour to white would fill those four in solid. The resize to 256px is
+// where the saving comes from.
 //
-// Nineteen requests, not one per operator: operators share factions heavily.
+// About forty-five requests, not one per operator: operators share factions heavily.
 async function bakeIcons(label, dirName, names, pathFor, size = 256) {
   const logoDir = path.join(outDir, dirName);
   await mkdir(logoDir, { recursive: true });
@@ -810,6 +814,9 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // script, so it's harvested here rather than costing a second pass over 427 ids.
   const nations = new Map();
   const nationIds = new Map();
+  // Each operator's most specific faction — team, else group, else nation — which is the
+  // badge the detail page's header shows, and the card back's when there is no nation.
+  const factions = new Map();
   const collabs = new Map();
   // Same reasoning: the raw character_table only has subProfessionId, not the resolved
   // subProfessionName buildPayload's uniequip join produces — harvested here instead of
@@ -835,7 +842,8 @@ async function buildOperatorDetails(regular, cnSupplement) {
       // translated overlay. Spreading `base` here would silently ship the raw Chinese
       // buildPayload returns instead of the fan translations, in both this file and the
       // popup projection below (`pd` reads from finalOp too).
-      const finalOp = { ...op, arts, limited: limitedIds.has(entry.id) };
+      const collab = collabFor(base.data?.displayNumber);
+      const finalOp = { ...op, arts, limited: limitedIds.has(entry.id) || Boolean(collab) };
 
       // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
       // slug and only a fallback, title-cased, for a payload whose factions array is empty
@@ -850,7 +858,10 @@ async function buildOperatorDetails(regular, cnSupplement) {
       const nationId = finalOp.factions?.[0]?.nationPower?.powerId ?? base.data?.nationId ?? '';
       if (nationId) nationIds.set(entry.id, nationId);
 
-      const collab = collabFor(base.data?.displayNumber);
+      const mainPower = finalOp.factions?.[0];
+      const faction = mainPower?.teamPower ?? mainPower?.groupPower ?? mainPower?.nationPower;
+      if (faction) factions.set(entry.id, faction);
+
       if (collab) collabs.set(entry.id, collab);
 
       if (base.archetype) archetypes.set(entry.id, base.archetype);
@@ -881,14 +892,15 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // accumulated across every operator and would otherwise get flushed here even when
   // `written` collapses to near-zero, silently overwriting a good popup.json before that
   // check ever runs.
-  return { written, nations, nationIds, collabs, archetypes, traitByName, popup, itemIds };
+  return { written, nations, nationIds, factions, collabs, archetypes, traitByName, popup, itemIds };
 }
 
 // Operators only ever sold on limited banners, for the detail page's LIMITED tag. The CN
 // banner table names each limited pool's operator in limitParam.limitedCharId: keyed by
 // char id, so no name join, and it already covers the CN-only operators this build
 // supplements. Collab banners are LINKAGE pools rather than LIMITED ones, so collab
-// operators are deliberately absent — the game itself doesn't class them as limited.
+// operators are absent from this set; the caller adds them from collabFor, since a
+// crossover's operators can't be obtained once it ends either.
 // Under 20 hits means the table changed shape, and no tags at all beats wrong ones.
 async function fetchLimitedIds() {
   try {
@@ -1073,7 +1085,7 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-const { written: detailsWritten, nations, nationIds, collabs, archetypes, traitByName, popup, itemIds } = await buildOperatorDetails(
+const { written: detailsWritten, nations, nationIds, factions, collabs, archetypes, traitByName, popup, itemIds } = await buildOperatorDetails(
   roster.map(r => ({ id: r.id, appellation: r.data.appellation })),
   cnSupplement,
 );
@@ -1133,6 +1145,10 @@ const entries = roster.map(r => ({
   nation: nations.get(r.id) ?? '',
   // The faction's own id, which names its logo file.
   nationId: nationIds.get(r.id) ?? '',
+  // The most specific faction (team, else group, else nation): its display name, and its
+  // id for the logo file.
+  faction: factions.get(r.id)?.powerName ?? '',
+  factionId: factions.get(r.id)?.powerId ?? '',
   // Display name of the crossover this operator came from, '' for the regular roster.
   collab: collabs.get(r.id) ?? '',
 }));
@@ -1160,6 +1176,8 @@ for (const c of cnSupplement) {
     releaseOrder: releaseOrders.get(c.id) ?? null,
     nation: nations.get(c.id) ?? '',
     nationId: nationIds.get(c.id) ?? '',
+    faction: factions.get(c.id)?.powerName ?? '',
+    factionId: factions.get(c.id)?.powerId ?? '',
     collab: collabs.get(c.id) ?? '',
   });
 }
@@ -1190,7 +1208,7 @@ await writeFile(outFile, JSON.stringify(entries));
 // the branches missing from the old icon source belong exclusively to them.
 const branchIcons = await fetchBranchIcons(entries);
 await fetchPortraits(entries);
-await bakeIcons('faction logos', 'faction-logos', entries.map(e => e.nationId), id => `factions/logo_${id}.png`);
+await bakeIcons('faction logos', 'faction-logos', entries.flatMap(e => [e.nationId, e.factionId]), id => `factions/logo_${id}.png`);
 await bakeIcons('class icons', 'class-icons', CLASS_SLUGS, slug => `classes/class_${slug}.png`);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 const withOrder = entries.filter(o => o.releaseOrder != null).length;

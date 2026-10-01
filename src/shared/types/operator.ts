@@ -149,6 +149,8 @@ export interface BaseSkill {
 }
 
 export interface FactionPower {
+  // The game's own faction id ('sees', 'penguin', 'kjerag'), which names its logo file.
+  powerId: string;
   powerName: string;
 }
 
@@ -274,8 +276,8 @@ export interface Operator {
   // the static per-operator bundle has it), so always optional.
   arts?: OperatorArt[];
   skins?: OperatorSkin[];
-  // Only ever sold on limited banners, from the CN gacha table's LIMITED pools. Collab
-  // operators come from LINKAGE pools and are not limited by the game's own definition.
+  // Only obtainable for a limited time: the CN gacha table's LIMITED pools, plus every
+  // collab operator. Collabs run on LINKAGE pools, so the game's own flag misses them.
   limited?: boolean;
 }
 
@@ -333,6 +335,12 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // after it, and slugifying the display name does not reproduce it for five of the
   // nineteen nations.
   nationId: string;
+  // The most specific faction — team, else group, else nation — as a display name
+  // ('S.E.E.S.', 'Penguin Logistics') and as the game's id ('sees', 'penguin'). Every
+  // operator has one, so it is the card back's badge for the 28 with no nation: the
+  // franchise collabs, Babel and the Followers.
+  faction: string;
+  factionId: string;
   // Display name of the crossover this operator came from ('Persona 3'), '' for the
   // regular roster. Resolved at build time from a curated prefix table in
   // build-operator-index.mjs — there is no isCollab flag in the source data, so the table

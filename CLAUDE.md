@@ -92,7 +92,9 @@ src/
       ranges.json             ← every attack range in use (~55), bundled
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
       portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
-      faction-logos/<id>.webp ← one nation badge per faction, printed on the card back
+      faction-logos/<id>.webp ← one badge per faction (45): the nation on the card back
+                                (the team for the 28 with no nation), the most specific
+                                faction in the detail header
       items.json              ← name/icon/rarity of the ~90 materials any payload prices, bundled
       item-icons/<iconId>.webp  ← those materials' icons at 96px, copied as static files
       elite-icons/<0-2>.webp    ← the game's elite badges, 40px, painted as CSS masks
@@ -216,7 +218,7 @@ fetchOperator(id): Promise<Operator>       // baked file, same origin; throws if
 operatorAvatarUrl(id)                      // square crop      — Arknight-Images CDN
 operatorPortraitUrl(id, '1' | '2')         // 180x360 bust     — yuanyan3060 CDN
 operatorPortraitLocalUrl(id)               // the same bust, bundle-relative portraits/ WebP
-factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — an alpha mask
+factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — a mask; takes any faction id
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
@@ -241,7 +243,7 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 `operators.json` — one slim entry per operator, bundled into both JS bundles:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, collab }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab }
 ```
 
 `operator-details/<id>.json` — the full `Operator` payload for **every** operator (431),
@@ -392,10 +394,13 @@ set and information architecture all follow theirs, so read
 - **Skin rail** — renders each outfit's **55 KB square avatar**, not its illustration.
   Pointing 64px thumbnails at full art meant SilverAsh pulled 16.4 MB before the page
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
-- **Panel** — rarity-tinted strip with stars (and **LIMITED** for the 26 operators the CN
-  gacha table's LIMITED pools name; collab operators come from LINKAGE pools and are not
-  limited by the game's definition), then avatar + serif operator name (the alter
-  epithet in `--dim`) + class / branch / position row. The branch name carries the
+- **Panel** — rarity-tinted strip with stars, then faction badge + serif operator name (the
+  alter epithet in `--dim`) + class / branch / position row. The badge is the operator's most
+  specific faction (team, else group, else nation), painted as a luminance mask in the rarity
+  colour; the game files the Rhodes Island badge under three collab ids (`sees`, `mujica`,
+  `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits hard right on the
+  name's row, for the 26 operators the CN gacha table's LIMITED pools name plus every collab
+  operator (27; they come from LINKAGE pools, which that table doesn't flag). The branch name carries the
   class trait as its `title` tooltip. Position is Melee, Ranged, or — the reference's rule —
   Melee & Ranged when the trait says the operator "can be deployed on ranged" tiles.
 - **Tabs** — Attributes, Talents, Skills, Modules, RIIC, Misc. Every panel opens with its

@@ -43,10 +43,10 @@ export function operatorPortraitLocalUrl(id: OperatorId): string {
   return `portraits/${encodeURIComponent(id)}.webp`;
 }
 
-// The faction badge printed on the back of a card, keyed by the game's own faction id
-// ('rim', 'kjerag'). Baked into the bundle by the build like branch-icons/, and held as
-// an alpha mask rather than a picture, so the card can tint it. About 4 KB each, one per
-// faction rather than one per operator.
+// The faction badge printed on the back of a card and in the detail page's header, keyed
+// by the game's own faction id ('rim', 'kjerag', 'penguin'). Baked into the bundle by the
+// build like branch-icons/, and held as a mask rather than a picture, so whatever shows it
+// can tint it. About 4 KB each, one per faction rather than one per operator.
 export function factionLogoUrl(nationId: string): string {
   return `faction-logos/${encodeURIComponent(nationId)}.webp`;
 }

@@ -11,7 +11,7 @@
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
 import {
   operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
-  itemIconUrl, potentialIconUrl,
+  itemIconUrl, potentialIconUrl, factionLogoUrl,
 } from '../../shared/api/hella-api';
 import itemIndex from '../../shared/generated/items.json';
 import gameConsts from '../../shared/generated/game-consts.json';
@@ -811,17 +811,25 @@ function headerHtml(s: DetailState): string {
   const traitTip = cleanText(info?.text ?? d.description ?? '').replace(/<br>/g, ' ');
   const branch = s.op.archetype ?? d.subProfessionId;
   const position = positionOf(d);
+  // The most specific faction the operator belongs to, as the game's own profile shows it:
+  // S.E.E.S. rather than nothing for a collab operator, Penguin Logistics rather than Lungmen.
+  const mainPower = s.op.factions?.[0];
+  const faction = mainPower?.teamPower ?? mainPower?.groupPower ?? mainPower?.nationPower;
 
   return `
     <div class="op-rarity-strip r${n}">
       <span class="visually-hidden">Rarity: ${n}</span>
       ${'<span class="strip-star">★</span>'.repeat(n)}
-      ${s.op.limited ? '<span class="strip-limited">Limited</span>' : ''}
     </div>
-    <div class="op-header">
-      <img class="op-header-avatar" src="${operatorAvatarUrl(s.op.id)}" alt="" loading="lazy"
-           onerror="this.style.visibility='hidden'">
-      <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
+    <div class="op-header r${n}">
+      ${faction
+        // A mask, as on the back of a card, so the header supplies the colour.
+        ? `<span class="op-header-faction" role="img" style="--logo: url(${factionLogoUrl(faction.powerId)})" aria-label="${escHtml(faction.powerName)}" title="${escHtml(faction.powerName)}"></span>`
+        : ''}
+      <div class="op-header-title">
+        <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
+        ${s.op.limited ? '<span class="op-header-limited">Limited</span>' : ''}
+      </div>
       <div class="op-header-classes">
         <span class="hdr-item">
           <img class="hdr-icon" src="${classIconUrl(cls)}" alt="">

@@ -1120,14 +1120,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   padding: var(--sp-12) 22px var(--sp-12) var(--sp-12);
   min-width: 0;
 }
-.bk-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-6); }
-.bk-brand {
-  font-size: var(--fs-2xs);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
+.bk-head { display: flex; justify-content: flex-end; align-items: baseline; gap: var(--sp-6); }
 // 8px, off-scale like .op-serial's 9px: this is the plate's printed small type, and at
 // the 10px step it competes with the operator name below it.
 .bk-serial {
@@ -1143,7 +1136,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 // class and branch are all on the front, and repeating them here made the back a second
 // label rather than the back of the same object.
 .bk-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 auto; }
-// The badge is painted, not drawn: --logo carries the faction's alpha mask and the colour
+// The badge is painted, not drawn: --logo carries the faction's mask and the colour
 // comes from here, so the same file serves every tint. --dim at 60% keeps it as a
 // watermark on the plate rather than a second subject competing with the art behind it.
 .bk-glyph {
@@ -1156,6 +1149,8 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   opacity: 0.6;
   -webkit-mask: var(--logo) center / contain no-repeat;
           mask: var(--logo) center / contain no-repeat;
+  // See .op-header-faction: the collab teams' logos carry opaque black detail.
+  mask-mode: luminance;
 }
 
 // The badge takes the card's rarity colour. It is the one place on the back that carries
@@ -1438,18 +1433,6 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   letter-spacing: 1px;
 }
 
-// After the stars, in the strip's own rarity colour, as the reference sets it: heavy,
-// italic, capitals.
-.strip-limited {
-  margin-left: var(--sp-8);
-  font-size: var(--fs-sm);
-  font-weight: 900;
-  font-style: italic;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  line-height: 12px;
-}
-
 @each $tier, $spec in $rarities {
   .op-rarity-strip.r#{$tier} {
     background: color-mix(in srgb, var(--r#{$tier}) 8%, transparent);
@@ -1457,9 +1440,11 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   }
 }
 
+// The icon column is auto, sized by the faction badge. Every operator has one today; a
+// payload without would leave a zero-width track and only the column gap.
 .op-header {
   display: grid;
-  grid-template-columns: 72px 1fr;
+  grid-template-columns: auto 1fr;
   grid-template-areas:
     'icon name'
     'icon classes';
@@ -1469,19 +1454,53 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   background: rgb(36 36 46 / 66%);
 }
 
-.op-header-avatar {
+// The same painted badge as the back of a card (.bk-glyph): --logo is the faction's mask,
+// and the colour is the operator's rarity.
+//
+// Luminance, not the default alpha: the nation logos are white on transparency and read
+// the same either way, but Team Rainbow's and the Rhodes Island badge the game files under
+// the other collabs' ids (sees, mujica, laios) are white with opaque black detail, which an
+// alpha mask fills in as one solid shape.
+.op-header-faction {
   grid-area: icon;
   width: 72px;
   height: 72px;
-  border-radius: var(--radius-sm);
-  object-fit: cover;
-  background: var(--border);
+  background: var(--rarity, var(--dim));
+  opacity: 0.6;
+  -webkit-mask: var(--logo) center / contain no-repeat;
+          mask: var(--logo) center / contain no-repeat;
+  mask-mode: luminance;
+}
+
+// The name and the LIMITED tag. It wraps so the name keeps the full width: a name too
+// long to share its line sends the tag to a line of its own, still hard right.
+.op-header-title {
+  grid-area: name;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--sp-8);
+}
+
+// On the name's row, hard right, directly above the position label on the row below. In
+// the rarity colour, set as the reference sets it: heavy, italic, capitals.
+.op-header-limited {
+  margin-left: auto;
+  color: var(--rarity);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@each $tier, $spec in $rarities {
+  .op-header.r#{$tier} { --rarity: var(--r#{$tier}); }
 }
 
 // Serif, large, and light on the alter epithet — the reference's one typographic
 // flourish, and what makes the page read as a dossier rather than a spec sheet.
 .op-header-name {
-  grid-area: name;
   font-family: Georgia, 'Times New Roman', 'Crimson Text', serif;
   font-size: var(--fs-5xl);
   font-weight: 700;
@@ -1949,7 +1968,7 @@ input[type='number'] {
 // the badge in the colour of whatever it sits on. Opting this one element out, and filling
 // it with the system text colour, keeps it visible in every high-contrast theme.
 @media (forced-colors: active) {
-  .ico-mask { forced-color-adjust: none; background: CanvasText; }
+  .ico-mask, .op-header-faction { forced-color-adjust: none; background: CanvasText; }
 }
 
 // A small caps label over a group: an outfit's series, "To reach M2", "Unlock missions".
@@ -2317,13 +2336,13 @@ button.outfit-name {
   .splash-name { font-size: var(--fs-lg); }
 
   .op-header {
-    grid-template-columns: 56px 1fr;
     padding: var(--sp-12) var(--sp-16);
     gap: var(--sp-6) var(--sp-12);
   }
 
-  .op-header-avatar { width: 56px; height: 56px; }
+  .op-header-faction { width: 56px; height: 56px; }
   .op-header-name { font-size: 26px; }
+  .op-header-limited { font-size: var(--fs-base); }
   .op-header-classes { font-size: var(--fs-base); gap: var(--sp-8); }
   .hdr-spacer { display: none; }
 

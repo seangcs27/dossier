@@ -9,7 +9,8 @@ picking one up later doesn't need re-investigation.
 Done tab by tab against the live reference (https://sanitygone.help/en/operators/makoto-yuki/
 is a good specimen: limited, module, four-potential dropdown), so each pass can be reviewed
 on its own. Attributes is done: stat glyphs, the game's elite and potential badges, the
-position icon, circular material tiles, and the LIMITED tag. Still to do, in order:
+position icon, circular material tiles, the LIMITED tag, and the faction badge in the header.
+Still to do, in order:
 
 - **Talents** — compare the talent cards, their elite/potential unlock badges, and how the
   reference marks a talent that changes with potential.
@@ -113,6 +114,14 @@ and no branch line — so `npm run design` regenerates previews of a UI that no 
 Not blocked on anything; needs a design pass rather than investigation.
 
 ### Nation and group on the detail page, with their logos
+**Partly done.** The detail header now shows one badge — the operator's most specific faction
+(team, else group, else nation), from the 45 baked `faction-logos/` — and Misc has a
+"Faction" row that prefers the nation. So Texas the Omertosa reads Penguin Logistics in the
+header and Lungmen in Misc, and no operator shows both tiers with both logos. What is left is
+that pairing: nation *and* group, each named, each with its logo. The notes below predate the
+badge and are kept for the data they record; `factionLogoUrl()` exists and every id matched
+its filename.
+
 The grid card now carries the operator's home nation up its left edge (`.op-edge`, from
 `nation` in the generated index). The **detail page shows neither nation nor group**, which
 is the bigger gap — that page is where you'd actually go looking for "where is SilverAsh
