@@ -89,7 +89,7 @@ src/
     generated/      ← ALL gitignored, rebuilt every build
       operators.json          ← slim grid index, bundled into both targets
       operator-details/<id>.json  ← 431 full Operator payloads, copied as static files
-      ranges.json             ← every attack range in use (~55), bundled
+      ranges.json             ← every attack range in use (~57), bundled
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
       portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
       faction-logos/<id>.webp ← one badge per faction (45): the nation on the card back
@@ -250,7 +250,7 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 copied as static files rather than bundled. This is what makes a detail page load from a
 same-origin file (~100 ms) instead of a live API call (~2.3 s).
 
-`ranges.json` — every attack range referenced by any operator (~55 unique; operators share
+`ranges.json` — every attack range referenced by any operator, skill or talent (~57 unique; operators share
 them heavily), a few KB, bundled.
 
 Operators flagged `isNotObtainable` are **dropped** (~28): the `Reserve Operator - *` set
@@ -409,11 +409,19 @@ set and information architecture all follow theirs, so read
 - **Attributes** — elite button group, level slider + typed input, module checkbox/pills,
   trust checkbox + 0–200 input, and a potential menu of the game's rank badges with no words
   (a menu button, since a native `<select>` can't show images). Like the reference it offers
-  Potential 1 plus only the ranks that change a stat shown here — Makoto Yuki gets 1, 2, 4, 6;
-  the Talents tab still has the full native dropdown. The trust bonus scales by
+  Potential 1 plus only the ranks that change a stat shown here — Makoto Yuki gets 1, 2, 4, 6.
+  The trust bonus scales by
   `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule, then what
   promoting into the selected elite costs: LMD (from `gamedata_const.evolveGoldCost`, which
   the phase's own `evolveCost` leaves out) followed by the materials.
+- **Talents** — elite button group and the same potential badge menu, here offering
+  Potential 1 plus the ranks that change a talent unlocked at or below the selected elite
+  (Makoto Yuki: 1, 3, 5). One live version per talent — the strongest the elite and potential
+  unlock — under its unlock elite's badge and a serif name. A talent with a range of its own
+  (28 operators) shows it under the description, overlaid on the operator's only when the
+  talent replaces it (`talent_override_rangeid_flag`: Tomimi, Bena, Specter the Unchained).
+  CN-only operators' talents stay in Chinese where AN-EN-Tags has no translation; the
+  reference shows the same.
 - **Skills** — skill pills + a 1–10 rank slider labelled `1…7, M1–M3`, an SP-cost /
   initial-SP / duration row, the description, the skill's range overlaid on the
   operator's (added cells blue, removed cells red), and what reaching the selected rank

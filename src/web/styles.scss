@@ -1694,7 +1694,7 @@ input[type='number'] {
   input { accent-color: var(--link); width: 16px; height: 16px; cursor: pointer; }
 }
 
-// The Attributes tab's potential control: badge-only trigger and a row of badges, since the
+// The potential control on Attributes and Talents: badge-only trigger and badges, since the
 // game's own rank art says which potential it is without a word. See potentialMenu().
 .pot-menu { position: relative; }
 
@@ -1750,16 +1750,6 @@ input[type='number'] {
     &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
     &[aria-checked='true'] { background: var(--chip); }
   }
-}
-
-.pot-select select {
-  padding: 5px var(--sp-8);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--chip);
-  background: var(--bg);
-  color: var(--text);
-  font-size: var(--fs-lg);
-  cursor: pointer;
 }
 
 // ── Button groups ──
@@ -1922,6 +1912,8 @@ input[type='number'] {
 }
 
 .entry > .entry-name { margin-bottom: var(--sp-12); }
+// A talent's own range, under its description.
+.entry > .range-block { margin-top: var(--sp-16); }
 
 .tagline {
   font-size: var(--fs-md);

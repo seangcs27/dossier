@@ -63,6 +63,8 @@ export interface TalentCandidate {
   name: string;
   description: string;
   isHideTalent: boolean;
+  // Set on the ~28 operators whose talent has a reach of its own (Tomimi, Liskarm).
+  rangeId?: string | null;
   // Values the description's {placeholders} interpolate from. See descriptionToHtml.
   blackboard?: Blackboard[] | null;
 }

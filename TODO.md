@@ -10,10 +10,10 @@ Done tab by tab against the live reference (https://sanitygone.help/en/operators
 is a good specimen: limited, module, four-potential dropdown), so each pass can be reviewed
 on its own. Attributes is done: stat glyphs, the game's elite and potential badges, the
 position icon, circular material tiles, the LIMITED tag, and the faction badge in the header.
-Still to do, in order:
+Talents is done: the potential badge menu limited to the ranks that change a talent, and
+talent ranges (the reference marks a potential-upgraded talent no other way than that menu;
+the cards already matched). Still to do, in order:
 
-- **Talents** — compare the talent cards, their elite/potential unlock badges, and how the
-  reference marks a talent that changes with potential.
 - **Skills** — the skill header, SP/duration row, rank slider labels, and the cost row's
   requirement badge against the reference's own skill-upgrade layout.
 - **Modules** — module header (type badge, stage selector), stat chips, trait text, and

@@ -11,9 +11,10 @@ const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated',
 );
 
-// Every range id the detail view can ask for: an operator's per-phase range AND every
+// Every range id the detail view can ask for: an operator's per-phase range, every
 // skill level's own range (skills that change reach — Ranged Guards, most Snipers'
-// S3s — carry their own rangeId, and the view draws it over the operator's).
+// S3s — carry their own rangeId, and the view draws it over the operator's), AND every
+// talent's (Tomimi's replaces her range; Liskarm's is how far her SP sharing reaches).
 //
 // Collected from the baked per-operator details that build:index:operators has already
 // written: those files are the exact input the runtime reads, so nothing can be needed at
@@ -37,6 +38,11 @@ async function collectRangeIds() {
       for (const skill of op.skills ?? []) {
         for (const level of skill.excel?.levels ?? []) {
           if (level.rangeId) ids.add(level.rangeId);
+        }
+      }
+      for (const talent of op.data?.talents ?? []) {
+        for (const candidate of talent.candidates ?? []) {
+          if (candidate.rangeId) ids.add(candidate.rangeId);
         }
       }
     }

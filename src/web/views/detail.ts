@@ -220,30 +220,17 @@ function eliteGroup(act: string, phases: number[], current: number): string {
   })), 'elite');
 }
 
-function potentialSelect(count: number, current: number): string {
-  if (count === 0) return '';
-  return `
-    <label class="pot-select">
-      <span class="visually-hidden">Potential</span>
-      <select data-act="pot" id="pot">
-        ${Array.from({ length: count + 1 }, (_, i) =>
-          `<option value="${i}"${i === current ? ' selected' : ''}>Potential ${i + 1}</option>`).join('')}
-      </select>
-    </label>
-  `;
-}
-
-// The Attributes tab's potential control: the game's rank badges alone, no words. As in the
-// reference, it offers Potential 1 plus only the ranks that change a stat this panel shows —
-// Makoto Yuki gets 1, 2, 4 and 6 — since picking any other would move no number. Potential
-// is shared with the Talents tab, which can select a rank this list omits; the trigger
-// shows the real current rank either way, so the two never disagree about the state.
+// The potential control: the game's rank badges alone, no words. As in the reference, it
+// offers Potential 1 plus only the `ranks` that change something on the panel it sits in —
+// on Attributes Makoto Yuki gets 1, 2, 4 and 6, on Talents 1, 3 and 5 — since picking any
+// other would change nothing. Potential is shared between the two tabs, so the current rank
+// may be one this panel's list omits; the trigger shows the real rank either way, so the
+// tabs never disagree about the state.
 //
 // A native <select> can't show an image in its options, hence a small menu button.
-function potentialMenu(s: DetailState): string {
+function potentialMenu(s: DetailState, ranks: number[]): string {
   if (!maxPotential(s.op)) return '';
-  const values = [0, ...(s.op.data.potentialRanks ?? []).flatMap((rank, i) =>
-    (rank.buff?.attributes?.attributeModifiers ?? []).some(m => POTENTIAL_ATTR[m.attributeType]) ? [i + 1] : [])];
+  const values = [...new Set([0, ...ranks])].sort((a, b) => a - b);
   const badge = (v: number) => `<img class="pot-icon" src="${potentialIconUrl(v + 1)}" alt="">`;
   return `
     <div class="pot-menu">
@@ -401,7 +388,8 @@ function attributesPanel(s: DetailState): string {
         ${checkbox('trust-on', 'Trust', s.trustOn)}
         <input type="number" id="trust-num" class="num-box" min="0" max="200" value="${s.trust}"
                aria-label="Trust"${s.trustOn ? '' : ' disabled'}>
-        ${potentialMenu(s)}
+        ${potentialMenu(s, (op.data.potentialRanks ?? []).flatMap((rank, i) =>
+          (rank.buff?.attributes?.attributeModifiers ?? []).some(m => POTENTIAL_ATTR[m.attributeType]) ? [i + 1] : []))}
       </div>
     </div>
   `;
@@ -463,21 +451,35 @@ function talentsPanel(s: DetailState): string {
     .filter((c): c is TalentCandidate => !!c);
 
   const body = shown.length
-    ? shown.map(c => `
+    ? shown.map(c => {
+        // "yes some talents have ranges. Tomimi why do you exist" — the reference. Drawn
+        // over the operator's own range only when the talent replaces it; otherwise it is
+        // the reach of the talent's effect, and a diff against the attack range means nothing.
+        const overrides = (c.blackboard ?? []).some(b => b.key === 'talent_override_rangeid_flag' && b.value === 1);
+        return `
         <section class="entry">
           <header class="entry-head">
             ${eliteIcon(phaseNum(c.unlockCondition.phase))}
             <h2 class="entry-name">${escHtml(c.name)}</h2>
           </header>
           <p class="rich">${descriptionToHtml(c.description, c.blackboard ?? [])}</p>
+          ${rangeBlock(rangeFor(s, c.rangeId), overrides ? operatorRange(s) : null)}
         </section>
-      `).join('')
+      `;
+      }).join('')
     : `<p class="empty-msg">No talents at this elite level and potential.</p>`;
+
+  // The ranks that can change a talent shown at this elite. The reference lists only those
+  // of candidates unlocking AT the elite, which drops a potential upgrade for any talent
+  // that isn't restated there; "at or below" keeps it selectable.
+  const ranks = talents.flatMap(t => (t.candidates ?? [])
+    .filter(c => c.name && c.description && !c.isHideTalent && phaseNum(c.unlockCondition.phase) <= s.phaseIdx)
+    .map(c => c.requiredPotentialRank));
 
   return `
     <div class="panel-controls panel-controls-inline">
       ${eliteGroup('phase', s.op.data.phases.map((_, i) => i), s.phaseIdx)}
-      ${potentialSelect(maxPotential(s.op), s.potential)}
+      ${potentialMenu(s, ranks)}
     </div>
     <div class="entry-list">${body}</div>
   `;
@@ -1038,10 +1040,11 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
   if (seq !== mountSeq) return;
 
   // Pull every range the page can show up front — each phase's, plus every skill level's
-  // — so switching Elite or dragging the skill slider stays synchronous.
+  // and talent's — so switching Elite or dragging the skill slider stays synchronous.
   const rangeIds = [...new Set([
     ...op.data.phases.map(p => p.rangeId),
     ...(op.skills ?? []).flatMap(s => (s.excel?.levels ?? []).map(l => l.rangeId)),
+    ...(op.data.talents ?? []).flatMap(t => (t.candidates ?? []).map(c => c.rangeId)),
   ].filter((x): x is string => !!x))];
   const ranges = new Map<string, AttackRange>();
   await Promise.all(rangeIds.map(async rid => {
@@ -1148,7 +1151,6 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
       }
       case 'trust-on':  state.trustOn = (el as HTMLInputElement).checked; break;
       case 'mod-on':    state.moduleOn = (el as HTMLInputElement).checked; break;
-      case 'pot':       state.potential = Number((el as HTMLSelectElement).value); break;
       default: return;
     }
     renderPanel(container);

@@ -51,14 +51,15 @@ function buildCard(op: OperatorIndexEntry): string {
   // first, then the crossover: collab characters have no nation because they aren't from
   // Terra, so the crossover answers the same question for them. The order matters —
   // Monster Hunter operators are Terra natives in costume and keep their real nation, so
-  // they must not fall through to the collab. The project name is the last resort, for
-  // the handful with neither, and keeps the strip from reading as a broken element.
+  // they must not fall through to the collab. Babel and the Followers have neither, so
+  // their team stands in. The project name is the last resort, for an index built before
+  // `faction` existed, and keeps the strip from reading as a broken element.
   //
   // The repeat count is derived rather than fixed, so density stays even: a flat 4 left
   // "Yan" as mostly empty strip while overflowing "Rim Billiton". ~55 characters is what
   // fills the card's height at 8px with the strip's tracking; the strip crops what's left
   // over, which is what the real tags do at their ends anyway.
-  const edgeWord = op.nation || op.collab || 'Dossier';
+  const edgeWord = op.nation || op.collab || op.faction || 'Dossier';
   const edgeText = Array(Math.max(2, Math.round(55 / (edgeWord.length + 3))))
     .fill(edgeWord).join(' · ');
 
