@@ -434,6 +434,42 @@ body {
   }
 }
 
+// Global and CN as one button split down the middle, the rarity group's shape: the two are
+// halves of one roster, not two unrelated tags. Each half lights on its own, and both lit
+// is everyone, the same as neither.
+.server-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.server-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-6);
+  padding: var(--sp-8) var(--sp-4);
+  border: 0;
+  background: var(--bg);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+
+  & + .server-btn { border-left: 1px solid var(--border); }
+  &:hover { background: var(--surface2); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  &.on { background: var(--chip); color: var(--text); }
+
+  // The count, a step quieter than the name it belongs to.
+  span { font-weight: 400; opacity: 0.7; }
+}
+
 // Tags and sort sit behind this. Styled as a row rather than a chip so it reads as a
 // section heading you can open, not as another filter value.
 .filter-disclosure {
@@ -1109,6 +1145,10 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 .op-card.is-live { z-index: 3; }
 .op-card.is-live .op-plate,
 .op-card.is-live .op-stars { transform-style: preserve-3d; }
+// The layer hint stays for as long as the card is live, not only while it spins. Dropping
+// it the moment a spin stopped made the browser tear the plate's layer down and paint it
+// again, and on a phone the rarity stars blinked out while it did.
+.op-card.is-live .op-plate { will-change: transform; }
 
 // No `backface-visibility` anywhere, deliberately. It was how the two faces used to hide
 // each other, and in Firefox it took the card with it: sweeping the pointer across the
@@ -1120,7 +1160,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 // own depth sorting already shows whichever is nearer the viewer. The separation is also
 // what stops them fighting for the same pixels edge-on. Nothing needs hiding.
 .op-card.is-spinning { cursor: grabbing; }
-.op-card.is-spinning .op-plate { transition: none; will-change: transform; }
+.op-card.is-spinning .op-plate { transition: none; }
 
 .op-card-body {
   transform: translateZ(calc(var(--thick) / 2));
@@ -1428,6 +1468,155 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   border-radius: var(--radius-lg);
 }
 
+// The art opens the full-size viewer (art-viewer.ts).
+.splash-img[data-act] {
+  cursor: zoom-in;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+}
+
+// ── Artwork viewer ──
+// A popup in the middle of the window, the page dimmed around it: the art on a dark stage,
+// the arrows at its sides, the way out in its top-right corner and one bar of controls along
+// the bottom. A modal <dialog> centres itself by its auto margins, which the reset takes
+// away, so they are put back here.
+.art-viewer {
+  width: min(960px, calc(100vw - 48px));
+  height: min(840px, calc(100dvh - 96px));
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: rgb(10 16 26);
+  color: var(--text);
+  overflow: hidden;
+
+  &::backdrop { background: rgb(0 0 0 / 70%); }
+}
+
+// The art scrolls inside the stage once zoomed. Centred with auto margins rather than
+// `place-items`: a centred flex child that overflows is cut off on the near side, and a
+// margin-centred one is not. Every drag and pinch on it is the viewer's own (art-viewer.ts),
+// so the browser's are switched off: its pinch would zoom the page, and its swipe would go
+// back a page.
+.av-stage {
+  position: absolute;
+  inset: 0 0 64px;
+  display: flex;
+  overflow: auto;
+  touch-action: none;
+  overscroll-behavior: contain;
+  cursor: grab;
+
+  &:active { cursor: grabbing; }
+}
+
+.av-img {
+  display: block;
+  margin: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+  user-select: none;
+}
+
+.av-nav,
+.av-close {
+  position: absolute;
+  display: flex;
+  padding: var(--sp-10);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: rgb(25 25 32 / 60%);
+  color: var(--text);
+  cursor: pointer;
+
+  svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  &:hover { background: var(--surface2); border-color: var(--muted); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+.av-nav { top: calc(50% - 32px - 22px); }
+.av-prev { left: var(--sp-16); }
+.av-next { right: var(--sp-16); }
+.av-close { top: var(--sp-12); right: var(--sp-12); padding: var(--sp-8); }
+
+.av-bar {
+  position: absolute;
+  inset: auto 0 0;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-16);
+  padding: 0 var(--sp-16);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.av-label { font-size: var(--fs-lg); font-weight: 600; white-space: nowrap; }
+
+.av-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  margin-left: auto;
+
+  input { width: 140px; accent-color: var(--accent); cursor: pointer; }
+
+  button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--chip);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-size: var(--fs-2xl);
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover { border-color: var(--muted); }
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  }
+}
+
+.av-percent { width: 44px; color: var(--muted); font-size: var(--fs-base); font-variant-numeric: tabular-nums; }
+
+.av-thumbs { display: flex; gap: var(--sp-4); overflow-x: auto; }
+
+.av-thumb {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--chip);
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.45;
+
+  img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+  &:hover { opacity: 0.8; }
+  &.on { opacity: 1; border-color: var(--accent); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+// On a phone the popup is the window's width less a margin and as tall as a square stage
+// needs. The bar is two rows, what is showing and then the thumbnails. The zoom slider
+// goes: two fingers do that job there.
+@media (max-width: 640px) {
+  .art-viewer { width: calc(100vw - 24px); height: min(calc(100vw - 24px + 96px), calc(100dvh - 96px)); }
+  .av-stage { inset: 0 0 96px; }
+  .av-bar { height: 96px; flex-wrap: wrap; align-content: center; gap: var(--sp-8) var(--sp-12); padding: var(--sp-8) var(--sp-12); }
+  .av-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .av-zoom { display: none; }
+  .av-thumbs { order: 3; flex-basis: 100%; }
+  .av-nav { top: calc(50% - 48px - 22px); }
+  .av-prev { left: var(--sp-8); }
+  .av-next { right: var(--sp-8); }
+  .av-close { top: var(--sp-8); right: var(--sp-8); }
+}
+
 // Stacked squares pinned to the top-left corner of the art, over it rather than beside
 // it — the art is the panel here, so the rail floats on top of it.
 .splash-rail {
@@ -1461,6 +1650,42 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 
   &:hover { opacity: 0.7; }
   &.on { opacity: 1; }
+}
+
+// LIMITED and Upcoming, in the art's top-right corner, opposite the outfit rail: outlined
+// pills in small capitals, one shape for both, on the caption's dark plate so they read
+// over any artwork.
+.splash-tags {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  // One above the other, each stretched to the wider word, so both are one size.
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.splash-tag {
+  padding: var(--sp-2) var(--sp-8);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  background: rgb(25 25 32 / 60%);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// LIMITED is about the operator, so it takes the rarity colour. Upcoming is a note about
+// the data rather than about the operator: grey, and the reason is its tooltip.
+.splash-tag-limited { color: var(--rarity); }
+.splash-tag-upcoming {
+  color: var(--muted);
+  cursor: help;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 
 .splash-caption {
@@ -1547,51 +1772,15 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   mask-mode: luminance;
 }
 
-// The name and the LIMITED tag. It wraps so the name keeps the full width: a name too
-// long to share its line sends the tag to a line of its own, still hard right.
-.op-header-title {
-  grid-area: name;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--sp-8);
-}
-
-// The tags on the name's row, hard right, directly above the position label on the row
-// below: outlined pills in small capitals, one shape for both.
-.op-header-limited,
-.op-header-server {
-  margin-left: auto;
-  padding: var(--sp-2) var(--sp-8);
-  border: 1px solid currentColor;
-  border-radius: var(--radius-pill);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-// LIMITED is about the operator, so it takes the rarity colour.
-.op-header-limited { color: var(--rarity); }
-
-// For an operator the global server doesn't have yet. Grey, since it is a note about the
-// data rather than about the operator, and the reason is its tooltip. When both tags are
-// there it takes the right-hand push, so the two sit together.
-.op-header-server {
-  color: var(--muted);
-  cursor: help;
-
-  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  + .op-header-limited { margin-left: 0; }
-}
-
 @each $tier, $spec in $rarities {
-  .op-header.r#{$tier} { --rarity: var(--r#{$tier}); }
+  .op-header.r#{$tier},
+  .splash-tags.r#{$tier} { --rarity: var(--r#{$tier}); }
 }
 
 // Serif, large, and light on the alter epithet — the reference's one typographic
 // flourish, and what makes the page read as a dossier rather than a spec sheet.
 .op-header-name {
+  grid-area: name;
   font-family: Georgia, 'Times New Roman', 'Crimson Text', serif;
   font-size: var(--fs-5xl);
   font-weight: 700;

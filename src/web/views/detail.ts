@@ -9,6 +9,7 @@
 // and all of them come from data we don't have rather than from a design preference.
 
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
+import { openArtViewer } from '../art-viewer';
 import {
   operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
   itemIconUrl, potentialIconUrl, factionLogoUrl, moduleTypeIconUrl, moduleImageUrl, riicSkillIconUrl,
@@ -248,13 +249,13 @@ function potentialMenu(s: DetailState, ranks: number[]): string {
   return `
     <div class="pot-menu">
       <button class="pot-trigger" data-act="pot-toggle" aria-haspopup="menu" aria-expanded="false"
-              aria-label="Potential ${s.potential + 1}" title="Potential ${s.potential + 1}"${values.length < 2 ? ' disabled' : ''}>
+              aria-label="Potential ${s.potential + 1}" data-tip="Potential ${s.potential + 1}"${values.length < 2 ? ' disabled' : ''}>
         ${badge(s.potential)}<span class="pot-caret" aria-hidden="true"></span>
       </button>
       <div class="pot-options" role="menu" hidden>
         ${values.map(v => `
           <button role="menuitemradio" aria-checked="${v === s.potential}" data-act="pot-pick" data-value="${v}"
-                  aria-label="Potential ${v + 1}" title="Potential ${v + 1}">${badge(v)}</button>
+                  aria-label="Potential ${v + 1}" data-tip="Potential ${v + 1}">${badge(v)}</button>
         `).join('')}
       </div>
     </div>
@@ -293,7 +294,7 @@ function costListHtml(costs: ItemCost[]): string {
     const count = COMPACT.format(c.count);
     const tier = item ? ` cost-r${item.rarity.replace('TIER_', '')}` : '';
     return `
-      <li class="cost${tier}" title="${escHtml(`${name} ×${c.count.toLocaleString('en-US')}`)}">
+      <li class="cost${tier}" data-tip="${escHtml(`${name} ×${c.count.toLocaleString('en-US')}`)}">
         ${item ? `<img class="cost-icon" src="${itemIconUrl(item.iconId)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
         <span class="cost-count">${count}</span>
         <span class="visually-hidden">${escHtml(name)}</span>
@@ -718,7 +719,7 @@ function modulesPanel(s: DetailState): string {
         <img class="mod-type-icon" src="${moduleTypeIconUrl(mod.info.typeIcon)}" alt="" loading="lazy" onerror="this.remove()">
         <h2 class="entry-name">${escHtml(mod.info.uniEquipName)}</h2>
         ${code ? `<span class="mod-code">${escHtml(code)}</span>` : ''}
-        <div class="mod-compare" title="What the blue text is a change from">
+        <div class="mod-compare" data-tip="What the blue text is a change from">
           <span class="visually-hidden">Mark changes against</span>
           ${buttonGroup('module-diff', [
             { value: 'base', label: 'vs no module', on: !perStage },
@@ -1001,13 +1002,9 @@ function headerHtml(s: DetailState): string {
     <div class="op-header r${n}">
       ${faction
         // A mask, as on the back of a card, so the header supplies the colour.
-        ? `<span class="op-header-faction" role="img" style="--logo: url(${factionLogoUrl(faction.powerId)})" aria-label="${escHtml(faction.powerName)}" title="${escHtml(faction.powerName)}"></span>`
+        ? `<span class="op-header-faction" role="img" style="--logo: url(${factionLogoUrl(faction.powerId)})" aria-label="${escHtml(faction.powerName)}" tabindex="0" data-tip="${escHtml(faction.powerName)}"></span>`
         : ''}
-      <div class="op-header-title">
-        <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
-        ${s.op.cnOnly ? '<span class="op-header-server" tabindex="0" data-tip="On the CN server only, not on Global yet. The English here is the wiki\'s unofficial translation, and some text may still be in Chinese.">Upcoming</span>' : ''}
-        ${s.op.limited ? '<span class="op-header-limited">Limited</span>' : ''}
-      </div>
+      <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
       <div class="op-header-classes">
         <span class="hdr-item">
           <img class="hdr-icon" src="${classIconUrl(cls)}" alt="">
@@ -1015,7 +1012,7 @@ function headerHtml(s: DetailState): string {
         </span>
         <span class="hdr-item">
           <img class="hdr-icon" src="${archetypeIconUrl(d.subProfessionId)}" alt="" onerror="this.remove()">
-          <span class="hdr-branch"${traitTip ? ` title="${traitTip}"` : ''}>${escHtml(branch)}</span>
+          <span class="hdr-branch"${traitTip ? ` tabindex="0" data-tip="${traitTip}"` : ''}>${escHtml(branch)}</span>
         </span>
         <span class="hdr-spacer"></span>
         <span class="hdr-item hdr-position">
@@ -1036,10 +1033,23 @@ function headerHtml(s: DetailState): string {
 // at up to 6.4MB each — before the page settled. Using avatars puts that at ~2.9MB, and
 // the thumbnails appear immediately instead of trickling in. A skin whose avatar is
 // missing falls back to its illustration rather than showing a hole.
+// LIMITED and Upcoming, pinned to the art's top-right corner. They sat beside the name,
+// where on a phone they squeezed it and dropped to a line of their own. Upcoming is an
+// operator the global server doesn't have yet; why that matters is its tooltip.
+function splashTagsHtml(op: Operator): string {
+  if (!op.limited && !op.cnOnly) return '';
+  return `
+    <div class="splash-tags r${rarityNum(op.data.rarity)}">
+      ${op.cnOnly ? '<span class="splash-tag splash-tag-upcoming" tabindex="0" data-tip="On the CN server only, not on Global yet. The English here is the wiki\'s unofficial translation, and some text may still be in Chinese.">Upcoming</span>' : ''}
+      ${op.limited ? '<span class="splash-tag splash-tag-limited">Limited</span>' : ''}
+    </div>
+  `;
+}
+
 function splashHtml(op: Operator, artIdx: number): string {
   const arts = op.arts ?? [];
   if (!arts.length) {
-    return `<div class="splash splash-empty"><img class="splash-img" src="${operatorAvatarUrl(op.id)}" alt=""></div>`;
+    return `<div class="splash splash-empty">${splashTagsHtml(op)}<img class="splash-img" src="${operatorAvatarUrl(op.id)}" alt=""></div>`;
   }
   const i = Math.min(artIdx, arts.length - 1);
   const active = arts[i];
@@ -1053,7 +1063,7 @@ function splashHtml(op: Operator, artIdx: number): string {
         <div class="splash-rail" role="tablist" aria-label="Artwork">
           ${arts.map((a, j) => `
             <button class="splash-thumb${j === i ? ' on' : ''}" data-act="art" data-value="${j}"
-                    role="tab" aria-selected="${j === i}" title="${escHtml(a.label)}">
+                    role="tab" aria-selected="${j === i}" data-tip="${escHtml(a.label)}">
               <img src="${operatorSkinAvatarUrl(op.id, a.suffix)}" alt="${escHtml(a.label)}"
                    loading="lazy" decoding="async"
                    onerror="this.onerror=null;this.src='${a.url.replace(/'/g, '%27')}'">
@@ -1061,8 +1071,10 @@ function splashHtml(op: Operator, artIdx: number): string {
           `).join('')}
         </div>
       ` : ''}
+      ${splashTagsHtml(op)}
       <img class="splash-img" src="${artUrl(active.url, 1024)}" alt="${escHtml(active.label)}"
            fetchpriority="high" decoding="async"
+           data-act="art-open" role="button" tabindex="0" aria-label="Open ${escHtml(active.label)} at full size"
            onerror="this.onerror=null;this.src='${active.url.replace(/'/g, '%27')}'">
       <div class="splash-caption">
         ${series ? `<span class="section-label">${escHtml(series)}</span>` : ''}
@@ -1267,6 +1279,15 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
         renderAll(container);
         container.querySelector('.splash')?.scrollIntoView({ block: 'nearest' });
         return;
+      // The page follows the viewer: whichever piece was showing when it closed becomes the
+      // page's own, and focus goes back to the art it was opened from.
+      case 'art-open':
+        openArtViewer(state.op.id, state.op.arts ?? [], state.artIdx, (index) => {
+          if (!state) return;
+          if (index !== state.artIdx) { state.artIdx = index; renderAll(container); }
+          container.querySelector<HTMLElement>('.splash-img')?.focus();
+        });
+        return;
       case 'phase': {
         state.phaseIdx = Number(value);
         state.level = state.op.data.phases[state.phaseIdx].maxLevel;
@@ -1349,5 +1370,13 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
   // Leaving the rank field with something unparseable in it puts the real rank back.
   container.onchange = (ev) => {
     if ((ev.target as HTMLElement).id === 'skill-lvl-num') updateSkillBody(container);
+  };
+
+  // The art is an <img> acting as a button, so Enter and Space have to be given to it.
+  container.onkeydown = (ev) => {
+    const el = ev.target as HTMLElement;
+    if ((ev.key !== 'Enter' && ev.key !== ' ') || el.dataset.act !== 'art-open') return;
+    ev.preventDefault();
+    el.click();
   };
 }

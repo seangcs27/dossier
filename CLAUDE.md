@@ -123,7 +123,8 @@ src/
     index.ts        ← app entry: random logo, hash-router dispatch (grid ↔ detail)
     router.ts       ← hash routing (#/ , #/op/<id>)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
-    tooltip.ts      ← the one floating tooltip behind every [data-tip] (keyword definitions)
+    tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
+    art-viewer.ts   ← the artwork viewer popup the detail page's art opens
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
@@ -316,7 +317,7 @@ minutes, twice, before this).
   Basic Info and the Physical Exam line by line, and each operator's `/File` subpage holds
   the prose files — in English only where someone has translated them (Aphrissa in full, a
   Profile here and there), in Chinese otherwise. These operators carry `cnOnly` in the index
-  and the payload: an "Upcoming" tag in the detail header and the "CN" side of the grid's Server filter.
+  and the payload: an "Upcoming" tag on the detail page's artwork and the "CN" side of the grid's Server filter.
 
   **No source has it**, so it is still Chinese: base-skill *names* for these operators (the
   wiki's `BaseSkills` table has 1 of their 41, and its own page prints "Unknown base skill";
@@ -404,7 +405,7 @@ the same style, grouped under a header per picked class and shown only once a cl
 — multi-select, where a picked branch narrows only its own class (Caster + Supporter + Mech-accord
 Caster is every Supporter plus the Mech-accord Casters), and a branch that would yield nothing
 under the other filters dims; a six-segment rarity group tinted by rarity; collab
-chips; two Server chips, "Global" and "CN" (the CN-only operators), each with its count; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
+chips; a Server button split in two, GLOBAL and CN (the CN-only operators), each half with its count; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
 active one reverses it) and multi-select recruitment tags with an any/all mode.
 `renderMore()` rebuilds the panel on every change and restores focus to the equivalent
 control afterwards. Operators without a `releaseDate` sort last in both release directions.
@@ -419,7 +420,14 @@ set and information architecture all follow theirs, so read
 - **Page** — the selected artwork fills a fixed background at low opacity, faded into
   `--bg`. Art column left (breadcrumb, splash, a vertical skin-thumbnail rail overlaying
   the art, illustrator caption); a fixed data panel right, collapsing to one column below
-  1200px.
+  1200px. Clicking the art opens `art-viewer.ts`: a centred modal `<dialog>` popup (960×840
+  at most, the page dimmed around it, an X in its top-right corner) with the piece at 2048px;
+  zoom, 100–400%, by buttons, slider, wheel, a two-finger pinch on a screen or a trackpad;
+  drag to pan once zoomed; and every piece the operator has by arrow buttons, the arrow keys,
+  a thumbnail row, a sideways drag at 100%, or a two-finger sideways swipe on a trackpad. The
+  stage sets `touch-action: none` and reads every gesture itself from pointer and wheel
+  events (a trackpad pinch is a wheel with ctrl held; Safari's is its own `gesturechange`).
+  The page takes whichever piece was showing when it closed.
 - **Skin rail** — renders each outfit's **55 KB square avatar**, not its illustration.
   Pointing 64px thumbnails at full art meant SilverAsh pulled 16.4 MB before the page
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
@@ -427,11 +435,13 @@ set and information architecture all follow theirs, so read
   alter epithet in `--dim`) + class / branch / position row. The badge is the operator's most
   specific faction (team, else group, else nation), painted as a luminance mask in the rarity
   colour; the game files the Rhodes Island badge under three collab ids (`sees`, `mujica`,
-  `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits hard right on the
-  name's row, for the 26 operators the CN gacha table's LIMITED pools name plus every collab
-  operator (27; they come from LINKAGE pools, which that table doesn't flag). It and the
-  grey "Upcoming" tag are the same outlined pill; LIMITED takes the rarity colour. The branch name carries the
-  class trait as its `title` tooltip. Position is Melee, Ranged, or — the reference's rule —
+  `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits in the artwork's
+  top-right corner (`splashTagsHtml`), for the 26 operators the CN gacha table's LIMITED
+  pools name plus every collab operator (27; they come from LINKAGE pools, which that table
+  doesn't flag). It and the grey "Upcoming" tag are the same outlined pill, stacked one above
+  the other at one width; LIMITED takes the rarity colour. Beside the name they squeezed it
+  on a phone. The branch name carries the
+  class trait as its tooltip. Position is Melee, Ranged, or — the reference's rule —
   Melee & Ranged when the trait says the operator "can be deployed on ranged" tiles.
 - **Tabs** — Attributes, Talents, Skills, Modules, RIIC, Misc. Every panel opens with its
   own controls above a rule. **Elite and potential are shared state across panels**, unlike
@@ -503,7 +513,8 @@ data is a markup language (`<@ba.vup>+{atk:0%}</>`), so tags become styled spans
 renders as the raw token rather than vanishing. `$` tags (`<$ba.sluggish>`) are game keywords:
 they render muted with the game's own definition ("Slow: -80% Movement Speed") from
 `game-consts.json`, shown by `tooltip.ts` — one floating tooltip for every `[data-tip]`, on
-hover and on keyboard focus, in place of the browser's `title`. That covers ~98% of keyword uses; the rest render without one.
+hover (after a 300 ms rest, so the grid's cards don't flash theirs), on a tap, and on
+keyboard focus. Every tooltip on the site goes through it; no element carries `title`. That covers ~98% of keyword uses; the rest render without one.
 
 Not cloned, for lack of data: **summon/token** stat blocks, the Misc tab's potential-token
 row, and outfit prices. `src/web/icons.ts` draws the stat, skill and position

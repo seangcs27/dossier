@@ -95,13 +95,13 @@ function buildCard(op: OperatorIndexEntry): string {
         <div class="op-overlay">
           <span class="visually-hidden">Rarity: ${n}</span>
           <div class="op-info">
-            <div class="op-name" title="${escHtml(op.name)}">${escHtml(base)}</div>
-            <div class="op-epithet"${epithet ? ` title="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
+            <div class="op-name" data-tip="${escHtml(op.name)}">${escHtml(base)}</div>
+            <div class="op-epithet"${epithet ? ` data-tip="${escHtml(op.name)}"` : ''}>${epithet ? escHtml(epithet) : '&nbsp;'}</div>
             <div class="op-meta-row">
-              <img class="op-meta-icon" src="${classIconUrl(cls)}" alt="" title="${label}" loading="lazy">
-              <span class="op-class-label" title="${label} · ${escHtml(op.archetype)}">${label}</span>
+              <img class="op-meta-icon" src="${classIconUrl(cls)}" alt="" data-tip="${label}" loading="lazy">
+              <span class="op-class-label" data-tip="${label} · ${escHtml(op.archetype)}">${label}</span>
             </div>
-            <div class="op-serial" title="${escHtml(op.archetype)} · ${escHtml(op.id)}">
+            <div class="op-serial" data-tip="${escHtml(op.archetype)} · ${escHtml(op.id)}">
               <img class="op-serial-icon" src="${archetypeIconUrl(op.subProfessionId)}" alt="" loading="lazy" onerror="this.remove()">
               <span class="op-serial-text">${escHtml(op.archetype)}</span>
             </div>
@@ -122,7 +122,7 @@ function buildCard(op: OperatorIndexEntry): string {
             // A mask rather than an <img>, so the card supplies the colour. The nation's
             // badge, or for the 28 operators with no nation (the franchise collabs, Babel,
             // the Followers) their team's.
-            ? `<div class="bk-glyph" style="--logo: url(${factionLogoUrl(op.nationId || op.factionId)})" title="${escHtml(op.nation || op.faction)}"></div>`
+            ? `<div class="bk-glyph" style="--logo: url(${factionLogoUrl(op.nationId || op.factionId)})" data-tip="${escHtml(op.nation || op.faction)}"></div>`
             : ''}</div>
           <div class="bk-foot">
             <div class="bk-tags">${op.tags.map(t => `<span class="bk-tag">${escHtml(t)}</span>`).join('')}</div>
@@ -232,7 +232,7 @@ function branchGroup(cls: Profession, counts: ReadonlyMap<string, number>): stri
           const on = state.subclasses.has(s.id);
           return `
             <button class="branch-tile${on ? ' on' : ''}${n ? '' : ' zero'}" data-sub="${escHtml(s.id)}"
-                    aria-pressed="${on}" aria-label="${escHtml(s.label)}, ${n} operators" title="${escHtml(s.label)} · ${n}">
+                    aria-pressed="${on}" aria-label="${escHtml(s.label)}, ${n} operators" data-tip="${escHtml(s.label)} · ${n}">
               <img src="${archetypeIconUrl(s.id)}" alt="" loading="lazy" onerror="this.remove()">
               <span>${escHtml(s.label.replace(classWord, ''))}</span>
             </button>`;
@@ -331,11 +331,11 @@ function renderMore(): void {
     ${cnCount ? `
       <div class="filter-group">
         <div class="filter-label">Server</div>
-        <div class="collab-row">
+        <div class="server-row">
           ${servers.map(sv => `
-            <button class="chip${state.servers.has(sv.id) ? ' active' : ''}" data-server="${sv.id}"
-                    aria-pressed="${state.servers.has(sv.id)}" title="${escHtml(sv.title)}">
-              ${sv.label} · ${sv.count}
+            <button class="server-btn${state.servers.has(sv.id) ? ' on' : ''}" data-server="${sv.id}"
+                    aria-pressed="${state.servers.has(sv.id)}" data-tip="${escHtml(sv.title)}">
+              ${sv.label}<span>${sv.count}</span>
             </button>
           `).join('')}
         </div>
@@ -363,7 +363,7 @@ function renderMore(): void {
             return `
               <button class="chip sort-btn${on ? ' active' : ''}" data-sort="${o.id}"
                       aria-pressed="${on}" aria-label="${name}"
-                      title="${on ? 'Click again to reverse' : ''}">
+                      ${on ? 'data-tip="Click again to reverse"' : ''}>
                 ${o.label}
                 ${on ? `
                   <svg class="sort-dir${sortDesc ? ' desc' : ''}" viewBox="0 0 16 16" aria-hidden="true">
