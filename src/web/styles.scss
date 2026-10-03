@@ -231,6 +231,37 @@ body {
   &[hidden] { display: none; }
 }
 
+// The panel's title and its close button. Sticky, with the panel's own padding pulled back
+// in, so the way out stays in reach however far the panel has scrolled.
+.filter-head {
+  position: sticky;
+  top: calc(-1 * var(--sp-16));
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: calc(-1 * var(--sp-16)) calc(-1 * var(--sp-16)) 0;
+  padding: var(--sp-10) var(--sp-10) var(--sp-10) var(--sp-16);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.filter-close {
+  display: flex;
+  padding: var(--sp-6);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  &:hover { background: var(--surface2); color: var(--text); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+}
+
 .filter-group {
   display: flex;
   flex-direction: column;
@@ -525,8 +556,15 @@ body {
   &:disabled { opacity: 0.4; cursor: default; }
 }
 
+// The result count, as a tag: the same pill as the Filters button beside it, without the
+// hover, since it reports and does nothing.
 #count {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
   font-size: var(--fs-sm);
+  font-weight: 600;
   color: var(--muted);
   flex-shrink: 0;
 }
@@ -1527,6 +1565,25 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   letter-spacing: 0.04em;
 }
 
+// Beside LIMITED, for an operator the global server doesn't have yet: a quiet outlined tag,
+// since it is a note about the data rather than about the operator. The reason is its
+// tooltip. It takes the right-hand push when it is there, so the two sit together.
+.op-header-server {
+  margin-left: auto;
+  padding: var(--sp-2) var(--sp-8);
+  border: 1px solid var(--muted);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: help;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  + .op-header-limited { margin-left: 0; }
+}
+
 @each $tier, $spec in $rarities {
   .op-header.r#{$tier} { --rarity: var(--r#{$tier}); }
 }
@@ -2287,8 +2344,10 @@ input[type='number'] {
   img { height: 182px; width: auto; }
 }
 
-// Collapsed by default: the flavour text can spoil the story the module belongs to.
-.mod-desc {
+// Collapsed by default: the flavour text can spoil the story the module belongs to. The
+// Misc tab's archive files (.file-entry) fold away the same way, for the same reason.
+.mod-desc,
+.file-entry {
   margin-top: var(--sp-16);
   padding-top: var(--sp-16);
   border-top: 1px solid var(--border);
@@ -2377,6 +2436,58 @@ button.outfit-name {
   flex-wrap: wrap;
   gap: var(--sp-8);
 }
+
+// ── Misc: the operator's handbook files ──
+// The files keep the line breaks they were written with.
+.file-text { white-space: pre-line; }
+
+// Basic info beside the physical exam, a rule between, as the reference sets them.
+.file-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-24);
+
+  > div + div { padding-left: var(--sp-24); border-left: 1px solid var(--border); }
+  .entry-name { margin-bottom: var(--sp-12); }
+}
+
+.file-facts {
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-12);
+    padding: var(--sp-6) 0;
+  }
+
+  // A long label wraps ("Originium Arts Assimilation") rather than squeezing its value into
+  // breaking mid-word; a value only breaks when it is one long unbroken string.
+  dt { color: var(--muted); font-size: var(--fs-lg); }
+  dd { font-size: var(--fs-xl); font-weight: 600; text-align: right; white-space: pre-line; overflow-wrap: break-word; min-width: 0; }
+}
+
+// Infection status over the clinical analysis, set apart on a plate.
+.file-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+  padding: var(--sp-16);
+  border-radius: var(--radius-lg);
+  background: var(--border);
+
+  .section-label { margin-bottom: var(--sp-4); }
+}
+
+// The operator's token: what the game's item text says about them, beside their face.
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-16);
+  padding-top: var(--sp-16);
+  border-top: 1px solid var(--border);
+}
+
+.token-avatar { width: 52px; height: 52px; border-radius: var(--radius-sm); flex-shrink: 0; }
+.token-quote { font-style: italic; }
 
 .op-tag {
   font-size: var(--fs-base);
@@ -2485,6 +2596,12 @@ button.outfit-name {
     > div { padding: 0; border-left: none; }
   }
 
+  .file-columns {
+    grid-template-columns: 1fr;
+
+    > div + div { padding-left: 0; border-left: none; }
+  }
+
   .range-block { grid-template-columns: 1fr; justify-items: center; gap: var(--sp-12); }
   .pot-row { grid-template-columns: 1fr; gap: var(--sp-2); }
   .ctl-cluster-end { margin-left: 0; }
@@ -2512,6 +2629,7 @@ button.outfit-name {
 
   #count {
     grid-area: 1 / 2;
+    padding: var(--sp-4) var(--sp-10);
     font-size: var(--fs-xs);
     align-self: center;
     justify-self: end;

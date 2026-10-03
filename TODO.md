@@ -24,12 +24,23 @@ flavour text collapsed behind a spoiler warning. Module and potential attack spe
 shorten the Attributes tab's attack interval; both were ignored. RIIC is done: each base
 skill's own badge beside its name, and stages grouped by the game's slot rather than by name
 — a renamed upgrade used to show beside the skill it replaces, on 104 operator/elite
-combinations. The reference shows no room-type icon, so neither do we. Still to do:
+combinations. The reference shows no room-type icon, so neither do we. Misc is done: the
+handbook files (profile, basic info, physical exam, clinical analysis, archive files,
+promotion record) from `handbook_info_table`, laid out as the reference does. That closes
+the tab-by-tab pass.
 
-- **Misc** — the reference's handbook-driven layout. Ours now has outfits; the handbook
-  text itself (Basic Info, Physical Exam, Profile, Archive Files 1-4, Promotion Record) is in
-  `en/gamedata/excel/handbook_info_table.json`, 6.4 MB, 420 operators, and is worth landing
-  before restyling this tab around it.
+What the pass left open:
+
+- **English for CN-only operators** now comes from the wiki: talents, skills, module names
+  and effects, trait, and the handbook's Basic Info and Physical Exam. Still Chinese on those
+  19, because no source has it: base-skill **names** (40 of them — the wiki's table has 1,
+  AN-EN-Tags translates descriptions only), most archive files (the wiki has Aphrissa's in
+  full and a Profile for a few), a module's talent text at a raised potential, module flavour
+  text, and missions where the wiki page has none. Short of a machine translation or a
+  hand-kept table of 40 names, these wait for the global release. The grid's "Not on Global
+  yet" filter lists exactly who is affected.
+- **Summon stat blocks** under a token skill, and the Misc tab's potential-token row: no data
+  in the payloads for either.
 
 ### What the raw-gamedata migration left behind
 The build no longer touches HellaAPI: `scripts/lib/gamedata.mjs` loads the game's excel

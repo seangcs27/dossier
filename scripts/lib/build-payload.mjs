@@ -33,6 +33,27 @@ function normalizeEmptyArrays(value, key = '') {
   return value;
 }
 
+const AMIYA_FORMS = new Set(['char_1001_amiya2', 'char_1037_amiya3']);
+
+// The CN handbook's file titles, as the EN table names the same files.
+const CN_FILE_TITLE = {
+  基础档案: 'Basic Info',
+  综合体检测试: 'Physical Exam',
+  综合性能检测结果: 'Performance Review',
+  客观履历: 'Profile',
+  临床诊断分析: 'Clinical Analysis',
+  档案资料一: 'Archive File 1',
+  档案资料二: 'Archive File 2',
+  档案资料三: 'Archive File 3',
+  档案资料四: 'Archive File 4',
+  档案资料五: 'Archive File 5',
+  晋升记录: 'Promotion Record',
+  升变档案一: 'Class Conversion Record 1',
+  升变档案二: 'Class Conversion Record 2',
+  情报资料一: 'Intel File 1',
+  源石技艺评定: 'Originium Arts Rating',
+};
+
 export async function buildPayload(charId, server = 'en') {
   const chars = await table(server, 'character_table');
   const patch = await table(server, 'char_patch_table');
@@ -64,6 +85,11 @@ export async function buildPayload(charId, server = 'en') {
   const faction = id => teams[id] ?? cnTeams[id] ?? null;
   const ranges = await table(server, 'range_table');
   const skinTable = await table(server, 'skin_table');
+  // The Misc tab's files. Not load-bearing: without the table an operator ships with no
+  // files rather than not shipping. Amiya's Guard and Medic forms have no record of their
+  // own and read hers, as the reference does.
+  const handbook = await table(server, 'handbook_info_table').catch(() => ({}));
+  const record = handbook.handbookDict?.[AMIYA_FORMS.has(charId) ? 'char_002_amiya' : charId];
 
   // Wrapping the whole payload means every field a later task adds is normalised too.
   return normalizeEmptyArrays({
@@ -137,5 +163,14 @@ export async function buildPayload(charId, server = 'en') {
     // reproduces every skin count, where charId alone gets the three Amiya forms wrong.
     skins: Object.values(skinTable.charSkins ?? {})
       .filter(skin => (skin.tmplId ?? skin.charId) === charId),
+    // Each handbook file as its title and text ("Basic Info", "Archive File 2"). The CN
+    // table titles them in Chinese; those are renamed so the page can find each file by one
+    // name, while the text itself stays as the table has it.
+    handbook: [record?.storyTextAudio ?? []].flat()
+      .map(file => ({
+        title: CN_FILE_TITLE[file.storyTitle] ?? file.storyTitle,
+        text: [file.stories ?? []].flat()[0]?.storyText ?? '',
+      }))
+      .filter(file => file.title && file.text),
   });
 }

@@ -707,6 +707,197 @@ async function fetchWikiTraits(names) {
   }
 }
 
+// The wiki's unofficial English for the operators the global server doesn't have yet: each
+// one's page, parsed (see lib/wiki-text.mjs) and keyed by the game id in its infobox. The
+// Ace files above were last updated in April 2026, so for anything released since, this is
+// the only English there is.
+//
+// Each operator also has a "/File" subpage with the handbook's prose, and a row in the
+// OperatorFiles table with the facts the handbook lists (gender, birthplace, exam grades);
+// both ride along as `files` and `record`.
+//
+// A handful of requests however many operators there are — the titles, every page's wikitext
+// in batches of fifty, the table rows — because the wiki answers a page-by-page crawl with a
+// 429 after about a dozen.
+async function fetchWikiPages() {
+  try {
+    const titles = (await cargo({ tables: 'Operators', fields: '_pageName=page', where: 'isCN=1' })).map(r => r.page);
+    const wanted = titles.flatMap(title => [title, `${title}/File`]);
+    const textByTitle = new Map();
+    for (let i = 0; i < wanted.length; i += 50) {
+      const qs = new URLSearchParams({
+        action: 'query', prop: 'revisions', rvprop: 'content', rvslots: 'main',
+        titles: wanted.slice(i, i + 50).join('|'), format: 'json', formatversion: '2',
+      });
+      const res = await fetchWithRetry(`${WIKI_API}?${qs}`);
+      if (!res.ok) throw new Error(`wiki ${res.status}`);
+      for (const page of (await res.json()).query?.pages ?? []) {
+        textByTitle.set(page.title, page.revisions?.[0]?.slots?.main?.content ?? '');
+      }
+    }
+
+    const pages = new Map();
+    for (const title of titles) {
+      const parsed = parseOperatorPage(textByTitle.get(title) ?? '');
+      if (!parsed.charId) continue;
+      pages.set(parsed.charId, { ...parsed, files: parseFilePage(textByTitle.get(`${title}/File`) ?? ''), record: null });
+    }
+
+    const records = await cargo({
+      tables: 'OperatorFiles',
+      fields: 'id,name,gender,experience,birthplace,birthdate,race,height,infection,strength,mobility,endurance,tactical,skill,originium',
+      where: `id IN (${[...pages.keys()].map(id => `"${id}"`).join(',')})`,
+    });
+    for (const record of records) {
+      const page = pages.get(record.id);
+      if (page) page.record = record;
+    }
+    console.log(`wiki pages: ${pages.size} of ${titles.length} CN-only operators parsed, ${records.length} with a file record`);
+    return pages;
+  } catch (e) {
+    console.warn(`wiki pages skipped: ${e.message}`);
+    return new Map();
+  }
+}
+
+const hasHan = text => typeof text === 'string' && /\p{Script=Han}/u.test(text);
+
+// The handbook's "【key】value" lines, CN key to the EN table's label and the wiki record's
+// field that holds the value.
+const HANDBOOK_FIELD = {
+  代号: ['Code Name', 'name'],
+  姓名: ['Name', 'name'],
+  性别: ['Gender', 'gender'],
+  战斗经验: ['Combat Experience', 'experience'],
+  出身地: ['Place of Birth', 'birthplace'],
+  生日: ['Date of Birth', 'birthdate'],
+  种族: ['Race', 'race'],
+  身高: ['Height', 'height'],
+  矿石病感染情况: ['Infection Status', 'infection'],
+  物理强度: ['Physical Strength', 'strength'],
+  战场机动: ['Mobility', 'mobility'],
+  生理耐受: ['Physical Resilience', 'endurance'],
+  战术规划: ['Tactical Acumen', 'tactical'],
+  战斗技巧: ['Combat Skill', 'skill'],
+  源石技艺适应性: ['Originium Arts Assimilation', 'originium'],
+};
+
+// A CN "Basic Info" or "Physical Exam" file with each line the wiki record can answer
+// rewritten as the EN table would have it ("[Gender] Female"). A key the map doesn't know,
+// or a field the record leaves empty, keeps its Chinese line: a robot's and a collab
+// student's files use keys of their own.
+function translateFileFields(text, record) {
+  return text.split(/\n(?=【)/).map(block => {
+    const [label, field] = HANDBOOK_FIELD[/^【([^【】]+)】/.exec(block)?.[1]] ?? [];
+    return field && record[field] ? `[${label}] ${wikiToGameText(record[field])}` : block;
+  }).join('\n');
+}
+
+// Fills in, from the operator's wiki page, whatever buildCnOperatorPayload left in Chinese:
+// talents, skills, module names, effects and missions, and the trait. Only Chinese text is
+// replaced, so anything Ace or the game already supplied in English stays as it was, and
+// only an exact match is used: a talent's text is taken for the same elite and potential or
+// not at all, since the nearest other rank would be English with the wrong numbers in it.
+//
+// The wiki's text has its values written out, where the game's has {placeholders} — which
+// is fine, the page interpolates nothing it doesn't find.
+function applyWikiText(op, page) {
+  if (!page) return op;
+
+  // The wiki lists what a player sees, so hidden skills and talents don't take a place.
+  let skillAt = -1;
+  const skills = (op.skills ?? []).map(s => {
+    if (s.excel?.hidden || !s.excel?.levels?.length) return s;
+    const tl = page.skills[++skillAt];
+    if (!tl) return s;
+    return {
+      ...s,
+      excel: {
+        ...s.excel,
+        levels: s.excel.levels.map((lv, i) => (
+          hasHan(lv.name) || hasHan(lv.description)
+            ? { ...lv, name: tl.name || lv.name, description: tl.levels[i] ?? lv.description }
+            : lv
+        )),
+      },
+    };
+  });
+
+  let talentAt = -1;
+  const talents = (op.data.talents ?? []).map(t => {
+    if (!(t.candidates ?? []).some(c => c.name && !c.isHideTalent)) return t;
+    const group = page.talents[++talentAt];
+    if (!group) return t;
+    return {
+      ...t,
+      candidates: t.candidates.map(c => {
+        if (!hasHan(c.name) && !hasHan(c.description)) return c;
+        const phase = Number(String(c.unlockCondition?.phase).replace('PHASE_', ''));
+        const tl = group.find(e => e.phase === phase && e.rank === c.requiredPotentialRank);
+        return tl ? { ...c, name: tl.name || c.name, description: tl.description } : c;
+      }),
+    };
+  });
+
+  const mapCandidates = (bundle, fn) => (
+    Array.isArray(bundle?.candidates) ? { ...bundle, candidates: bundle.candidates.map(fn) } : bundle
+  );
+  const modules = (op.modules ?? []).map(m => {
+    const tl = page.modules[[m.info?.typeName1, m.info?.typeName2].filter(Boolean).join('-').toUpperCase()];
+    if (!tl || !m.data) return m;
+    const [trait, ...talentByStage] = tl.effects;
+    return {
+      ...m,
+      info: { ...m.info, uniEquipName: hasHan(m.info.uniEquipName) ? tl.name : m.info.uniEquipName },
+      missions: m.missions?.some(hasHan) && tl.missions.length === m.missions.length ? tl.missions : m.missions,
+      data: {
+        ...m.data,
+        phases: m.data.phases.map((phase, stage) => {
+          // The wiki gives one talent text per stage, so only the first talent a stage
+          // rewrites takes it; a second would be given the first one's words.
+          let talentText = talentByStage[stage - 1];
+          return {
+            ...phase,
+            parts: phase.parts.map(part => ({
+              ...part,
+              overrideTraitDataBundle: mapCandidates(part.overrideTraitDataBundle, c => {
+                if (!trait || c.requiredPotentialRank !== 0) return c;
+                if (hasHan(c.additionalDescription)) return { ...c, additionalDescription: trait };
+                if (hasHan(c.overrideDescripton)) return { ...c, overrideDescripton: trait };
+                return c;
+              }),
+              addOrOverrideTalentDataBundle: mapCandidates(part.addOrOverrideTalentDataBundle, c => {
+                if (!talentText || c.requiredPotentialRank !== 0 || !hasHan(c.upgradeDescription)) return c;
+                const text = talentText;
+                talentText = null;
+                return { ...c, upgradeDescription: text };
+              }),
+            })),
+          };
+        }),
+      },
+    };
+  });
+
+  const data = { ...op.data, talents };
+  // A trait that changes with elite is an object of candidates; the wiki has the one line.
+  if (page.trait && hasHan(JSON.stringify(op.data.trait ?? ''))) data.trait = page.trait;
+  if (page.trait && hasHan(op.data.description)) data.description = page.trait;
+  if (page.profile && hasHan(op.data.itemUsage)) data.itemUsage = page.profile;
+
+  // The handbook: the fact files line by line from the wiki's record, and each prose file
+  // from the "/File" subpage where someone has translated it — an untranslated subpage holds
+  // the same Chinese under the same title, and is no improvement.
+  const handbook = (op.handbook ?? []).map(file => {
+    if (!hasHan(file.text)) return file;
+    const prose = page.files.find(f => f.title === file.title && !hasHan(f.text));
+    if (prose) return { ...file, text: prose.text };
+    return page.record ? { ...file, text: translateFileFields(file.text, page.record) } : file;
+  });
+
+  return { ...op, data, skills, modules, handbook };
+}
+
 // Builds the CN-supplement version of a full Operator object: shape-normalized skills,
 // plus every translated field (skills/talents from Aceship, trait/itemUsage from the
 // wiki, tags/obtain from the static CN_* tables above, base skills from RIIC data,
@@ -796,13 +987,14 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 // wait for the next rebuild instead. Best-effort per operator: one bad fetch shouldn't
 // cost the others.
 async function buildOperatorDetails(regular, cnSupplement) {
-  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds] = await Promise.all([
+  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds, wikiPages] = await Promise.all([
     fetchAceTranslations(),
     fetchWikiTraits(cnSupplement.map(c => c.appellation)),
     fetchRiicTranslations(),
     fetchPotentialKeywords(),
     fetchCharacterArtIndex(),
     fetchLimitedIds(),
+    fetchWikiPages(),
   ]);
   const cnById = new Map(cnSupplement.map(c => [c.id, c]));
 
@@ -835,7 +1027,10 @@ async function buildOperatorDetails(regular, cnSupplement) {
       const base = await buildPayload(entry.id, cn ? 'cn' : 'en');
       if (!base) throw new Error('not in the character table');
       const op = cn
-        ? buildCnOperatorPayload(base, entry.id, entry.appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords)
+        ? applyWikiText(
+            buildCnOperatorPayload(base, entry.id, entry.appellation, skillTl, talentTl, traitByName, riicBuffs, potentialKeywords),
+            wikiPages.get(entry.id),
+          )
         : base;
       const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
       // `op`, not `base`: for a CN-supplement operator `op` is buildCnOperatorPayload's
@@ -843,7 +1038,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
       // buildPayload returns instead of the fan translations, in both this file and the
       // popup projection below (`pd` reads from finalOp too).
       const collab = collabFor(base.data?.displayNumber);
-      const finalOp = { ...op, arts, limited: limitedIds.has(entry.id) || Boolean(collab) };
+      const finalOp = { ...op, arts, limited: limitedIds.has(entry.id) || Boolean(collab), cnOnly: Boolean(cn) };
 
       // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
       // slug and only a fallback, title-cased, for a payload whose factions array is empty
@@ -1012,6 +1207,7 @@ async function previousOperatorCount() {
 
 import { table } from './lib/gamedata.mjs';
 import { buildPayload } from './lib/build-payload.mjs';
+import { parseFilePage, parseOperatorPage, wikiToGameText } from './lib/wiki-text.mjs';
 
 const VALID_PROFESSION = new Set([
   'CASTER', 'MEDIC', 'PIONEER', 'SNIPER', 'SPECIAL', 'SUPPORT', 'TANK', 'WARRIOR',
@@ -1179,6 +1375,8 @@ for (const c of cnSupplement) {
     faction: factions.get(c.id)?.powerName ?? '',
     factionId: factions.get(c.id)?.powerId ?? '',
     collab: collabs.get(c.id) ?? '',
+    // Not on the global server yet: its text is the wiki's unofficial English, or Chinese.
+    cnOnly: true,
   });
 }
 

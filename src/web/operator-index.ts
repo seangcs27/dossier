@@ -28,6 +28,7 @@ export interface OperatorFilter {
   tags: ReadonlySet<string>;
   tagMode: TagMode;
   collabs: ReadonlySet<string>; // collab display names, empty for no restriction
+  cnOnly: boolean;              // only operators the global server doesn't have yet
 }
 
 export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): OperatorIndexEntry[] {
@@ -42,6 +43,7 @@ export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): Operato
     if (f.rarities.size && !f.rarities.has(rarityNum(op.rarity))) return false;
     if (narrowed.has(op.profession) && !f.subclasses.has(op.subProfessionId)) return false;
     if (f.collabs.size && !f.collabs.has(op.collab)) return false;
+    if (f.cnOnly && !op.cnOnly) return false;
     if (f.tags.size) {
       const hit = [...f.tags].filter(t => op.tags.includes(t)).length;
       if (f.tagMode === 'all' ? hit < f.tags.size : hit === 0) return false;

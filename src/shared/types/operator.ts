@@ -294,9 +294,16 @@ export interface Operator {
   // the static per-operator bundle has it), so always optional.
   arts?: OperatorArt[];
   skins?: OperatorSkin[];
+  // The operator's handbook files, in the game's order: "Basic Info", "Physical Exam",
+  // "Profile", "Clinical Analysis", "Archive File 1" and on, "Promotion Record". Basic Info
+  // and the exam are "[Key] value" lines in one string; the rest is prose.
+  handbook?: { title: string; text: string }[];
   // Only obtainable for a limited time: the CN gacha table's LIMITED pools, plus every
   // collab operator. Collabs run on LINKAGE pools, so the game's own flag misses them.
   limited?: boolean;
+  // Not on the global server yet. Its text comes from the CN tables with the wiki's
+  // unofficial English laid over it, so some of it may still be Chinese.
+  cnOnly?: boolean;
 }
 
 export interface OperatorSummary {
@@ -368,6 +375,8 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // outsiders with no nation, and Monster Hunter, whose operators are Terra natives in a
   // collab's costume and keep theirs.
   collab: string;
+  // Set on operators the global server doesn't have yet, absent on everyone else.
+  cnOnly?: boolean;
   // CN release date, 'YYYY-MM-DD'. null for operators with no dateable event (some
   // Integrated Strategies exclusives, a few event operators the wiki never dated).
   // '9999-12-31' is a sentinel for CN-supplement operators — known to be newer than

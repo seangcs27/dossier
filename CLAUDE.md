@@ -247,7 +247,7 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 `operators.json` — one slim entry per operator, bundled into both JS bundles:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab, cnOnly? }
 ```
 
 `operator-details/<id>.json` — the full `Operator` payload for **every** operator (431),
@@ -275,7 +275,9 @@ minutes, twice, before this).
   joined by `scripts/lib/build-payload.mjs` into the same `Operator` payload the app has
   always read: `character_table` (plus `char_patch_table`, which is where Amiya's Guard and
   Medic forms live), `skill_table`, `uniequip_table` + `battle_equip_table`, `building_data`,
-  `handbook_team_table`, `range_table`, `skin_table`. Two more feed the detail page's costs
+  `handbook_team_table`, `range_table`, `skin_table`, and `handbook_info_table` for the Misc
+  tab's files (the one of these that isn't load-bearing: without it operators ship with no
+  files). Two more feed the detail page's costs
   and tooltips rather than the payload — `item_table` (→ `items.json` + `item-icons/`) and
   `gamedata_const` (→ `game-consts.json`); both are non-load-bearing, and on failure keep the
   last build's file or write an empty one so the bundle still builds. This replaced HellaAPI (`awedtan.ca`), a
@@ -302,6 +304,24 @@ minutes, twice, before this).
   when `Operators.event` is blank but `obtain`'s wikitext links a real place.
   CN-supplemented operators have no dateable event yet, but are known to be newer than
   everything the EN tables carry, so they get the `9999-12-31` sentinel and sort **first**.
+
+  The same wiki is where a CN-only operator's **English text** comes from: its page spells
+  out every talent (per elite and potential), every skill rank and each module stage in
+  templates, as unofficial translations. `fetchWikiPages` takes all of them in a handful of
+  batched requests — the wiki answers a page-by-page crawl with a 429 after about a dozen —
+  `scripts/lib/wiki-text.mjs` parses them and converts wiki markup to the game's, and
+  `applyWikiText` fills in only what is still Chinese, and only on an exact elite/potential
+  match. Pages are matched by the game id in the infobox, not the name ("Viy" is Вий). The
+  handbook comes from two more places on the same wiki: the `OperatorFiles` table answers
+  Basic Info and the Physical Exam line by line, and each operator's `/File` subpage holds
+  the prose files — in English only where someone has translated them (Aphrissa in full, a
+  Profile here and there), in Chinese otherwise. These operators carry `cnOnly` in the index
+  and the payload: a "CN only" tag in the detail header and a filter chip in the grid.
+
+  **No source has it**, so it is still Chinese: base-skill *names* for these operators (the
+  wiki's `BaseSkills` table has 1 of their 41, and its own page prints "Unknown base skill";
+  AN-EN-Tags translates the descriptions but not the names), a module's talent text at a
+  raised potential, module flavour text, most archive files, and missions on a few pages.
 - **sanitygone.help** — `releaseOrder`, a PRTS-scraped ordinal baked into Sanity Gone's own
   bundle. Near-universal coverage and verified accurate, including for operators the wiki
   can't date at all, so it's the **preferred** sort signal at runtime; `releaseDate` is the
@@ -311,7 +331,9 @@ minutes, twice, before this).
 - **PuppiizSunniiz/AN-EN-Tags** — community translations applied to CN-only operators'
   baked payloads: `tl-skills.json` / `tl-talents.json` (Ace), `puppiiz/riic_data.json`
   (RIIC buffs, keyed by `buffId`), `tl-potential.json` (a keyword substitution table —
-  potential descriptions are templated strings from a closed vocabulary, not prose).
+  potential descriptions are templated strings from a closed vocabulary, not prose). The
+  two Ace files stopped being updated in April 2026, so they cover no operator released
+  since; the wiki pages above do.
 - **PuppiizSunniiz/Arknight-Images** — the character-art tree, read at build time to know
   which outfit illustrations actually exist before listing them in `arts`.
 - **yuanyan3060/ArknightsGameResource** — 180×360 bust portraits, the card art. Downloaded
@@ -372,16 +394,17 @@ for data** (only images). Cards are built 48 at a time as the page nears the end
 exists: all ~430 at once was ~550 ms of paint and layerize before first paint, and held
 back every portrait request until it finished. The topbar's search box (260px) and a Filters button form one cluster
 on the left, beside the wordmark. The box's magnifier is its clear button: it turns into a
-cross once there is text, and pressing it empties the box. The Filters button opens a popover,
-anchored under the cluster, that stays open until toggled or dismissed with Escape —
-**deliberately no click-away close**, since filtering is a back-and-forth with the grid.
+cross once there is text, and pressing it empties the box. The result count beside them is a
+pill of the same shape. The Filters button opens a popover, anchored under the cluster, that
+closes on the toggle, its own close button (in a sticky head row), Escape, or a press
+anywhere outside it.
 
 Inside the popover: class tiles (glyph over name, four across); Archetype / Subclass tiles in
 the same style, grouped under a header per picked class and shown only once a class is picked
 — multi-select, where a picked branch narrows only its own class (Caster + Supporter + Mech-accord
 Caster is every Supporter plus the Mech-accord Casters), and a branch that would yield nothing
 under the other filters dims; a six-segment rarity group tinted by rarity; collab
-chips; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
+chips; a Server chip, "Not on Global yet", for the CN-only operators; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
 active one reverses it) and multi-select recruitment tags with an any/all mode.
 `renderMore()` rebuilds the panel on every change and restores focus to the equivalent
 control afterwards. Operators without a `releaseDate` sort last in both release directions.
@@ -457,6 +480,15 @@ set and information architecture all follow theirs, so read
   and the description. Stages are grouped by `bases[].slot`, the game's own `buffChar` entry,
   because an upgrade is often renamed outright ("Penguin Logistics α" into "Logistics
   Expert"); matching on the name is only a fallback for a payload baked without the slot.
+- **Misc** — the reference's handbook layout, from `handbook_info_table` (baked into each
+  payload as `handbook`, a list of titled files): recruitment tags, Profile, Basic Info beside
+  the Physical Exam (a robot's Performance Review), Infection Status with the Clinical
+  Analysis on a plate, then every other file — Archive Files, Promotion Record, Amiya's Class
+  Conversion Records — as collapsed `<details>` under its own title. The token row follows
+  (the operator's face beside `itemUsage` and `itemDesc`), then what the reference has no
+  place for: trait, obtain source, the potential ladder, every named outfit and a fact
+  list. CN-only operators' files are the CN table's, in Chinese; the Persona 3 operators'
+  files have titles of their own and all show as collapsed sections.
 
 Costs render as the reference's material discs (`costListHtml` in `detail.ts`): a 52px circle
 ringed and washed in the item's rarity colour, the baked icon filling it, and the count in
@@ -472,9 +504,8 @@ they render muted with the game's own definition ("Slow: -80% Movement Speed") f
 `game-consts.json`, shown by `tooltip.ts` — one floating tooltip for every `[data-tip]`, on
 hover and on keyboard focus, in place of the browser's `title`. That covers ~98% of keyword uses; the rest render without one.
 
-Not cloned, for lack of data: **summon/token** stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
-shows tags, trait, archive blurb, obtain source, the potential ladder, every named outfit
-and a fact list), and outfit prices. `src/web/icons.ts` draws the stat, skill and position
+Not cloned, for lack of data: **summon/token** stat blocks, the Misc tab's potential-token
+row, and outfit prices. `src/web/icons.ts` draws the stat, skill and position
 glyphs inline rather than fetching them — ATK, attack interval, block, DP cost and the three
 position glyphs are Sanity Gone's own drawings (GPL-2.0 via iansjk/sanity-gone), since the game
 ships none. The elite and potential badges are the game's own art, baked by the build.

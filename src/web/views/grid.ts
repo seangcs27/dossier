@@ -25,6 +25,7 @@ const state = {
   tags: new Set<string>(),
   tagMode: 'any' as TagMode,
   collabs: new Set<string>(),
+  cnOnly: false,
   moreOpen: false,
   // Tags and sort live behind a disclosure. They're the least-reached-for controls and
   // the tag list alone is longer than everything above it put together.
@@ -185,7 +186,7 @@ function render(container: HTMLElement): void {
 
 function activeCount(): number {
   return state.classes.size + state.rarities.size + state.tags.size + state.collabs.size
-    + state.subclasses.size;
+    + state.subclasses.size + Number(state.cnOnly);
 }
 
 // ── Filter popover: every dimension in one panel, opened from the topbar ──
@@ -263,7 +264,16 @@ function renderMore(): void {
   const focused = document.activeElement as HTMLElement | null;
   const refocus = focused && panel.contains(focused) ? focusSelector(focused) : null;
 
+  const cnOnlyCount = getOperators().filter(op => op.cnOnly).length;
+
   panel.innerHTML = `
+    <div class="filter-head">
+      Filters
+      <button class="filter-close" id="close-filters" aria-label="Close filters">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+      </button>
+    </div>
+
     <div class="filter-group">
       <div class="filter-label">Class</div>
       <div class="class-row">
@@ -305,6 +315,18 @@ function renderMore(): void {
               ${escHtml(c)}
             </button>
           `).join('')}
+        </div>
+      </div>
+    ` : ''}
+
+    ${cnOnlyCount ? `
+      <div class="filter-group">
+        <div class="filter-label">Server</div>
+        <div class="collab-row">
+          <button class="chip${state.cnOnly ? ' active' : ''}" data-server="cn" aria-pressed="${state.cnOnly}"
+                  title="Released on the CN server only; their English is the wiki's unofficial translation">
+            Not on Global yet · ${cnOnlyCount}
+          </button>
         </div>
       </div>
     ` : ''}
@@ -409,6 +431,7 @@ function clearAll(): void {
   state.tags.clear();
   state.collabs.clear();
   state.subclasses.clear();
+  state.cnOnly = false;
 }
 
 export function mountGrid(container: HTMLElement): void {
@@ -448,6 +471,13 @@ export function mountGrid(container: HTMLElement): void {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!el) return;
     if (el.id === 'clear-filters') { clearAll(); refresh(); return; }
+    if (el.id === 'close-filters') {
+      state.moreOpen = false;
+      refreshChrome();
+      document.getElementById('more-toggle')?.focus();
+      return;
+    }
+    if (el.dataset.server) { state.cnOnly = !state.cnOnly; refresh(); return; }
     if (el.id === 'advanced-toggle') { state.advancedOpen = !state.advancedOpen; refreshChrome(); return; }
     const sortField = el.dataset.sort;
     if (sortField) {
@@ -481,11 +511,18 @@ export function mountGrid(container: HTMLElement): void {
     }
   };
 
-  // No click-away close. Filtering is a back-and-forth between the panel and the grid —
-  // pick a class, look, narrow it, look again — and dismissing the panel on the first
-  // glance at the results meant reopening it every time. It closes on the toggle, or on
-  // Escape, and otherwise stays where it was put.
-  //
+  // The panel closes on its toggle, its own close button, Escape, or a press anywhere
+  // outside it. (It used to stay open on an outside press, so the grid could be glanced at
+  // between picks; in use that read as a panel that wouldn't go away.) Assigned rather than
+  // added, like onkeydown below: this runs on every return to the grid.
+  document.onpointerdown = (ev) => {
+    if (!state.moreOpen || panel.hidden) return;
+    const target = ev.target as Element;
+    if (target.closest('#more-filters, #more-toggle')) return;
+    state.moreOpen = false;
+    refreshChrome();
+  };
+
   // Escape acts only while the panel is actually on screen — the detail page hides it
   // without resetting state, and this handler outlives the grid. It also leaves the search
   // box alone: moving focus mid-keydown there let the native clear empty the field without

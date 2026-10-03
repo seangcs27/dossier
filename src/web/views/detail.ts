@@ -849,12 +849,71 @@ function outfitsHtml(op: Operator): string {
   return `<section class="entry"><h2 class="entry-name">Outfits</h2><div class="outfit-list">${items}</div></section>`;
 }
 
-// The reference's Misc tab is built on the operator handbook (profile, physical exam,
-// voice actor, artist). HellaAPI doesn't expose the handbook, so this collects what we
-// do have that has no home in the other tabs: recruitment tags, the class trait, the
-// archive blurb, how the operator is obtained, faction, the potential ladder — which
-// the reference surfaces through the potential dropdown's own tooltips instead — and
-// the operator's outfits.
+// A handbook file written as "[Key] value" lines — Basic Info, the Physical Exam — as its
+// pairs. A line with no key continues the value above it ("[Infection Status]" puts its
+// answer on the next line). The CN table writes the same thing with 【】.
+function handbookFields(text: string): [string, string][] {
+  const fields: [string, string][] = [];
+  for (const line of text.split('\n')) {
+    const m = /^\[([^\]]+)\]\s*(.*)$/.exec(line) ?? /^【([^【】]+)】\s*(.*)$/.exec(line);
+    if (m) fields.push([m[1].trim(), m[2]]);
+    else if (fields.length) fields[fields.length - 1][1] += `\n${line}`;
+  }
+  return fields.map(([key, value]) => [key, value.trim()]);
+}
+
+// Pulled out of Basic Info into the box beside the clinical analysis, as the reference does.
+// The second of each pair is what a robot has instead; the last two are the CN table's.
+const INFECTION_KEYS = new Set(['Infection Status', 'Inspection Report', '矿石病感染情况', '维护检测报告']);
+
+// The files the layout places itself; every other one ("Archive File 1", "Promotion
+// Record", a collab's own) follows as a collapsed section under its own title.
+const PLACED_FILES = new Set(['Basic Info', 'Physical Exam', 'Performance Review', 'Profile', 'Clinical Analysis']);
+
+// The reference's Misc tab, built on the operator's handbook: profile, basic info beside
+// the physical exam (a robot's performance review), infection status with the clinical
+// analysis, then the archive files and promotion record, collapsed. Under those, what has no
+// home in the other tabs: the class trait, how the operator is obtained, the potential
+// ladder — which the reference leaves to its potential dropdown's tooltips — the outfits
+// and a fact list.
+function handbookHtml(op: Operator): string {
+  const files = op.handbook ?? [];
+  const file = (title: string): string | undefined => files.find(f => f.title === title)?.text;
+  const basic = handbookFields(file('Basic Info') ?? '');
+  const exam = files.find(f => f.title === 'Physical Exam' || f.title === 'Performance Review');
+  const infection = basic.find(([key]) => INFECTION_KEYS.has(key));
+  const profile = file('Profile');
+  const clinical = file('Clinical Analysis');
+
+  const factList = (fields: [string, string][]): string => `
+    <dl class="file-facts">
+      ${fields.map(([key, value]) => `<div><dt>${escHtml(key)}</dt><dd>${cleanText(value)}</dd></div>`).join('')}
+    </dl>
+  `;
+
+  return `
+    ${profile ? `<section class="entry"><h2 class="entry-name">Profile</h2><p class="rich file-text">${cleanText(profile)}</p></section>` : ''}
+    ${basic.length || exam ? `
+      <section class="entry file-columns">
+        ${basic.length ? `<div><h2 class="entry-name">Basic Info</h2>${factList(basic.filter(f => f !== infection))}</div>` : ''}
+        ${exam ? `<div><h2 class="entry-name">${escHtml(exam.title)}</h2>${factList(handbookFields(exam.text))}</div>` : ''}
+      </section>
+    ` : ''}
+    ${infection || clinical ? `
+      <div class="file-box">
+        ${infection ? `<div><span class="section-label">${escHtml(infection[0])}</span><p class="rich file-text">${cleanText(infection[1])}</p></div>` : ''}
+        ${clinical ? `<div><span class="section-label">Clinical Analysis</span><p class="rich file-text">${cleanText(clinical)}</p></div>` : ''}
+      </div>
+    ` : ''}
+    ${files.filter(f => !PLACED_FILES.has(f.title)).map(f => `
+      <details class="file-entry">
+        <summary>${escHtml(f.title)}</summary>
+        <p class="rich file-text">${cleanText(f.text)}</p>
+      </details>
+    `).join('')}
+  `;
+}
+
 function miscPanel(s: DetailState): string {
   const d = s.op.data;
   const tags = (d.tagList ?? []).map(t => `<span class="op-tag">${escHtml(t)}</span>`).join('');
@@ -878,8 +937,17 @@ function miscPanel(s: DetailState): string {
 
   return `
     ${tags ? `<div class="detail-tags">${tags}</div>` : ''}
+    ${handbookHtml(s.op)}
+    ${d.itemUsage || d.itemDesc ? `
+      <div class="token-row">
+        <img class="token-avatar" src="${operatorAvatarUrl(s.op.id)}" alt="" loading="lazy" onerror="this.remove()">
+        <div>
+          ${d.itemUsage ? `<p class="rich">${cleanText(d.itemUsage)}</p>` : ''}
+          ${d.itemDesc ? `<p class="rich muted-text token-quote">${cleanText(d.itemDesc)}</p>` : ''}
+        </div>
+      </div>
+    ` : ''}
     ${trait ? `<section class="entry"><h2 class="entry-name">Trait</h2><p class="rich">${descriptionToHtml(trait.text, trait.blackboard)}</p></section>` : ''}
-    ${d.itemUsage ? `<section class="entry"><h2 class="entry-name">Archive</h2><p class="rich muted-text">${cleanText(d.itemUsage)}</p></section>` : ''}
     ${d.itemObtainApproach ? `<section class="entry"><h2 class="entry-name">Obtained from</h2><p class="rich">${escHtml(d.itemObtainApproach)}</p></section>` : ''}
     ${pots ? `<section class="entry"><h2 class="entry-name">Potentials</h2>${pots}</section>` : ''}
     ${outfitsHtml(s.op)}
@@ -937,6 +1005,7 @@ function headerHtml(s: DetailState): string {
         : ''}
       <div class="op-header-title">
         <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
+        ${s.op.cnOnly ? '<span class="op-header-server" tabindex="0" data-tip="Not on the global server yet. The English here is the wiki\'s unofficial translation, and some text may still be in Chinese.">CN only</span>' : ''}
         ${s.op.limited ? '<span class="op-header-limited">Limited</span>' : ''}
       </div>
       <div class="op-header-classes">
