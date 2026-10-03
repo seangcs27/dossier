@@ -104,10 +104,15 @@ export async function buildPayload(charId, server = 'en') {
     // RIIC base skills: each buffData entry names its unlock condition, the buff itself
     // lives in building_data.buffs. The CN payloads overlay a translation onto
     // skill.description later, in build-operator-index.mjs.
+    //
+    // `slot` is which buffChar entry the buff came from. Each entry is one base skill and
+    // its buffData the stages it grows through, so the slot is what says "Logistics Expert"
+    // replaces "Penguin Logistics α" — their names share nothing. An empty stage list
+    // arrives as {} rather than [], hence the wrap.
     bases: (building.chars?.[charId]?.buffChar ?? [])
-      .flatMap(entry => entry.buffData ?? [])
-      .filter(buff => building.buffs[buff.buffId])
-      .map(buff => ({ condition: buff, skill: building.buffs[buff.buffId] })),
+      .flatMap((entry, slot) => [entry.buffData ?? []].flat().map(buff => ({ buff, slot })))
+      .filter(({ buff }) => building.buffs[buff.buffId])
+      .map(({ buff, slot }) => ({ condition: buff, skill: building.buffs[buff.buffId], slot })),
     // An operator can hold more than one affiliation: Amiya is Rhodes Island and, by birth,
     // Rim Billiton. The record carries that as `mainPower` plus a `subPower` list — 81 EN
     // operators have one, and 88 of the 431 payloads show more than one entry — so reading

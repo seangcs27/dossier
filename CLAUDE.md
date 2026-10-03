@@ -123,6 +123,7 @@ src/
     index.ts        ← app entry: random logo, hash-router dispatch (grid ↔ detail)
     router.ts       ← hash routing (#/ , #/op/<id>)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
+    tooltip.ts      ← the one floating tooltip behind every [data-tip] (keyword definitions)
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
@@ -226,6 +227,7 @@ eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a
 potentialIconUrl(rank)                     // bundle-relative potential-icons/ — full colour, never masked
 skillIconUrl(skillId)                      // Arknight-Images CDN
 moduleTypeIconUrl(typeIcon)                // module type badge ('gua-y') — Arknight-Images CDN
+riicSkillIconUrl(skillIcon)                // base skill badge ('bskill_ws_nian') — Arknight-Images CDN
 moduleImageUrl(uniEquipId)                 // module illustration — Arknight-Images CDN, ~300 KB, pass through artUrl
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
 archetypeIconUrl(subProfessionId)          // bundle-relative branch-icons/ — self-hosted
@@ -450,6 +452,11 @@ set and information architecture all follow theirs, so read
   module's illustration (resized through `artUrl`, the upstream PNG is ~300 KB); what
   unlocking or reaching the stage costs; the unlock missions; and the flavour text in a
   collapsed `<details>`, since it can spoil the story.
+- **RIIC** — elite button group (only the elites some base skill unlocks at), then one live
+  stage per base skill: its badge, serif name, an unlock badge when it needs more than Lv1,
+  and the description. Stages are grouped by `bases[].slot`, the game's own `buffChar` entry,
+  because an upgrade is often renamed outright ("Penguin Logistics α" into "Logistics
+  Expert"); matching on the name is only a fallback for a payload baked without the slot.
 
 Costs render as the reference's material discs (`costListHtml` in `detail.ts`): a 52px circle
 ringed and washed in the item's rarity colour, the baked icon filling it, and the count in
@@ -461,8 +468,9 @@ Descriptions are rendered by `descriptionToHtml` in `format.ts`, not `cleanText`
 data is a markup language (`<@ba.vup>+{atk:0%}</>`), so tags become styled spans and
 `{placeholders}` are interpolated from the entry's own `blackboard`. An unresolvable key
 renders as the raw token rather than vanishing. `$` tags (`<$ba.sluggish>`) are game keywords:
-they render muted with the game's own definition as a `title` ("Slow: -80% Movement Speed"),
-from `game-consts.json`. That covers ~98% of keyword uses; the rest render without one.
+they render muted with the game's own definition ("Slow: -80% Movement Speed") from
+`game-consts.json`, shown by `tooltip.ts` — one floating tooltip for every `[data-tip]`, on
+hover and on keyboard focus, in place of the browser's `title`. That covers ~98% of keyword uses; the rest render without one.
 
 Not cloned, for lack of data: **summon/token** stat blocks, the reference's handbook-driven Misc tab (the payloads carry no handbook; ours
 shows tags, trait, archive blurb, obtain source, the potential ladder, every named outfit

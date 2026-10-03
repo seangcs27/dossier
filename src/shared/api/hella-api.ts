@@ -99,6 +99,11 @@ export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }
 
+// A base skill's badge ('bskill_ws_nian'), a 36px full-colour disc, ~2 KB — Arknight-Images CDN.
+export function riicSkillIconUrl(skillIcon: string): string {
+  return `${IMAGE_BASE}/ui/infrastructure/skill/${encodeURIComponent(skillIcon)}.png`;
+}
+
 // A module's type badge ('gua-y'), ~1.5 KB — Arknight-Images CDN.
 export function moduleTypeIconUrl(typeIcon: string): string {
   return `${IMAGE_BASE}/equip/type/${encodeURIComponent(typeIcon)}.png`;

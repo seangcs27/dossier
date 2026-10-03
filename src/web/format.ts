@@ -69,16 +69,17 @@ function tagClass(tag: string): string {
 
 const TERMS: Record<string, { name: string; description: string } | undefined> = gameConsts.terms;
 
-// ` title="Slow: -80% Movement Speed" data-term` for a `$` keyword the glossary knows, else
-// nothing. Definitions carry their own markup ("<$ba.stun>Stun</>"), which cleanText strips
-// before it escapes the text for the attribute. Their line breaks become `&#10;`, which a
-// tooltip still shows as a break: left raw, descriptionToHtml's closing newline pass would
-// turn them into a literal "<br>" inside the attribute.
+// ` data-term="Slow" data-tip="-80% Movement Speed" tabindex="0"` for a `$` keyword the
+// glossary knows, else nothing. tooltip.ts shows the pair on hover and on focus, which is
+// what the tabindex is for. Definitions carry their own markup ("<$ba.stun>Stun</>"), which
+// cleanText strips before it escapes the text for the attribute. Their line breaks become
+// `&#10;`, which the tooltip still shows as a break: left raw, descriptionToHtml's closing
+// newline pass would turn them into a literal "<br>" inside the attribute.
 function termAttrs(tag: string): string {
   const term = tag.startsWith('$') ? TERMS[tag.slice(1)] : undefined;
   if (!term) return '';
-  const text = cleanText(`${term.name}: ${term.description}`).replace(/\r?\n|\\n/g, '&#10;');
-  return ` title="${text}" data-term`;
+  const attr = (text: string): string => cleanText(text).replace(/\r?\n|\\n/g, '&#10;');
+  return ` data-term="${attr(term.name)}" data-tip="${attr(term.description)}" tabindex="0"`;
 }
 
 const PLACEHOLDER = /-?\{-?([^}:]+?)(?::([^}]+))?\}/g;

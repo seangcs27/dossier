@@ -21,9 +21,11 @@ rows with glyphs, the talent each stage changes (it showed only the trait before
 2 and 3 looked like stat bumps) with the changed words marked blue against either the
 operator's own text or the previous stage (a toggle), a potential menu, the module's illustration, and the
 flavour text collapsed behind a spoiler warning. Module and potential attack speed now
-shorten the Attributes tab's attack interval; both were ignored. Still to do, in order:
+shorten the Attributes tab's attack interval; both were ignored. RIIC is done: each base
+skill's own badge beside its name, and stages grouped by the game's slot rather than by name
+— a renamed upgrade used to show beside the skill it replaces, on 104 operator/elite
+combinations. The reference shows no room-type icon, so neither do we. Still to do:
 
-- **RIIC** — base skill cards, room-type icons, and the elite selector.
 - **Misc** — the reference's handbook-driven layout. Ours now has outfits; the handbook
   text itself (Basic Info, Physical Exam, Profile, Archive Files 1-4, Promotion Record) is in
   `en/gamedata/excel/handbook_info_table.json`, 6.4 MB, 420 operators, and is worth landing

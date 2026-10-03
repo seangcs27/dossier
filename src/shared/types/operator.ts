@@ -148,6 +148,9 @@ export interface BaseSkill {
     roomType: string;
     description: string;
   };
+  // Which of the operator's base skills this is a stage of. Entries that share a slot are
+  // one skill growing with elite and level. Absent on payloads baked before it was added.
+  slot?: number;
 }
 
 export interface FactionPower {

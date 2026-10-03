@@ -3,8 +3,10 @@ import { applyRandomLogo } from './logo';
 import { currentRoute, goHome, onRouteChange } from './router';
 import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
+import { mountTooltips } from './tooltip';
 
 applyRandomLogo();
+mountTooltips();
 
 const view = document.getElementById('view')!;
 

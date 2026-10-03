@@ -41,9 +41,11 @@ body {
       display: flex;
       align-items: center;
       gap: var(--sp-12);
-
-      &:hover { opacity: 0.8; }
     }
+
+    // The word dims under the pointer; the logo doesn't, since hovering it already does
+    // something of its own (it rolls a new face, see logo.ts).
+    .wordmark:hover { opacity: 0.8; }
   }
 }
 
@@ -2018,7 +2020,30 @@ input[type='number'] {
     cursor: help;
     text-decoration: underline dotted;
     text-underline-offset: 0.2em;
+
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-xs); }
   }
+}
+
+// The one tooltip tooltip.ts moves around: a keyword's name over its definition. Fixed and
+// click-through, so it can sit over anything without getting in the pointer's way.
+.tip {
+  position: fixed;
+  z-index: 100;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: var(--sp-8) var(--sp-10);
+  border: 1px solid var(--chip);
+  border-radius: var(--radius-md);
+  background: var(--surface2);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+  color: var(--text);
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  white-space: pre-line;
+  pointer-events: none;
+
+  &[hidden] { display: none; }
+  strong { display: block; margin-bottom: var(--sp-2); color: var(--accent); }
 }
 
 .muted-text { color: var(--dim); }
@@ -2181,6 +2206,10 @@ input[type='number'] {
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
+
+// ── RIIC ──
+// The base skill's own badge beside its name, at the reference's 24px.
+.riic-icon { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
 
 // ── Modules ──
 // The type badge and code beside the module's name, as the reference sets them: the

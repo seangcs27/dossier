@@ -11,7 +11,7 @@
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
 import {
   operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
-  itemIconUrl, potentialIconUrl, factionLogoUrl, moduleTypeIconUrl, moduleImageUrl,
+  itemIconUrl, potentialIconUrl, factionLogoUrl, moduleTypeIconUrl, moduleImageUrl, riicSkillIconUrl,
 } from '../../shared/api/hella-api';
 import itemIndex from '../../shared/generated/items.json';
 import gameConsts from '../../shared/generated/game-consts.json';
@@ -760,9 +760,10 @@ function modulesPanel(s: DetailState): string {
 
 // ── RIIC ─────────────────────────────────────────────────────────────────────
 
-// A base skill's upgrades ship as separate entries whose names differ only by a trailing
-// rank glyph ("Wisdom" / "Wisdom α"). Normalising that away lets the panel show one live
-// stage per skill, the way the reference does, instead of every rank at once.
+// A stand-in for `slot` on a payload baked before the build recorded it: a base skill's
+// upgrades often differ only by a trailing rank glyph ("Wisdom" / "Wisdom α"), so
+// normalising that away groups most of them. It misses any upgrade that is renamed
+// outright ("Penguin Logistics α" into "Logistics Expert"), which is why the slot exists.
 const riicKey = (b: { skill: { buffName: string; roomType: string } }): string =>
   `${b.skill.roomType}|${b.skill.buffName.replace(/[\s·]*(α|β|γ|δ|Ⅰ|Ⅱ|Ⅲ|\+)+$/, '').trim()}`;
 
@@ -771,22 +772,23 @@ function riicPanel(s: DetailState): string {
   const elites = [...new Set(bases.map(b => phaseNum(b.condition.cond.phase)))].sort();
   const elite = Math.min(s.phaseIdx, elites[elites.length - 1] ?? 0);
 
-  // One stage per skill: the strongest the selected elite unlocks, like the reference.
-  const byName = new Map<string, typeof bases[number]>();
+  // One stage per skill: the last one the selected elite unlocks, like the reference.
+  const bySkill = new Map<number | string, typeof bases[number]>();
   for (const b of bases) {
     if (phaseNum(b.condition.cond.phase) > elite) continue;
-    const key = riicKey(b);
-    const prev = byName.get(key);
+    const key = b.slot ?? riicKey(b);
+    const prev = bySkill.get(key);
     if (!prev || phaseNum(prev.condition.cond.phase) <= phaseNum(b.condition.cond.phase)) {
-      byName.set(key, b);
+      bySkill.set(key, b);
     }
   }
-  const shown = [...byName.values()];
+  const shown = [...bySkill.values()];
 
   const body = shown.length
     ? shown.map(b => `
         <section class="entry">
           <header class="entry-head">
+            <img class="riic-icon" src="${riicSkillIconUrl(b.skill.skillIcon)}" alt="" loading="lazy" onerror="this.remove()">
             <h2 class="entry-name">${escHtml(b.skill.buffName)}</h2>
             ${b.condition.cond.level > 1
               ? `<span class="unlock-badge">${eliteIcon(phaseNum(b.condition.cond.phase))}Lv${b.condition.cond.level}</span>`
