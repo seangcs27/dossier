@@ -491,7 +491,7 @@ const SP_TYPE: Record<string, { label: string; cls: string }> = {
   INCREASE_WITH_TIME:   { label: 'Auto',      cls: 'sp-auto' },
   INCREASE_WHEN_ATTACK: { label: 'Offensive', cls: 'sp-offensive' },
   INCREASE_WITH_ATTACK: { label: 'Offensive', cls: 'sp-offensive' },
-  INCREASE_WHEN_HURT:   { label: 'Defensive', cls: 'sp-defensive' },
+  INCREASE_WHEN_TAKEN_DAMAGE: { label: 'Defensive', cls: 'sp-defensive' },
 };
 
 const SKILL_TYPE: Record<string, string> = {
@@ -523,10 +523,12 @@ function rankUpHtml(s: DetailState, skill: OperatorSkillDetail, idx: number): st
   const step = rankStep(s, skill, idx);
   if (!step) return '';
   const target = idx >= 7 ? `Mastery ${idx - 6}` : `Rank ${idx + 1}`;
-  const requires = `
-    <span class="unlock-badge">${eliteIcon(phaseNum(step.cond.phase))}Lv${step.cond.level}</span>
-    ${step.hours ? `<span class="upgrade-time">${ICON_DURATION}${step.hours}h training</span>` : ''}
-  `;
+  // As in the reference, no badge for Elite 0 Lv1 (ranks 2-4): every operator starts there.
+  const gated = phaseNum(step.cond.phase) > 0 || step.cond.level > 1;
+  const requires = [
+    gated ? `<span class="unlock-badge">${eliteIcon(phaseNum(step.cond.phase))}Lv${step.cond.level}</span>` : '',
+    step.hours ? `<span class="upgrade-time">${ICON_DURATION}${step.hours}h training</span>` : '',
+  ].join('');
   return upgradeRowHtml(`To reach ${target}`, requires, step.costs);
 }
 
@@ -547,7 +549,8 @@ function skillsPanel(s: DetailState): string {
         <div class="lvl-block">
           <input type="range" id="skill-lvl" min="1" max="${levels.length}" value="${idx + 1}" step="1"
                  aria-label="Skill rank">
-          <span class="num-round num-round-static" id="skill-lvl-out">${skillLevelLabel(idx)}</span>
+          <input type="text" id="skill-lvl-num" class="num-round num-round-skill" maxlength="2"
+                 autocomplete="off" value="${skillLevelLabel(idx)}" aria-label="Skill rank, 1 to 7 or M1 to M3">
         </div>
       </div>
     </div>
@@ -558,7 +561,7 @@ function skillsPanel(s: DetailState): string {
 function skillBodyHtml(s: DetailState, skill: OperatorSkillDetail, idx: number): string {
   const lv = skill.excel.levels[idx];
   const sp = lv.spData;
-  const spType = SP_TYPE[sp?.spType ?? ''] ?? { label: 'Always active', cls: 'sp-passive' };
+  const spType = SP_TYPE[sp?.spType ?? ''] ?? { label: 'Always Active', cls: 'sp-passive' };
   const duration = lv.duration < 0 ? 'Infinite' : lv.duration === 0 ? 'Instant' : `${lv.duration} sec`;
   const range = rangeFor(s, lv.rangeId);
 
@@ -571,7 +574,7 @@ function skillBodyHtml(s: DetailState, skill: OperatorSkillDetail, idx: number):
       <div class="skill-type">
         <span>${escHtml(SKILL_TYPE[lv.skillType] ?? lv.skillType)}</span>
         <span class="dot"></span>
-        <span class="${spType.cls}">${spType.label} recovery</span>
+        <span class="${spType.cls}">${spType.label} Recovery</span>
       </div>
     </div>
     <dl class="skill-meta">
@@ -965,9 +968,9 @@ function updateSkillBody(container: HTMLElement): void {
   const skill = skills[Math.min(state.skillIdx, skills.length - 1)];
   const idx = Math.min(state.skillLevel, skill.excel.levels.length - 1);
   const body = container.querySelector<HTMLElement>('#skill-body');
-  const out = container.querySelector<HTMLElement>('#skill-lvl-out');
+  const out = container.querySelector<HTMLInputElement>('#skill-lvl-num');
   if (body) body.innerHTML = skillBodyHtml(state, skill, idx);
-  if (out) out.textContent = skillLevelLabel(idx);
+  if (out) out.value = skillLevelLabel(idx);
 }
 
 // The potential menu opens and closes in place: re-rendering the panel just to show it would
@@ -1076,7 +1079,7 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
   container.onclick = (ev) => {
     const el = (ev.target as HTMLElement).closest<HTMLElement>('[data-act]');
     if (!el || !state) return;
-    // Checkboxes and the potential <select> report through oninput/onchange instead.
+    // Checkboxes report through oninput instead.
     if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) return;
     const value = el.dataset.value!;
     switch (el.dataset.act) {
@@ -1142,6 +1145,18 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
         state.skillLevel = Number((el as HTMLInputElement).value) - 1;
         updateSkillBody(container);
         return;
+      // Typed, as in the reference: "5", or "M2" in either case. Anything else is left in
+      // the field untouched until it parses, and onchange below restores the real rank.
+      case 'skill-lvl-num': {
+        const slider = container.querySelector<HTMLInputElement>('#skill-lvl');
+        const mastery = /^m([123])$/i.exec(el.value.trim());
+        const rank = mastery ? Number(mastery[1]) + 7 : Number(el.value);
+        if (!slider || !Number.isInteger(rank) || rank < 1 || rank > Number(slider.max)) return;
+        state.skillLevel = rank - 1;
+        slider.value = String(rank);
+        updateSkillBody(container);
+        return;
+      }
       case 'trust-num': {
         const v = Number((el as HTMLInputElement).value);
         if (!Number.isFinite(v) || v < 0 || v > 200) return;
@@ -1154,5 +1169,10 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
       default: return;
     }
     renderPanel(container);
+  };
+
+  // Leaving the rank field with something unparseable in it puts the real rank back.
+  container.onchange = (ev) => {
+    if ((ev.target as HTMLElement).id === 'skill-lvl-num') updateSkillBody(container);
   };
 }

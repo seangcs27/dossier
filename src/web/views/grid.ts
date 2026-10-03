@@ -430,7 +430,11 @@ export function mountGrid(container: HTMLElement): void {
   const refreshChrome = () => { syncChips(); renderMore(); };
   const refresh = () => { refreshChrome(); render(container); };
 
-  search.oninput = () => { state.query = search.value; render(container); };
+  const clear = document.getElementById('search-clear') as HTMLButtonElement;
+  const syncQuery = () => { state.query = search.value; clear.disabled = !state.query; render(container); };
+  clear.disabled = !state.query;
+  search.oninput = syncQuery;
+  clear.onclick = () => { search.value = ''; syncQuery(); search.focus(); };
 
   actions.onclick = (ev) => {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle');

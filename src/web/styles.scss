@@ -54,26 +54,55 @@ body {
   border-radius: var(--radius-lg);
 }
 
-// Search leads the bar rather than sitting as one control among many — it's the
-// primary way into 427 operators, so it gets the width and the icon affordance.
+// Search leads the cluster beside the wordmark. 260px holds the longest operator name;
+// stretched across the bar it was mostly empty box.
 .search-wrap {
   position: relative;
-  flex: 1;
-  max-width: 520px;
+  width: 260px;
   display: flex;
   align-items: center;
 }
 
+// The box's leading icon, and its clear button: a magnifier while the box is empty, turning
+// into a cross once there is something to clear. Disabled it is decoration, and lets a click
+// through to the input underneath.
+.search-clear {
+  position: absolute;
+  left: var(--sp-4);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: none;
+  cursor: pointer;
+
+  &:disabled { pointer-events: none; }
+  &:hover { background: var(--surface2); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+}
+
 .search-icon {
   position: absolute;
-  left: 12px;
+  inset: var(--sp-8);
   width: 16px;
   height: 16px;
   fill: none;
   stroke: var(--muted);
   stroke-width: 2;
   stroke-linecap: round;
-  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+// One turns out as the other turns in, so it reads as a single icon changing shape.
+.search-icon-clear { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+.search-clear:not(:disabled) {
+  .search-icon-find  { opacity: 0; transform: rotate(90deg) scale(0.5); }
+  .search-icon-clear { opacity: 1; transform: none; stroke: var(--text); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-icon { transition: none; }
 }
 
 #search {
@@ -87,22 +116,23 @@ body {
   outline: none;
 
   &:focus { border-color: var(--accent); }
+  // The cross above clears the box; the browser's own would be a second one.
+  &::-webkit-search-cancel-button { display: none; }
 }
 
 // Search and Filters are one cluster: narrowing by name and narrowing by class are the
 // same job, and the button used to sit at the far end of the bar away from the box it
 // works with.
 //
-// Right-aligned, like the actions it replaced. #more-filters is anchored to the topbar's
-// right edge, so a left-aligned cluster left the popover opening up to ~630px from the
-// button that opened it on a wide screen.
+// Left, beside the wordmark. It is the popover's positioning context, so #more-filters
+// opens under the cluster wherever the cluster sits — and stretched to the header's full
+// content height, so the popover's offset is the header's padding and nothing else.
 .topbar-actions {
+  position: relative;
+  align-self: stretch;
   display: flex;
   align-items: center;
   gap: var(--sp-8);
-  flex: 1;
-  max-width: 640px;
-  margin-left: auto;
 }
 
 // ── Filter chips ──
@@ -180,8 +210,9 @@ body {
 // couple hundred pixels every time it opened.
 #more-filters {
   position: absolute;
-  right: 24px;
-  top: 100%;
+  left: 0;
+  // Past the header's bottom padding and border, so it hangs from the bar's lower edge.
+  top: calc(100% + var(--sp-16) + 1px);
   z-index: 20;
   width: min(420px, calc(100vw - 32px));
   display: flex;
@@ -1663,10 +1694,13 @@ input[type='number'] {
   &::-webkit-inner-spin-button { appearance: none; margin: 0; }
 }
 
-.num-round-static {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+// The skill rank's slider and field are blue where the level's are gold — the reference's
+// two slider colours, and the same split as the button groups (elite gold, the rest blue).
+#skill-lvl { accent-color: var(--link); }
+.num-round-skill {
+  border-color: var(--link);
+
+  &:focus { outline-color: color-mix(in srgb, var(--link) 50%, transparent); }
 }
 
 .num-box {
@@ -2380,11 +2414,7 @@ button.outfit-name {
   // Search and Filters travel together now, so the pair takes the whole second row rather
   // than being squeezed into the auto column beside the wordmark — at 390px that left the
   // search box 141px wide. The count moves up to row 1, where the wordmark leaves room.
-  .topbar-actions {
-    grid-area: 2 / 1 / 3 / -1;
-    margin-left: 0;
-    max-width: none;
-  }
+  .topbar-actions { grid-area: 2 / 1 / 3 / -1; }
 
   #count {
     grid-area: 1 / 2;
@@ -2393,15 +2423,15 @@ button.outfit-name {
     justify-self: end;
   }
 
-  .search-wrap { max-width: none; }
+  .search-wrap { flex: 1; width: auto; }
 
   #search {
     font-size: var(--fs-xl); // < 16px makes iOS Safari zoom on focus
   }
 
   #more-filters {
-    right: 12px;
-    left: 12px;
+    right: 0;
+    top: calc(100% + var(--sp-10) + 1px);
     width: auto;
   }
 

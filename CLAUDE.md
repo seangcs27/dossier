@@ -366,8 +366,10 @@ Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid
 Reads the bundled index through `src/web/operator-index.ts` and makes **no network requests
 for data** (only images). Cards are built 48 at a time as the page nears the end of what
 exists: all ~430 at once was ~550 ms of paint and layerize before first paint, and held
-back every portrait request until it finished. The topbar's search box and a Filters button form one right-aligned
-cluster; the button opens a popover that stays open until toggled or dismissed with Escape —
+back every portrait request until it finished. The topbar's search box (260px) and a Filters button form one cluster
+on the left, beside the wordmark. The box's magnifier is its clear button: it turns into a
+cross once there is text, and pressing it empties the box. The Filters button opens a popover,
+anchored under the cluster, that stays open until toggled or dismissed with Escape —
 **deliberately no click-away close**, since filtering is a back-and-forth with the grid.
 
 Inside the popover: class tiles (glyph over name, four across); Archetype / Subclass tiles in
@@ -422,10 +424,14 @@ set and information architecture all follow theirs, so read
   talent replaces it (`talent_override_rangeid_flag`: Tomimi, Bena, Specter the Unchained).
   CN-only operators' talents stay in Chinese where AN-EN-Tags has no translation; the
   reference shows the same.
-- **Skills** — skill pills + a 1–10 rank slider labelled `1…7, M1–M3`, an SP-cost /
-  initial-SP / duration row, the description, the skill's range overlaid on the
-  operator's (added cells blue, removed cells red), and what reaching the selected rank
-  takes: its elite/level requirement, for M1–M3 the training time, and the materials.
+- **Skills** — skill pills + a 1–10 rank slider with a field you can type into (`5`, or `M2`
+  in either case), both blue where the level's are gold, as in the reference. Then the skill
+  header (trigger type and SP recovery type, coloured per type), an SP-cost / initial-SP /
+  duration row, the description, the skill's range overlaid on the operator's (added cells
+  blue, removed cells red), and what reaching the selected rank takes: its elite/level
+  requirement (omitted at Elite 0 Lv1, as the reference does), for M1–M3 the training time —
+  ours, the reference has none — and the materials. The recovery label is the game's "Auto"
+  where the reference says "Per Second".
 - **Modules** — the module's stats and trait per stage, what unlocking or reaching that stage
   costs, then the missions that unlock it.
 

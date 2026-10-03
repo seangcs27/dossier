@@ -12,10 +12,12 @@ on its own. Attributes is done: stat glyphs, the game's elite and potential badg
 position icon, circular material tiles, the LIMITED tag, and the faction badge in the header.
 Talents is done: the potential badge menu limited to the ranks that change a talent, and
 talent ranges (the reference marks a potential-upgraded talent no other way than that menu;
-the cards already matched). Still to do, in order:
+the cards already matched). Skills is done: a typed rank field beside the slider, the
+reference's blue for both, no requirement badge at Elite 0 Lv1, and defensive-recovery skills
+labelled as such (they read "Always active" before — the data's key is
+`INCREASE_WHEN_TAKEN_DAMAGE`). The summon stat block under a token skill (43 skills) is still
+not cloned: the payloads carry no summon stats. Still to do, in order:
 
-- **Skills** — the skill header, SP/duration row, rank slider labels, and the cost row's
-  requirement badge against the reference's own skill-upgrade layout.
 - **Modules** — module header (type badge, stage selector), stat chips, trait text, and
   the unlock cost and missions.
 - **RIIC** — base skill cards, room-type icons, and the elite selector.
