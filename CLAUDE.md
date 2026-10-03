@@ -316,7 +316,7 @@ minutes, twice, before this).
   Basic Info and the Physical Exam line by line, and each operator's `/File` subpage holds
   the prose files — in English only where someone has translated them (Aphrissa in full, a
   Profile here and there), in Chinese otherwise. These operators carry `cnOnly` in the index
-  and the payload: a "CN only" tag in the detail header and a filter chip in the grid.
+  and the payload: an "Upcoming" tag in the detail header and the "CN" side of the grid's Server filter.
 
   **No source has it**, so it is still Chinese: base-skill *names* for these operators (the
   wiki's `BaseSkills` table has 1 of their 41, and its own page prints "Unknown base skill";
@@ -404,7 +404,7 @@ the same style, grouped under a header per picked class and shown only once a cl
 — multi-select, where a picked branch narrows only its own class (Caster + Supporter + Mech-accord
 Caster is every Supporter plus the Mech-accord Casters), and a branch that would yield nothing
 under the other filters dims; a six-segment rarity group tinted by rarity; collab
-chips; a Server chip, "Not on Global yet", for the CN-only operators; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
+chips; two Server chips, "Global" and "CN" (the CN-only operators), each with its count; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
 active one reverses it) and multi-select recruitment tags with an any/all mode.
 `renderMore()` rebuilds the panel on every change and restores focus to the equivalent
 control afterwards. Operators without a `releaseDate` sort last in both release directions.
@@ -429,7 +429,8 @@ set and information architecture all follow theirs, so read
   colour; the game files the Rhodes Island badge under three collab ids (`sees`, `mujica`,
   `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits hard right on the
   name's row, for the 26 operators the CN gacha table's LIMITED pools name plus every collab
-  operator (27; they come from LINKAGE pools, which that table doesn't flag). The branch name carries the
+  operator (27; they come from LINKAGE pools, which that table doesn't flag). It and the
+  grey "Upcoming" tag are the same outlined pill; LIMITED takes the rarity colour. The branch name carries the
   class trait as its `title` tooltip. Position is Melee, Ranged, or — the reference's rule —
   Melee & Ranged when the trait says the operator "can be deployed on ranged" tiles.
 - **Tabs** — Attributes, Talents, Skills, Modules, RIIC, Misc. Every panel opens with its

@@ -28,8 +28,14 @@ export interface OperatorFilter {
   tags: ReadonlySet<string>;
   tagMode: TagMode;
   collabs: ReadonlySet<string>; // collab display names, empty for no restriction
-  cnOnly: boolean;              // only operators the global server doesn't have yet
+  servers: ReadonlySet<Server>; // empty for no restriction
 }
+
+// Which server an operator is on: Global has everyone except the newest, who are CN-only
+// until their release reaches it.
+export type Server = 'global' | 'cn';
+
+export const serverOf = (op: OperatorIndexEntry): Server => (op.cnOnly ? 'cn' : 'global');
 
 export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): OperatorIndexEntry[] {
   const q = f.query.toLowerCase().trim();
@@ -43,7 +49,7 @@ export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): Operato
     if (f.rarities.size && !f.rarities.has(rarityNum(op.rarity))) return false;
     if (narrowed.has(op.profession) && !f.subclasses.has(op.subProfessionId)) return false;
     if (f.collabs.size && !f.collabs.has(op.collab)) return false;
-    if (f.cnOnly && !op.cnOnly) return false;
+    if (f.servers.size && !f.servers.has(serverOf(op))) return false;
     if (f.tags.size) {
       const hit = [...f.tags].filter(t => op.tags.includes(t)).length;
       if (f.tagMode === 'all' ? hit < f.tags.size : hit === 0) return false;

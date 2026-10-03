@@ -567,6 +567,9 @@ body {
   font-weight: 600;
   color: var(--muted);
   flex-shrink: 0;
+
+  // The detail page has nothing to count and clears it; an empty pill is just a blob.
+  &:empty { display: none; }
 }
 
 // ── Grid ──
@@ -1080,11 +1083,11 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   // of the card's width; it does not have to carry the grab area, because the link
   // underneath keeps its full rectangle whatever the plate is doing.
   --thick: 11px;
-  // Where the light band sits, as a share of the card's height. The band is horizontal,
-  // so only the vertical component of the pointer or the tilt moves it. Declared here
-  // rather than on .op-light because .op-shade is a different element and has to darken
-  // around the same line.
-  --at: var(--ly, 32%);
+  // Where the light band sits, as a share of the card's width. The band is vertical, so
+  // only the sideways component of the pointer or the tilt moves it — the same axis the
+  // card turns on. Declared here rather than on .op-light because .op-shade is a different
+  // element and has to darken around the same line.
+  --at: var(--lx, 50%);
   perspective: 900px;
   // The page keeps vertical scrolling; only sideways drags reach the spin code.
   touch-action: pan-y;
@@ -1261,13 +1264,14 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.25s;
-  // 170deg, not 180: ten degrees off level reads as a raked reflection rather than a
-  // printed rule, and stays shallow enough to still scan as horizontal. Under 180 rather
-  // than over, so the band rises to the left. The shade below
-  // uses the same angle, so the lit band and the darkening it implies stay parallel.
+  // Dead upright (90deg). A lean was tried at ten degrees and at four: the card is twice
+  // as tall as it is wide, so any lean shows double, and it read as a slanted stripe. The
+  // shade below uses the same axis, so the lit band and the darkening it implies stay
+  // parallel. The stops are twice what the horizontal band used: they are shares of the
+  // card's width now.
   background:
-    linear-gradient(170deg, transparent calc(var(--at) - 8%), rgb(255 255 255 / 8%) calc(var(--at) - 3%), rgb(255 255 255 / 24%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 3%), transparent calc(var(--at) + 8%)),
-    linear-gradient(170deg, transparent calc(var(--at) - 22%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 22%));
+    linear-gradient(90deg, transparent calc(var(--at) - 16%), rgb(255 255 255 / 8%) calc(var(--at) - 6%), rgb(255 255 255 / 24%) var(--at), rgb(255 255 255 / 8%) calc(var(--at) + 6%), transparent calc(var(--at) + 16%)),
+    linear-gradient(90deg, transparent calc(var(--at) - 44%), rgb(255 255 255 / 10%) var(--at), transparent calc(var(--at) + 44%));
   mix-blend-mode: screen;
 }
 
@@ -1282,13 +1286,13 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   opacity: 0;
   transition: opacity 0.25s;
   // Matches the light's own axis: the band stays clear and the card darkens away from it,
-  // upward and downward, which is what makes a horizontal streak read as a lit band rather
-  // than a white stripe painted on.
+  // to the left and to the right, which is what makes a vertical streak read as a lit band
+  // rather than a white stripe painted on.
   background: linear-gradient(
-    183deg,
+    90deg,
     rgb(0 0 0 / 55%) 0%,
-    rgb(0 0 0 / 0%) calc(var(--at) - 7%),
-    rgb(0 0 0 / 0%) calc(var(--at) + 7%),
+    rgb(0 0 0 / 0%) calc(var(--at) - 14%),
+    rgb(0 0 0 / 0%) calc(var(--at) + 14%),
     rgb(0 0 0 / 55%) 100%
   );
   mix-blend-mode: multiply;
@@ -1553,31 +1557,28 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   gap: 0 var(--sp-8);
 }
 
-// On the name's row, hard right, directly above the position label on the row below. In
-// the rarity colour, set as the reference sets it: heavy, italic, capitals.
-.op-header-limited {
-  margin-left: auto;
-  color: var(--rarity);
-  font-size: var(--fs-lg);
-  font-weight: 900;
-  font-style: italic;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-// Beside LIMITED, for an operator the global server doesn't have yet: a quiet outlined tag,
-// since it is a note about the data rather than about the operator. The reason is its
-// tooltip. It takes the right-hand push when it is there, so the two sit together.
+// The tags on the name's row, hard right, directly above the position label on the row
+// below: outlined pills in small capitals, one shape for both.
+.op-header-limited,
 .op-header-server {
   margin-left: auto;
   padding: var(--sp-2) var(--sp-8);
-  border: 1px solid var(--muted);
+  border: 1px solid currentColor;
   border-radius: var(--radius-pill);
-  color: var(--muted);
   font-size: var(--fs-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+// LIMITED is about the operator, so it takes the rarity colour.
+.op-header-limited { color: var(--rarity); }
+
+// For an operator the global server doesn't have yet. Grey, since it is a note about the
+// data rather than about the operator, and the reason is its tooltip. When both tags are
+// there it takes the right-hand push, so the two sit together.
+.op-header-server {
+  color: var(--muted);
   cursor: help;
 
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -2565,7 +2566,6 @@ button.outfit-name {
 
   .op-header-faction { width: 56px; height: 56px; }
   .op-header-name { font-size: 26px; }
-  .op-header-limited { font-size: var(--fs-base); }
   .op-header-classes { font-size: var(--fs-base); gap: var(--sp-8); }
   .hdr-spacer { display: none; }
 

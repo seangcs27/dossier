@@ -10,6 +10,8 @@ import {
   subclassesFor,
   allTags,
   allCollabs,
+  serverOf,
+  type Server,
   type SortKey,
   type TagMode,
 } from '../operator-index';
@@ -25,7 +27,7 @@ const state = {
   tags: new Set<string>(),
   tagMode: 'any' as TagMode,
   collabs: new Set<string>(),
-  cnOnly: false,
+  servers: new Set<Server>(),
   moreOpen: false,
   // Tags and sort live behind a disclosure. They're the least-reached-for controls and
   // the tag list alone is longer than everything above it put together.
@@ -186,7 +188,7 @@ function render(container: HTMLElement): void {
 
 function activeCount(): number {
   return state.classes.size + state.rarities.size + state.tags.size + state.collabs.size
-    + state.subclasses.size + Number(state.cnOnly);
+    + state.subclasses.size + state.servers.size;
 }
 
 // ── Filter popover: every dimension in one panel, opened from the topbar ──
@@ -264,7 +266,14 @@ function renderMore(): void {
   const focused = document.activeElement as HTMLElement | null;
   const refocus = focused && panel.contains(focused) ? focusSelector(focused) : null;
 
-  const cnOnlyCount = getOperators().filter(op => op.cnOnly).length;
+  const cnCount = getOperators().filter(op => serverOf(op) === 'cn').length;
+  const servers: { id: Server; label: string; count: number; title: string }[] = [
+    { id: 'global', label: 'Global', count: getOperators().length - cnCount, title: 'Released on the Global server' },
+    {
+      id: 'cn', label: 'CN', count: cnCount,
+      title: "On the CN server only, not on Global yet; their English is the wiki's unofficial translation",
+    },
+  ];
 
   panel.innerHTML = `
     <div class="filter-head">
@@ -319,14 +328,16 @@ function renderMore(): void {
       </div>
     ` : ''}
 
-    ${cnOnlyCount ? `
+    ${cnCount ? `
       <div class="filter-group">
         <div class="filter-label">Server</div>
         <div class="collab-row">
-          <button class="chip${state.cnOnly ? ' active' : ''}" data-server="cn" aria-pressed="${state.cnOnly}"
-                  title="Released on the CN server only; their English is the wiki's unofficial translation">
-            Not on Global yet · ${cnOnlyCount}
-          </button>
+          ${servers.map(sv => `
+            <button class="chip${state.servers.has(sv.id) ? ' active' : ''}" data-server="${sv.id}"
+                    aria-pressed="${state.servers.has(sv.id)}" title="${escHtml(sv.title)}">
+              ${sv.label} · ${sv.count}
+            </button>
+          `).join('')}
         </div>
       </div>
     ` : ''}
@@ -431,7 +442,7 @@ function clearAll(): void {
   state.tags.clear();
   state.collabs.clear();
   state.subclasses.clear();
-  state.cnOnly = false;
+  state.servers.clear();
 }
 
 export function mountGrid(container: HTMLElement): void {
@@ -477,7 +488,12 @@ export function mountGrid(container: HTMLElement): void {
       document.getElementById('more-toggle')?.focus();
       return;
     }
-    if (el.dataset.server) { state.cnOnly = !state.cnOnly; refresh(); return; }
+    const server = el.dataset.server as Server | undefined;
+    if (server) {
+      if (state.servers.has(server)) state.servers.delete(server); else state.servers.add(server);
+      refresh();
+      return;
+    }
     if (el.id === 'advanced-toggle') { state.advancedOpen = !state.advancedOpen; refreshChrome(); return; }
     const sortField = el.dataset.sort;
     if (sortField) {

@@ -71,8 +71,13 @@ export function operatorSkinAvatarUrl(id: OperatorId, suffix: string): string {
 // wsrv.nl caches a year, so only the first visitor to an operator pays. Callers keep the
 // raw URL as an onerror fallback — if the proxy ever disappears the page is merely slow
 // again rather than broken.
+//
+// The proxy decodes its `url` twice, so an escape in the source has to be escaped once more
+// to survive: every outfit's file has a "#" in its name ("…_epoque%234.png"), which
+// otherwise reached the proxy's fetch as a bare "#", cut the path short, and came back 404.
+// That was 533 of the 1,363 illustrations, each then falling back to its 6-7 MB original.
 export function artUrl(rawUrl: string, width: number, quality = 82): string {
-  const source = rawUrl.replace(/^https?:\/\//, '');
+  const source = rawUrl.replace(/^https?:\/\//, '').replace(/%/g, '%25');
   return `https://wsrv.nl/?url=${encodeURIComponent(source)}&w=${width}&output=webp&q=${quality}`;
 }
 

@@ -50,7 +50,6 @@ function mountCard(card: HTMLElement): void {
 
   const href = card.getAttribute('href') ?? '';
   const setVar = (name: string, value: string): void => card.style.setProperty(name, value);
-  const norm = (deg: number): number => ((deg % 360) + 360) % 360;
 
   const paint = (): void => {
     const y = ry + tiltY;
@@ -60,8 +59,8 @@ function mountCard(card: HTMLElement): void {
     // the card turns under: the highlight sweeps across the face and crosses the middle
     // as the card goes edge-on.
     if (state === 'drag' || state === 'coast') {
-      setVar('--lx', '50%');
-      setVar('--ly', `${(50 + 42 * Math.sin(y * Math.PI / 180)).toFixed(1)}%`);
+      setVar('--lx', `${(50 + 42 * Math.sin(y * Math.PI / 180)).toFixed(1)}%`);
+      setVar('--ly', '50%');
     }
   };
 
@@ -211,7 +210,10 @@ function mountCard(card: HTMLElement): void {
     vx *= decay;
     if (Math.abs(vy) < STOP && Math.abs(rx) < 0.05) {
       rx = 0;
-      ry = norm(ry);
+      // `ry` is left as it stands, however many turns it has counted. Folding it back into
+      // 0-360 here changed the angle in the same frame the plate's transition came back on
+      // (is-spinning goes just below), so the card unwound every turn it had made in a
+      // quarter of a second: a second spin after it had already stopped.
       paint();
       card.classList.remove('is-spinning');
       if (!hovering) card.classList.remove('is-lit');

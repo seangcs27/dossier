@@ -1005,7 +1005,7 @@ function headerHtml(s: DetailState): string {
         : ''}
       <div class="op-header-title">
         <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
-        ${s.op.cnOnly ? '<span class="op-header-server" tabindex="0" data-tip="Not on the global server yet. The English here is the wiki\'s unofficial translation, and some text may still be in Chinese.">CN only</span>' : ''}
+        ${s.op.cnOnly ? '<span class="op-header-server" tabindex="0" data-tip="On the CN server only, not on Global yet. The English here is the wiki\'s unofficial translation, and some text may still be in Chinese.">Upcoming</span>' : ''}
         ${s.op.limited ? '<span class="op-header-limited">Limited</span>' : ''}
       </div>
       <div class="op-header-classes">
