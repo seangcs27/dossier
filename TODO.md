@@ -16,10 +16,13 @@ the cards already matched). Skills is done: a typed rank field beside the slider
 reference's blue for both, no requirement badge at Elite 0 Lv1, and defensive-recovery skills
 labelled as such (they read "Always active" before — the data's key is
 `INCREASE_WHEN_TAKEN_DAMAGE`). The summon stat block under a token skill (43 skills) is still
-not cloned: the payloads carry no summon stats. Still to do, in order:
+not cloned: the payloads carry no summon stats. Modules is done: type badge and code, stat
+rows with glyphs, the talent each stage changes (it showed only the trait before, so stages
+2 and 3 looked like stat bumps) with the changed words marked blue against either the
+operator's own text or the previous stage (a toggle), a potential menu, the module's illustration, and the
+flavour text collapsed behind a spoiler warning. Module and potential attack speed now
+shorten the Attributes tab's attack interval; both were ignored. Still to do, in order:
 
-- **Modules** — module header (type badge, stage selector), stat chips, trait text, and
-  the unlock cost and missions.
 - **RIIC** — base skill cards, room-type icons, and the elite selector.
 - **Misc** — the reference's handbook-driven layout. Ours now has outfits; the handbook
   text itself (Basic Info, Physical Exam, Profile, Archive Files 1-4, Promotion Record) is in

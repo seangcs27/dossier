@@ -99,6 +99,17 @@ export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }
 
+// A module's type badge ('gua-y'), ~1.5 KB — Arknight-Images CDN.
+export function moduleTypeIconUrl(typeIcon: string): string {
+  return `${IMAGE_BASE}/equip/type/${encodeURIComponent(typeIcon)}.png`;
+}
+
+// A module's own illustration, keyed by uniEquipId. The upstream PNG is ~300 KB, so callers
+// pass it through artUrl() to resize it rather than pulling it whole.
+export function moduleImageUrl(uniEquipId: string): string {
+  return `${IMAGE_BASE}/equip/icon/${encodeURIComponent(uniEquipId)}.png`;
+}
+
 // White monochrome glyph on transparency. Takes the CSS slug ('defender', 'vanguard'),
 // not the game enum — there are only eight, so they cache across the whole grid.
 // Baked into the bundle like the branch icons, and for the same reason: an icon almost

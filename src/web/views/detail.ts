@@ -11,13 +11,12 @@
 import { getOperator, getRange } from '../../shared/cache/operator-cache';
 import {
   operatorAvatarUrl, operatorSkinAvatarUrl, skillIconUrl, classIconUrl, archetypeIconUrl, artUrl,
-  itemIconUrl, potentialIconUrl, factionLogoUrl,
+  itemIconUrl, potentialIconUrl, factionLogoUrl, moduleTypeIconUrl, moduleImageUrl,
 } from '../../shared/api/hella-api';
 import itemIndex from '../../shared/generated/items.json';
 import gameConsts from '../../shared/generated/game-consts.json';
 import type {
   AttackRange,
-  Blackboard,
   ItemCost,
   ModulePhase,
   Operator,
@@ -36,6 +35,7 @@ import {
   escHtml,
   cleanText,
   descriptionToHtml,
+  markChanges,
   traitInfo,
   splitAlterName,
 } from '../format';
@@ -115,18 +115,28 @@ function computeStats(
     if (bonus) for (const { key } of STAT_ROWS) out[key] += (bonus[key] ?? 0) * scale;
   }
 
+  // Attack speed has no row of its own: potentials and modules grant it as a flat bonus on
+  // a base of 100, and it shortens the attack interval instead (below).
+  let aspd = 0;
+
   // potentialRanks[0] is Potential 2, so `potential` is how many ranks are unlocked.
   for (const rank of (op.data.potentialRanks ?? []).slice(0, potential)) {
     for (const mod of rank.buff?.attributes?.attributeModifiers ?? []) {
+      if (mod.attributeType === 'ATTACK_SPEED') aspd += mod.value;
       const key = POTENTIAL_ATTR[mod.attributeType];
       if (key) out[key] += mod.value;
     }
   }
 
   for (const b of modulePhase?.attributeBlackboard ?? []) {
+    if (b.key === 'attack_speed') aspd += b.value;
     const key = MODULE_ATTR[b.key];
     if (key) out[key] += b.value;
   }
+
+  // The game's rule, interval × 100 / (100 + ASPD). The reference also rounds the result to
+  // a 30 fps frame; this doesn't, so an operator with no bonus still reads its base interval.
+  out.baseAttackTime = out.baseAttackTime * 100 / (100 + aspd);
   return out;
 }
 
@@ -157,6 +167,9 @@ interface DetailState {
   moduleIdx: number;
   moduleLevel: number;     // 0-based index into data.phases
   moduleOn: boolean;       // whether the selected module feeds into the stat panel
+  // What a module's marked changes are a change from: the operator without the module, or
+  // the stage before the selected one.
+  moduleDiff: 'base' | 'stage';
   artIdx: number;          // which piece of artwork the viewer is showing
 }
 
@@ -389,7 +402,8 @@ function attributesPanel(s: DetailState): string {
         <input type="number" id="trust-num" class="num-box" min="0" max="200" value="${s.trust}"
                aria-label="Trust"${s.trustOn ? '' : ' disabled'}>
         ${potentialMenu(s, (op.data.potentialRanks ?? []).flatMap((rank, i) =>
-          (rank.buff?.attributes?.attributeModifiers ?? []).some(m => POTENTIAL_ATTR[m.attributeType]) ? [i + 1] : []))}
+          (rank.buff?.attributes?.attributeModifiers ?? [])
+            .some(m => POTENTIAL_ATTR[m.attributeType] || m.attributeType === 'ATTACK_SPEED') ? [i + 1] : []))}
       </div>
     </div>
   `;
@@ -590,6 +604,60 @@ function skillBodyHtml(s: DetailState, skill: OperatorSkillDetail, idx: number):
 
 // ── Modules ──────────────────────────────────────────────────────────────────
 
+// One part of a module stage at the selected potential: the strongest candidate it unlocks.
+// A rank the module doesn't restate keeps the lower rank's effect, as in game.
+function moduleCandidate<T extends { requiredPotentialRank: number }>(
+  candidates: T[] | null | undefined, potential: number,
+): T | null {
+  return (candidates ?? [])
+    .filter(c => c.requiredPotentialRank <= potential)
+    .sort((a, b) => b.requiredPotentialRank - a.requiredPotentialRank)[0] ?? null;
+}
+
+// One thing a module stage does: `key` names what it touches ('trait', 'talent:0') so the
+// same effect can be found on another stage, `html` is its rendered text, and `base` the
+// operator's own text it replaces — null where it replaces nothing.
+interface ModuleEffect {
+  key: string;
+  label: string;
+  html: string;
+  base: string | null;
+}
+
+// What a stage does to the trait and the talents, labelled as the reference labels it: a
+// trait gains a line ("Added") or is rewritten ("Updated"); a talent is rewritten, or a new
+// one is added. `base` is the operator's own trait, or the talent at the module's elite and
+// the selected potential.
+function moduleEffects(s: DetailState, mod: OperatorModule, phase: ModulePhase): ModuleEffect[] {
+  const d = s.op.data;
+  const ownTrait = traitInfo(d) ?? (d.description ? { text: d.description, blackboard: [] } : null);
+  return phase.parts.flatMap(p => {
+    const trait = moduleCandidate(p.overrideTraitDataBundle?.candidates, s.potential);
+    const traitText = trait?.additionalDescription || trait?.overrideDescripton;
+    if (trait && traitText) {
+      const added = !!trait.additionalDescription;
+      return [{
+        key: 'trait',
+        label: `Trait (${added ? 'Added' : 'Updated'})`,
+        html: descriptionToHtml(traitText, trait.blackboard ?? []),
+        base: !added && ownTrait ? descriptionToHtml(ownTrait.text, ownTrait.blackboard) : null,
+      }];
+    }
+    const talent = moduleCandidate(p.addOrOverrideTalentDataBundle?.candidates, s.potential);
+    if (talent?.upgradeDescription) {
+      const ownTalent = talent.talentIndex < 0 ? undefined : d.talents?.[talent.talentIndex];
+      const own = ownTalent ? activeCandidate(ownTalent, phaseNum(mod.info.showEvolvePhase), s.potential) : null;
+      return [{
+        key: `talent:${talent.talentIndex}`,
+        label: talent.talentIndex < 0 ? 'New Talent (Added)' : `Talent ${talent.talentIndex + 1} (Updated)`,
+        html: descriptionToHtml(talent.upgradeDescription, talent.blackboard ?? []),
+        base: own ? descriptionToHtml(own.description, own.blackboard ?? []) : null,
+      }];
+    }
+    return [];
+  });
+}
+
 function modulesPanel(s: DetailState): string {
   const mods = visibleModules(s.op);
   const modIdx = Math.min(s.moduleIdx, mods.length - 1);
@@ -599,21 +667,33 @@ function modulesPanel(s: DetailState): string {
   const phase = phases[lvIdx];
   const code = [mod.info.typeName1, mod.info.typeName2].filter(Boolean).join('-');
 
+  // The reference's stat row: glyph, name, signed value, a rule between. Attack speed has no
+  // row in the attribute table, so it is named here rather than looked up there.
   const stats = phase.attributeBlackboard.map(b => {
-    const key = MODULE_ATTR[b.key];
-    const label = key ? STAT_ROWS.find(r => r.key === key)?.label ?? b.key : b.key;
+    const row = b.key === 'attack_speed'
+      ? { label: 'Attack Speed', icon: ICON_ASPD }
+      : STAT_ROWS.find(r => r.key === MODULE_ATTR[b.key]);
     const sign = b.value > 0 ? '+' : '';
-    return `<div class="mod-stat"><span>${escHtml(label)}</span><strong>${sign}${b.value}</strong></div>`;
-  }).join('');
+    return `<div><dt>${row?.icon ?? ''}<span>${escHtml(row?.label ?? b.key)}</span></dt><dd>${sign}${b.value}</dd></div>`;
+  });
+  const cols = stats.length === 3 ? 3 : Math.min(stats.length, 2);
 
-  const trait = phase.parts
-    .flatMap(p => (p.overrideTraitDataBundle?.candidates ?? []).map(c => ({
-      text: c.additionalDescription ?? c.overrideDescripton,
-      bb: c.blackboard ?? [],
-    })))
-    .filter((x): x is { text: string; bb: Blackboard[] } => !!x.text)
-    .map(x => `<p class="rich">${descriptionToHtml(x.text, x.bb)}</p>`)
-    .join('');
+  // The changed words are marked against one of two things, the reader's choice: the
+  // operator without the module, or the stage before this one. An effect the previous stage
+  // doesn't have (a talent first touched at stage 2) still falls back to the operator's own
+  // text, and stage 1 has no previous stage, so there the two are the same thing.
+  const perStage = s.moduleDiff === 'stage' && lvIdx > 0;
+  const previous = perStage ? moduleEffects(s, mod, phases[lvIdx - 1]) : [];
+  const effects = moduleEffects(s, mod, phase).map(e => ({
+    ...e,
+    base: previous.find(prev => prev.key === e.key)?.html ?? e.base,
+  }));
+
+  // The ranks this stage's trait and talent changes are written for.
+  const ranks = phase.parts.flatMap(p => [
+    ...(p.overrideTraitDataBundle?.candidates ?? []),
+    ...(p.addOrOverrideTalentDataBundle?.candidates ?? []),
+  ].map(c => c.requiredPotentialRank));
 
   return `
     <div class="panel-controls">
@@ -630,20 +710,36 @@ function modulesPanel(s: DetailState): string {
         ${buttonGroup('module-lv', phases.map((p, i) => ({
           value: i, label: String(p.equipLevel), on: i === lvIdx,
         })))}
+        <div class="ctl-cluster ctl-cluster-end">${potentialMenu(s, ranks)}</div>
       </div>
     </div>
     <section class="entry">
       <header class="entry-head">
+        <img class="mod-type-icon" src="${moduleTypeIconUrl(mod.info.typeIcon)}" alt="" loading="lazy" onerror="this.remove()">
         <h2 class="entry-name">${escHtml(mod.info.uniEquipName)}</h2>
-        ${code ? `<span class="tagline">${escHtml(code)}</span>` : ''}
-        <span class="unlock-badge">${eliteIcon(phaseNum(mod.info.showEvolvePhase))}Lv${mod.info.unlockLevel}</span>
+        ${code ? `<span class="mod-code">${escHtml(code)}</span>` : ''}
+        <div class="mod-compare" title="What the blue text is a change from">
+          <span class="visually-hidden">Mark changes against</span>
+          ${buttonGroup('module-diff', [
+            { value: 'base', label: 'vs no module', on: !perStage },
+            { value: 'stage', label: 'vs prev. stage', on: perStage },
+          ], 'pill', lvIdx === 0)}
+        </div>
       </header>
-      ${mod.info.uniEquipDesc ? `<p class="rich muted-text">${cleanText(mod.info.uniEquipDesc)}</p>` : ''}
-      ${stats ? `<div class="mod-stats">${stats}</div>` : ''}
-      ${trait}
+      ${stats.length ? `<dl class="mod-stats mod-stats-${cols}">${stats.join('')}</dl>` : ''}
+      ${effects.map(e => `
+        <div class="mod-effect">
+          <span class="section-label">${e.label}</span>
+          <p class="rich">${markChanges(e.html, e.base)}</p>
+        </div>
+      `).join('')}
+      <div class="mod-image">
+        <img src="${artUrl(moduleImageUrl(mod.info.uniEquipId), 364)}" alt="" loading="lazy"
+             onerror="this.parentElement.remove()">
+      </div>
       ${upgradeRowHtml(
         phase.equipLevel === 1 ? 'To unlock' : `To reach stage ${phase.equipLevel}`,
-        '',
+        `<span class="unlock-badge">${eliteIcon(phaseNum(mod.info.showEvolvePhase))}Lv${mod.info.unlockLevel}</span>`,
         mod.info.itemCost?.[String(phase.equipLevel)] ?? [],
       )}
       ${mod.missions?.length ? `
@@ -651,6 +747,12 @@ function modulesPanel(s: DetailState): string {
           <span class="section-label">Unlock missions</span>
           <ol class="mission-list">${mod.missions.map(m => `<li>${cleanText(m)}</li>`).join('')}</ol>
         </div>
+      ` : ''}
+      ${mod.info.uniEquipDesc ? `
+        <details class="mod-desc">
+          <summary>Description <span class="muted-text">(possible story spoilers)</span></summary>
+          <p class="rich muted-text">${cleanText(mod.info.uniEquipDesc)}</p>
+        </details>
       ` : ''}
     </section>
   `;
@@ -1072,6 +1174,7 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
     moduleIdx: 0,
     moduleLevel: Math.max(0, (visibleModules(op)[0]?.data?.phases.length ?? 1) - 1),
     moduleOn: false,
+    moduleDiff: 'base',
     artIdx: e2Idx >= 0 ? e2Idx : 0,
   };
   renderAll(container);
@@ -1106,6 +1209,7 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
                         state.moduleLevel = Math.max(0, (visibleModules(state.op)[state.moduleIdx]?.data?.phases.length ?? 1) - 1);
                         break;
       case 'module-lv': state.moduleLevel = Number(value); break;
+      case 'module-diff': state.moduleDiff = value as DetailState['moduleDiff']; break;
       case 'pot-toggle':
         setPotentialMenu(el.getAttribute('aria-expanded') !== 'true');
         return;

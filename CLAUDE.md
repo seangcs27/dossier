@@ -225,6 +225,8 @@ itemIconUrl(iconId)                        // bundle-relative item-icons/ — ke
 eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a mask, see eliteIcon()
 potentialIconUrl(rank)                     // bundle-relative potential-icons/ — full colour, never masked
 skillIconUrl(skillId)                      // Arknight-Images CDN
+moduleTypeIconUrl(typeIcon)                // module type badge ('gua-y') — Arknight-Images CDN
+moduleImageUrl(uniEquipId)                 // module illustration — Arknight-Images CDN, ~300 KB, pass through artUrl
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
 archetypeIconUrl(subProfessionId)          // bundle-relative branch-icons/ — self-hosted
 IMAGE_BASE
@@ -413,7 +415,9 @@ set and information architecture all follow theirs, so read
   (a menu button, since a native `<select>` can't show images). Like the reference it offers
   Potential 1 plus only the ranks that change a stat shown here — Makoto Yuki gets 1, 2, 4, 6.
   The trust bonus scales by
-  `min(trust, 100) / 100`. Stats render as a two-column `dl` with a centre rule, then what
+  `min(trust, 100) / 100`. Attack speed from potentials and modules shortens the attack
+  interval as the game does, `interval × 100 / (100 + ASPD)`, without the reference's
+  rounding to a 30 fps frame (so Kal'tsit's PHY-Y reads 2.66 sec where it reads 2.67). Stats render as a two-column `dl` with a centre rule, then what
   promoting into the selected elite costs: LMD (from `gamedata_const.evolveGoldCost`, which
   the phase's own `evolveCost` leaves out) followed by the materials.
 - **Talents** — elite button group and the same potential badge menu, here offering
@@ -432,8 +436,20 @@ set and information architecture all follow theirs, so read
   requirement (omitted at Elite 0 Lv1, as the reference does), for M1–M3 the training time —
   ours, the reference has none — and the materials. The recovery label is the game's "Auto"
   where the reference says "Per Second".
-- **Modules** — the module's stats and trait per stage, what unlocking or reaching that stage
-  costs, then the missions that unlock it.
+- **Modules** — module pills, stage pills and the potential badge menu (the ranks the stage's
+  changes are written for). The game's type badge, the module's name and code; its stat
+  changes as glyph / name / value rows, two or three across; what the stage does to the trait
+  ("Trait (Added)" for an extra line, "(Updated)" for a rewrite) and to the talents ("Talent N
+  (Updated)", "New Talent (Added)"), each the strongest candidate the potential unlocks, with
+  what it changes marked in value-up blue — `markChanges` in `format.ts`, a word
+  diff (the game data carries no such markup itself). A toggle on the name's row picks what
+  it is a change from: **vs no module**, the operator's own trait or talent at Elite 2 and the
+  same potential, where an added line is all marked; or **vs prev. stage**, the same effect
+  one stage down, which marks only what this stage moved (stage 1 has no previous stage, so
+  the toggle is disabled there); the
+  module's illustration (resized through `artUrl`, the upstream PNG is ~300 KB); what
+  unlocking or reaching the stage costs; the unlock missions; and the flavour text in a
+  collapsed `<details>`, since it can spoil the story.
 
 Costs render as the reference's material discs (`costListHtml` in `detail.ts`): a 52px circle
 ringed and washed in the item's rarity colour, the baked icon filling it, and the count in

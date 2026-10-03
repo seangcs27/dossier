@@ -131,6 +131,61 @@ export function descriptionToHtml(text: string | null | undefined, bb: Blackboar
   return out.replace(/\r?\n|\\n/g, '<br>');
 }
 
+// An entity, one Han character (CJK text has no spaces to split on), a number, a word, a
+// run of whitespace, or a single symbol — so "+16%" against "+21%" marks only the "21".
+const DIFF_TOKEN = /&[#\w]+;|\p{Script=Han}|\p{N}+(?:\.\p{N}+)?|\p{L}+|\s+|\S/gu;
+
+// Marks what a rendered description adds or changes against the one it replaces, wrapping
+// those words in `.text-diff`. Both sides are descriptionToHtml output: tags pass through
+// untouched and only the text between them is compared, word by word on a longest common
+// subsequence, so markup and entities stay intact. With no `base`, all of it is new.
+export function markChanges(html: string, base: string | null): string {
+  const tokens = (text: string): string[] => text.match(DIFF_TOKEN) ?? [];
+  const words = (h: string): string[] => h.split(/<[^>]+>/).flatMap(tokens).filter(t => t.trim());
+  const ours = words(html);
+  const theirs = base === null ? [] : words(base);
+
+  const lcs = Array.from({ length: ours.length + 1 }, () => new Array<number>(theirs.length + 1).fill(0));
+  for (let a = ours.length - 1; a >= 0; a--) {
+    for (let b = theirs.length - 1; b >= 0; b--) {
+      lcs[a][b] = ours[a] === theirs[b] ? lcs[a + 1][b + 1] + 1 : Math.max(lcs[a + 1][b], lcs[a][b + 1]);
+    }
+  }
+  // On a tie, skip the old word rather than the new one, so each old word pairs with its
+  // EARLIEST match. The other way round, Nian's "+16% Max HP" paired with the "+4% Max HP"
+  // her module adds later in the sentence, and the new clause read as unchanged.
+  const kept = new Set<number>();
+  for (let a = 0, b = 0; a < ours.length && b < theirs.length;) {
+    if (ours[a] === theirs[b]) { kept.add(a); a++; b++; }
+    else if (lcs[a + 1][b] > lcs[a][b + 1]) a++;
+    else b++;
+  }
+
+  // Rebuild, joining neighbouring changed words (and the spaces between them) into one span.
+  let index = 0;
+  return html.split(/(<[^>]+>)/).map(part => {
+    if (part.startsWith('<')) return part;
+    let out = '';
+    let run = '';
+    let space = '';
+    for (const t of tokens(part)) {
+      if (!t.trim()) {
+        if (run) space += t; else out += t;
+        continue;
+      }
+      if (kept.has(index++)) {
+        if (run) { out += `<span class="text-diff">${run}</span>`; run = ''; }
+        out += space + t;
+      } else {
+        run += space + t;
+      }
+      space = '';
+    }
+    if (run) out += `<span class="text-diff">${run}</span>`;
+    return out + space;
+  }).join('');
+}
+
 // "PHASE_2" -> "E2"
 export function phaseLabel(phase: string): string {
   return 'E' + phase.replace('PHASE_', '');

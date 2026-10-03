@@ -171,6 +171,17 @@ export interface ModuleTraitCandidate {
   additionalDescription: string | null;
   overrideDescripton: string | null; // [sic] — the game data misspells it
   unlockCondition: UnlockCondition;
+  requiredPotentialRank: number;
+  blackboard?: Blackboard[] | null;
+}
+
+// A talent the module changes at this stage: `talentIndex` is the talent it rewrites, or
+// -1 for one it adds. `upgradeDescription` replaces the talent's text outright.
+export interface ModuleTalentCandidate {
+  talentIndex: number;
+  requiredPotentialRank: number;
+  name: string | null;
+  upgradeDescription: string | null;
   blackboard?: Blackboard[] | null;
 }
 
@@ -180,6 +191,7 @@ export interface ModulePhase {
   parts: {
     target: string;
     overrideTraitDataBundle?: { candidates: ModuleTraitCandidate[] | null } | null;
+    addOrOverrideTalentDataBundle?: { candidates: ModuleTalentCandidate[] | null } | null;
   }[];
 }
 
@@ -190,6 +202,7 @@ export interface OperatorModule {
     uniEquipDesc: string | null;
     typeName1: string | null; // "GUA"
     typeName2: string | null; // "Y"  -> displayed as GUA-Y
+    typeIcon: string;         // "gua-y", which names the type badge's image file
     unlockLevel: number;
     showEvolvePhase: string;
     // Keyed by stage ("1", "2", "3"), matching ModulePhase.equipLevel.
