@@ -10,7 +10,9 @@ import {
   subclassesFor,
   allTags,
   allCollabs,
+  gameModeOf,
   serverOf,
+  type GameMode,
   type Server,
   type SortKey,
   type TagMode,
@@ -28,6 +30,7 @@ const state = {
   tagMode: 'any' as TagMode,
   collabs: new Set<string>(),
   servers: new Set<Server>(),
+  games: new Set<GameMode>(),
   moreOpen: false,
   // Tags and sort live behind a disclosure. They're the least-reached-for controls and
   // the tag list alone is longer than everything above it put together.
@@ -109,6 +112,7 @@ function buildCard(op: OperatorIndexEntry): string {
           </div>
           <span class="op-cta">View operator</span>
         </div>
+        ${op.mode ? `<span class="op-mode" data-tip="${MODE_LABEL[op.mode]} only">${op.mode}</span>` : ''}
         <div class="op-edge" aria-hidden="true">${escHtml(edgeText)}</div>
         <div class="op-light" aria-hidden="true"></div>
       </div>
@@ -189,7 +193,7 @@ function render(container: HTMLElement): void {
 
 function activeCount(): number {
   return state.classes.size + state.rarities.size + state.tags.size + state.collabs.size
-    + state.subclasses.size + state.servers.size;
+    + state.subclasses.size + state.servers.size + state.games.size;
 }
 
 // ── Filter popover: every dimension in one panel, opened from the topbar ──
@@ -276,6 +280,14 @@ function renderMore(): void {
     },
   ];
 
+  // The roster against the operators a game mode lends, split the same way as Server.
+  const gameCount = (id: GameMode): number => getOperators().filter(op => gameModeOf(op) === id).length;
+  const games: { id: GameMode; label: string; title: string }[] = [
+    { id: 'roster', label: 'Roster', title: 'Operators you can obtain' },
+    { id: 'IS', label: 'IS', title: `${MODE_LABEL.IS} only: lent by the mode, never obtained` },
+    { id: 'SP', label: 'SP', title: `${MODE_LABEL.SP} only: lent by the mode, never obtained` },
+  ];
+
   panel.innerHTML = `
     <div class="filter-group">
       <div class="filter-label">Class</div>
@@ -336,6 +348,18 @@ function renderMore(): void {
       </div>
     ` : ''}
 
+    <div class="filter-group">
+      <div class="filter-label">Game mode</div>
+      <div class="server-row game-row">
+        ${games.map(g => `
+          <button class="server-btn${state.games.has(g.id) ? ' on' : ''}" data-game="${g.id}"
+                  aria-pressed="${state.games.has(g.id)}" data-tip="${escHtml(g.title)}">
+            ${g.label}<span>${gameCount(g.id)}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+
     <button class="filter-disclosure${state.advancedOpen ? ' open' : ''}" id="advanced-toggle"
             aria-expanded="${state.advancedOpen}" aria-controls="advanced-options">
       Advanced options
@@ -384,13 +408,11 @@ function renderMore(): void {
         </div>
       </div>
     </div>
-
-    <button class="filter-clear" id="clear-filters"${activeCount() ? '' : ' disabled'}>Clear Filters</button>
   `;
 
   if (refocus) {
-    // Clear Filters disables itself once there's nothing left to clear, and a disabled
-    // button can't take focus, so hand it to the toggle rather than letting it fall away.
+    // The rebuild can leave the control out, a branch tile whose class was just unpicked,
+    // so hand the focus to the toggle rather than letting it fall away.
     const target = panel.querySelector<HTMLButtonElement>(refocus);
     if (target && !target.disabled) target.focus();
     else document.getElementById('more-toggle')?.focus();
@@ -409,15 +431,10 @@ function syncChips(): void {
   more.classList.toggle('active', state.moreOpen || n > 0);
   more.setAttribute('aria-expanded', String(state.moreOpen));
 
-  // The panel's shape rises round the toggle (.filter-pop in styles.scss), so it has to be
-  // told where the toggle is: that moves with the label just written, with the close button
-  // coming and going, and on a phone with the width of the row. Measured last, after all of
-  // those have been set.
-  const actions = more.parentElement!;
-  actions.classList.toggle('filters-open', state.moreOpen);
-  document.getElementById('close-filters')!.hidden = !state.moreOpen;
-  actions.style.setProperty('--tab-left', `${more.offsetLeft}px`);
-  actions.style.setProperty('--tab-rise', `${actions.offsetHeight - more.offsetTop}px`);
+  // The panel's own state lives on the cluster, which is what its blob, its content, and
+  // the Clear and close buttons beside the toggle all animate from (styles.scss).
+  more.closest('.topbar-actions')!.classList.toggle('filters-open', state.moreOpen);
+  (document.getElementById('clear-filters') as HTMLButtonElement).disabled = !n;
 }
 
 function toggleChip(chip: HTMLButtonElement): void {
@@ -447,7 +464,14 @@ function clearAll(): void {
   state.collabs.clear();
   state.subclasses.clear();
   state.servers.clear();
+  state.games.clear();
 }
+
+// Watches the two sizes the filter panel's shape is drawn from (.filter-blob in styles.scss):
+// how wide the buttons' part of the search box is, which is the tab's width, and how tall
+// the box is, which is the tab's height. The first changes with the Filters label and all the
+// way through Clear and the close button folding in or out, so it is observed, not read once.
+let tabWatch: ResizeObserver | undefined;
 
 export function mountGrid(container: HTMLElement): void {
   const search  = document.getElementById('search') as HTMLInputElement;
@@ -455,6 +479,15 @@ export function mountGrid(container: HTMLElement): void {
   const wrap    = document.querySelector<HTMLElement>('.search-wrap')!;
   wrap.style.display = '';
   actions.style.display = '';
+
+  if (!tabWatch) {
+    const tab = actions.querySelector<HTMLElement>('.filter-tab')!;
+    tabWatch = new ResizeObserver(() => {
+      actions.style.setProperty('--tab-w', `${tab.offsetWidth}px`);
+      actions.style.setProperty('--box-h', `${wrap.offsetHeight}px`);
+    });
+    tabWatch.observe(tab);
+  }
 
   search.value = state.query;
   syncChips();
@@ -475,24 +508,34 @@ export function mountGrid(container: HTMLElement): void {
   clear.onclick = () => { search.value = ''; syncQuery(); search.focus(); };
 
   actions.onclick = (ev) => {
-    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle, #close-filters');
+    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle, #clear-filters, #close-filters');
     if (!el) return;
-    // The close button only closes, and hides as it does, so focus goes back to the toggle.
-    state.moreOpen = el.id === 'more-toggle' && !state.moreOpen;
-    refreshChrome();
-    if (el.id === 'close-filters') document.getElementById('more-toggle')?.focus();
+    if (el.id === 'clear-filters') {
+      clearAll();
+      refresh();
+    } else {
+      // The close button only closes.
+      state.moreOpen = el.id === 'more-toggle' && !state.moreOpen;
+      refreshChrome();
+    }
+    // Clear has just disabled itself and the close button has folded away, and neither can
+    // hold the focus then, so it goes to the toggle.
+    if (el.id !== 'more-toggle') document.getElementById('more-toggle')?.focus();
   };
-  // The blob's shape follows the toggle, which on a phone moves with the window's width.
-  window.onresize = syncChips;
 
   const panel = document.getElementById('more-filters')!;
   panel.onclick = (ev) => {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!el) return;
-    if (el.id === 'clear-filters') { clearAll(); refresh(); return; }
     const server = el.dataset.server as Server | undefined;
     if (server) {
       if (state.servers.has(server)) state.servers.delete(server); else state.servers.add(server);
+      refresh();
+      return;
+    }
+    const game = el.dataset.game as GameMode | undefined;
+    if (game) {
+      if (state.games.has(game)) state.games.delete(game); else state.games.add(game);
       refresh();
       return;
     }
@@ -531,12 +574,14 @@ export function mountGrid(container: HTMLElement): void {
 
   // The panel closes on its toggle, its own close button, Escape, or a press anywhere
   // outside it. (It used to stay open on an outside press, so the grid could be glanced at
-  // between picks; in use that read as a panel that wouldn't go away.) Assigned rather than
-  // added, like onkeydown below: this runs on every return to the grid.
+  // between picks; in use that read as a panel that wouldn't go away.) "Outside" is outside
+  // the whole cluster: the search box is the panel's head now, and typing a name while
+  // picking filters is one job. Assigned rather than added, like onkeydown below: this runs
+  // on every return to the grid.
   document.onpointerdown = (ev) => {
     if (!state.moreOpen || panel.hidden) return;
     const target = ev.target as Element;
-    if (target.closest('#more-filters, #more-toggle, #close-filters')) return;
+    if (target.closest('.topbar-actions')) return;
     state.moreOpen = false;
     refreshChrome();
   };

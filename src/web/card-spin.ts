@@ -215,6 +215,13 @@ function mountCard(card: HTMLElement): void {
       // (is-spinning goes just below), so the card unwound every turn it had made in a
       // quarter of a second: a second spin after it had already stopped.
       paint();
+      // The last step is committed before the transition comes back, by reading a layout
+      // value, which makes the browser apply the styles so far. Otherwise this frame's
+      // movement, a fraction of a degree, is found changed in the same pass that turns the
+      // transition on, and is animated: a quarter-second transition on every stop that
+      // nobody can see, except that on iOS Safari the rarity tab, the one part of the plate
+      // that is 3D inside 3D, is drawn flat for as long as it runs.
+      void card.offsetWidth;
       card.classList.remove('is-spinning');
       if (!hovering) card.classList.remove('is-lit');
       state = 'idle';

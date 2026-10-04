@@ -271,9 +271,24 @@ mode lends for a run and nothing gives you. The mode goes by the id's band, the 
 AN-EN-Tags makes: the 500s are Integrated Strategies' (`mode: 'IS'`, 11), the 600s Stronghold
 Protocol's (`'SP'`, 18); an unobtainable id in neither band would be dropped. The flag is
 used rather than a name match because the trainer "Mechanist" (`char_610_acfend`) shares its
-name with a real 6★ operator, as do "Raidian" and "Shalem". They carry no release date (the
-name lookup would hand a trainer its namesake's), so they sort last in their rarity band, and
-the extension's popup leaves them out. Payloads also carry `welfare`: true where
+name with a real 6★ operator, as do "Raidian" and "Shalem". On a grid card they carry the
+mode's initials as a badge (`.op-mode`) and its name up the edge strip, and the extension's
+popup leaves them out.
+
+**Where they sort is taken from AN-EN-Tags' own list**, `json/tl-akhr.json`. They were never
+released, so nothing dates them: no release date (the name lookup would hand a trainer its
+namesake's), no Sanity Gone ordinal, a default-skin `getTime` of 0 in the game's skin table,
+and a `character_table` order that goes by class rather than by date. AN-EN-Tags' grid is
+that file's order within each rarity (not alphabetical: its maintainer appends to it as
+operators are added), and it is the one place found that puts them at a point in time. Each
+takes a `releaseOrder` a fraction past the newest of the ordinary operators of its own
+rarity that precede it in that file, so under the Release sort it sits after the whole batch
+AN-EN-Tags shows it after. Checked against the wiki's dates for each mode's first CN run,
+the blocks land where they should: Integrated Strategies' first operators after the batch of
+2020-08-24 (Ceobe's Fungimist opened that day), its later ones after Highmore, Stronghold
+Protocol's after the batch of 2024-10-31 (it opened 2024-11-15) and after that of
+2025-10-31 (Alliance, 2025-11-14). Without the file they keep no order and sort last.
+Payloads also carry `welfare`: true where
 `itemObtainApproach` is an event reward, an anniversary reward or an Integrated Strategies
 reward (81 operators).
 
@@ -348,7 +363,8 @@ minutes, twice, before this).
   (RIIC buffs, keyed by `buffId`), `tl-potential.json` (a keyword substitution table —
   potential descriptions are templated strings from a closed vocabulary, not prose). The
   two Ace files stopped being updated in April 2026, so they cover no operator released
-  since; the wiki pages above do.
+  since; the wiki pages above do. Its operator list, `tl-akhr.json`, is also read for its
+  file order, which is what places the mode-only operators (see above).
 - **PuppiizSunniiz/Arknight-Images** — the character-art tree, read at build time to know
   which outfit illustrations actually exist before listing them in `arts`.
 - **yuanyan3060/ArknightsGameResource** — 180×360 bust portraits, the card art. Downloaded
@@ -410,31 +426,49 @@ from the Events link at the far end of the topbar (the wordmark is the way back)
 Reads the bundled index through `src/web/operator-index.ts` and makes **no network requests
 for data** (only images). Cards are built 48 at a time as the page nears the end of what
 exists: all ~430 at once was ~550 ms of paint and layerize before first paint, and held
-back every portrait request until it finished. The topbar's search box (260px) and a Filters button form one cluster
-on the left, beside the wordmark. The box's magnifier is its clear button: it turns into a
-cross once there is text, and pressing it empties the box. The result count beside them is a
-pill of the same shape. The Filters button opens a popover, anchored under the cluster, that
-closes on the toggle, a close button that appears beside the toggle, Escape, or a press
-anywhere outside it.
+back every portrait request until it finished. The topbar's search box sits on the left,
+beside the wordmark, 420px wide (the full row on a phone). It is one box in two parts: the
+field you type in (`.search-field`), and at its right end the Filters button's part
+(`.filter-tab`), with a rule between them. The box's magnifier is its clear button: it turns
+into a cross once there is text, and pressing it empties the box. The result count beside it
+is a pill. The Filters button opens a popover that hangs from the search box, as wide as the
+box, and closes on the toggle, the close button, Escape, or a press anywhere outside the
+cluster (a press in the search box is inside it: typing a name while picking filters is one
+job). While it is open, Clear and the close button unfold beside the toggle
+(`.filter-extra`, folded to no width when shut).
 
-The popover is one shape with its toggle: a blob that hangs from the bar's lower edge and
-rises on the right round the Filters and close buttons, leaving the search box outside in
-the notch. It is two plain blocks (`.blob-tab`, `.blob-body`) behind the panel, run together
-by an SVG "goo" filter in `index.html` (blur, then cut the blur back to a hard edge, then a
-1px rim); the panel's own content sits over them unfiltered. Opening scales the blocks out
-from the toggle on the card's ease (a fast start and a long settle, no rebound) and closing
-scales them back, which through the filter reads as liquid; the blocks never fade, because
-the filter cuts on opacity.
-`syncChips()` measures where the toggle is (`--tab-left`, `--tab-rise`), since that moves
-with the label and, on a phone, the row's width. `#more-filters[hidden]` keeps its layout:
-the blob takes its height from the panel and still has to run back up.
+The popover is a folder with a tab. Its body hangs flush from the box's lower edge; its tab
+stands up inside the box's right end, behind Filters, Clear and the close button, so the
+buttons that work the panel sit on the panel's own tab and the field sits in the notch
+beside it. The shape is two plain blocks behind the panel (`.blob-tab`, `.blob-body`), run
+together by an SVG "goo" filter in `index.html` (blur, then cut the blur back to a hard
+edge, then a 1px rim); the panel's own content sits over them unfiltered. The box is on a
+layer above the shape: the field is opaque and hides what tucks in behind it, and the
+buttons' part fades from a filled box to clear, which is what uncovers the tab. Both blocks
+stop 1px short of the box's edges, so the filter's rim, drawn outside a block, lands on the
+box's own border line. `grid.ts` measures the tab's width and the box's height with a
+`ResizeObserver` (`--tab-w`, `--box-h`): the first moves with the Filters label and all
+through Clear and the close button folding. Opening scales the body out from under the tab
+on the card's ease (a fast start and a long settle, no rebound) and closing draws it back
+up; the blocks never fade, because the filter cuts on opacity. `#more-filters[hidden]`
+keeps its layout: the shape takes its height from the panel and still has to run back up.
+
+**It animates whatever `prefers-reduced-motion` says, on purpose** (the comment on
+`.filter-pop` has the reasoning). On Windows that setting is the "Animation effects" switch,
+off on the owner's machine, and with it honoured the panel appeared and vanished with no
+animation at all. An earlier rule honoured it only half, by a specificity accident: the open
+state still animated and the close did not, which is what "the close has no animation" was.
+`card-spin.ts` takes the same view of that setting.
 
 Inside the popover: class tiles (glyph over name, four across); Archetype / Subclass tiles in
 the same style, grouped under a header per picked class and shown only once a class is picked
 — multi-select, where a picked branch narrows only its own class (Caster + Supporter + Mech-accord
 Caster is every Supporter plus the Mech-accord Casters), and a branch that would yield nothing
 under the other filters dims; a six-segment rarity group tinted by rarity; collab
-chips; a Server button split in two, GLOBAL and CN (the CN-only operators), each half with its count; and an Advanced options disclosure holding Sort (Release order / Name — clicking the
+chips; a Server button split in two, GLOBAL and CN (the CN-only operators), each half with its count;
+a Game mode button split in three the same way, ROSTER, IS and SP (the operators only
+Integrated Strategies or Stronghold Protocol lends); and an Advanced options disclosure
+holding Sort (Release order / Name — clicking the
 active one reverses it) and multi-select recruitment tags with an any/all mode.
 `renderMore()` rebuilds the panel on every change and restores focus to the equivalent
 control afterwards. Operators without a `releaseDate` sort last in both release directions.
@@ -570,8 +604,11 @@ time, or for a prediction the CN run it came from. An event whose stages have cl
 under Live now until its shop does, reading "Stages closed · Shop closes in 3d". A pool card
 also lists its featured operators, highest rarity first, in their rarity's colour, each a
 link to the dossier. Which section a thing is in is decided at render time from the reader's
-clock, since the page is read for up to a week after the build. The countdown is as of when
-the page was opened; it does not tick.
+clock, since the page is read for up to a week after the build. The countdowns are a live
+clock, to the second ("3d 18h 26m 05s"): the schedule is baked but "now" is the reader's, so
+one `setInterval` rewrites each card's line every second and rebuilds the list when
+something starts, closes or ends. The views have no unmount hook, so the timer stops itself
+once its panel is gone from the page.
 
 The calendar is one month of the server's days, a grid per week: the dates in the first row
 and a lane per overlapping bar under it. An event is a filled bar, a prediction a dashed
@@ -620,8 +657,7 @@ unreachable the last build's `events.json` is kept, or an empty one written, and
 says it has no schedule; with only the game's tables unreachable the schedule is written
 without shop times and rotating pools.
 
-Not built: Arkpedia's birthdays on the calendar, its pull planner, and a countdown that
-ticks.
+Not built: Arkpedia's birthdays on the calendar and its pull planner.
 
 ## Testing
 

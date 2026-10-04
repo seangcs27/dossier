@@ -559,6 +559,61 @@ async function fetchReleaseOrder() {
   }
 }
 
+// AN-EN-Tags' own operator list, as ids in file order. Its maintainer appends to it as
+// operators are added to the game, so the order is roughly chronological, and it is the
+// one place found that puts the operators a game mode lends at a point in time: the game's
+// tables date nothing (a default skin's getTime is 0 for all 29 of them), their order in
+// character_table is by class rather than by date, and Sanity Gone's release ordinal skips
+// them. AN-EN-Tags' grid is this file's order within each rarity. Supplemental only: without
+// it those operators keep no release order and sort last, as they did before.
+async function fetchListOrder() {
+  try {
+    const res = await timedFetch(`${AN_EN_TAGS_JSON_BASE}/tl-akhr.json`);
+    if (!res.ok) throw new Error(String(res.status));
+    return (await res.json()).map(row => row.id);
+  } catch (e) {
+    console.warn(`AN-EN-Tags list order skipped: ${e.message}`);
+    return [];
+  }
+}
+
+// Where each mode-only operator sorts among the released ones: just after every ordinary
+// operator of its own rarity that comes before it in AN-EN-Tags' list, as a fraction past
+// the newest of them. Rarity matters because the grid groups by it: "after the 6-stars
+// before it" is what puts the Stronghold Protocol trainers after the whole batch they
+// follow there, rather than beside whichever 4-star happened to precede them in the file.
+//
+// The newest of them, not the last one listed: the file and Sanity Gone disagree about the
+// order inside a batch released on one day, and going by the last one listed put the
+// 3-star reserves before Spot, which the file lists ahead of them and which came out a year
+// before Integrated Strategies did. Several in a row keep the file's order among themselves.
+function modeReleaseOrders(roster) {
+  const byId = new Map(roster.map(r => [r.id, r]));
+  const orders = new Map();
+  const newest = {};   // rarity -> the highest release order among ordinary operators so far
+  const run = {};      // rarity -> how many mode-only operators have followed it
+  for (const id of listOrder) {
+    const r = byId.get(id);
+    if (!r) continue;
+    const rarity = r.data.rarity;
+    if (!r.mode) {
+      const order = releaseOrders.get(id);
+      if (order > (newest[rarity] ?? 0)) { newest[rarity] = order; run[rarity] = 0; }
+      continue;
+    }
+    run[rarity] = (run[rarity] ?? 0) + 1;
+    orders.set(id, (newest[rarity] ?? 0) + run[rarity] / 100);
+  }
+  // One the list leaves out (the trainer "Shalem") goes with its own kind: after the last
+  // listed operator of its mode and rarity.
+  for (const r of roster) {
+    if (!r.mode || orders.has(r.id)) continue;
+    const kin = roster.filter(k => k.mode === r.mode && k.data.rarity === r.data.rarity && orders.has(k.id));
+    if (kin.length) orders.set(r.id, Math.round((Math.max(...kin.map(k => orders.get(k.id))) + 0.001) * 1000) / 1000);
+  }
+  return orders;
+}
+
 // Supplemental only — never blocks the build. A GitHub raw-content hiccup should not
 // fail a weekly deploy over ~10 operators that are already tolerably handled by sorting
 // last; the game data tables are the source that matters.
@@ -1227,11 +1282,12 @@ const VALID_PROFESSION = new Set([
 ]);
 const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
 
-const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
+const [enChars, enPatch, releaseDates, releaseOrders, listOrder] = await Promise.all([
   table('en', 'character_table').catch(e => e),
   table('en', 'char_patch_table').catch(e => e),
   fetchReleaseDates(),
   fetchReleaseOrder(),
+  fetchListOrder(),
 ]);
 
 // GitHub raw is a steadier source than the self-hosted API this replaced, but the reason
@@ -1290,6 +1346,7 @@ const excluded = Object.entries({ ...enChars, ...(enPatch.patchChars ?? {}) })
   .length;
 
 const cnSupplement = await fetchCnSupplement(new Set(roster.map(r => r.id)));
+const modeOrders = modeReleaseOrders(roster);
 
 // The wiki lists Japanese collab operators surname-first ("Togawa Sakiko"); HellaAPI
 // gives given-name-first ("Sakiko Togawa").
@@ -1355,7 +1412,8 @@ const entries = roster.map(r => ({
   // a mode's own operators, which were never released: looked up by name, the trainer
   // "Mechanist" would take the real Mechanist's date.
   releaseDate: r.mode ? null : releaseDateFor(r.data.name),
-  releaseOrder: releaseOrders.get(r.id) ?? null,
+  // Sanity Gone's ordinal, or for a mode's own operator the place AN-EN-Tags' list gives it.
+  releaseOrder: (r.mode ? modeOrders.get(r.id) : releaseOrders.get(r.id)) ?? null,
   // Display name of the operator's home nation ("Kjerag"), '' where the payload states
   // none. Harvested from the full payloads in buildOperatorDetails above.
   nation: nations.get(r.id) ?? '',
@@ -1431,7 +1489,9 @@ await fetchPortraits(entries);
 await bakeIcons('faction logos', 'faction-logos', entries.flatMap(e => [e.nationId, e.factionId]), id => `factions/logo_${id}.png`);
 await bakeIcons('class icons', 'class-icons', CLASS_SLUGS, slug => `classes/class_${slug}.png`);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
-const withOrder = entries.filter(o => o.releaseOrder != null).length;
+// A mode's own operators carry a place borrowed from AN-EN-Tags' list, not an ordinal of
+// Sanity Gone's, so they are not counted as having one.
+const withOrder = entries.filter(o => o.releaseOrder != null && !o.mode).length;
 console.log(
   `wrote ${entries.length} operators (${dated} dated, ${cnSupplement.length} recent-undated ` +
   `(sort first), ${genuinelyUndated} genuinely undated (sort last), ${excluded} unobtainable ` +

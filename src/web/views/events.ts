@@ -70,11 +70,13 @@ const monthTitle = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'l
 const rangeIn = (timeZone: string, start: number, end: number): string =>
   `${dayIn(timeZone, false).format(start)} – ${dayIn(timeZone, true).format(end)}`;
 
+// Down to the second, which is what shows it to be a clock: "3d 18h 26m 05s".
 function spanText(ms: number): string {
-  const minutes = Math.floor(ms / 60_000);
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor(minutes % 1440 / 60);
-  return days ? `${days}d ${hours}h` : `${hours}h ${minutes % 60}m`;
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  const two = (n: number): string => String(n).padStart(2, '0');
+  const days = Math.floor(seconds / 86_400);
+  const clock = `${two(Math.floor(seconds % 86_400 / 3600))}h ${two(Math.floor(seconds % 3600 / 60))}m ${two(seconds % 60)}s`;
+  return days ? `${days}d ${clock}` : clock;
 }
 
 // When the thing is over for the lists: an event stays until its shop shuts.
@@ -125,9 +127,13 @@ function operatorsHtml(pool: GamePool): string {
   `;
 }
 
+// Open to the public right now: announced, started, and its stages (or the pool) not yet shut.
+const isRunning = (item: GameEvent | GamePool, now: number): boolean =>
+  !item.predicted && item.start <= now && item.end > now;
+
 function cardHtml(item: GameEvent | GamePool, now: number): string {
   const tags = 'kind' in item ? [POOL_LABEL[item.kind] ?? 'Headhunting'] : eventTags(item);
-  const running = !item.predicted && item.start <= now && item.end > now;
+  const running = isRunning(item, now);
   return `
     <article class="ev-card${running ? ' ev-live' : ''}">
       <div class="ev-banner">
@@ -154,20 +160,33 @@ function sectionHtml(title: string, items: (GameEvent | GamePool)[], now: number
   `;
 }
 
-// Either list: what is on now, what Global has announced, what is only predicted.
-function listHtml(items: (GameEvent | GamePool)[], now: number): string {
+// A list's three sections at one moment: what is on now, what Global has announced, what is
+// only predicted.
+function sectionsOf(items: (GameEvent | GamePool)[], now: number): { title: string; items: (GameEvent | GamePool)[] }[] {
   const open = items.filter(item => lastsUntil(item) > now);
-  if (!open.length) return '<div class="state-msg"><div class="label">No schedule</div>This build has no data for this list.</div>';
   const announced = open.filter(item => !item.predicted);
+  return [
+    { title: 'Live now', items: announced.filter(item => item.start <= now) },
+    { title: 'Upcoming', items: announced.filter(item => item.start > now) },
+    { title: 'Predicted', items: open.filter(item => item.predicted) },
+  ];
+}
+
+// What a rendered list would have to be rebuilt for, rather than have its countdowns
+// rewritten in place: something moving between sections, or its stages closing.
+const shapeOf = (items: (GameEvent | GamePool)[], now: number): string =>
+  [...sectionsOf(items, now).map(s => s.items.length), items.filter(item => isRunning(item, now)).length].join();
+
+function listHtml(items: (GameEvent | GamePool)[], now: number): string {
+  const sections = sectionsOf(items, now);
+  if (!sections.some(s => s.items.length)) return '<div class="state-msg"><div class="label">No schedule</div>This build has no data for this list.</div>';
   return `
     <p class="events-note">
       The Global server's schedule, in server time (UTC-7). A predicted date is the CN run
       moved about ${lagDays()} days later, the gap Global has been keeping; it is an estimate
       until the thing is announced.
     </p>
-    ${sectionHtml('Live now', announced.filter(item => item.start <= now), now)}
-    ${sectionHtml('Upcoming', announced.filter(item => item.start > now), now)}
-    ${sectionHtml('Predicted', open.filter(item => item.predicted), now)}
+    ${sections.map(s => sectionHtml(s.title, s.items, now)).join('')}
   `;
 }
 
@@ -275,6 +294,9 @@ function calendarHtml(now: number): string {
   `;
 }
 
+// The one countdown timer, whichever list is showing.
+let ticker = 0;
+
 const TABS: { id: EventsTab; label: string; href: string }[] = [
   { id: 'list', label: 'Events', href: '#/events' },
   { id: 'pools', label: 'Headhunting', href: '#/events/pools' },
@@ -324,6 +346,29 @@ export function mountEvents(container: HTMLElement, tab: EventsTab): void {
     // The rebuild detached the button that was pressed; its replacement takes the focus.
     panel.querySelector<HTMLElement>(`[data-cal="${control.dataset.cal}"]:not(:disabled)`)?.focus();
   };
+
+  // The countdowns are a clock. The schedule is baked, but "now" is the reader's, so every
+  // second each card's line is written again from the same data; and when something starts,
+  // closes or ends, which moves it to another section or off the page, the list is rebuilt.
+  // The views have no way to be told they have been left, so the timer checks for itself:
+  // once its panel is gone from the page it stops.
+  clearInterval(ticker);
+  if (tab !== 'calendar') {
+    const items = tab === 'pools' ? getPools() : getEvents();
+    let shape = shapeOf(items, Date.now());
+    ticker = window.setInterval(() => {
+      const panel = container.querySelector<HTMLElement>('#ev-panel');
+      if (!panel) { clearInterval(ticker); return; }
+      const now = Date.now();
+      if (shapeOf(items, now) !== shape) {
+        shape = shapeOf(items, now);
+        panel.innerHTML = panelHtml();
+        return;
+      }
+      const shown = sectionsOf(items, now).flatMap(s => s.items);
+      panel.querySelectorAll('.ev-when').forEach((line, i) => { line.textContent = whenText(shown[i], now); });
+    }, 1000);
+  }
 
   // The link to here is in the sticky topbar, so it is pressed from anywhere down the grid.
   window.scrollTo(0, 0);

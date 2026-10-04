@@ -18,32 +18,42 @@
     <header>
       <h1><a href="#/" id="home"><img class="logo-mark" src="icons/icon-96.png" alt="" width="44" height="44"><span class="wordmark">DOSSIER</span></a></h1>
       <div class="topbar-actions">
+        <!-- One box in two parts: the field you type in, and at its right end the Filters
+             button's part, which becomes the filter panel's tab while the panel is open. -->
         <div class="search-wrap">
-          <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
-          <!-- The magnifier while the box is empty, a cross that clears it once it isn't.
-               Disabled (and click-through) when there is nothing to clear. -->
-          <button type="button" class="search-clear" id="search-clear" aria-label="Clear search" disabled>
-            <svg class="search-icon search-icon-find" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="7"></circle>
-              <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-            </svg>
-            <svg class="search-icon search-icon-clear" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18"></path>
-            </svg>
-          </button>
+          <div class="search-field">
+            <input type="search" id="search" placeholder="Search operators…" autocomplete="off">
+            <!-- The magnifier while the box is empty, a cross that clears it once it isn't.
+                 Disabled (and click-through) when there is nothing to clear. -->
+            <button type="button" class="search-clear" id="search-clear" aria-label="Clear search" disabled>
+              <svg class="search-icon search-icon-find" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+              </svg>
+              <svg class="search-icon search-icon-clear" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18"></path>
+              </svg>
+            </button>
+          </div>
+          <!-- The panel's toggle, and beside it, folded away until the panel is open, Clear
+               and the way out. -->
+          <div class="filter-tab">
+            <button class="chip chip-action" id="more-toggle" aria-controls="more-filters" aria-expanded="false">
+              <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M1.5 3.5h13M4 8h8M6.5 12.5h3"></path>
+              </svg>
+              <span id="more-label">Filters</span>
+            </button>
+            <span class="filter-extra">
+              <button class="filter-clear" id="clear-filters" aria-label="Clear filters" disabled>Clear</button>
+              <button class="filter-close" id="close-filters" aria-label="Close filters">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+              </button>
+            </span>
+          </div>
         </div>
-        <button class="chip chip-action" id="more-toggle" aria-controls="more-filters" aria-expanded="false">
-          <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M1.5 3.5h13M4 8h8M6.5 12.5h3"></path>
-          </svg>
-          <span id="more-label">Filters</span>
-        </button>
-        <!-- The way out of the panel, beside its toggle and shown only while it is open. -->
-        <button class="filter-close" id="close-filters" aria-label="Close filters" hidden>
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-        </button>
-        <!-- The panel, over its shape: two plain blocks, one behind the panel and one rising
-             behind the toggle, that the goo filter below runs together into a single blob. -->
+        <!-- The panel, over its shape: two plain blocks, the tab behind the buttons above
+             and the body under the box, that the goo filter below runs together into one. -->
         <div class="filter-pop">
           <div class="filter-blob" aria-hidden="true"><span class="blob-tab"></span><span class="blob-body"></span></div>
           <div id="more-filters" hidden></div>

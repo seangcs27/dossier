@@ -401,6 +401,10 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // null if Sanity Gone doesn't have this operator either (rare — usually only for an
   // operator so new even they haven't ingested it) or their site was unreachable at
   // build time. See scripts/build-operator-index.mjs.
+  //
+  // A mode's own operator (`mode`) has no ordinal there, having never been released. It
+  // carries a fraction instead (359.03): a place just after the ordinary operator of its
+  // rarity that precedes it in AN-EN-Tags' list, which is where that site shows it.
   releaseOrder: number | null;
   archetype: string;  // display name for subProfessionId, e.g. 'Splash Caster'
   tags: string[];     // recruitment tags, e.g. ['DPS', 'AoE']

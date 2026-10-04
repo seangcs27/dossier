@@ -56,13 +56,54 @@ body {
   border-radius: var(--radius-lg);
 }
 
-// Search leads the cluster beside the wordmark. 260px holds the longest operator name;
-// stretched across the bar it was mostly empty box.
+// The search box, beside the wordmark: one box in two parts. On the left the field you type
+// in; at its right end the Filters button's part, with Clear and the close button beside it
+// while the panel is open. Shut, the two read as a single box with a rule between them.
+// Open, the right part gives up its fill and what shows through is the filter panel's tab
+// (.filter-pop below), so the buttons sit on the tab of the panel they belong to.
+//
+// The box is as wide as that panel, which is why it no longer stops at the 260px the
+// longest operator name needs: the two are one shape, and the count beside them stays put
+// when the panel opens.
 .search-wrap {
   position: relative;
-  width: 260px;
+  // Over the panel's shape, which tucks in behind the box.
+  z-index: 21;
+  width: min(420px, calc(100vw - 32px));
+  min-width: 0;
+  display: flex;
+}
+
+.search-field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+
+  &:focus-within { border-color: var(--accent); }
+}
+
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: 0 var(--sp-4);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  // Closing, it is a box again only once the panel's body has run back up behind it.
+  transition: background-color 0.16s ease 0.34s, border-color 0.16s ease 0.34s;
+}
+
+.filters-open .filter-tab {
+  background-color: transparent;
+  border-color: transparent;
+  transition-delay: 0s;
 }
 
 // The box's leading icon, and its clear button: a magnifier while the box is empty, turning
@@ -108,16 +149,18 @@ body {
 }
 
 #search {
-  width: 100%;
-  padding: var(--sp-10) 14px var(--sp-10) 36px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  // Whatever the buttons leave. An input has a width of its own (about 20 characters) that
+  // it would otherwise hold out for, pushing the box wider than the row on a phone.
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  padding: var(--sp-10) var(--sp-6) var(--sp-10) 36px;
+  background: none;
+  border: 0;
   color: var(--text);
   font-size: var(--fs-base);
   outline: none;
 
-  &:focus { border-color: var(--accent); }
   // The cross above clears the box; the browser's own would be a second one.
   &::-webkit-search-cancel-button { display: none; }
 }
@@ -126,15 +169,10 @@ body {
 // same job, and the button used to sit at the far end of the bar away from the box it
 // works with.
 //
-// Left, beside the wordmark. It is the popover's positioning context, so #more-filters
-// opens under the cluster wherever the cluster sits — and stretched to the header's full
-// content height, so the popover's offset is the header's padding and nothing else.
+// Left, beside the wordmark. It is the popover's positioning context and exactly as tall
+// as the search box, so the panel opens from the box's own lower edge.
 .topbar-actions {
-  // From the cluster's foot to the bar's lower edge: the header's padding and its border.
-  --pop-gap: calc(var(--sp-16) + 1px);
-
   position: relative;
-  align-self: stretch;
   display: flex;
   align-items: center;
   gap: var(--sp-8);
@@ -221,38 +259,44 @@ body {
 // lives here now, so leaving it in the document flow would push the grid down by a
 // couple hundred pixels every time it opened.
 //
-// The panel is one shape with its toggle: a blob that hangs from the bar's lower edge and
-// rises, on the right, round the Filters button and the close button beside it, leaving the
-// search box outside in the notch. It pours out of the button when it opens and runs back
-// into it when it closes.
+// The panel is a folder with a tab. Its body hangs from the search box's lower edge, as
+// wide as the box, with no gap between them; its tab stands up inside the box's right end,
+// behind the Filters, Clear and close buttons, so the buttons that work the panel sit on the
+// panel's own tab and the field you type in sits in the notch beside it. The body pours out
+// from under the tab when it opens and is drawn back up into it when it closes.
+//
+// It animates whatever `prefers-reduced-motion` says, on purpose. On Windows that setting
+// is the "Animation effects" switch, which is off for a lot of people who only dislike
+// window animations (see card-spin.ts, which takes the same view), and with it honoured
+// here the panel simply appeared and vanished on the machine it was designed on. The motion
+// is one small panel, set off by the reader's own press.
 .filter-pop {
-  // How far the blob rises above the panel: from the bar's lower edge up to 8px over the
-  // toggle. --tab-left and --tab-rise are the toggle's place in the cluster, measured by
-  // syncChips() in grid.ts, since both move with the label and, on a phone, the width.
-  --rise: calc(var(--tab-rise, 38px) + var(--pop-gap) + var(--sp-8));
+  // How far the body reaches up behind the search box: about half the box, so the box's
+  // own rounded foot sits on it with nothing showing between the two.
+  --tuck: 18px;
 
   position: absolute;
   left: 0;
-  top: calc(100% + var(--pop-gap));
+  right: 0;
+  top: 100%;
   z-index: 20;
-  width: min(420px, calc(100vw - 32px));
   // Hidden once the blob has run back up, not before.
   visibility: hidden;
-  transition: visibility 0s linear 0.3s;
+  transition: visibility 0s linear 0.5s;
 }
 
 .filters-open .filter-pop { visibility: visible; transition-delay: 0s; }
 
-// Open, the cluster is as wide as the panel, which puts the close button at the panel's
-// right edge and moves the count out from under the blob.
-.topbar-actions.filters-open { width: min(420px, calc(100vw - 32px)); }
-
-// The shape itself, behind the panel. The goo filter (index.html) runs the two blocks
-// together and rounds the corner between them; nothing else is in here, so the panel's own
-// text is never filtered.
+// The shape itself, behind the panel, reaching up to the search box's top edge for the tab.
+// The goo filter (index.html) runs the two blocks together and rounds the corners; nothing
+// else is in here, so the panel's own text is never filtered.
+//
+// --box-h is the search box's height and --tab-w the width of its buttons' part, both
+// measured in grid.ts: the second moves with the Filters label and with Clear and the close
+// button folding in and out. The fallbacks are the desktop sizes with the panel shut.
 .filter-blob {
   position: absolute;
-  inset: calc(-1 * var(--rise)) 0 0;
+  inset: calc(-1 * var(--box-h, 38px)) 0 0;
   z-index: -1;
   filter: url('#goo') drop-shadow(0 12px 24px rgb(0 0 0 / 45%));
   pointer-events: none;
@@ -261,47 +305,44 @@ body {
 .goo-rim { flood-color: var(--border); }
 .svg-defs { position: absolute; }
 
+// Both blocks stop 1px short of the box's outer edges. The filter draws its rim outside a
+// block, and that puts the rim on the same pixels as the box's own border, so the tab's top
+// edge and the field's top edge are one line.
 .blob-tab,
 .blob-body {
   position: absolute;
-  right: 0;
-  border-radius: var(--radius-xl);
+  right: 1px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
-// Scale is the whole animation, with no fade: the filter cuts on opacity, so a block at
-// half strength would not look faint, it would vanish. The ease is the card's: a fast start
-// and a long settle with no rebound, the way something thick pours. What makes it move like
-// a liquid is the filter, rounding the join as the two blocks run into each other.
+// The tab: behind the buttons' part of the box, from the box's top edge down into the body
+// so the two overlap and the filter has something to join. It reaches a little to the left
+// as well, in behind the field, so no gap opens between the two. It does not move: the
+// buttons' part fades from a filled box to clear over it, and back.
 .blob-tab {
-  top: 0;
-  left: calc(var(--tab-left, 268px) - var(--sp-6));
-  // Down into the body, so the two overlap and the filter has something to join.
-  height: calc(var(--rise) + 24px);
-  transform: scale(0.4, 0);
-  transform-origin: 50% 40%;
-  transition: transform 0.18s ease-in 0.12s;
+  top: 1px;
+  width: calc(var(--tab-w, 96px) + var(--sp-8) - 1px);
+  height: calc(var(--box-h, 38px) + 20px);
 }
 
+// Scale is the whole animation, with no fade: the filter cuts on opacity, so a block at
+// half strength would not look faint, it would vanish. Opening, the ease is the card's: a
+// fast start and a long settle with no rebound, the way something thick pours. Closing
+// takes its time too; a quick ease-in was over before it read as anything but the panel
+// vanishing. What makes it move like a liquid is the filter, rounding the join as the body
+// runs out from under the tab.
 .blob-body {
-  top: var(--rise);
-  left: 0;
-  bottom: 0;
-  transform: scale(0.3, 0);
-  // Under the toggle, which is where it pours from.
-  transform-origin: calc(100% - 64px) 0;
-  transition: transform 0.24s ease-in;
+  top: calc(var(--box-h, 38px) - var(--tuck));
+  left: 1px;
+  bottom: 1px;
+  transform: scale(0.4, 0);
+  // Under the middle of the tab, which is where it pours from.
+  transform-origin: calc(100% - var(--tab-w, 96px) / 2) 0;
+  transition: transform 0.38s ease-in-out;
 }
 
-.filters-open .blob-tab { transform: none; transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1); }
-.filters-open .blob-body { transform: none; transition: transform 0.52s cubic-bezier(0.2, 0.9, 0.2, 1) 0.08s; }
-
-// The toggle and the close button sit on the blob's raised part, so above the panel's layer.
-#more-toggle,
-#close-filters {
-  position: relative;
-  z-index: 21;
-}
+.filters-open .blob-body { transform: none; transition: transform 0.52s cubic-bezier(0.2, 0.9, 0.2, 1) 0.06s; }
 
 // No box of its own: the blob behind it is the panel. Hidden, it keeps its place in the
 // layout, since the blob takes its height from it and still has to run back up.
@@ -313,23 +354,14 @@ body {
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   opacity: 0;
-  transition: opacity 0.1s;
+  transition: opacity 0.12s;
 }
 
 // The content arrives once the blob has mostly landed.
 .filters-open #more-filters { opacity: 1; transition: opacity 0.2s 0.26s; }
 
-@media (prefers-reduced-motion: reduce) {
-  .filter-pop,
-  .blob-tab,
-  .blob-body,
-  #more-filters { transition: none; }
-}
-
 .filter-close {
   display: flex;
-  // The far end of the open cluster, which is the blob's top-right corner.
-  margin: 0 var(--sp-4) 0 auto;
   padding: var(--sp-6);
   border: none;
   border-radius: var(--radius-pill);
@@ -340,7 +372,31 @@ body {
   svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
   &:hover { background: var(--surface2); color: var(--text); }
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  &[hidden] { display: none; }
+}
+
+// Clear and the close button, in the search box beside the Filters button. Shut, they are
+// folded to no width, with the box's gap before them taken back, and they unfold as the
+// panel opens, so the Filters button slides along the box instead of jumping. Hidden as
+// well as folded, which is what keeps them out of the tab order.
+.filter-extra {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  max-width: 0;
+  margin-left: calc(-1 * var(--sp-4));
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: max-width 0.24s ease-in-out, margin-left 0.24s ease-in-out, opacity 0.16s, visibility 0s linear 0.24s;
+}
+
+.filters-open .filter-extra {
+  // Any width past the pair's own (about 90px) would do: it is only the fold's far end.
+  max-width: 120px;
+  margin-left: 0;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
 }
 
 .filter-group {
@@ -526,6 +582,9 @@ body {
   overflow: hidden;
 }
 
+// The same split button, in three: Game mode has the roster and the two modes.
+.game-row { grid-template-columns: repeat(3, 1fr); }
+
 .server-btn {
   display: flex;
   align-items: center;
@@ -659,10 +718,14 @@ body {
   .sort-dir.desc { transform: none; }
 }
 
+// Clear, in the search box between the Filters button and the close button while the panel
+// is open: the Filters button's pill, with nothing to mark it out until it has something to
+// clear.
 .filter-clear {
-  padding: 9px;
+  flex-shrink: 0;
+  padding: 7px var(--sp-12);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-pill);
   background: var(--bg);
   color: var(--text);
   font-size: var(--fs-sm);
@@ -671,6 +734,8 @@ body {
 
   &:hover:not(:disabled) { border-color: var(--accent); }
   &:disabled { opacity: 0.4; cursor: default; }
+  // Inside the button: the fold it sits in clips anything drawn outside.
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 }
 
 // The result count, as a tag: the same pill as the Filters button beside it, without the
@@ -753,6 +818,23 @@ body {
   background: var(--border);
   border: 1px solid var(--edge);
   overflow: hidden;
+}
+
+// The mark on an operator only a game mode lends: the mode's initials (IS, SP) in the
+// card's top-right corner, the detail page's tag at card size. Without it nothing on the
+// face tells the trainer "Mechanist" from the operator of the same name beside it.
+.op-mode {
+  position: absolute;
+  top: var(--sp-8);
+  right: var(--sp-8);
+  padding: var(--sp-2) var(--sp-6);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-pill);
+  background: rgb(25 25 32 / 60%);
+  color: var(--muted);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 
 // The issuing body repeated up the plate's left edge, bottom to top, exactly where the
@@ -3160,16 +3242,6 @@ a.pool-op:hover { text-decoration: underline; }
 
   #search {
     font-size: var(--fs-xl); // < 16px makes iOS Safari zoom on focus
-  }
-
-  // The cluster is already the full row here, so the panel takes its width from it, open
-  // or closed, and the bar's padding under it is the smaller one.
-  .topbar-actions { --pop-gap: calc(var(--sp-10) + 1px); }
-  .topbar-actions.filters-open { width: auto; }
-
-  .filter-pop {
-    right: 0;
-    width: auto;
   }
 
   // The column gutter has to be wider than the rarity tab, or the next card in DOM order

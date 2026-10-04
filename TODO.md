@@ -15,8 +15,6 @@ Not built yet:
   to 16 January and return to the usual lag, as past years did; Arkpedia's stay 10–16 days
   later through March. No rule reproduced theirs (they may be hand-set), so there is nothing
   to copy; revisit when the wiki's `EstimatedEventDetails` table, empty today, gets rows.
-- **A ticking countdown.** "Ends in 3d 18h" is as of when the page was opened. The views
-  have no unmount hook to stop a timer on, which is the part to add.
 - **Birthdays and the pull planner.** Arkpedia's calendar has a Birthdays toggle and its
   event cards a "Plan pulls" button. Neither was asked for.
 - **Standard pools ahead of the wiki.** The game dates a standard pool before the wiki has
@@ -25,16 +23,43 @@ Not built yet:
 
 ### Mode-only operators in the grid
 
-The 29 operators a game mode lends (IS, SP) are in the grid now, tagged on their detail page
-and named for their mode on the card's edge. Not done: a filter for them, and the Server
-filter counts them under GLOBAL, whose tooltip says "released".
+The 29 operators a game mode lends (IS, SP) are in the grid: badged on the card, tagged on
+their detail page, filterable under Game mode, and placed among the released operators by
+AN-EN-Tags' list order. What is left:
 
-### The filter blob — unseen on a real device
+- **The Server filter counts them under GLOBAL**, whose tooltip says "released".
+- **"SO" is not marked.** AN-EN-Tags badges two obtainable operators, Raidian and Mechanist,
+  as Special Operators, from its own `json/puppiiz/special_operator.json`. Nothing in the
+  game tables read here says so.
+- **One fetch decides their place.** If `tl-akhr.json` is unreachable at build time they
+  fall back to sorting last. It happened once in testing and righted itself on the next run.
+- **Seven wiki release dates disagree with the release order.** Skadi, Dur-nar, Breeze,
+  Broca, Purestream, Chiave and Raidian carry a wiki date weeks or months later than the
+  operators ordered after them (the wiki's "debut event" for them is a later one). Nothing
+  shows it: the date is only the sort's fallback, and all seven have an order. Mayer is the
+  one operator with no order, and sorts by its date, correctly, among the launch operators.
 
-The Filters popover's shape is an SVG goo filter over two blocks. It was checked in the
-desktop app's browser pane at 1280px and 375px, with the animation's middle frames forced by
-hand. Not checked: Safari, which has a history of trouble with filters over animated
-transforms, and how the open and close feel at speed.
+### The filter blob — its animation unseen by me
+
+The Filters popover's shape is an SVG goo filter over two blocks: a folder whose tab stands
+in the search box's right end, behind the Filters, Clear and close buttons. It went through
+a blob round the Filters button (liked), a plain panel as wide as the box ("not the slime
+shape any more", and missing its animation, which was the reduced-motion rule doing what it
+said on a machine with that setting on), and a blob with shoulders and drips (animation
+back, drips unwanted) before the owner asked for a tab like a folder's. It animates
+regardless of that setting. I have confirmed the transitions start, open and close, and
+looked at the open and shut states, but nobody has watched this version play at speed.
+
+### The rarity tab going flat after a spin on iOS Safari — a fix on reasoning alone
+
+On an iPhone the 3D rarity tab drew flat for a moment when a spun card stopped. The change
+in `card-spin.ts` commits the last frame before `is-spinning` comes off, so the plate's
+transition never starts at a stop; the theory is that Safari flattens nested `preserve-3d`
+(the tab, inside the plate) for as long as an accelerated transform transition runs on the
+plate. It fits the facts (phone only, lasts about the transition's quarter second, only the
+nested part goes flat) but was not reproduced. If it still happens, the next suspect is the
+light fading out at the same moment: `.op-light` and `.op-shade` (which has
+`mix-blend-mode`) lose `is-lit` on a touch device when the spin ends.
 
 ### Detail page — match Sanity Gone, one tab at a time
 Done tab by tab against the live reference (https://sanitygone.help/en/operators/makoto-yuki/
