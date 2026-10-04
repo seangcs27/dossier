@@ -203,13 +203,42 @@ async function bakeIcons(label, dirName, names, pathFor, size = 256) {
     }
   });
 
-  const total = have.size + written;
+  // Of the ones asked for, not of everything in the folder: the collabs' logos share the
+  // faction badges' folder and would be counted as badges.
+  const total = ids.length - wanted.length + written;
   console.log(
     `${label}: ${total}/${ids.length} (${written} new)` +
     `${missing.length ? ` — missing ${missing.join(', ')}` : ''} ` +
     `-> ${path.relative(process.cwd(), logoDir)}`,
   );
   return total;
+}
+
+// The collabs' own logos, from the repo rather than a CDN (see collabLogoFiles). They go in
+// beside the faction badges, which is where the pages look for a badge. A source is one
+// flat colour on transparency (black, white or red, as it happens), and the badge is a
+// luminance mask, where anything dark disappears: so only the alpha is kept, under plain
+// white. Rewritten every build: four small files, and a replaced source should not need
+// the folder clearing first.
+async function bakeCollabLogos() {
+  const logoDir = path.join(outDir, 'faction-logos');
+  await mkdir(logoDir, { recursive: true });
+  for (const [slug, file] of collabLogoFiles) {
+    // The density is for the SVGs: they are drawn a few hundred pixels wide, and at the
+    // default would be scaled up from that.
+    const { data, info } = await sharp(path.join(collabLogoDir, file), { density: 300 })
+      .resize(512, 512, { fit: 'inside' })
+      .ensureAlpha()
+      .extractChannel('alpha')
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const webp = await sharp({ create: { width: info.width, height: info.height, channels: 3, background: '#fff' } })
+      .joinChannel(data, { raw: { width: info.width, height: info.height, channels: 1 } })
+      .webp({ quality: 82, effort: 4, alphaQuality: 100 })
+      .toBuffer();
+    await writeFile(path.join(logoDir, `collab-${slug}.webp`), webp);
+  }
+  console.log(`collab logos: ${collabLogoFiles.size} -> ${path.relative(process.cwd(), logoDir)}`);
 }
 
 // The eight class glyphs, which every card and both filter panels show. Baking them is
@@ -412,6 +441,28 @@ const COLLAB_BY_PREFIX = {
 const collabFor = displayNumber => {
   const prefix = (String(displayNumber ?? '').match(/^[A-Za-z]+/) ?? [''])[0];
   return COLLAB_BY_PREFIX[prefix] ?? '';
+};
+
+// A collab's own logo, where the repo has one: collab-logos/<slug>.svg or .png beside this
+// script, named for the collab ('Persona 3' -> persona-3). The game ships none: it files
+// the Rhodes Island badge under sees, mujica and laios, and Monster Hunter's operators are
+// Rhodes Island's own. The four here are the series' logos as Wikimedia Commons has them,
+// each filed there as a public-domain text logo, and a trademark:
+//   persona-3             File:Persona 3 Reload logo black.svg
+//   monster-hunter        File:Monster Hunter logo black.svg
+//   ave-mujica            File:Ave-mujica-original-logo.svg
+//   delicious-in-dungeon  File:Dungeon Meshi Logo.png
+// A collab with no file keeps its faction's badge, as Rainbow Six Siege does: the game has
+// Team Rainbow's.
+const collabLogoDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'collab-logos');
+const collabLogoFiles = new Map(
+  (await readdir(collabLogoDir).catch(() => [])).map(file => [path.parse(file).name, file]),
+);
+
+// The id that collab's badge is baked under ('collab-persona-3'), '' where it has no logo.
+const collabLogoFor = collab => {
+  const slug = collab.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  return collabLogoFiles.has(slug) ? `collab-${slug}` : '';
 };
 
 const RECENT_UNDATED = '9999-12-31';
@@ -1069,11 +1120,15 @@ async function buildOperatorDetails(regular, cnSupplement) {
       // buildPayload returns instead of the fan translations, in both this file and the
       // popup projection below (`pd` reads from finalOp too).
       const collab = collabFor(base.data?.displayNumber);
+      const collabLogo = collabLogoFor(collab);
       const finalOp = {
         ...op, arts, limited: limitedIds.has(entry.id) || Boolean(collab), cnOnly: Boolean(cn),
         welfare: WELFARE_OBTAIN.has(op.data?.itemObtainApproach),
         // 'IS' or 'SP' for an operator only that mode lends; absent for everyone else.
         mode: entry.mode,
+        // The collab's name and its logo's id, where that collab has a logo of its own: the
+        // header shows it in place of the faction's badge. Absent for everyone else.
+        ...(collabLogo ? { collab, collabLogo } : {}),
       };
 
       // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
@@ -1428,6 +1483,13 @@ for (const c of cnSupplement) {
   });
 }
 
+// The id of the collab's own logo, where it has one: the card back shows that in place of
+// the faction's badge. Absent for everyone else.
+for (const entry of entries) {
+  const collabLogo = collabLogoFor(entry.collab);
+  if (collabLogo) entry.collabLogo = collabLogo;
+}
+
 // RECENT_UNDATED entries are placeholder-dated, not genuinely dated — don't let them
 // count toward MIN_DATED, or a wiki outage that zeroed out real dates could still pass
 // the check as long as enough CN-supplement operators existed.
@@ -1455,6 +1517,7 @@ await writeFile(outFile, JSON.stringify(entries));
 const branchIcons = await fetchBranchIcons(entries);
 await fetchPortraits(entries);
 await bakeIcons('faction logos', 'faction-logos', entries.flatMap(e => [e.nationId, e.factionId]), id => `factions/logo_${id}.png`);
+await bakeCollabLogos();
 await bakeIcons('class icons', 'class-icons', CLASS_SLUGS, slug => `classes/class_${slug}.png`);
 const genuinelyUndated = entries.filter(o => !o.releaseDate).length;
 // A mode's own operators carry a place borrowed from AN-EN-Tags' list, not an ordinal of

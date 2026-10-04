@@ -75,6 +75,7 @@ scripts/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
+  collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
@@ -96,8 +97,9 @@ src/
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
       portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
       faction-logos/<id>.webp ← one badge per faction (45): the nation on the card back
-                                (the team for the 28 with no nation), the most specific
-                                faction in the detail header
+                                (the team for the ones with no nation), the most specific
+                                faction in the detail header; plus collab-<slug>.webp, the
+                                four collab logos, which take the badge's place on both
       items.json              ← name/icon/rarity of the ~90 materials any payload prices, bundled
       item-icons/<iconId>.webp  ← those materials' icons at 96px, copied as static files
       elite-icons/<0-2>.webp    ← the game's elite badges, 40px, painted as CSS masks
@@ -129,6 +131,7 @@ src/
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools , #/events/calendar)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
+    scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
@@ -149,7 +152,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -165,6 +168,26 @@ injection.
 spacing / radius scales (as Sass maps), the `:root` custom properties generated from them,
 the reset, the rarity colour modifiers, and the spinner keyframe. Changing a rarity colour
 means editing **one map** in `_tokens.scss`.
+
+**Scrollbars are the web target's alone** (`src/web/styles.scss`; the popup keeps the
+browser's, by the owner's choice): an 8px gutter holding a 4px pill, no track and no arrow
+buttons, 金藍 at rest (the one blue above 3:1 on both the page and a panel) and the accent's
+gold while its box is being scrolled or the pointer is on it. Chromium and Safari take the
+`::-webkit-scrollbar` parts; Firefox takes `scrollbar-width` / `scrollbar-color`, which sit
+behind `@supports not selector(::-webkit-scrollbar)` because Chromium, given both, uses the
+standard pair and goes back to a square thumb between arrows. The filter panel's track
+stops 4px short of its round foot, where the thumb's tip crossed the corner.
+
+The gold while scrolling is `scrollbar.ts`: one capturing `scroll` listener puts
+`.is-scrolling` on the box and takes it off 700 ms after the last event, easing `--thumb`
+between the two colours by hand with the Web Animations API (120 ms in, 600 ms out, from
+whatever colour the thumb is at, so a scroll that resumes mid-fade does not jump). By hand
+because a CSS transition would have to join each scroller's own `transition` list.
+`--thumb` is a registered `<color>` (`@property`) so it can be eased at all, and it does not
+inherit, since easing an inherited property on the page would restyle every element under it
+each frame; the thumb reads its own box's value with `--thumb: inherit`. **The page's
+scrollbar is styled from `<body>`, not `<html>`**: lit on `<html>`, the colour changed in
+the computed style and never in the pixels, so the page's scroll events light the body.
 
 The scales emit `--fs-*` (11 steps, 10→36px), `--sp-*` (9 steps, named by value — `--sp-8`
 is 8px), and `--radius-*` (6 steps). They were read off the shipped stylesheet rather than
@@ -256,7 +279,7 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 `operators.json` — one slim entry per operator, bundled into both JS bundles:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab, cnOnly?, mode? }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab, collabLogo?, cnOnly?, mode? }
 ```
 
 `operator-details/<id>.json` — the full `Operator` payload for **every** operator (460),
@@ -295,6 +318,20 @@ fetch was one more thing to fail. A mode-only operator the record lacks sorts la
 build warning that names it. Payloads also carry `welfare`: true where
 `itemObtainApproach` is an event reward, an anniversary reward or an Integrated Strategies
 reward (81 operators).
+
+**Four collabs have a logo of their own**, kept in the repo (`scripts/collab-logos/`, named
+for the collab: `persona-3.svg`, `monster-hunter.svg`, `ave-mujica.svg`,
+`delicious-in-dungeon.png`) because the game ships none: it files the Rhodes Island badge
+under `sees`, `mujica` and `laios`, and Monster Hunter's operators are Rhodes Island's own.
+They are the series' logos as Wikimedia Commons has them, each filed there as a public-domain
+text logo and a trademark (the build script names the four files). The build bakes each
+into `faction-logos/collab-<slug>.webp`, keeping only the alpha under plain white, since the
+sources are black, white and red and the badge is a luminance mask; and it sets `collabLogo`
+on those 19 operators' index entries, and `collab` + `collabLogo` on their payloads. Where
+`collabLogo` is set, the card back and the detail header show it in place of the faction's
+badge, with the collab's name as the tooltip. A collab with no file keeps its faction's
+badge: Rainbow Six Siege has Team Rainbow's from the game. A new collab's logo is one file
+dropped in that folder under the collab's name.
 
 **Seven sources are joined at build time.** Only the game's own excel tables are load-bearing
 — every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
@@ -534,8 +571,10 @@ set and information architecture all follow theirs, so read
   alter epithet in `--dim`) + class / branch / position row. The badge is the operator's most
   specific faction (team, else group, else nation), painted as a luminance mask in one colour
   for every operator (the accent's gold at 60%, as on the back of a card; it followed rarity
-  until the owner found that odd, and gold was their pick over a pale neutral); the game files the Rhodes Island badge under three collab ids (`sees`, `mujica`,
-  `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits in the artwork's
+  until the owner found that odd, and gold was their pick over a pale neutral). A crossover
+  operator shows its collab's own logo there instead (Persona 3 Reload, Monster Hunter, Ave
+  Mujica, Delicious in Dungeon; see `collabLogo` above), because the game files the Rhodes
+  Island badge under `sees`, `mujica` and `laios`. **LIMITED** sits in the artwork's
   top-right corner (`splashTagsHtml`), for the 26 operators the CN gacha table's LIMITED
   pools name plus every collab operator (27; they come from LINKAGE pools, which that table
   doesn't flag). It and the other tags are the same outlined pill, stacked one above the

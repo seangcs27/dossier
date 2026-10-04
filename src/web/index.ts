@@ -5,9 +5,11 @@ import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
 import { mountEvents } from './views/events';
 import { mountTooltips } from './tooltip';
+import { mountScrollbars } from './scrollbar';
 
 applyRandomLogo();
 mountTooltips();
+mountScrollbars();
 
 const view = document.getElementById('view')!;
 const eventsLink = document.getElementById('nav-events')!;

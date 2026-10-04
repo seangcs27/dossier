@@ -72,6 +72,7 @@ the deploy workflow keeps the published site current as new operators release.
 | [PuppiizSunniiz/AN-EN-Tags](https://github.com/PuppiizSunniiz/AN-EN-Tags) | Community English translations: skills, talents, RIIC buffs, potentials, recruitment tags |
 | [PuppiizSunniiz/Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images) | Avatars, class icons, skill icons, full illustrations |
 | [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) | 180×360 bust portraits for grid cards |
+| [Wikimedia Commons](https://commons.wikimedia.org) | The four crossover logos kept in `scripts/collab-logos/` (Persona 3 Reload, Monster Hunter, Ave Mujica, Delicious in Dungeon) |
 
 Every source except HellaAPI is supplemental: if one is unreachable the build logs a
 warning and degrades rather than failing. All network calls carry a 20 s timeout.
@@ -176,5 +177,9 @@ dossier/
 All Arknights game data and artwork is the property of **Hypergryph / Yostar**. This is a
 non-commercial fan reference built on community-maintained data mirrors (credited above),
 and carries no affiliation or endorsement. Assets will be removed on request.
+
+The Persona 3 Reload, Monster Hunter, Ave Mujica and Delicious in Dungeon logos are
+trademarks of their respective owners. They are shown only to mark which crossover an
+operator came from.
 
 *Scaffolded from [hololive-helper](https://github.com/seangcs27/hololive-helper); Phase 2+ replaced the original feature set entirely.*

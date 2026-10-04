@@ -195,21 +195,25 @@ and no branch line — so `npm run design` regenerates previews of a UI that no 
 
 Not blocked on anything; needs a design pass rather than investigation.
 
-### Collab logos — waiting on artwork
-Four collabs show the Rhodes Island badge on the card back and in the detail header, because
-the game has no logo for them: Persona 3 (`sees`, 4 operators), Ave Mujica (`mujica`, 5) and
-Delicious in Dungeon (`laios`, 4) are factions whose logo file is the Rhodes Island badge,
-and the 6 Monster Hunter operators belong to Rhodes Island itself (`rhodes`, `action4`,
-`reserve6`). Rainbow Six Siege has its own (`rainbow`).
+### Collab logos — what is left
+**Done:** Persona 3, Monster Hunter, Ave Mujica and Delicious in Dungeon show the series' own
+logo on the card back and in the detail header, in place of the Rhodes Island badge the game
+files them under. The four files are in `scripts/collab-logos/` (not `design/source/`, which
+turned out to be gitignored whole, so the deploy build could not have read them there);
+CLAUDE.md has how they are baked and wired. Rainbow Six Siege keeps the game's own badge.
 
-Blocked on the images, which the owner offered to find. One per collab: an emblem rather than
-a wordmark (it is drawn at 72px in the header and at most 140px on a card), white on transparent
-(the badge is a luminance mask, so colour is dropped and anything dark disappears), square,
-SVG or a PNG of 512px or more. They would be the first images here that are not the game's
-own files, so they need a tracked folder and a build step that lays them over
-`faction-logos/`, which is gitignored and rebuilt. Three can go by faction id. Monster Hunter
-cannot, since its operators share their ids with ordinary Rhodes Island operators: the card
-and the header would have to ask for the collab's logo first, by `collab`.
+| Collab | Wikimedia Commons file | Shape |
+|---|---|---|
+| Persona 3 | `Persona 3 Reload logo black.svg` | compact, reads at 72px |
+| Monster Hunter | `Monster Hunter logo black.svg` | two-line wordmark, reads at 72px |
+| Ave Mujica | `Ave-mujica-original-logo.svg` | one-line wordmark, small at 72px |
+| Delicious in Dungeon | `Dungeon Meshi Logo.png` | the Japanese title, very wide, smallest at 72px |
+
+What is left is better art for the two wide ones, if it exists. Commons' other files were
+worse (the Dungeon Meshi SVG is outlines only, the Ave Mujica anime logo an opaque JPEG,
+English Wikipedia's Monster Hunter logo a small colour raster), and monsterhunterwiki.org,
+which has the series' emblems, sits behind a bot check and was left alone. A squarer emblem
+dropped into the folder under the same name replaces a wordmark with no other change.
 
 ### Nation and group on the detail page, with their logos
 **Partly done.** The detail header now shows one badge — the operator's most specific faction

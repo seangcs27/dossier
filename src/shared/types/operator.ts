@@ -309,6 +309,11 @@ export interface Operator {
   welfare?: boolean;
   // Set on an operator only a game mode lends, which nothing can give you.
   mode?: OperatorMode;
+  // The crossover's name ('Persona 3') and the id its own logo is baked under
+  // ('collab-persona-3'), which the header shows in place of the faction's badge. Both are
+  // set only where the repo has a logo for that collab (scripts/collab-logos/).
+  collab?: string;
+  collabLogo?: string;
 }
 
 /** The game mode an unobtainable operator belongs to: Integrated Strategies or Stronghold Protocol. */
@@ -383,6 +388,10 @@ export interface OperatorIndexEntry extends OperatorSlim {
   // outsiders with no nation, and Monster Hunter, whose operators are Terra natives in a
   // collab's costume and keep theirs.
   collab: string;
+  // The id that collab's own logo is baked under ('collab-persona-3'), which the card back
+  // shows in place of the faction's badge. Absent where the collab has no logo of its own
+  // (Rainbow Six Siege: the game has Team Rainbow's) and on the regular roster.
+  collabLogo?: string;
   // Set on operators the global server doesn't have yet, absent on everyone else.
   cnOnly?: boolean;
   // Set on an operator only a game mode lends, absent on everyone else.

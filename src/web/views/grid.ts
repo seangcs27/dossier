@@ -123,11 +123,11 @@ function buildCard(op: OperatorIndexEntry): string {
         <div class="op-back-frost"></div>
         <div class="op-back-print">
           <div class="bk-head"><span class="bk-serial">${escHtml(op.id)}</span></div>
-          <div class="bk-mid">${op.nationId || op.factionId
-            // A mask rather than an <img>, so the card supplies the colour. The nation's
-            // badge, or for the 28 operators with no nation (the franchise collabs, Babel,
-            // the Followers) their team's.
-            ? `<div class="bk-glyph" style="--logo: url(${factionLogoUrl(op.nationId || op.factionId)})" data-tip="${escHtml(op.nation || op.faction)}"></div>`
+          <div class="bk-mid">${op.collabLogo || op.nationId || op.factionId
+            // A mask rather than an <img>, so the card supplies the colour. The collab's
+            // own logo where it has one; otherwise the nation's badge, or for the operators
+            // with no nation (Team Rainbow, Babel, the Followers) their team's.
+            ? `<div class="bk-glyph" style="--logo: url(${factionLogoUrl(op.collabLogo || op.nationId || op.factionId)})" data-tip="${escHtml(op.collabLogo ? op.collab : op.nation || op.faction)}"></div>`
             : ''}</div>
           <div class="bk-foot">
             <div class="bk-tags">${op.tags.map(t => `<span class="bk-tag">${escHtml(t)}</span>`).join('')}</div>

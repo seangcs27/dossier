@@ -994,6 +994,10 @@ function headerHtml(s: DetailState): string {
   // S.E.E.S. rather than nothing for a collab operator, Penguin Logistics rather than Lungmen.
   const mainPower = s.op.factions?.[0];
   const faction = mainPower?.teamPower ?? mainPower?.groupPower ?? mainPower?.nationPower;
+  // A crossover operator shows its collab's own logo instead, where the build has one.
+  const badge = s.op.collabLogo && s.op.collab
+    ? { id: s.op.collabLogo, name: s.op.collab }
+    : faction && { id: faction.powerId, name: faction.powerName };
 
   return `
     <div class="op-rarity-strip r${n}">
@@ -1001,9 +1005,9 @@ function headerHtml(s: DetailState): string {
       ${'<span class="strip-star">★</span>'.repeat(n)}
     </div>
     <div class="op-header">
-      ${faction
+      ${badge
         // A mask, as on the back of a card, so the stylesheet supplies the colour.
-        ? `<span class="op-header-faction" role="img" style="--logo: url(${factionLogoUrl(faction.powerId)})" aria-label="${escHtml(faction.powerName)}" tabindex="0" data-tip="${escHtml(faction.powerName)}"></span>`
+        ? `<span class="op-header-faction" role="img" style="--logo: url(${factionLogoUrl(badge.id)})" aria-label="${escHtml(badge.name)}" tabindex="0" data-tip="${escHtml(badge.name)}"></span>`
         : ''}
       <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>
       <div class="op-header-classes">

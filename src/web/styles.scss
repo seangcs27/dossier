@@ -12,6 +12,57 @@ body {
   min-height: 100vh;
 }
 
+// ── Scrollbars ──
+// A thin pill in the palette, with no track and no arrow buttons: 金藍 at rest, the one
+// blue that stays above 3:1 on both the page and a panel, and the accent's gold while its
+// box is being scrolled or the pointer is on it. scrollbar.ts puts .is-scrolling on the box
+// and eases the colour between the two. Here only: the popup keeps the browser's own.
+//
+// The colour is a registered property so that it can be eased: a plain custom property
+// only flips, and the scrollbar's parts take no transition of their own. It does not
+// inherit, or easing it on the page would restyle everything under the page on every
+// frame; the thumb asks for its own box's value by name instead. The fallback in each
+// var() is for a browser that cannot register one, where the colour flips.
+@property --thumb {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: #{map.get($surfaces, muted)};
+}
+
+.is-scrolling { --thumb: var(--accent); }
+
+// Chromium and Safari build theirs from these parts; the clear border is what holds the
+// pill in from the gutter's edges.
+::-webkit-scrollbar {
+  width: var(--sp-8);
+  height: var(--sp-8);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  --thumb: inherit;
+  border: var(--sp-2) solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--thumb, var(--muted)) padding-box;
+
+  &:hover,
+  &:active { background-color: var(--accent); }
+}
+
+// Firefox has only the two standard properties, and draws its own hover. They are kept to
+// browsers without the parts above: Chromium, given both, takes the standard pair and goes
+// back to a square thumb between arrow buttons.
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--thumb, var(--muted)) transparent;
+  }
+}
+
 // ── Topbar (sticky) ──
 .topbar {
   position: sticky;
@@ -459,6 +510,10 @@ body {
   overflow-y: auto;
   opacity: 0;
   transition: opacity 0.12s;
+
+  // The panel's foot is round, so its scrollbar stops short of it: run to the very end, the
+  // thumb's tip sat across the corner's curve.
+  &::-webkit-scrollbar-track { margin-bottom: var(--sp-4); }
 }
 
 // The content arrives once the blob has mostly landed.
