@@ -304,7 +304,15 @@ export interface Operator {
   // Not on the global server yet. Its text comes from the CN tables with the wiki's
   // unofficial English laid over it, so some of it may still be Chinese.
   cnOnly?: boolean;
+  // Handed out free, by an event, an anniversary or Integrated Strategies, rather than
+  // pulled, recruited or bought.
+  welfare?: boolean;
+  // Set on an operator only a game mode lends, which nothing can give you.
+  mode?: OperatorMode;
 }
+
+/** The game mode an unobtainable operator belongs to: Integrated Strategies or Stronghold Protocol. */
+export type OperatorMode = 'IS' | 'SP';
 
 export interface OperatorSummary {
   id: OperatorId;
@@ -377,6 +385,8 @@ export interface OperatorIndexEntry extends OperatorSlim {
   collab: string;
   // Set on operators the global server doesn't have yet, absent on everyone else.
   cnOnly?: boolean;
+  // Set on an operator only a game mode lends, absent on everyone else.
+  mode?: OperatorMode;
   // CN release date, 'YYYY-MM-DD'. null for operators with no dateable event (some
   // Integrated Strategies exclusives, a few event operators the wiki never dated).
   // '9999-12-31' is a sentinel for CN-supplement operators — known to be newer than

@@ -38,12 +38,41 @@
           </svg>
           <span id="more-label">Filters</span>
         </button>
-        <div id="more-filters" hidden></div>
+        <!-- The way out of the panel, beside its toggle and shown only while it is open. -->
+        <button class="filter-close" id="close-filters" aria-label="Close filters" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
+        </button>
+        <!-- The panel, over its shape: two plain blocks, one behind the panel and one rising
+             behind the toggle, that the goo filter below runs together into a single blob. -->
+        <div class="filter-pop">
+          <div class="filter-blob" aria-hidden="true"><span class="blob-tab"></span><span class="blob-body"></span></div>
+          <div id="more-filters" hidden></div>
+        </div>
       </div>
       <span id="count"></span>
+      <a class="chip chip-action nav-events" id="nav-events" href="#/events">
+        <svg class="filter-icon" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3"></path>
+        </svg>
+        Events
+      </a>
     </header>
   </div>
   <main id="view"></main>
+  <!-- What makes separate blocks read as one liquid shape: blur them, then cut the blur back
+       to a hard edge, so two blocks that sit close run together and every corner between
+       them fills in. The last four steps draw a 1px rim round the result. sRGB, because the
+       default linear space would darken the fill. -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <filter id="goo" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"></feGaussianBlur>
+      <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="goo"></feColorMatrix>
+      <feMorphology in="goo" operator="dilate" radius="1" result="fat"></feMorphology>
+      <feFlood class="goo-rim" result="ink"></feFlood>
+      <feComposite in="ink" in2="fat" operator="in" result="rim"></feComposite>
+      <feMerge><feMergeNode in="rim"></feMergeNode><feMergeNode in="goo"></feMergeNode></feMerge>
+    </filter>
+  </svg>
   <script src="app.js"></script>
 </body>
 </html>

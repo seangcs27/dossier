@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Dossier** is an Arknights operator lookup tool with two targets built from a shared codebase:
 
 1. **Browser extension** (Firefox/Chrome, Manifest V3) — operator lookup in a popup
-2. **Web SPA** — operator search and detail view, deployable to GitHub Pages
+2. **Web SPA** — operator search and detail view, plus the Global event schedule,
+   deployable to GitHub Pages
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
@@ -37,9 +38,9 @@ npm run design       # build:web, then regenerate design/components/*.html previ
 npm run clean        # Remove ./dist/
 ```
 
-`build:index` is two scripts: `build:index:operators` (the index, the per-operator detail
-payloads, the branch icons) and `build:index:ranges` (`ranges.json`). Both run under
-`node --no-network-family-autoselection`.
+`build:index` is three scripts: `build:index:operators` (the index, the per-operator detail
+payloads, the branch icons), `build:index:ranges` (`ranges.json`) and `build:index:events`
+(`events.json` and the event banners). All run under `node --no-network-family-autoselection`.
 
 **Building behind an HTTP proxy** (sandboxes, some corporate networks): the build scripts
 fetch with Node's built-in `fetch`, which — unlike `curl` and `git` — **ignores
@@ -72,6 +73,7 @@ Requires repo Settings → Pages → Source = "GitHub Actions" (one-time).
 scripts/
   build-operator-index.mjs   ← operators.json + operator-details/ + branch-icons/ + portraits/
   build-range-index.mjs      ← ranges.json
+  build-event-index.mjs      ← events.json + event-banners/
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
@@ -88,7 +90,7 @@ src/
       operator-cache.ts  ← 1hr TTL in-memory cache; ranges served from the bundle
     generated/      ← ALL gitignored, rebuilt every build
       operators.json          ← slim grid index, bundled into both targets
-      operator-details/<id>.json  ← 431 full Operator payloads, copied as static files
+      operator-details/<id>.json  ← 460 full Operator payloads, copied as static files
       ranges.json             ← every attack range in use (~57), bundled
       branch-icons/<sub>.png  ← self-hosted archetype glyphs, copied as static files
       portraits/<id>.webp     ← card art, re-encoded from PNG at build, copied as static files
@@ -100,6 +102,8 @@ src/
       elite-icons/<0-2>.webp    ← the game's elite badges, 40px, painted as CSS masks
       potential-icons/<1-6>.webp  ← the game's potential rank badges, 48px, full colour
       game-consts.json        ← keyword glossary + promotion LMD, from gamedata_const, bundled
+      events.json             ← the Global schedule: ~27 events and ~34 headhunting pools, bundled into the web target
+      event-banners/<stem>.webp  ← those events' banners at 960px, copied as static files
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
       index.ts      ← re-export barrel
@@ -120,18 +124,20 @@ src/
       html.ts       ← escHtml
 
   web/              ← SPA
-    index.ts        ← app entry: random logo, hash-router dispatch (grid ↔ detail)
-    router.ts       ← hash routing (#/ , #/op/<id>)
+    index.ts        ← app entry: random logo, hash-router dispatch (grid, detail, events)
+    router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools , #/events/calendar)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
-    styles.scss     ← full-page layout, topbar, chips, grid, detail
+    event-index.ts  ← schedule data store: getEvents/getPools/lagDays, and the GameEvent / GamePool types
+    styles.scss     ← full-page layout, topbar, chips, grid, detail, events
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
+      events.ts     ← the Global event schedule, after Arkpedia's (see below)
     index.html      ← markup shell; links styles.css
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
@@ -142,7 +148,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `item-icons/`, `elite-icons/` and `potential-icons/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -226,6 +232,7 @@ operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Ima
 itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
 eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a mask, see eliteIcon()
 potentialIconUrl(rank)                     // bundle-relative potential-icons/ — full colour, never masked
+eventBannerUrl(banner)                     // bundle-relative event-banners/ — takes events.json's `banner` stem
 skillIconUrl(skillId)                      // Arknight-Images CDN
 moduleTypeIconUrl(typeIcon)                // module type badge ('gua-y') — Arknight-Images CDN
 riicSkillIconUrl(skillIcon)                // base skill badge ('bskill_ws_nian') — Arknight-Images CDN
@@ -248,20 +255,27 @@ Built by `scripts/build-operator-index.mjs` and `scripts/build-range-index.mjs`,
 `operators.json` — one slim entry per operator, bundled into both JS bundles:
 
 ```ts
-{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab, cnOnly? }
+{ id, name, appellation, rarity, profession, subProfessionId, archetype, tags, releaseDate, releaseOrder, nation, nationId, faction, factionId, collab, cnOnly?, mode? }
 ```
 
-`operator-details/<id>.json` — the full `Operator` payload for **every** operator (431),
+`operator-details/<id>.json` — the full `Operator` payload for **every** operator (460),
 copied as static files rather than bundled. This is what makes a detail page load from a
 same-origin file (~100 ms) instead of a live API call (~2.3 s).
 
 `ranges.json` — every attack range referenced by any operator, skill or talent (~57 unique; operators share
 them heavily), a few KB, bundled.
 
-Operators flagged `isNotObtainable` are **dropped** (~28): the `Reserve Operator - *` set
-and the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which were never released. The
-flag is used rather than a name match because the Integrated Strategies trainer "Mechanist"
-(`char_610_acfend`) shares its name with a real 6★ operator, as does "Raidian".
+Operators flagged `isNotObtainable` are **kept, marked with their game mode** (29): the
+`Reserve Operator - *` set and the Sharp/Pith/Touch/Stormeye/Tulip trainer families, which a
+mode lends for a run and nothing gives you. The mode goes by the id's band, the split
+AN-EN-Tags makes: the 500s are Integrated Strategies' (`mode: 'IS'`, 11), the 600s Stronghold
+Protocol's (`'SP'`, 18); an unobtainable id in neither band would be dropped. The flag is
+used rather than a name match because the trainer "Mechanist" (`char_610_acfend`) shares its
+name with a real 6★ operator, as do "Raidian" and "Shalem". They carry no release date (the
+name lookup would hand a trainer its namesake's), so they sort last in their rarity band, and
+the extension's popup leaves them out. Payloads also carry `welfare`: true where
+`itemObtainApproach` is an event reward, an anniversary reward or an Integrated Strategies
+reward (81 operators).
 
 **Seven sources are joined at build time.** Only the game's own excel tables are load-bearing
 — every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
@@ -346,7 +360,7 @@ minutes, twice, before this).
 
 The script hard-fails below **300** genuinely-dated operators (the `9999-12-31` sentinel
 doesn't count toward it), so a wiki schema change breaks the build instead of silently
-shipping a wrong order. Current state: ~431 operators, ~401 with a real CN date, ~430 with
+shipping a wrong order. Current state: ~460 operators, ~404 with a real CN date, ~430 with
 a Sanity Gone `releaseOrder`.
 
 ### Operator Cache (`src/shared/cache/operator-cache.ts`)
@@ -375,6 +389,8 @@ maps in `src/web/format.ts` translate for display.
 Single entry point: **`popup/index.ts`**. No background service worker and no content
 script. The popup renders its grid from the bundled `operators.json` — it opens with
 **zero network requests** — sorted rarity-desc then name, and filters on name/appellation.
+It leaves out the operators only a game mode lends (`mode`): it has nowhere to say what they
+are.
 Opening an operator calls `getOperator()`, which reads the copied
 `operator-details/<id>.json`. State (search text, current view) lives in module-level
 variables and does not persist across popup close/reopen.
@@ -385,8 +401,9 @@ variables and does not persist across popup close/reopen.
 
 ## Web SPA (`src/web/`)
 
-Vanilla TS, no framework. Hash-routed two-view app: `#/` shows the operator grid;
-`#/op/<id>` shows the operator dossier.
+Vanilla TS, no framework. Hash-routed three-view app: `#/` shows the operator grid;
+`#/op/<id>` shows the operator dossier; `#/events` shows the Global event schedule, reached
+from the Events link at the far end of the topbar (the wordmark is the way back).
 
 ### Grid (`src/web/views/grid.ts`)
 
@@ -397,8 +414,20 @@ back every portrait request until it finished. The topbar's search box (260px) a
 on the left, beside the wordmark. The box's magnifier is its clear button: it turns into a
 cross once there is text, and pressing it empties the box. The result count beside them is a
 pill of the same shape. The Filters button opens a popover, anchored under the cluster, that
-closes on the toggle, its own close button (in a sticky head row), Escape, or a press
+closes on the toggle, a close button that appears beside the toggle, Escape, or a press
 anywhere outside it.
+
+The popover is one shape with its toggle: a blob that hangs from the bar's lower edge and
+rises on the right round the Filters and close buttons, leaving the search box outside in
+the notch. It is two plain blocks (`.blob-tab`, `.blob-body`) behind the panel, run together
+by an SVG "goo" filter in `index.html` (blur, then cut the blur back to a hard edge, then a
+1px rim); the panel's own content sits over them unfiltered. Opening scales the blocks out
+from the toggle on the card's ease (a fast start and a long settle, no rebound) and closing
+scales them back, which through the filter reads as liquid; the blocks never fade, because
+the filter cuts on opacity.
+`syncChips()` measures where the toggle is (`--tab-left`, `--tab-rise`), since that moves
+with the label and, on a phone, the row's width. `#more-filters[hidden]` keeps its layout:
+the blob takes its height from the panel and still has to run back up.
 
 Inside the popover: class tiles (glyph over name, four across); Archetype / Subclass tiles in
 the same style, grouped under a header per picked class and shown only once a class is picked
@@ -422,9 +451,11 @@ set and information architecture all follow theirs, so read
   the art, illustrator caption); a fixed data panel right, collapsing to one column below
   1200px. Clicking the art opens `art-viewer.ts`: a centred modal `<dialog>` popup (960×840
   at most, the page dimmed around it, an X in its top-right corner) with the piece at 2048px;
-  zoom, 100–400%, by buttons, slider, wheel, a two-finger pinch on a screen or a trackpad;
-  drag to pan once zoomed; and every piece the operator has by arrow buttons, the arrow keys,
-  a thumbnail row, a sideways drag at 100%, or a two-finger sideways swipe on a trackpad. The
+  zoom, 50–400% (every piece opens at 100%, which fits the stage), by buttons, slider, wheel,
+  a two-finger pinch on a screen or a trackpad; drag to pan once zoomed in; and every piece
+  the operator has by arrow buttons, the arrow keys, a thumbnail row, a sideways drag at 100%
+  or below, or a two-finger sideways swipe on a trackpad. The piece's name is at the bar's
+  left and its "2 / 3" count at the right, in the popup's bottom-right corner. The
   stage sets `touch-action: none` and reads every gesture itself from pointer and wheel
   events (a trackpad pinch is a wheel with ctrl held; Safari's is its own `gesturechange`).
   The page takes whichever piece was showing when it closed.
@@ -438,9 +469,11 @@ set and information architecture all follow theirs, so read
   `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits in the artwork's
   top-right corner (`splashTagsHtml`), for the 26 operators the CN gacha table's LIMITED
   pools name plus every collab operator (27; they come from LINKAGE pools, which that table
-  doesn't flag). It and the grey "Upcoming" tag are the same outlined pill, stacked one above
-  the other at one width; LIMITED takes the rarity colour. Beside the name they squeezed it
-  on a phone. The branch name carries the
+  doesn't flag). It and the other tags are the same outlined pill, stacked one above the
+  other at one width: a grey "Upcoming" (CN-only), a grey "IS" or "SP" (an operator only
+  that mode lends), "Welfare" in the text colour (a free operator, the payload's `welfare`),
+  and LIMITED in the rarity colour. All but LIMITED carry a tooltip. Beside the name they
+  squeezed it on a phone. The branch name carries the
   class trait as its tooltip. Position is Melee, Ranged, or — the reference's rule —
   Melee & Ranged when the trait says the operator "can be deployed on ranged" tiles.
 - **Tabs** — Attributes, Talents, Skills, Modules, RIIC, Misc. Every panel opens with its
@@ -521,6 +554,74 @@ row, and outfit prices. `src/web/icons.ts` draws the stat, skill and position
 glyphs inline rather than fetching them — ATK, attack interval, block, DP cost and the three
 position glyphs are Sanity Gone's own drawings (GPL-2.0 via iansjk/sanity-gone), since the game
 ships none. The elite and potential badges are the game's own art, baked by the build.
+
+### Events view (`src/web/views/events.ts`)
+
+The Global server's schedule, after **Arkpedia's** Schedule page (`arkpedia.net/schedule`),
+as three tabs that are routes of their own: **Events** (`#/events`), **Headhunting**
+(`#/events/pools`) and **Calendar** (`#/events/calendar`).
+
+The two lists share one layout: sections of banner cards — Live now, Upcoming (announced for
+Global), and Predicted (run on CN, not yet announced for Global). A card is the banner, the
+kind as tags (Side Story, Vignette, Rerun, Crossover, the Celebration / Festival / Carnival
+group…; for a pool Standard, Kernel, New Operators, Limited, Joint Operation…), the name, the
+dates in server time (UTC-7) and a countdown; the dates' tooltip gives the reader's own
+time, or for a prediction the CN run it came from. An event whose stages have closed stays
+under Live now until its shop does, reading "Stages closed · Shop closes in 3d". A pool card
+also lists its featured operators, highest rarity first, in their rarity's colour, each a
+link to the dossier. Which section a thing is in is decided at render time from the reader's
+clock, since the page is read for up to a week after the build. The countdown is as of when
+the page was opened; it does not tick.
+
+The calendar is one month of the server's days, a grid per week: the dates in the first row
+and a lane per overlapping bar under it. An event is a filled bar, a prediction a dashed
+one, what is running today takes the accent, and a Headhunting toggle adds the pools as
+outlined bars. Previous / next stop at the first and last month there is anything to show
+(the build keeps 92 days of what has ended, so the current month is whole). The month and the
+toggle are module state, kept across visits like the grid's filters.
+
+`scripts/build-event-index.mjs` bakes `events.json`. **Events come from arknights.wiki.gg's
+Cargo tables**: `Events` (English name, type, rerun / crossover flags, CN-exclusive flag) and
+`EventServerDetails` (each server's start, end and banner, times in UTC). The game's own
+`activity_table` was the other candidate and lost: it names a CN-only event in Chinese, has
+no Contingency Contract, and knows nothing of a Global event until the client update that
+carries it, where the wiki has one as soon as it is announced. It is still read for the one
+thing the wiki lacks, `rewardEndTime`, when the shop closes: the game's activity for an event
+is the one that ends on the same second and starts within two days (the names differ).
+
+**Pools are a join.** The wiki's `Banners` table has every pool's featured operators, and the
+dates of the named ones on both servers. The rotating standard and kernel pools it lists with
+no dates at all, so those come from the game's `gacha_table`, matched by number: the Nth
+standard pool the game has opened ("Rare Operators…", `NORMAL` / `DOUBLE` rules) is the
+wiki's Standard Pool N, and likewise `CLASSIC` / `CLASSIC_DOUBLE` for kernel, whose operators
+the game names by id in `dynMeta`. The wiki's operator names are matched to the index blind
+to punctuation and accents ("Kal'tsit - Esperanta" for "Kal'tsit·Esperanta"); one that does
+not match stays a plain name.
+
+**A predicted date is the CN run plus a lag in calendar days**, each server's own (CN is
+UTC+8, Global UTC-7): the median, over the last 10 events both servers have run, of the days
+between the two starts (159 in October 2026), put on Global's hours (opens 10:00, closes
+03:59 server time). That reproduced Arkpedia's predicted schedule to the day for three months
+ahead. Two things override the usual lag. **A neighbour's:** anything that opened on CN
+within 4 days of an event whose Global date is known takes that event's real lag, which is
+how a pool lands on the day its own event was announced for. **The anniversary:** the CN
+summer carnival (the wiki's `Carnival` group) is pinned to 16 January, Global's launch day,
+where it has opened in 2024, 2025 and 2026 (the Friday before in 2022 and 2023), and its
+pool follows it. Nothing after the carnival is moved: in past years the lag was back to
+normal by the next event, and Arkpedia's later predictions, which run 10–16 days after ours,
+could not be reproduced from any rule. A CN run whose predicted Global end has passed with no
+Global run is dropped as not coming, as is the event the wiki flags CN-exclusive.
+
+Banners are the wiki's 1560×500 PNGs (~1 MB), fetched as its 960px thumbnail and re-encoded
+to WebP (~50 KB), for the events and pools the lists show (~32 files). Files are named for
+the wiki image, not the event, so an event's banner changing from the CN one to the EN one is
+a new file; ones nothing listed uses are deleted. None of this is load-bearing: with the wiki
+unreachable the last build's `events.json` is kept, or an empty one written, and the page
+says it has no schedule; with only the game's tables unreachable the schedule is written
+without shop times and rotating pools.
+
+Not built: Arkpedia's birthdays on the calendar, its pull planner, and a countdown that
+ticks.
 
 ## Testing
 

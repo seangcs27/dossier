@@ -15,7 +15,8 @@ import { artUrl, operatorSkinAvatarUrl } from '../shared/api/hella-api';
 import type { OperatorArt, OperatorId } from '../shared/types';
 import { escHtml } from './format';
 
-const ZOOM_MIN = 100;   // percent; 100 fits the stage
+const ZOOM_FIT = 100;   // percent; 100 fits the stage, and is where every piece opens
+const ZOOM_MIN = 50;
 const ZOOM_MAX = 400;
 const ZOOM_STEP = 25;
 
@@ -33,7 +34,7 @@ export function openArtViewer(
   opId: OperatorId, arts: OperatorArt[], start: number, onClose: (index: number) => void,
 ): void {
   let index = start;
-  let zoom = ZOOM_MIN;
+  let zoom = ZOOM_FIT;
 
   const dialog = document.createElement('dialog');
   dialog.className = 'art-viewer';
@@ -64,6 +65,7 @@ export function openArtViewer(
           </button>
         `).join('')}
       </div>
+      <span class="av-count"></span>
     </div>
     <button class="av-close" data-av="close" aria-label="Close">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
@@ -76,6 +78,7 @@ export function openArtViewer(
   const slider = dialog.querySelector<HTMLInputElement>('input[type="range"]')!;
   const percent = dialog.querySelector<HTMLElement>('.av-percent')!;
   const label = dialog.querySelector<HTMLElement>('.av-label')!;
+  const count = dialog.querySelector<HTMLElement>('.av-count')!;
   const thumbs = dialog.querySelectorAll<HTMLElement>('.av-thumb');
 
   // The art is square, so "fits the stage" is the stage's shorter side. Zooming keeps
@@ -102,12 +105,13 @@ export function openArtViewer(
     img.onerror = () => { img.onerror = null; img.src = art.url; };
     img.src = artUrl(art.url, 2048);
     img.alt = art.label;
-    label.textContent = arts.length > 1 ? `${art.label} · ${index + 1} / ${arts.length}` : art.label;
+    label.textContent = art.label;
+    count.textContent = arts.length > 1 ? `${index + 1} / ${arts.length}` : '';
     thumbs.forEach((thumb, i) => {
       thumb.classList.toggle('on', i === index);
       thumb.setAttribute('aria-selected', String(i === index));
     });
-    setZoom(ZOOM_MIN);
+    setZoom(ZOOM_FIT);
   };
 
   // A press on the dialog itself is a press on the backdrop around the popup, and closes it.
@@ -200,12 +204,12 @@ export function openArtViewer(
     pointers.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
     if (pinch && pointers.size === 2) {
       setZoom(pinch.zoom * spread() / pinch.spread);
-    } else if (drag && zoom > ZOOM_MIN) {
+    } else if (drag && zoom > ZOOM_FIT) {
       stage.scrollLeft = drag.left - (ev.clientX - drag.x);
       stage.scrollTop = drag.top - (ev.clientY - drag.y);
     } else if (drag) {
-      // Nothing to pan at 100%, so the art follows the pointer sideways: far enough and
-      // letting go turns to the next piece.
+      // Nothing to pan while the art fits, so it follows the pointer sideways: far enough
+      // and letting go turns to the next piece.
       img.style.translate = `${ev.clientX - drag.x}px`;
     }
   });
@@ -218,7 +222,7 @@ export function openArtViewer(
     drag = null;
     img.style.translate = '';
     // Dragging the art left brings the next one in from the right.
-    if (ev.type === 'pointerup' && zoom === ZOOM_MIN && Math.abs(travel) >= SWIPE_PX) {
+    if (ev.type === 'pointerup' && zoom <= ZOOM_FIT && Math.abs(travel) >= SWIPE_PX) {
       showArt(index + (travel < 0 ? 1 : -1));
     }
   };

@@ -1,10 +1,16 @@
 export type Route =
   | { view: 'grid' }
-  | { view: 'detail'; id: string };
+  | { view: 'detail'; id: string }
+  | { view: 'events'; tab: EventsTab };
+
+// The Events page's tabs: #/events is the list of events, and the other two hang off it.
+export type EventsTab = 'list' | 'pools' | 'calendar';
 
 export function parseHash(hash: string): Route {
   const m = /^#\/op\/([^/]+)$/.exec(hash);
   if (m && m[1]) return { view: 'detail', id: decodeURIComponent(m[1]) };
+  const ev = /^#\/events(?:\/(pools|calendar))?$/.exec(hash);
+  if (ev) return { view: 'events', tab: (ev[1] ?? 'list') as EventsTab };
   return { view: 'grid' };
 }
 

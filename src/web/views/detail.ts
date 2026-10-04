@@ -30,6 +30,7 @@ import type {
   UnlockCondition,
 } from '../../shared/types';
 import {
+  MODE_LABEL,
   PROFESSION_LABEL,
   PROFESSION_CSS,
   rarityNum,
@@ -1037,11 +1038,13 @@ function headerHtml(s: DetailState): string {
 // where on a phone they squeezed it and dropped to a line of their own. Upcoming is an
 // operator the global server doesn't have yet; why that matters is its tooltip.
 function splashTagsHtml(op: Operator): string {
-  if (!op.limited && !op.cnOnly) return '';
+  if (!op.limited && !op.cnOnly && !op.welfare && !op.mode) return '';
   return `
     <div class="splash-tags r${rarityNum(op.data.rarity)}">
       ${op.cnOnly ? '<span class="splash-tag splash-tag-upcoming" tabindex="0" data-tip="On the CN server only, not on Global yet. The English here is the wiki\'s unofficial translation, and some text may still be in Chinese.">Upcoming</span>' : ''}
+      ${op.mode ? `<span class="splash-tag splash-tag-mode" tabindex="0" data-tip="${MODE_LABEL[op.mode]} only. The mode lends this operator for a run, and nothing gives it to you to keep.">${op.mode}</span>` : ''}
       ${op.limited ? '<span class="splash-tag splash-tag-limited">Limited</span>' : ''}
+      ${op.welfare ? `<span class="splash-tag splash-tag-welfare" tabindex="0" data-tip="Free to obtain: ${escHtml(op.data.itemObtainApproach ?? '')}.">Welfare</span>` : ''}
     </div>
   `;
 }

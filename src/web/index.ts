@@ -3,17 +3,22 @@ import { applyRandomLogo } from './logo';
 import { currentRoute, goHome, onRouteChange } from './router';
 import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
+import { mountEvents } from './views/events';
 import { mountTooltips } from './tooltip';
 
 applyRandomLogo();
 mountTooltips();
 
 const view = document.getElementById('view')!;
+const eventsLink = document.getElementById('nav-events')!;
 
 function dispatch(): void {
   const route = currentRoute();
+  eventsLink.classList.toggle('active', route.view === 'events');
   if (route.view === 'detail') {
     void mountDetail(view, route.id);
+  } else if (route.view === 'events') {
+    mountEvents(view, route.tab);
   } else {
     mountGrid(view);
   }

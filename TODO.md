@@ -5,6 +5,37 @@ picking one up later doesn't need re-investigation.
 
 ## Planned
 
+### Global schedule — what is left
+
+The Events page (`#/events`) has the events, the headhunting pools and a month calendar,
+with shop-close times and the anniversary pinned. Arkpedia's Schedule page is the reference.
+Not built yet:
+
+- **Predictions after the anniversary still differ from Arkpedia's.** Ours pin the carnival
+  to 16 January and return to the usual lag, as past years did; Arkpedia's stay 10–16 days
+  later through March. No rule reproduced theirs (they may be hand-set), so there is nothing
+  to copy; revisit when the wiki's `EstimatedEventDetails` table, empty today, gets rows.
+- **A ticking countdown.** "Ends in 3d 18h" is as of when the page was opened. The views
+  have no unmount hook to stop a timer on, which is the part to add.
+- **Birthdays and the pull planner.** Arkpedia's calendar has a Birthdays toggle and its
+  event cards a "Plan pulls" button. Neither was asked for.
+- **Standard pools ahead of the wiki.** The game dates a standard pool before the wiki has
+  numbered it, so the next one can show with no operators and no banner (Standard Pool 177
+  did). It fills in on the build after the wiki catches up.
+
+### Mode-only operators in the grid
+
+The 29 operators a game mode lends (IS, SP) are in the grid now, tagged on their detail page
+and named for their mode on the card's edge. Not done: a filter for them, and the Server
+filter counts them under GLOBAL, whose tooltip says "released".
+
+### The filter blob — unseen on a real device
+
+The Filters popover's shape is an SVG goo filter over two blocks. It was checked in the
+desktop app's browser pane at 1280px and 375px, with the animation's middle frames forced by
+hand. Not checked: Safari, which has a history of trouble with filters over animated
+transforms, and how the open and close feel at speed.
+
 ### Detail page — match Sanity Gone, one tab at a time
 Done tab by tab against the live reference (https://sanitygone.help/en/operators/makoto-yuki/
 is a good specimen: limited, module, four-potential dropdown), so each pass can be reviewed

@@ -1,5 +1,11 @@
-import type { Blackboard, Rarity, Profession, OperatorData } from '../shared/types';
+import type { Blackboard, Rarity, Profession, OperatorData, OperatorMode } from '../shared/types';
 import gameConsts from '../shared/generated/game-consts.json';
+
+// The game mode a mode-only operator belongs to, spelled out.
+export const MODE_LABEL: Record<OperatorMode, string> = {
+  IS: 'Integrated Strategies',
+  SP: 'Stronghold Protocol',
+};
 
 export const PROFESSION_LABEL: Record<Profession, string> = {
   CASTER:   'Caster',

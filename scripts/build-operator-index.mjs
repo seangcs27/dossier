@@ -440,6 +440,14 @@ const CN_OBTAIN_EN = {
   '周年奖励': 'Anniversary Reward',
 };
 
+// The ways of getting an operator that make it a "welfare" one: handed out free by an event,
+// an anniversary or Integrated Strategies, rather than pulled, recruited or bought. In the
+// EN table's wording and in CN_OBTAIN_EN's, since a CN-only operator's payload carries that.
+const WELFARE_OBTAIN = new Set([
+  'Event Reward', 'Anniversary Reward', 'Obtained from Integrated Strategies',
+  CN_OBTAIN_EN['活动获得'], CN_OBTAIN_EN['集成战略获得'],
+]);
+
 // Below this many resolved dates, assume the wiki is down or its schema moved —
 // fail the build rather than silently deploying a broken sort order.
 const MIN_DATED = 300;
@@ -1038,7 +1046,12 @@ async function buildOperatorDetails(regular, cnSupplement) {
       // buildPayload returns instead of the fan translations, in both this file and the
       // popup projection below (`pd` reads from finalOp too).
       const collab = collabFor(base.data?.displayNumber);
-      const finalOp = { ...op, arts, limited: limitedIds.has(entry.id) || Boolean(collab), cnOnly: Boolean(cn) };
+      const finalOp = {
+        ...op, arts, limited: limitedIds.has(entry.id) || Boolean(collab), cnOnly: Boolean(cn),
+        welfare: WELFARE_OBTAIN.has(op.data?.itemObtainApproach),
+        // 'IS' or 'SP' for an operator only that mode lends; absent for everyone else.
+        mode: entry.mode,
+      };
 
       // `powerName` is the localized display name ("Kjerag"); `data.nationId` is the raw
       // slug and only a fallback, title-cased, for a payload whose factions array is empty
@@ -1247,27 +1260,33 @@ if (tableError) {
   process.exit(0);
 }
 
-// Tutorial and Integrated Strategies trainer units — the "Reserve Operator - *" set plus
-// the Sharp/Pith/Touch/Stormeye/Tulip families. They were never released, so they have no
-// release date and only pad the end of the grid. Both reference sites omit them too.
+// The operators a game mode lends you and nothing can give you: the "Reserve Operator - *"
+// set and the Sharp/Pith/Touch/Stormeye/Tulip trainer families. The site ships them marked
+// with the mode they belong to, which goes by the id's band, the same split AN-EN-Tags
+// makes: the 500s are Integrated Strategies' ('IS'), the 600s Stronghold Protocol's ('SP').
+// undefined for an ordinary operator; null for an unobtainable one in neither band, which
+// is dropped, since there is nothing to say about where it is from.
 //
 // `isNotObtainable` is the flag rather than a name match, because name matching would
-// confuse the IS trainer "Mechanist" (char_610_acfend) with the real 6* operator of the
-// same name, and likewise for "Raidian".
-//
-// The roster the site ships: real operators, minus the tutorial and Integrated
-// Strategies trainers that were never released. Amiya's Guard and Medic forms come from the
-// patch table — they are operators like any other here, and dropping them would lose two
-// from the grid.
+// confuse the trainer "Mechanist" (char_610_acfend) with the real 6* operator of the same
+// name, and likewise for "Raidian".
+function modeOf(id, c) {
+  if (!c.isNotObtainable) return undefined;
+  if (/^char_5\d\d_/.test(id)) return 'IS';
+  return /^char_6\d\d_/.test(id) ? 'SP' : null;
+}
+
+// The roster the site ships. Amiya's Guard and Medic forms come from the patch table — they
+// are operators like any other here, and dropping them would lose two from the grid.
 const roster = Object.entries({ ...enChars, ...(enPatch.patchChars ?? {}) })
   .filter(([, c]) => VALID_PROFESSION.has(c.profession) && VALID_RARITY.has(c.rarity))
-  .filter(([, c]) => !c.isNotObtainable)
-  .map(([id, c]) => ({ id, data: c }));
+  .map(([id, c]) => ({ id, data: c, mode: modeOf(id, c) }))
+  .filter(r => r.mode !== null);
 
 // Diagnostic only, for the summary log below: how many otherwise operator-shaped (valid
-// profession/rarity) records the isNotObtainable filter above dropped.
-const excluded = Object.values({ ...enChars, ...(enPatch.patchChars ?? {}) })
-  .filter(c => VALID_PROFESSION.has(c.profession) && VALID_RARITY.has(c.rarity) && c.isNotObtainable)
+// profession/rarity) records were dropped as unobtainable and in no mode's band.
+const excluded = Object.entries({ ...enChars, ...(enPatch.patchChars ?? {}) })
+  .filter(([id, c]) => VALID_PROFESSION.has(c.profession) && VALID_RARITY.has(c.rarity) && modeOf(id, c) === null)
   .length;
 
 const cnSupplement = await fetchCnSupplement(new Set(roster.map(r => r.id)));
@@ -1282,7 +1301,7 @@ function releaseDateFor(name) {
 }
 
 const { written: detailsWritten, nations, nationIds, factions, collabs, archetypes, traitByName, popup, itemIds } = await buildOperatorDetails(
-  roster.map(r => ({ id: r.id, appellation: r.data.appellation })),
+  roster.map(r => ({ id: r.id, appellation: r.data.appellation, mode: r.mode })),
   cnSupplement,
 );
 
@@ -1332,9 +1351,10 @@ const entries = roster.map(r => ({
   archetype: archetypes.get(r.id) ?? '',
   // Recruitment tags. A few operators carry an empty-string tag; drop those.
   tags: (r.data.tagList ?? []).filter(t => t && t.trim()),
-  // null for tutorial / Integrated Strategies trainer units that were never released,
-  // plus a few event operators whose debut event has no dated row on the wiki.
-  releaseDate: releaseDateFor(r.data.name),
+  // null for a few event operators whose debut event has no dated row on the wiki, and for
+  // a mode's own operators, which were never released: looked up by name, the trainer
+  // "Mechanist" would take the real Mechanist's date.
+  releaseDate: r.mode ? null : releaseDateFor(r.data.name),
   releaseOrder: releaseOrders.get(r.id) ?? null,
   // Display name of the operator's home nation ("Kjerag"), '' where the payload states
   // none. Harvested from the full payloads in buildOperatorDetails above.
@@ -1347,6 +1367,8 @@ const entries = roster.map(r => ({
   factionId: factions.get(r.id)?.powerId ?? '',
   // Display name of the crossover this operator came from, '' for the regular roster.
   collab: collabs.get(r.id) ?? '',
+  // 'IS' or 'SP' on an operator only that mode lends, absent on everyone else.
+  ...(r.mode ? { mode: r.mode } : {}),
 }));
 
 // CN-only entries have no English `archetype` to draw on (the CN table names branches in

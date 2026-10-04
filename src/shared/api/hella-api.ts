@@ -100,6 +100,12 @@ export function potentialIconUrl(rank: number): string {
   return `potential-icons/${rank}.webp`;
 }
 
+// An event's banner, baked at 960px wide from the wiki's 1560x500 original. Takes the
+// `banner` stem events.json carries, which is empty for one the build could not fetch.
+export function eventBannerUrl(banner: string): string {
+  return `event-banners/${banner}.webp`;
+}
+
 export function skillIconUrl(skillId: string): string {
   return `${IMAGE_BASE}/skills/skill_icon_${encodeURIComponent(skillId)}.png`;
 }

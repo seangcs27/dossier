@@ -20,8 +20,10 @@ function rarityNum(r: Rarity): number {
 // nine fields out of.
 const details = bundledDetails as unknown as Record<string, PopupOperator>;
 
+// Without the operators only a game mode lends: the popup has nowhere to say what they are,
+// and two of them share a real operator's name.
 const allOps = (bundled as unknown as OperatorIndexEntry[])
-  .slice()
+  .filter(op => !op.mode)
   .sort((a, b) =>
     rarityNum(b.rarity) - rarityNum(a.rarity) || a.name.localeCompare(b.name));
 

@@ -33,6 +33,10 @@ from a same-origin file (~100 ms) instead of a third-party API round trip. See
     entry's blackboard, so buff values read as the game states them instead of being stripped
     to plain text
   - Elite and potential are shared state across tabs, so switching tabs keeps your build
+- **Schedule** at `#/events` — the Global server's events and headhunting pools: what is
+  live, what has been announced, and what CN has already run with a predicted Global date
+  (the CN run plus the recent gap between the two servers, about 160 days), as two lists and
+  a month calendar, modelled on [Arkpedia](https://www.arkpedia.net/schedule)'s
 - **Hash routing** — back/forward navigation and refresh-safe deep links, no server config needed
 
 ### Browser extension
@@ -51,6 +55,10 @@ independent sources, then writes:
 - `src/shared/generated/operator-details/<id>.json` — one full dossier per operator
 - `src/shared/generated/ranges.json` — every attack range in use
 - `src/shared/generated/branch-icons/<subProfessionId>.png` — archetype badge icons
+
+`scripts/build-event-index.mjs` runs beside it and writes `events.json` and
+`event-banners/`, the Global schedule, from arknights.wiki.gg's event and banner tables and
+the game's own activity and gacha tables.
 
 All generated output is gitignored and rebuilt from scratch each time. A weekly cron in
 the deploy workflow keeps the published site current as new operators release.
@@ -122,6 +130,7 @@ dossier/
 ├── scripts/
 │   ├── build-operator-index.mjs   # The data pipeline (see above)
 │   ├── build-range-index.mjs      # Attack ranges
+│   ├── build-event-index.mjs      # Global event schedule + banners
 │   └── build-design-previews.mjs  # Component previews for design review
 ├── .github/workflows/
 │   └── deploy-pages.yml       # Pages deploy on push + weekly data refresh
@@ -137,12 +146,13 @@ dossier/
     │   └── utils/html.ts      # escHtml / cleanText
     └── web/                   # Web SPA
         ├── index.ts           # Entry: router dispatch
-        ├── router.ts          # Hash routing (#/ , #/op/<id>)
+        ├── router.ts          # Hash routing (#/ , #/op/<id> , #/events)
         ├── format.ts          # Display helpers
         ├── logo.ts            # Random logo/favicon variant per load
         ├── operator-index.ts  # Grid data store: sort + filter
         ├── views/grid.ts      # Operator grid, search, filter popover
         ├── views/detail.ts    # Rich operator dossier
+        ├── views/events.ts    # Global event schedule
         └── styles.scss        # Full-page layout
 ```
 

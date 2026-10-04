@@ -15,7 +15,7 @@ import {
   type SortKey,
   type TagMode,
 } from '../operator-index';
-import { PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
+import { MODE_LABEL, PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 import { mountCardSpin } from '../card-spin';
 
 const state = {
@@ -55,14 +55,15 @@ function buildCard(op: OperatorIndexEntry): string {
   // Terra, so the crossover answers the same question for them. The order matters —
   // Monster Hunter operators are Terra natives in costume and keep their real nation, so
   // they must not fall through to the collab. Babel and the Followers have neither, so
-  // their team stands in. The project name is the last resort, for an index built before
+  // their team stands in. A mode's own operators have none of the three, and the mode is
+  // where they are from. The project name is the last resort, for an index built before
   // `faction` existed, and keeps the strip from reading as a broken element.
   //
   // The repeat count is derived rather than fixed, so density stays even: a flat 4 left
   // "Yan" as mostly empty strip while overflowing "Rim Billiton". ~55 characters is what
   // fills the card's height at 8px with the strip's tracking; the strip crops what's left
   // over, which is what the real tags do at their ends anyway.
-  const edgeWord = op.nation || op.collab || op.faction || 'Dossier';
+  const edgeWord = op.nation || op.collab || op.faction || (op.mode ? MODE_LABEL[op.mode] : 'Dossier');
   const edgeText = Array(Math.max(2, Math.round(55 / (edgeWord.length + 3))))
     .fill(edgeWord).join(' · ');
 
@@ -276,13 +277,6 @@ function renderMore(): void {
   ];
 
   panel.innerHTML = `
-    <div class="filter-head">
-      Filters
-      <button class="filter-close" id="close-filters" aria-label="Close filters">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
-      </button>
-    </div>
-
     <div class="filter-group">
       <div class="filter-label">Class</div>
       <div class="class-row">
@@ -414,6 +408,16 @@ function syncChips(): void {
   if (label) label.textContent = n ? `Filters · ${n}` : 'Filters';
   more.classList.toggle('active', state.moreOpen || n > 0);
   more.setAttribute('aria-expanded', String(state.moreOpen));
+
+  // The panel's shape rises round the toggle (.filter-pop in styles.scss), so it has to be
+  // told where the toggle is: that moves with the label just written, with the close button
+  // coming and going, and on a phone with the width of the row. Measured last, after all of
+  // those have been set.
+  const actions = more.parentElement!;
+  actions.classList.toggle('filters-open', state.moreOpen);
+  document.getElementById('close-filters')!.hidden = !state.moreOpen;
+  actions.style.setProperty('--tab-left', `${more.offsetLeft}px`);
+  actions.style.setProperty('--tab-rise', `${actions.offsetHeight - more.offsetTop}px`);
 }
 
 function toggleChip(chip: HTMLButtonElement): void {
@@ -471,23 +475,21 @@ export function mountGrid(container: HTMLElement): void {
   clear.onclick = () => { search.value = ''; syncQuery(); search.focus(); };
 
   actions.onclick = (ev) => {
-    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle');
+    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle, #close-filters');
     if (!el) return;
-    state.moreOpen = !state.moreOpen;
+    // The close button only closes, and hides as it does, so focus goes back to the toggle.
+    state.moreOpen = el.id === 'more-toggle' && !state.moreOpen;
     refreshChrome();
+    if (el.id === 'close-filters') document.getElementById('more-toggle')?.focus();
   };
+  // The blob's shape follows the toggle, which on a phone moves with the window's width.
+  window.onresize = syncChips;
 
   const panel = document.getElementById('more-filters')!;
   panel.onclick = (ev) => {
     const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (!el) return;
     if (el.id === 'clear-filters') { clearAll(); refresh(); return; }
-    if (el.id === 'close-filters') {
-      state.moreOpen = false;
-      refreshChrome();
-      document.getElementById('more-toggle')?.focus();
-      return;
-    }
     const server = el.dataset.server as Server | undefined;
     if (server) {
       if (state.servers.has(server)) state.servers.delete(server); else state.servers.add(server);
@@ -534,7 +536,7 @@ export function mountGrid(container: HTMLElement): void {
   document.onpointerdown = (ev) => {
     if (!state.moreOpen || panel.hidden) return;
     const target = ev.target as Element;
-    if (target.closest('#more-filters, #more-toggle')) return;
+    if (target.closest('#more-filters, #more-toggle, #close-filters')) return;
     state.moreOpen = false;
     refreshChrome();
   };

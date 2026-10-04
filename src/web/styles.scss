@@ -130,6 +130,9 @@ body {
 // opens under the cluster wherever the cluster sits — and stretched to the header's full
 // content height, so the popover's offset is the header's padding and nothing else.
 .topbar-actions {
+  // From the cluster's foot to the bar's lower edge: the header's padding and its border.
+  --pop-gap: calc(var(--sp-16) + 1px);
+
   position: relative;
   align-self: stretch;
   display: flex;
@@ -206,50 +209,127 @@ body {
   flex-shrink: 0;
 }
 
+// The way to the Events page, at the far end of the bar from the wordmark. It is a link
+// wearing the Filters button's pill, lit while that page is the one showing.
+.nav-events {
+  margin-left: auto;
+  text-decoration: none;
+}
+
 // ── Filter popover ──
 // Anchored under the topbar rather than inline in the flow: every filter dimension
 // lives here now, so leaving it in the document flow would push the grid down by a
 // couple hundred pixels every time it opened.
-#more-filters {
+//
+// The panel is one shape with its toggle: a blob that hangs from the bar's lower edge and
+// rises, on the right, round the Filters button and the close button beside it, leaving the
+// search box outside in the notch. It pours out of the button when it opens and runs back
+// into it when it closes.
+.filter-pop {
+  // How far the blob rises above the panel: from the bar's lower edge up to 8px over the
+  // toggle. --tab-left and --tab-rise are the toggle's place in the cluster, measured by
+  // syncChips() in grid.ts, since both move with the label and, on a phone, the width.
+  --rise: calc(var(--tab-rise, 38px) + var(--pop-gap) + var(--sp-8));
+
   position: absolute;
   left: 0;
-  // Past the header's bottom padding and border, so it hangs from the bar's lower edge.
-  top: calc(100% + var(--sp-16) + 1px);
+  top: calc(100% + var(--pop-gap));
   z-index: 20;
   width: min(420px, calc(100vw - 32px));
+  // Hidden once the blob has run back up, not before.
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s;
+}
+
+.filters-open .filter-pop { visibility: visible; transition-delay: 0s; }
+
+// Open, the cluster is as wide as the panel, which puts the close button at the panel's
+// right edge and moves the count out from under the blob.
+.topbar-actions.filters-open { width: min(420px, calc(100vw - 32px)); }
+
+// The shape itself, behind the panel. The goo filter (index.html) runs the two blocks
+// together and rounds the corner between them; nothing else is in here, so the panel's own
+// text is never filtered.
+.filter-blob {
+  position: absolute;
+  inset: calc(-1 * var(--rise)) 0 0;
+  z-index: -1;
+  filter: url('#goo') drop-shadow(0 12px 24px rgb(0 0 0 / 45%));
+  pointer-events: none;
+}
+
+.goo-rim { flood-color: var(--border); }
+.svg-defs { position: absolute; }
+
+.blob-tab,
+.blob-body {
+  position: absolute;
+  right: 0;
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+}
+
+// Scale is the whole animation, with no fade: the filter cuts on opacity, so a block at
+// half strength would not look faint, it would vanish. The ease is the card's: a fast start
+// and a long settle with no rebound, the way something thick pours. What makes it move like
+// a liquid is the filter, rounding the join as the two blocks run into each other.
+.blob-tab {
+  top: 0;
+  left: calc(var(--tab-left, 268px) - var(--sp-6));
+  // Down into the body, so the two overlap and the filter has something to join.
+  height: calc(var(--rise) + 24px);
+  transform: scale(0.4, 0);
+  transform-origin: 50% 40%;
+  transition: transform 0.18s ease-in 0.12s;
+}
+
+.blob-body {
+  top: var(--rise);
+  left: 0;
+  bottom: 0;
+  transform: scale(0.3, 0);
+  // Under the toggle, which is where it pours from.
+  transform-origin: calc(100% - 64px) 0;
+  transition: transform 0.24s ease-in;
+}
+
+.filters-open .blob-tab { transform: none; transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1); }
+.filters-open .blob-body { transform: none; transition: transform 0.52s cubic-bezier(0.2, 0.9, 0.2, 1) 0.08s; }
+
+// The toggle and the close button sit on the blob's raised part, so above the panel's layer.
+#more-toggle,
+#close-filters {
+  position: relative;
+  z-index: 21;
+}
+
+// No box of its own: the blob behind it is the panel. Hidden, it keeps its place in the
+// layout, since the blob takes its height from it and still has to run back up.
+#more-filters {
   display: flex;
   flex-direction: column;
   gap: var(--sp-16);
   padding: var(--sp-16);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
   max-height: calc(100vh - 120px);
   overflow-y: auto;
-
-  &[hidden] { display: none; }
+  opacity: 0;
+  transition: opacity 0.1s;
 }
 
-// The panel's title and its close button. Sticky, with the panel's own padding pulled back
-// in, so the way out stays in reach however far the panel has scrolled.
-.filter-head {
-  position: sticky;
-  top: calc(-1 * var(--sp-16));
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: calc(-1 * var(--sp-16)) calc(-1 * var(--sp-16)) 0;
-  padding: var(--sp-10) var(--sp-10) var(--sp-10) var(--sp-16);
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-  font-size: var(--fs-sm);
-  font-weight: 700;
+// The content arrives once the blob has mostly landed.
+.filters-open #more-filters { opacity: 1; transition: opacity 0.2s 0.26s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-pop,
+  .blob-tab,
+  .blob-body,
+  #more-filters { transition: none; }
 }
 
 .filter-close {
   display: flex;
+  // The far end of the open cluster, which is the blob's top-right corner.
+  margin: 0 var(--sp-4) 0 auto;
   padding: var(--sp-6);
   border: none;
   border-radius: var(--radius-pill);
@@ -260,6 +340,7 @@ body {
   svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
   &:hover { background: var(--surface2); color: var(--text); }
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  &[hidden] { display: none; }
 }
 
 .filter-group {
@@ -1601,16 +1682,27 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 
+// Which piece of how many, last in the bar so it sits in the popup's bottom-right corner.
+// Empty when the operator has a single piece.
+.av-count {
+  color: var(--muted);
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &:empty { display: none; }
+}
+
 // On a phone the popup is the window's width less a margin and as tall as a square stage
-// needs. The bar is two rows, what is showing and then the thumbnails. The zoom slider
-// goes: two fingers do that job there.
+// needs. The bar is two rows: what is showing, then the thumbnails with the count at their
+// right. The zoom slider goes: two fingers do that job there.
 @media (max-width: 640px) {
   .art-viewer { width: calc(100vw - 24px); height: min(calc(100vw - 24px + 96px), calc(100dvh - 96px)); }
   .av-stage { inset: 0 0 96px; }
   .av-bar { height: 96px; flex-wrap: wrap; align-content: center; gap: var(--sp-8) var(--sp-12); padding: var(--sp-8) var(--sp-12); }
-  .av-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .av-label { flex-basis: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .av-zoom { display: none; }
-  .av-thumbs { order: 3; flex-basis: 100%; }
+  .av-thumbs { flex: 1; min-width: 0; }
   .av-nav { top: calc(50% - 48px - 22px); }
   .av-prev { left: var(--sp-8); }
   .av-next { right: var(--sp-8); }
@@ -1679,14 +1771,19 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 }
 
 // LIMITED is about the operator, so it takes the rarity colour. Upcoming is a note about
-// the data rather than about the operator: grey, and the reason is its tooltip.
+// the data rather than about the operator: grey, and the reason is its tooltip. A mode's
+// initials (IS, SP) are the same kind of note. Welfare says how the operator is got, in the
+// plain text colour, so it reads apart from both.
 .splash-tag-limited { color: var(--rarity); }
-.splash-tag-upcoming {
+.splash-tag-upcoming,
+.splash-tag-mode,
+.splash-tag-welfare {
   color: var(--muted);
   cursor: help;
 
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
+.splash-tag-welfare { color: var(--text); }
 
 .splash-caption {
   position: absolute;
@@ -2717,6 +2814,231 @@ button.outfit-name {
   white-space: nowrap;
 }
 
+// ── Events ──
+// The Global schedule (views/events.ts): a note, then a section each for what is live,
+// announced and predicted, every one a grid of banner cards.
+.events {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--sp-20);
+}
+
+.events-note {
+  max-width: 72ch;
+  margin-bottom: var(--sp-24);
+  color: var(--muted);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+}
+
+.ev-section {
+  margin-bottom: var(--sp-24);
+
+  .section-label { margin-bottom: var(--sp-12); }
+}
+
+.ev-total { color: var(--dim); }
+
+// Four across on a wide screen, one on a phone. The 280px floor is the banner's: its title
+// is part of the picture, and any smaller it stops being readable.
+.ev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-16);
+}
+
+.ev-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+// What is running now is the one card marked out, in the accent.
+.ev-live { border-color: var(--accent); }
+
+// The wiki's banners are all 1560x500. The box holds that shape before the image arrives,
+// and stays as an empty plate for an event the build found no banner for.
+.ev-banner {
+  aspect-ratio: 1560 / 500;
+  background: var(--surface2);
+
+  img { display: block; width: 100%; height: 100%; object-fit: cover; }
+}
+
+.ev-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  padding: var(--sp-12) var(--sp-16) var(--sp-16);
+}
+
+.ev-tags { display: flex; flex-wrap: wrap; gap: var(--sp-6); }
+
+.ev-tag {
+  padding: var(--sp-2) var(--sp-8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+// The dates carry a tooltip (the reader's own time, or the CN run a prediction came from).
+.ev-dates {
+  width: fit-content;
+  color: var(--muted);
+  font-size: var(--fs-base);
+  cursor: help;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+.ev-when { font-size: var(--fs-base); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ev-live .ev-when { color: var(--accent); }
+
+// The page's tabs are the detail page's, as links: each is a route of its own.
+.ev-tabs {
+  display: flex;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-16);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+  .op-tab { text-decoration: none; }
+}
+
+// A pool's featured operators: names in their rarity's colour, each a link to the dossier.
+.pool-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4) var(--sp-10);
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-10);
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-md);
+}
+
+.pool-op {
+  color: var(--muted);
+  text-decoration: none;
+
+  @each $tier, $spec in $rarities {
+    &.r#{$tier} { color: var(--r#{$tier}); }
+  }
+}
+a.pool-op:hover { text-decoration: underline; }
+
+// ── Events: calendar ──
+// One month of the server's days: a row of weekday names, then a grid per week whose first
+// row is the dates and whose other rows are lanes for the bars.
+.cal-head {
+  display: flex;
+  flex-wrap: wrap;   // on a phone the Headhunting toggle drops to a row of its own
+  align-items: center;
+  gap: var(--sp-8);
+  margin-bottom: var(--sp-12);
+}
+
+.cal-title {
+  min-width: 9.5em;   // the longest month name, so the arrows don't move as the month does
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  text-align: center;
+}
+
+.cal-nav {
+  display: flex;
+  padding: var(--sp-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  &:hover:not(:disabled) { border-color: var(--muted); }
+  &:disabled { opacity: 0.35; cursor: default; }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+// Pushed to the far end: it changes what the month shows, where the rest change the month.
+.cal-pools { margin-left: auto; }
+
+.cal-grid {
+  margin-bottom: var(--sp-16);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.cal-weekdays,
+.cal-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.cal-weekdays {
+  padding: var(--sp-8) 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.cal-week {
+  grid-auto-rows: 24px;
+  row-gap: var(--sp-2);
+  padding-bottom: var(--sp-6);
+  border-top: 1px solid var(--border);
+}
+
+// A day is the full height of its week, behind the bars, so it can carry the column's rule
+// and today's wash; its date sits in the first row.
+.cal-day {
+  border-left: 1px solid var(--border);
+  padding: var(--sp-4) var(--sp-6);
+  color: var(--dim);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+
+  &:first-child { border-left: 0; }
+  &.out { color: var(--border); }
+  &.today { background: rgb(232 200 112 / 8%); color: var(--accent); font-weight: 700; }
+}
+
+.cal-bar {
+  z-index: 1;
+  margin: 0 var(--sp-2);
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--chip);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+
+  // Running today, in the accent, as the live card is in the lists.
+  &.live { border-color: var(--accent); }
+  // A pool reads as a different kind of thing from an event: outlined where that is filled.
+  &.pool { background: var(--bg); color: var(--dim); }
+  &.predicted { border-style: dashed; background: none; color: var(--muted); }
+  // A bar that runs on into the next week, or came from the last, has no end there.
+  &.cut-l { margin-left: 0; border-left: 0; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  &.cut-r { margin-right: 0; border-right: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+}
+
 // ── Detail: collapse to one column ──
 // Below this the data column can no longer sit beside the art at its fixed width, so the
 // art goes back on top and stops being sticky — a full-width illustration pinned to the
@@ -2797,12 +3119,12 @@ button.outfit-name {
 }
 
 // ── Narrow screens ──
-// The topbar becomes a 2x2 grid rather than relying on flex-wrap, so the break always
+// The topbar becomes a two-row grid rather than relying on flex-wrap, so the break always
 // lands in the same place instead of shifting with the width of the operator count.
 @media (max-width: 640px) {
   .topbar header {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
     gap: var(--sp-10);
     padding: var(--sp-10) var(--sp-12);
 
@@ -2824,15 +3146,29 @@ button.outfit-name {
     justify-self: end;
   }
 
+  // The Events link ends row 1, after the count, at the count's size.
+  .nav-events {
+    grid-area: 1 / 3;
+    padding: var(--sp-4) var(--sp-10);
+    font-size: var(--fs-xs);
+    align-self: center;
+  }
+
+  .events { padding: var(--sp-12); }
+
   .search-wrap { flex: 1; width: auto; }
 
   #search {
     font-size: var(--fs-xl); // < 16px makes iOS Safari zoom on focus
   }
 
-  #more-filters {
+  // The cluster is already the full row here, so the panel takes its width from it, open
+  // or closed, and the bar's padding under it is the smaller one.
+  .topbar-actions { --pop-gap: calc(var(--sp-10) + 1px); }
+  .topbar-actions.filters-open { width: auto; }
+
+  .filter-pop {
     right: 0;
-    top: calc(100% + var(--sp-10) + 1px);
     width: auto;
   }
 
