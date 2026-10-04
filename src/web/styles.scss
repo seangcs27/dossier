@@ -56,54 +56,138 @@ body {
   border-radius: var(--radius-lg);
 }
 
-// The search box, beside the wordmark: one box in two parts. On the left the field you type
-// in; at its right end the Filters button's part, with Clear and the close button beside it
-// while the panel is open. Shut, the two read as a single box with a rule between them.
-// Open, the right part gives up its fill and what shows through is the filter panel's tab
-// (.filter-pop below), so the buttons sit on the tab of the panel they belong to.
+// The search box, beside the wordmark: one box, with the Filters button inside it at its
+// right end. One fill and one line draw it, both the box's own, so nothing in the outline
+// says where the field stops and the button's part starts.
+//
+// Open, the box lets go of both: its fill and line fade out, the field shows the fill and
+// line it has kept ready underneath, closing it off into a box of its own, and what is left
+// showing through the button's part is the filter panel's tab (.filter-pop below). The
+// buttons then sit on the tab of the panel they belong to.
 //
 // The box is as wide as that panel, which is why it no longer stops at the 260px the
 // longest operator name needs: the two are one shape, and the count beside them stays put
 // when the panel opens.
 .search-wrap {
+  // The box's line: the accent while the field is being typed in.
+  --box-line: var(--border);
+  // The box's corners, and how far in from its outer edge the buttons inside it sit. Their
+  // own corners are the first less the second, so they turn about the same centres as the
+  // box's and the gap between the two stays even round the corner.
+  --box-radius: var(--radius-lg);
+  --box-inset: var(--sp-4);
+
   position: relative;
-  // Over the panel's shape, which tucks in behind the box.
+  // Over the panel's shape, whose edges run in behind the box's own line.
   z-index: 21;
   width: min(420px, calc(100vw - 32px));
   min-width: 0;
   display: flex;
+  background: var(--bg);
+  border: 1px solid var(--box-line);
+  border-radius: var(--box-radius);
+  transition: background-color 0.16s, border-color 0.16s;
+
+  &:has(#search:focus) { --box-line: var(--accent); }
 }
 
+.filters-open .search-wrap {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+// The field lies over the box's left end, line on line: the negative margins put its own
+// border on the box's, and its fill stops short of that border, so while the box is shut
+// the box's line is what shows there. Its right border is the one line the box has none
+// under; shut, it is clear, and the box's fill runs on behind it.
 .search-field {
   position: relative;
   flex: 1;
   min-width: 0;
+  margin: -1px 0 -1px -1px;
   display: flex;
   align-items: center;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
-
-  &:focus-within { border-color: var(--accent); }
+  background: var(--bg) padding-box;
+  border: 1px solid transparent;
+  border-radius: var(--box-radius) 0 0 var(--box-radius);
+  transition: border-color 0.16s, border-radius 0.16s;
 }
 
+// Open, it ends where the tab begins, and two of its corners turn inside out: the top right,
+// beside the tab, and the bottom left, over the panel's body. The outline's top and left
+// edges run flat past both, and the field's own boundary there is the round corner of the
+// tab, or of the body, curving in to meet that edge. The box goes square at the two corners
+// and a hollow (below) draws the rest. The bottom right stays round, a little tighter than
+// the shape behind it, and is where the shape turns the corner.
+//
+// The bottom left waits for the body, which is within 2px of it by then and still settling:
+// the corner would otherwise change shape with nothing beside it yet.
+.filters-open .search-field {
+  border-color: var(--box-line);
+  border-radius: var(--box-radius) 0 var(--radius-md) 0;
+  transition: border-color 0.16s, border-bottom-right-radius 0.16s, border-bottom-left-radius 0.1s 0.42s;
+}
+
+// The hollow at each of those corners: a square the size of the curve and its line, lying
+// over the field's corner and out past it. About the curve's centre it paints nothing
+// inside the curve, where the panel shows through, then the line, then the field's fill
+// out to the flat edge, whose own line is the border down one side. The panel's shape is
+// solid behind both (.blob-tab, .blob-body::before), so this line is the only one there,
+// and being the field's it turns the accent with the rest when the field is typed in. The
+// quarter-pixel either side of each stop is what smooths the curve.
+.search-field::before,
+.search-field::after {
+  content: '';
+  position: absolute;
+  width: calc(var(--box-radius) + 1px);
+  height: calc(var(--box-radius) + 1px);
+  background: radial-gradient(
+    circle at 100% 100%,
+    transparent calc(var(--box-radius) - 0.25px),
+    var(--box-line) calc(var(--box-radius) + 0.25px),
+    var(--box-line) calc(var(--box-radius) + 0.75px),
+    var(--bg) calc(var(--box-radius) + 1.25px)
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+
+// Beside the tab: the top edge runs on over the tab's corner.
+.search-field::before {
+  left: 100%;
+  top: -1px;
+  border-top: 1px solid var(--box-line);
+}
+
+// Over the body: the left edge runs on down past the body's corner.
+.search-field::after {
+  left: -1px;
+  top: 100%;
+  border-left: 1px solid var(--box-line);
+}
+
+.filters-open .search-field::before { opacity: 1; transition-duration: 0.16s; }
+.filters-open .search-field::after { opacity: 1; transition: opacity 0.1s 0.42s; }
+
+// The buttons' part: no fill or line of its own, only the inset. The 1px short of it is the
+// box's border, which the inset is measured from.
 .filter-tab {
   display: flex;
-  align-items: center;
   gap: var(--sp-4);
-  padding: 0 var(--sp-4);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-left: 0;
-  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  // Closing, it is a box again only once the panel's body has run back up behind it.
-  transition: background-color 0.16s ease 0.34s, border-color 0.16s ease 0.34s;
+  padding: calc(var(--box-inset) - 1px);
 }
 
-.filters-open .filter-tab {
-  background-color: transparent;
-  border-color: transparent;
-  transition-delay: 0s;
+// On the tab the Filters button gives up its lit state for the tab's own quiet line: the
+// tab it sits on already says the panel is open.
+#more-toggle {
+  border-radius: calc(var(--box-radius) - var(--box-inset));
+  transition: background-color 0.16s, border-color 0.16s;
+}
+
+.filters-open #more-toggle {
+  background: transparent;
+  border-color: var(--border);
 }
 
 // The box's leading icon, and its clear button: a magnifier while the box is empty, turning
@@ -137,15 +221,13 @@ body {
   transition: opacity 0.18s, transform 0.18s;
 }
 
-// One turns out as the other turns in, so it reads as a single icon changing shape.
+// One turns out as the other turns in, so it reads as a single icon changing shape. It
+// plays whatever `prefers-reduced-motion` says, for the reason given at .filter-pop: with
+// the setting honoured the icon simply swapped, on the machine it was designed on.
 .search-icon-clear { opacity: 0; transform: rotate(-90deg) scale(0.5); }
 .search-clear:not(:disabled) {
   .search-icon-find  { opacity: 0; transform: rotate(90deg) scale(0.5); }
   .search-icon-clear { opacity: 1; transform: none; stroke: var(--text); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .search-icon { transition: none; }
 }
 
 #search {
@@ -271,10 +353,6 @@ body {
 // here the panel simply appeared and vanished on the machine it was designed on. The motion
 // is one small panel, set off by the reader's own press.
 .filter-pop {
-  // How far the body reaches up behind the search box: about half the box, so the box's
-  // own rounded foot sits on it with nothing showing between the two.
-  --tuck: 18px;
-
   position: absolute;
   left: 0;
   right: 0;
@@ -308,22 +386,29 @@ body {
 // Both blocks stop 1px short of the box's outer edges. The filter draws its rim outside a
 // block, and that puts the rim on the same pixels as the box's own border, so the tab's top
 // edge and the field's top edge are one line.
+//
+// Square, both of them. The filter rounds every corner of the shape to the box's own 8px
+// (see index.html), which is the radius the shape has to follow; a radius here as well
+// would only make its corners rounder than the box's.
 .blob-tab,
 .blob-body {
   position: absolute;
   right: 1px;
-  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
-// The tab: behind the buttons' part of the box, from the box's top edge down into the body
-// so the two overlap and the filter has something to join. It reaches a little to the left
-// as well, in behind the field, so no gap opens between the two. It does not move: the
-// buttons' part fades from a filled box to clear over it, and back.
+// The tab: behind the buttons' part of the box, top to bottom, and 12px further left than
+// that, in behind the field. The filter rounds its top left corner like every other, and
+// the extra width is what puts that corner out of sight: the top edge that shows runs
+// straight on from the field's, and the round corner seen under it is the field's hollow
+// (.search-field::before), drawn over a block that is solid there. It ends where the body
+// begins and no lower, so nothing is left hanging under the box once the body has run back
+// up; two blocks that only touch still join, because the filter adds their blurs. It does
+// not move: the box's fill fades off it, and back over it.
 .blob-tab {
   top: 1px;
-  width: calc(var(--tab-w, 96px) + var(--sp-8) - 1px);
-  height: calc(var(--box-h, 38px) + 20px);
+  width: calc(var(--tab-w, 92px) + var(--sp-12));
+  height: calc(var(--box-h, 38px) - 1px);
 }
 
 // Scale is the whole animation, with no fade: the filter cuts on opacity, so a block at
@@ -332,14 +417,33 @@ body {
 // takes its time too; a quick ease-in was over before it read as anything but the panel
 // vanishing. What makes it move like a liquid is the filter, rounding the join as the body
 // runs out from under the tab.
+//
+// It starts at the box's lower edge, not up behind the box, so the shape turns round the
+// end of the field: the turn that shows is the field's own bottom right corner, with the
+// tab and the body solid behind it.
 .blob-body {
-  top: calc(var(--box-h, 38px) - var(--tuck));
+  top: var(--box-h, 38px);
   left: 1px;
   bottom: 1px;
   transform: scale(0.4, 0);
   // Under the middle of the tab, which is where it pours from.
-  transform-origin: calc(100% - var(--tab-w, 96px) / 2) 0;
+  transform-origin: calc(100% - var(--tab-w, 92px) / 2) 0;
   transition: transform 0.38s ease-in-out;
+}
+
+// The body's top left corner would come out round as well, and pinch in under the field's.
+// A stub standing up from that corner, behind the field, takes the rounding up out of
+// sight with it, so the left edge that shows runs straight down from the field's; the round
+// corner seen beside it is the field's hollow again (.search-field::after). It is part of
+// the body and scales with it: nothing of it is left once the body has run back up.
+.blob-body::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  width: var(--sp-16);
+  height: var(--sp-12);
+  background: inherit;
 }
 
 .filters-open .blob-body { transform: none; transition: transform 0.52s cubic-bezier(0.2, 0.9, 0.2, 1) 0.06s; }
@@ -362,9 +466,10 @@ body {
 
 .filter-close {
   display: flex;
-  padding: var(--sp-6);
+  align-items: center;
+  padding: 0 var(--sp-6);
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: calc(var(--box-radius) - var(--box-inset));
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -380,7 +485,6 @@ body {
 // well as folded, which is what keeps them out of the tab order.
 .filter-extra {
   display: flex;
-  align-items: center;
   gap: var(--sp-4);
   max-width: 0;
   margin-left: calc(-1 * var(--sp-4));
@@ -719,14 +823,15 @@ body {
 }
 
 // Clear, in the search box between the Filters button and the close button while the panel
-// is open: the Filters button's pill, with nothing to mark it out until it has something to
-// clear.
+// is open: the Filters button's shape, with nothing to mark it out until it has something
+// to clear.
 .filter-clear {
   flex-shrink: 0;
-  padding: 7px var(--sp-12);
+  padding: 0 var(--sp-12);
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: var(--bg);
+  border-radius: calc(var(--box-radius) - var(--box-inset));
+  // No fill: it is only ever seen on the tab, and takes the tab's.
+  background: none;
   color: var(--text);
   font-size: var(--fs-sm);
   font-weight: 600;
@@ -1414,27 +1519,19 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 // label rather than the back of the same object.
 .bk-mid { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1 1 auto; }
 // The badge is painted, not drawn: --logo carries the faction's mask and the colour
-// comes from here, so the same file serves every tint. --dim at 60% keeps it as a
-// watermark on the plate rather than a second subject competing with the art behind it.
+// comes from here. The accent's gold at 60% keeps it as a watermark on the plate rather than
+// a second subject competing with the art behind it. It is the same on every card, whatever
+// the rarity: the front's tab says that already.
 .bk-glyph {
   width: 80%;
   aspect-ratio: 1;
   max-width: 140px;
-  // Tinted per rarity below; --dim is the fallback for anything that lands here without
-  // a tier class.
-  background: var(--dim);
+  background: var(--accent);
   opacity: 0.6;
   -webkit-mask: var(--logo) center / contain no-repeat;
           mask: var(--logo) center / contain no-repeat;
   // See .op-header-faction: the collab teams' logos carry opaque black detail.
   mask-mode: luminance;
-}
-
-// The badge takes the card's rarity colour. It is the one place on the back that carries
-// any colour, and rarity is the only thing colour encodes here, so the back keeps saying
-// the same thing as the front's tab without repeating a word of it.
-@each $tier, $spec in $rarities {
-  .op-card.r#{$tier} .bk-glyph { background: var(--r#{$tier}); }
 }
 .bk-foot { display: flex; flex-direction: column; gap: var(--sp-6); }
 .bk-tags { display: flex; flex-wrap: wrap; gap: var(--sp-4); }
@@ -1934,7 +2031,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 }
 
 // The same painted badge as the back of a card (.bk-glyph): --logo is the faction's mask,
-// and the colour is the operator's rarity.
+// and the colour is the same gold for every operator.
 //
 // Luminance, not the default alpha: the nation logos are white on transparency and read
 // the same either way, but Team Rainbow's and the Rhodes Island badge the game files under
@@ -1944,7 +2041,7 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   grid-area: icon;
   width: 72px;
   height: 72px;
-  background: var(--rarity, var(--dim));
+  background: var(--accent);
   opacity: 0.6;
   -webkit-mask: var(--logo) center / contain no-repeat;
           mask: var(--logo) center / contain no-repeat;
@@ -1952,7 +2049,6 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
 }
 
 @each $tier, $spec in $rarities {
-  .op-header.r#{$tier},
   .splash-tags.r#{$tier} { --rarity: var(--r#{$tier}); }
 }
 

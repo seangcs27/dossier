@@ -72,11 +72,18 @@
   <!-- What makes separate blocks read as one liquid shape: blur them, then cut the blur back
        to a hard edge, so two blocks that sit close run together and every corner between
        them fills in. The last four steps draw a 1px rim round the result. sRGB, because the
-       default linear space would darken the fill. -->
+       default linear space would darken the fill.
+
+       The blur is what sets the shape's corners: a square corner comes out round, with a
+       radius of about 1.86 times the blur, inwards or outwards alike. 4.3 makes that 8px,
+       the search box's own corner radius, so the blocks in styles.scss are left square and
+       every corner of the shape matches the box it hangs from. The cut is centred on half
+       strength (11a - 5 is 0.5 at a = 0.5), which keeps a straight edge exactly where its
+       block's edge is. -->
   <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
     <filter id="goo" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur"></feGaussianBlur>
-      <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10" result="goo"></feColorMatrix>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4.3" result="blur"></feGaussianBlur>
+      <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 11 -5" result="goo"></feColorMatrix>
       <feMorphology in="goo" operator="dilate" radius="1" result="fat"></feMorphology>
       <feFlood class="goo-rim" result="ink"></feFlood>
       <feComposite in="ink" in2="fat" operator="in" result="rim"></feComposite>

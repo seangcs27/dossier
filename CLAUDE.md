@@ -74,6 +74,7 @@ scripts/
   build-operator-index.mjs   ← operators.json + operator-details/ + branch-icons/ + portraits/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
+  lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
@@ -275,20 +276,23 @@ name with a real 6★ operator, as do "Raidian" and "Shalem". On a grid card the
 mode's initials as a badge (`.op-mode`) and its name up the edge strip, and the extension's
 popup leaves them out.
 
-**Where they sort is taken from AN-EN-Tags' own list**, `json/tl-akhr.json`. They were never
-released, so nothing dates them: no release date (the name lookup would hand a trainer its
-namesake's), no Sanity Gone ordinal, a default-skin `getTime` of 0 in the game's skin table,
-and a `character_table` order that goes by class rather than by date. AN-EN-Tags' grid is
-that file's order within each rarity (not alphabetical: its maintainer appends to it as
-operators are added), and it is the one place found that puts them at a point in time. Each
-takes a `releaseOrder` a fraction past the newest of the ordinary operators of its own
-rarity that precede it in that file, so under the Release sort it sits after the whole batch
-AN-EN-Tags shows it after. Checked against the wiki's dates for each mode's first CN run,
-the blocks land where they should: Integrated Strategies' first operators after the batch of
-2020-08-24 (Ceobe's Fungimist opened that day), its later ones after Highmore, Stronghold
-Protocol's after the batch of 2024-10-31 (it opened 2024-11-15) and after that of
-2025-10-31 (Alliance, 2025-11-14). Without the file they keep no order and sort last.
-Payloads also carry `welfare`: true where
+**Where they sort is recorded in the repo**, `scripts/lib/mode-order.mjs`: one line per
+mode-only operator, naming the released operator of its rarity that it comes just after. It
+takes a `releaseOrder` a fraction past that operator's (the Stronghold Protocol trainers
+364.01–364.08, after Lappland the Decadenza), so it sits beside it under the Release sort.
+They were never released, so nothing dates them: no release date (the name lookup would hand
+a trainer its namesake's), no Sanity Gone ordinal, a default-skin `getTime` of 0 in the
+game's skin table, and a `character_table` order that goes by class rather than by date.
+The places were worked out once from AN-EN-Tags' own list, `json/tl-akhr.json`, whose file
+order is the order its grid shows within each rarity (not alphabetical: its maintainer
+appends to it as operators are added): each goes after the newest released operator of its
+rarity that the list has before it. They were then checked against the wiki's dates for each
+mode's first CN run: Integrated Strategies' first operators after the batch of 2020-08-24
+(Ceobe's Fungimist opened that day), its later ones after Highmore, Stronghold Protocol's
+after the batch of 2024-10-31 (it opened 2024-11-15) and after that of 2025-10-31 (Alliance,
+2025-11-14). Recorded rather than fetched each build because they do not change and the
+fetch was one more thing to fail. A mode-only operator the record lacks sorts last, with a
+build warning that names it. Payloads also carry `welfare`: true where
 `itemObtainApproach` is an event reward, an anniversary reward or an Integrated Strategies
 reward (81 operators).
 
@@ -363,8 +367,7 @@ minutes, twice, before this).
   (RIIC buffs, keyed by `buffId`), `tl-potential.json` (a keyword substitution table —
   potential descriptions are templated strings from a closed vocabulary, not prose). The
   two Ace files stopped being updated in April 2026, so they cover no operator released
-  since; the wiki pages above do. Its operator list, `tl-akhr.json`, is also read for its
-  file order, which is what places the mode-only operators (see above).
+  since; the wiki pages above do.
 - **PuppiizSunniiz/Arknight-Images** — the character-art tree, read at build time to know
   which outfit illustrations actually exist before listing them in `arts`.
 - **yuanyan3060/ArknightsGameResource** — 180×360 bust portraits, the card art. Downloaded
@@ -427,11 +430,15 @@ Reads the bundled index through `src/web/operator-index.ts` and makes **no netwo
 for data** (only images). Cards are built 48 at a time as the page nears the end of what
 exists: all ~430 at once was ~550 ms of paint and layerize before first paint, and held
 back every portrait request until it finished. The topbar's search box sits on the left,
-beside the wordmark, 420px wide (the full row on a phone). It is one box in two parts: the
-field you type in (`.search-field`), and at its right end the Filters button's part
-(`.filter-tab`), with a rule between them. The box's magnifier is its clear button: it turns
-into a cross once there is text, and pressing it empties the box. The result count beside it
-is a pill. The Filters button opens a popover that hangs from the search box, as wide as the
+beside the wordmark, 420px wide (the full row on a phone). It is one box with the Filters
+button inside it at its right end: `.search-wrap` draws the one fill and the one line, so
+nothing in the outline says where the field (`.search-field`) stops and the buttons' part
+(`.filter-tab`) starts. Every corner follows the box's own radius, `--box-radius` (8px):
+what sits inside the box is inset `--box-inset` (4px) from its outer edge and takes the
+radius less the inset (4px), so inner and outer corners turn about the same centre. The
+box's magnifier is its clear button: it turns into a cross once there is text
+(a quarter-turn and a fade, played whatever `prefers-reduced-motion` says, like the filter
+panel), and pressing it empties the box. The result count beside it is a pill. The Filters button opens a popover that hangs from the search box, as wide as the
 box, and closes on the toggle, the close button, Escape, or a press anywhere outside the
 cluster (a press in the search box is inside it: typing a name while picking filters is one
 job). While it is open, Clear and the close button unfold beside the toggle
@@ -440,17 +447,44 @@ job). While it is open, Clear and the close button unfold beside the toggle
 The popover is a folder with a tab. Its body hangs flush from the box's lower edge; its tab
 stands up inside the box's right end, behind Filters, Clear and the close button, so the
 buttons that work the panel sit on the panel's own tab and the field sits in the notch
-beside it. The shape is two plain blocks behind the panel (`.blob-tab`, `.blob-body`), run
-together by an SVG "goo" filter in `index.html` (blur, then cut the blur back to a hard
-edge, then a 1px rim); the panel's own content sits over them unfiltered. The box is on a
-layer above the shape: the field is opaque and hides what tucks in behind it, and the
-buttons' part fades from a filled box to clear, which is what uncovers the tab. Both blocks
-stop 1px short of the box's edges, so the filter's rim, drawn outside a block, lands on the
-box's own border line. `grid.ts` measures the tab's width and the box's height with a
+beside it, closed off into a box of its own. Two of that box's corners are round: the top
+left, which is the search box's own, and the bottom right, where the shape turns round the
+end of the field. The other two are turned inside out: the outline's top edge runs flat
+from the field on over the tab's corner, its left edge flat from the field on down past the
+body's, and the field's boundary there is the round corner of the tab, or of the body,
+curving in to meet that edge. That is the owner's mock; a pass that left those two joins
+square, with no curve, was sent back. The
+shape is two plain blocks behind the panel (`.blob-tab`, `.blob-body`), run together by an
+SVG "goo" filter in `index.html` (blur, then cut the blur back to a hard edge, then a 1px
+rim); the panel's own content sits over them unfiltered. The body starts at the box's lower
+edge. The blocks are square, and the filter's blur is what rounds every corner of the shape:
+a corner comes out at about 1.86 times the blur, and 4.3 makes that the box's 8px, so the
+tab and the panel's foot carry the radius of the box they hang from. The two corners the
+field turns inside out are not the filter's, though. The tab's top left and the body's top
+left are put out of sight behind the field (the tab block runs 12px further left than the
+buttons, and a stub stands up from the body's corner, `.blob-body::before`), and the round
+corner seen at each is drawn by the field: `.search-field::before` and `::after`, 9px
+squares whose radial gradient leaves the inside of the curve clear, draws the line along
+it and fills the rest with the field's fill, with the flat edge's line as a border down one
+side. So the curve is the field's own line and turns the accent with it. The top right one
+fades in with the field's line; the bottom left one, and that corner of the field going
+square, wait 0.42s for the body, which is within 2px of the edge by then. The field's bottom right
+corner is a little tighter than the filter's (6px) and is the only line there, with the
+shape solid behind it. Filters gives up its lit state for a quiet outline while the panel
+is open, like Clear beside it. The box is on a layer above the shape. Open, the box's own
+fill and line fade out, which is what uncovers the tab, and the field shows the fill and
+line it keeps underneath (its border lies exactly on the box's, by negative margins, and
+its fill stops short of it). Both blocks stop 1px short of the box's edges, so the filter's
+rim, drawn outside a block, lands on the box's own border line. The tab ends where the body
+begins and no lower: two blocks that only touch still join, because their blurs add, and
+nothing is left hanging under the box when the body has run back up. `grid.ts` measures the tab's width and the box's height with a
 `ResizeObserver` (`--tab-w`, `--box-h`): the first moves with the Filters label and all
-through Clear and the close button folding. Opening scales the body out from under the tab
-on the card's ease (a fast start and a long settle, no rebound) and closing draws it back
-up; the blocks never fade, because the filter cuts on opacity. `#more-filters[hidden]`
+through Clear and the close button folding. CSS anchor positioning cannot do that job here:
+a `filter` makes its element the containing block for everything positioned inside it, and
+an anchor has to be reachable from that containing block, so the blocks inside the filtered
+layer cannot anchor to the buttons outside it. Opening scales the body out from under the
+tab on the card's ease (a fast start and a long settle, no rebound) and closing draws it
+back up; the blocks never fade, because the filter cuts on opacity. `#more-filters[hidden]`
 keeps its layout: the shape takes its height from the panel and still has to run back up.
 
 **It animates whatever `prefers-reduced-motion` says, on purpose** (the comment on
@@ -498,8 +532,9 @@ set and information architecture all follow theirs, so read
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
 - **Panel** — rarity-tinted strip with stars, then faction badge + serif operator name (the
   alter epithet in `--dim`) + class / branch / position row. The badge is the operator's most
-  specific faction (team, else group, else nation), painted as a luminance mask in the rarity
-  colour; the game files the Rhodes Island badge under three collab ids (`sees`, `mujica`,
+  specific faction (team, else group, else nation), painted as a luminance mask in one colour
+  for every operator (the accent's gold at 60%, as on the back of a card; it followed rarity
+  until the owner found that odd, and gold was their pick over a pale neutral); the game files the Rhodes Island badge under three collab ids (`sees`, `mujica`,
   `laios`), so only Team Rainbow has a logo of its own. **LIMITED** sits in the artwork's
   top-right corner (`splashTagsHtml`), for the 26 operators the CN gacha table's LIMITED
   pools name plus every collab operator (27; they come from LINKAGE pools, which that table

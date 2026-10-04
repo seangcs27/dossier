@@ -1000,9 +1000,9 @@ function headerHtml(s: DetailState): string {
       <span class="visually-hidden">Rarity: ${n}</span>
       ${'<span class="strip-star">★</span>'.repeat(n)}
     </div>
-    <div class="op-header r${n}">
+    <div class="op-header">
       ${faction
-        // A mask, as on the back of a card, so the header supplies the colour.
+        // A mask, as on the back of a card, so the stylesheet supplies the colour.
         ? `<span class="op-header-faction" role="img" style="--logo: url(${factionLogoUrl(faction.powerId)})" aria-label="${escHtml(faction.powerName)}" tabindex="0" data-tip="${escHtml(faction.powerName)}"></span>`
         : ''}
       <h1 class="op-header-name">${escHtml(base)}${epithet ? `<span class="alter"> The ${escHtml(epithet)}</span>` : ''}</h1>

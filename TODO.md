@@ -25,14 +25,14 @@ Not built yet:
 
 The 29 operators a game mode lends (IS, SP) are in the grid: badged on the card, tagged on
 their detail page, filterable under Game mode, and placed among the released operators by
-AN-EN-Tags' list order. What is left:
+the places recorded in `scripts/lib/mode-order.mjs`. What is left:
 
 - **The Server filter counts them under GLOBAL**, whose tooltip says "released".
 - **"SO" is not marked.** AN-EN-Tags badges two obtainable operators, Raidian and Mechanist,
   as Special Operators, from its own `json/puppiiz/special_operator.json`. Nothing in the
   game tables read here says so.
-- **One fetch decides their place.** If `tl-akhr.json` is unreachable at build time they
-  fall back to sorting last. It happened once in testing and righted itself on the next run.
+- **A new mode-only operator needs a line by hand.** The record is fixed; one added to the
+  game later sorts last and the build warns, naming it, until `mode-order.mjs` gets its line.
 - **Seven wiki release dates disagree with the release order.** Skadi, Dur-nar, Breeze,
   Broca, Purestream, Chiave and Raidian carry a wiki date weeks or months later than the
   operators ordered after them (the wiki's "debut event" for them is a later one). Nothing
@@ -45,21 +45,29 @@ The Filters popover's shape is an SVG goo filter over two blocks: a folder whose
 in the search box's right end, behind the Filters, Clear and close buttons. It went through
 a blob round the Filters button (liked), a plain panel as wide as the box ("not the slime
 shape any more", and missing its animation, which was the reduced-motion rule doing what it
-said on a machine with that setting on), and a blob with shoulders and drips (animation
-back, drips unwanted) before the owner asked for a tab like a folder's. It animates
-regardless of that setting. I have confirmed the transitions start, open and close, and
-looked at the open and shut states, but nobody has watched this version play at speed.
+said on a machine with that setting on), a blob with shoulders and drips (animation back,
+drips unwanted), and a square-cornered tab, before the owner mocked up the shape it has now:
+the body starting at the box's lower edge, so the filter curves the join round the end of
+the field. Every corner then took the search box's own 8px, the buttons inside it 4px, and
+the box became one outlined box rather than two halves side by side. Last, the two joins
+where the field's corner met the panel's (beside the tab, and over the body) were flattened
+on the outside: the outline's top and left edges run straight through, and the panel's round
+corner stays as the field's boundary under them. My first pass read the owner's mock as
+square joins with no curve ("wrong, I still want the tab border to be curve"); the mock,
+enlarged, shows the curve kept. It animates regardless
+of that setting. I have confirmed the transitions start, open and close, and looked at the
+open and shut states, but nobody has watched this version play at speed, and the gold line
+on the box while typing could not be checked here: the app's browser pane never reports the
+page as focused. One thing to watch for at speed: opening, the field's bottom left corner
+changes shape 0.42s in, timed to the body's left edge reaching it (worked out from the ease,
+checked on paused frames, not watched).
 
-### The rarity tab going flat after a spin on iOS Safari — a fix on reasoning alone
-
-On an iPhone the 3D rarity tab drew flat for a moment when a spun card stopped. The change
-in `card-spin.ts` commits the last frame before `is-spinning` comes off, so the plate's
-transition never starts at a stop; the theory is that Safari flattens nested `preserve-3d`
-(the tab, inside the plate) for as long as an accelerated transform transition runs on the
-plate. It fits the facts (phone only, lasts about the transition's quarter second, only the
-nested part goes flat) but was not reproduced. If it still happens, the next suspect is the
-light fading out at the same moment: `.op-light` and `.op-shade` (which has
-`mix-blend-mode`) lose `is-lit` on a touch device when the spin ends.
+The owner asked for CSS anchor positioning to line the shape up with the buttons. It cannot
+be used for that while the shape is a filtered layer (the filter makes that layer the
+containing block for what is positioned inside it, and an anchor outside is out of reach),
+so the tab's size is still measured in script. Drawing the folder without the filter, with
+plain borders and an inverted-corner piece anchored to the buttons, would allow it, at the
+cost of the liquid join and its animation.
 
 ### Detail page — match Sanity Gone, one tab at a time
 Done tab by tab against the live reference (https://sanitygone.help/en/operators/makoto-yuki/
@@ -186,6 +194,22 @@ pills, a topbar `<select id="sort">`, and a card with the branch glyph still in 
 and no branch line — so `npm run design` regenerates previews of a UI that no longer exists.
 
 Not blocked on anything; needs a design pass rather than investigation.
+
+### Collab logos — waiting on artwork
+Four collabs show the Rhodes Island badge on the card back and in the detail header, because
+the game has no logo for them: Persona 3 (`sees`, 4 operators), Ave Mujica (`mujica`, 5) and
+Delicious in Dungeon (`laios`, 4) are factions whose logo file is the Rhodes Island badge,
+and the 6 Monster Hunter operators belong to Rhodes Island itself (`rhodes`, `action4`,
+`reserve6`). Rainbow Six Siege has its own (`rainbow`).
+
+Blocked on the images, which the owner offered to find. One per collab: an emblem rather than
+a wordmark (it is drawn at 72px in the header and at most 140px on a card), white on transparent
+(the badge is a luminance mask, so colour is dropped and anything dark disappears), square,
+SVG or a PNG of 512px or more. They would be the first images here that are not the game's
+own files, so they need a tracked folder and a build step that lays them over
+`faction-logos/`, which is gitignored and rebuilt. Three can go by faction id. Monster Hunter
+cannot, since its operators share their ids with ordinary Rhodes Island operators: the card
+and the header would have to ask for the collab's logo first, by `collab`.
 
 ### Nation and group on the detail page, with their logos
 **Partly done.** The detail header now shows one badge — the operator's most specific faction
