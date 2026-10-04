@@ -73,6 +73,7 @@ the deploy workflow keeps the published site current as new operators release.
 | [PuppiizSunniiz/Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images) | Avatars, class icons, skill icons, full illustrations |
 | [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) | 180×360 bust portraits for grid cards |
 | [Wikimedia Commons](https://commons.wikimedia.org) | The four crossover logos kept in `scripts/collab-logos/` (Persona 3 Reload, Monster Hunter, Ave Mujica, Delicious in Dungeon) |
+| [endfield.wiki.gg](https://endfield.wiki.gg) | Arknights: Endfield's roster and card art (Cargo API), read by `scripts/build-endfield-index.mjs` |
 
 Every source except HellaAPI is supplemental: if one is unreachable the build logs a
 warning and degrades rather than failing. All network calls carry a 20 s timeout.
@@ -174,7 +175,8 @@ dossier/
 
 ## Attribution
 
-All Arknights game data and artwork is the property of **Hypergryph / Yostar**. This is a
+All Arknights game data and artwork is the property of **Hypergryph / Yostar**, and
+Arknights: Endfield's of **Hypergryph / Gryphline**. This is a
 non-commercial fan reference built on community-maintained data mirrors (credited above),
 and carries no affiliation or endorsement. Assets will be removed on request.
 

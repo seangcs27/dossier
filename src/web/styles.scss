@@ -6,10 +6,75 @@
 @use '../styles/tokens' as *;
 
 body {
+  // The sidebar's share of the window: its width down the left edge, or on a phone its
+  // height along the foot. One of the two is always nothing. The page is padded to clear
+  // it, so nothing in the page had to move into a wrapper to make room.
+  --side-w: 72px;
+  --side-h: 0px;
+
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  padding: 0 0 var(--side-h) var(--side-w);
+}
+
+// ── Sidebar ──
+// The games, one tile each. Fixed in place; the topbar and the page sit beside it. The
+// first tile is as far down as the topbar's logo and the same size, so the two line up.
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 10;
+  width: var(--side-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-16) 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+.side-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-decoration: none;
+
+  &:hover,
+  &.active { color: var(--text); }
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+}
+
+// The game's initials on a tile. Lit in the accent for the game being shown, like the
+// Events link for its page.
+.side-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: border-color 0.16s, color 0.16s;
+}
+
+.side-game:hover .side-mark { border-color: var(--muted); }
+
+.side-game.active .side-mark {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 // ── Scrollbars ──
@@ -68,6 +133,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
+  // The bar lays itself out by its own width (the query further down), not the window's:
+  // the sidebar takes a share of the window that the bar never has.
+  container: topbar / inline-size;
 }
 
 // Scoped to the topbar's own <header>: the detail page uses <header> inside its content
@@ -131,7 +199,8 @@ body {
   position: relative;
   // Over the panel's shape, whose edges run in behind the box's own line.
   z-index: 21;
-  width: min(420px, calc(100vw - 32px));
+  // As wide as the cluster it sits in (.topbar-actions), which is what sets the width.
+  flex: 1;
   min-width: 0;
   display: flex;
   background: var(--bg);
@@ -304,8 +373,13 @@ body {
 //
 // Left, beside the wordmark. It is the popover's positioning context and exactly as tall
 // as the search box, so the panel opens from the box's own lower edge.
+//
+// 420px wide where the bar has it, and the one thing in the bar that gives way where it
+// has not: the wordmark, the count and the Events link keep their width.
 .topbar-actions {
   position: relative;
+  flex: 0 1 420px;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--sp-8);
@@ -380,11 +454,45 @@ body {
   flex-shrink: 0;
 }
 
-// The way to the Events page, at the far end of the bar from the wordmark. It is a link
-// wearing the Filters button's pill, lit while that page is the one showing.
+// The way to the Events page, beside the operator count. It is a link wearing the Filters
+// button's pill, lit while that page is the one showing, and gone while the other game is:
+// the schedule is Arknights'.
 .nav-events {
-  margin-left: auto;
   text-decoration: none;
+
+  &[hidden] { display: none; }
+}
+
+// Too narrow for one row, the bar becomes a two-row grid rather than relying on flex-wrap,
+// so the break always lands in the same place instead of shifting with the width of the
+// operator count: the wordmark, the count and the Events link above, the search box below
+// at the bar's full width. One row wants about 860px; under that the search box, which is
+// what gives way, would be narrower than 340px.
+//
+// The phone rules at the foot of the file lay the bar out the same way by the window's
+// width, which is what a browser without container queries is left with, and set the
+// phone's sizes.
+@container topbar (max-width: 860px) {
+  .topbar header {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    row-gap: var(--sp-10);
+
+    h1 { grid-area: 1 / 1; }
+  }
+
+  .topbar-actions { grid-area: 2 / 1 / 3 / -1; }
+
+  #count {
+    grid-area: 1 / 2;
+    align-self: center;
+    justify-self: end;
+  }
+
+  .nav-events {
+    grid-area: 1 / 3;
+    align-self: center;
+  }
 }
 
 // ── Filter popover ──
@@ -506,7 +614,9 @@ body {
   flex-direction: column;
   gap: var(--sp-16);
   padding: var(--sp-16);
-  max-height: calc(100vh - 120px);
+  // Less the sidebar where it runs along the foot of the window, which the panel would
+  // otherwise reach in behind.
+  max-height: calc(100vh - 120px - var(--side-h));
   overflow-y: auto;
   opacity: 0;
   transition: opacity 0.12s;
@@ -964,6 +1074,10 @@ body {
   // would otherwise sit under the next card in DOM order.
   &:hover { z-index: 1; }
 }
+
+// A card that opens nothing, which is every Endfield card until that game has a dossier
+// page: it can still be turned, so it says that and not "press me".
+div.op-card { cursor: grab; }
 
 // Everything that stays inside the card's own bounds. A plain rectangle: the art, the
 // gradient and the text are the whole silhouette, with nothing chamfering the frame.
@@ -3355,6 +3469,38 @@ a.pool-op:hover { text-decoration: underline; }
 // The topbar becomes a two-row grid rather than relying on flex-wrap, so the break always
 // lands in the same place instead of shifting with the width of the operator count.
 @media (max-width: 640px) {
+  // The sidebar lies along the window's foot here: down the edge it would take a column
+  // of cards off a phone. Tile and name sit side by side, since the bar is short.
+  body {
+    --side-w: 0px;
+    --side-h: 56px;
+  }
+
+  .sidebar {
+    inset: auto 0 0 0;
+    width: auto;
+    height: var(--side-h);
+    flex-direction: row;
+    justify-content: center;
+    gap: var(--sp-24);
+    padding: 0 var(--sp-12);
+    border-right: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .side-game {
+    flex-direction: row;
+    gap: var(--sp-8);
+    width: auto;
+    font-size: var(--fs-xs);
+  }
+
+  .side-mark {
+    width: 36px;
+    height: 36px;
+    font-size: var(--fs-sm);
+  }
+
   .topbar header {
     display: grid;
     grid-template-columns: 1fr auto auto;

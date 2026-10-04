@@ -5,6 +5,33 @@ picking one up later doesn't need re-investigation.
 
 ## Planned
 
+### Arknights: Endfield — what is left
+
+The second game has a sidebar tile and a roster (`#/endfield`, 33 operators on the Arknights
+card), baked from `endfield.wiki.gg`'s `Operators` table. That is the start, and all of it.
+Not built yet, roughly in the order worth doing:
+
+- **A dossier page.** The cards open nothing. The same table already has each operator's
+  quote, expertise, hobbies, gift preference, birthday and gender, and names a 2048px splash
+  (2-4 MB PNG, so it has to be baked smaller or resized on the way) and a 900px banner.
+  Skills, talents and potentials are not in any Cargo table: they are in each page's
+  wikitext, as on the Arknights wiki, and would need parsing like `scripts/lib/wiki-text.mjs`.
+  The wiki's other tables that could feed it: `Weapons`, `WeaponSkills`, `Gears`, `GearSets`,
+  `BaseSkills`, `AbilityMatrixUpgrades`.
+- **Search and filters.** The topbar's are Arknights' and are hidden on this page. Class (6),
+  element (5), weapon (5), rarity (3) and faction (9) are all in the index.
+- **Glyphs.** Class, element and weapon are words on the card; the wiki has icons for them
+  that the build does not fetch.
+- **Order.** Rarity, then name. The `Operators` table has no release date; `Versions` and
+  `Banners` might date them.
+- **Game icons in the sidebar.** The tiles carry initials (AK, EF) because the repo has no
+  icons for the games.
+- **Two copies of the card's markup**, `grid.ts` and `views/endfield.ts`. Sharing one template
+  meant rewriting the Arknights card's builder, which was not broken; worth doing if a third
+  game or a second change to the plate comes.
+- **Three copies of the build scripts' fetch helpers** (`timedFetch`, `wiki`): the operator,
+  event and Endfield scripts each carry their own.
+
 ### Global schedule — what is left
 
 The Events page (`#/events`) has the events, the headhunting pools and a month calendar,

@@ -43,6 +43,12 @@ export function operatorPortraitLocalUrl(id: OperatorId): string {
   return `portraits/${encodeURIComponent(id)}.webp`;
 }
 
+// An Arknights: Endfield operator's card art, the same 180x360 bust, baked by
+// scripts/build-endfield-index.mjs from the Endfield wiki. Keyed by the game's own id.
+export function endfieldPortraitUrl(id: string): string {
+  return `endfield/portraits/${encodeURIComponent(id)}.webp`;
+}
+
 // The faction badge printed on the back of a card and in the detail page's header, keyed
 // by the game's own faction id ('rim', 'kjerag', 'penguin'). Baked into the bundle by the
 // build like branch-icons/, and held as a mask rather than a picture, so whatever shows it

@@ -32,6 +32,7 @@ module.exports = {
         { from: 'src/shared/generated/elite-icons', to: 'elite-icons', noErrorOnMissing: true },
         { from: 'src/shared/generated/potential-icons', to: 'potential-icons', noErrorOnMissing: true },
         { from: 'src/shared/generated/event-banners', to: 'event-banners', noErrorOnMissing: true },
+        { from: 'src/shared/generated/endfield/portraits', to: 'endfield/portraits', noErrorOnMissing: true },
       ],
     }),
   ],

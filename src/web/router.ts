@@ -1,7 +1,8 @@
 export type Route =
   | { view: 'grid' }
   | { view: 'detail'; id: string }
-  | { view: 'events'; tab: EventsTab };
+  | { view: 'events'; tab: EventsTab }
+  | { view: 'endfield' };
 
 // The Events page's tabs: #/events is the list of events, and the other two hang off it.
 export type EventsTab = 'list' | 'pools' | 'calendar';
@@ -11,6 +12,9 @@ export function parseHash(hash: string): Route {
   if (m && m[1]) return { view: 'detail', id: decodeURIComponent(m[1]) };
   const ev = /^#\/events(?:\/(pools|calendar))?$/.exec(hash);
   if (ev) return { view: 'events', tab: (ev[1] ?? 'list') as EventsTab };
+  // The second game. Everything outside this prefix is Arknights', as it was before there
+  // were two, so links made then still land where they did.
+  if (hash === '#/endfield') return { view: 'endfield' };
   return { view: 'grid' };
 }
 

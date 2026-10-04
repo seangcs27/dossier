@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **Browser extension** (Firefox/Chrome, Manifest V3) — operator lookup in a popup
 2. **Web SPA** — operator search and detail view, plus the Global event schedule,
-   deployable to GitHub Pages
+   deployable to GitHub Pages. It also carries a second game, **Arknights: Endfield**, so
+   far as a roster only (see "Endfield" below); the extension is Arknights alone.
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
@@ -38,9 +39,10 @@ npm run design       # build:web, then regenerate design/components/*.html previ
 npm run clean        # Remove ./dist/
 ```
 
-`build:index` is three scripts: `build:index:operators` (the index, the per-operator detail
-payloads, the branch icons), `build:index:ranges` (`ranges.json`) and `build:index:events`
-(`events.json` and the event banners). All run under `node --no-network-family-autoselection`.
+`build:index` is four scripts: `build:index:operators` (the index, the per-operator detail
+payloads, the branch icons), `build:index:ranges` (`ranges.json`), `build:index:events`
+(`events.json` and the event banners) and `build:index:endfield` (the Endfield roster and
+its portraits). All run under `node --no-network-family-autoselection`.
 
 **Building behind an HTTP proxy** (sandboxes, some corporate networks): the build scripts
 fetch with Node's built-in `fetch`, which — unlike `curl` and `git` — **ignores
@@ -74,6 +76,7 @@ scripts/
   build-operator-index.mjs   ← operators.json + operator-details/ + branch-icons/ + portraits/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
+  build-endfield-index.mjs   ← endfield/operators.json + endfield/portraits/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
@@ -107,6 +110,8 @@ src/
       game-consts.json        ← keyword glossary + promotion LMD, from gamedata_const, bundled
       events.json             ← the Global schedule: ~27 events and ~34 headhunting pools, bundled into the web target
       event-banners/<stem>.webp  ← those events' banners at 960px, copied as static files
+      endfield/operators.json    ← the Endfield roster (33), bundled into the web target
+      endfield/portraits/<id>.webp  ← its card art, 180x360, copied as static files
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
       index.ts      ← re-export barrel
@@ -127,8 +132,10 @@ src/
       html.ts       ← escHtml
 
   web/              ← SPA
-    index.ts        ← app entry: random logo, hash-router dispatch (grid, detail, events)
-    router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools , #/events/calendar)
+    index.ts        ← app entry: random logo, hash-router dispatch (grid, detail, events,
+                      endfield), and which game the sidebar marks
+    router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
+                      #/events/calendar , #/endfield)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
@@ -137,11 +144,13 @@ src/
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
     event-index.ts  ← schedule data store: getEvents/getPools/lagDays, and the GameEvent / GamePool types
-    styles.scss     ← full-page layout, topbar, chips, grid, detail, events
+    endfield-index.ts  ← Endfield data store: getEndfieldOperators, and the EndfieldOperator type
+    styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
       events.ts     ← the Global event schedule, after Arkpedia's (see below)
+      endfield.ts   ← the Endfield roster, on the Arknights card (see below)
     index.html      ← markup shell; links styles.css
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
@@ -152,7 +161,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -250,6 +259,7 @@ fetchOperator(id): Promise<Operator>       // baked file, same origin; throws if
 operatorAvatarUrl(id)                      // square crop      — Arknight-Images CDN
 operatorPortraitUrl(id, '1' | '2')         // 180x360 bust     — yuanyan3060 CDN
 operatorPortraitLocalUrl(id)               // the same bust, bundle-relative portraits/ WebP
+endfieldPortraitUrl(id)                    // an Endfield operator's bust, bundle-relative endfield/portraits/
 factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — a mask; takes any faction id
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
@@ -457,9 +467,29 @@ variables and does not persist across popup close/reopen.
 
 ## Web SPA (`src/web/`)
 
-Vanilla TS, no framework. Hash-routed three-view app: `#/` shows the operator grid;
-`#/op/<id>` shows the operator dossier; `#/events` shows the Global event schedule, reached
-from the Events link at the far end of the topbar (the wordmark is the way back).
+Vanilla TS, no framework. Hash-routed: `#/` shows the operator grid; `#/op/<id>` shows the
+operator dossier; `#/events` shows the Global event schedule, reached from the Events link
+beside the operator count (the wordmark is the way back); `#/endfield` shows the second
+game's roster.
+
+**The sidebar** (`.sidebar`, in `index.html`) lists the games, one tile each: down the
+window's left edge, and along its foot on a phone (640px and under), where a rail would
+cost the grid a column. It is fixed, and `body` is padded to clear it (`--side-w` and
+`--side-h`, one of which is always zero), so nothing in the page moved into a wrapper. A
+tile carries the game's initials (AK, EF), since the repo has no icons for them. Everything
+outside the `#/endfield` prefix is Arknights', so a link made before there were two games
+still lands where it did. The Events link is hidden while Endfield is showing: the schedule
+is Arknights'.
+
+**The topbar lays itself out by its own width**, a container query on `.topbar`, because the
+sidebar takes a share of the window that the bar never has. With 860px or more it is one
+row: wordmark, search box, count, Events link. The search box is the one thing that gives
+way, from 420px down to about 340. Under 860px it is two rows: the wordmark, the count and
+the Events link above, the search box below at the bar's full width. (Before this the bar
+overflowed between the phone layout and about 890px of window, and the page scrolled
+sideways.) The phone rules at the foot of `styles.scss` lay the bar out the same way by the
+window's width, which is what a browser without container queries is left with, and set
+the phone's sizes.
 
 ### Grid (`src/web/views/grid.ts`)
 
@@ -467,7 +497,7 @@ Reads the bundled index through `src/web/operator-index.ts` and makes **no netwo
 for data** (only images). Cards are built 48 at a time as the page nears the end of what
 exists: all ~430 at once was ~550 ms of paint and layerize before first paint, and held
 back every portrait request until it finished. The topbar's search box sits on the left,
-beside the wordmark, 420px wide (the full row on a phone). It is one box with the Filters
+beside the wordmark, 420px wide where the bar has the room (see above). It is one box with the Filters
 button inside it at its right end: `.search-wrap` draws the one fill and the one line, so
 nothing in the outline says where the field (`.search-field`) stops and the buttons' part
 (`.filter-tab`) starts. Every corner follows the box's own radius, `--box-radius` (8px):
@@ -732,6 +762,34 @@ says it has no schedule; with only the game's tables unreachable the schedule is
 without shop times and rotating pools.
 
 Not built: Arkpedia's birthdays on the calendar and its pull planner.
+
+### Endfield (`src/web/views/endfield.ts`)
+
+Arknights: Endfield, the second game. It was the owner's "you pick one", and picked because
+its wiki (`endfield.wiki.gg`, the same platform as the Arknights one) keeps the same kind of
+Cargo table the Arknights build already reads, and because an operator there is close enough
+to one here to go on the same card.
+
+So far it is a roster and nothing else. `#/endfield` deals every operator onto the Arknights
+card: class where the class sits, element and weapon on the branch line, faction up the edge
+strip, tags on the back, rarity (4 to 6) on the tab. There are 33, the Endministrator's two
+forms as two cards, told apart on the line an alter's epithet takes. The cards turn like the
+others but open nothing (`div.op-card`, not a link, with a grab cursor), and carry no glyphs.
+The search box and the Events link are Arknights' and are hidden; the count pill stays.
+
+`scripts/build-endfield-index.mjs` bakes it from the wiki's `Operators` table:
+`endfield/operators.json` (id, name, rarity, class, element, weapon, faction, tags; highest
+rarity first, then by name) and each operator's portrait, the image the table calls
+`tooltip`, which is the same 180x360 bust as an Arknights card's (the Endministrator's two
+are a little smaller), re-encoded to WebP at about 21 KB. Portraits already on disk are
+kept. None of it is load-bearing: with the wiki unreachable the last file is kept, or an
+empty one written, and the page says it has no operators.
+
+Not built: a dossier page, search and filters, class / element / weapon glyphs, a release
+order. The same table also has each operator's quote, expertise, hobbies, gift preference
+and birthday, and names a 2048px splash and a 900px banner; none of that is read yet. The
+card's markup here is a second copy of the one in `grid.ts`: a change to the plate there
+has to be made here too.
 
 ## Testing
 
