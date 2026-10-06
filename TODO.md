@@ -7,9 +7,9 @@ picking one up later doesn't need re-investigation.
 
 ### Arknights: Endfield — what is left
 
-The second game has a sidebar tile and a roster (`#/endfield`, 33 operators on the Arknights
-card), baked from `endfield.wiki.gg`'s `Operators` table. That is the start, and all of it.
-Not built yet, roughly in the order worth doing:
+The second game has a sidebar tile (Endfield Industries' emblem) and a roster (`#/endfield`,
+33 operators on the Arknights card), baked from `endfield.wiki.gg`'s `Operators` table. That
+is the start, and all of it. Not built yet, roughly in the order worth doing:
 
 - **A dossier page.** The cards open nothing. The same table already has each operator's
   quote, expertise, hobbies, gift preference, birthday and gender, and names a 2048px splash
@@ -24,8 +24,6 @@ Not built yet, roughly in the order worth doing:
   that the build does not fetch.
 - **Order.** Rarity, then name. The `Operators` table has no release date; `Versions` and
   `Banners` might date them.
-- **Game icons in the sidebar.** The tiles carry initials (AK, EF) because the repo has no
-  icons for the games.
 - **Two copies of the card's markup**, `grid.ts` and `views/endfield.ts`. Sharing one template
   meant rewriting the Arknights card's builder, which was not broken; worth doing if a third
   game or a second change to the plate comes.

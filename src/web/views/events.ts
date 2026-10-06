@@ -8,7 +8,7 @@
 import { eventBannerUrl } from '../../shared/api/hella-api';
 import { getEvents, getPools, lagDays } from '../event-index';
 import type { GameEvent, GamePool } from '../event-index';
-import { escHtml, rarityNum } from '../format';
+import { crumbsHtml, escHtml, rarityNum } from '../format';
 import { getOperators } from '../operator-index';
 import type { EventsTab } from '../router';
 
@@ -318,11 +318,7 @@ export function mountEvents(container: HTMLElement, tab: EventsTab): void {
 
   container.innerHTML = `
     <div class="events">
-      <nav class="crumbs">
-        <a href="#/">Operators</a>
-        <span class="crumb-sep">/</span>
-        <span class="crumb-current">Events</span>
-      </nav>
+      ${crumbsHtml('Events')}
       <nav class="ev-tabs" aria-label="Schedule">
         ${TABS.map(t => `<a class="op-tab${t.id === tab ? ' on' : ''}" href="${t.href}"${t.id === tab ? ' aria-current="page"' : ''}>${t.label}</a>`).join('')}
       </nav>

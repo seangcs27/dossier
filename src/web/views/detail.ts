@@ -40,6 +40,7 @@ import {
   markChanges,
   traitInfo,
   splitAlterName,
+  crumbsHtml,
 } from '../format';
 import {
   ICON_HP, ICON_ATK, ICON_DEF, ICON_RES, ICON_ASPD, ICON_BLOCK, ICON_DP, ICON_REDEPLOY,
@@ -1106,11 +1107,7 @@ function shellHtml(s: DetailState): string {
         : ''}
       <div class="detail-body">
         <div class="detail-art-col">
-          <nav class="crumbs">
-            <a href="#/">Operators</a>
-            <span class="crumb-sep">/</span>
-            <span class="crumb-current">${escHtml(s.op.data.name)}</span>
-          </nav>
+          ${crumbsHtml(s.op.data.name)}
           ${splashHtml(s.op, s.artIdx)}
         </div>
         <div class="detail-data-col">
@@ -1198,7 +1195,7 @@ function errorHtml(id: string, label: string): string {
   return `
     <div class="detail">
       <div class="detail-body detail-body-error">
-        <nav class="crumbs"><a href="#/">Operators</a></nav>
+        ${crumbsHtml()}
         <div class="state-msg"><div class="label">${label}</div>No dossier found for <code>${escHtml(id)}</code>.</div>
       </div>
     </div>
@@ -1218,7 +1215,7 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
   container.innerHTML = `
     <div class="detail">
       <div class="detail-body detail-body-error">
-        <nav class="crumbs"><a href="#/">Operators</a></nav>
+        ${crumbsHtml()}
         <div class="state-msg"><span class="spinner"></span></div>
       </div>
     </div>
