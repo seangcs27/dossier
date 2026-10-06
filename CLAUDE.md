@@ -84,6 +84,7 @@ scripts/
 design/            ← Claude Design mirror; components/ and manifest.json are generated
                      (gitignored), source/ holds the icon artwork
 icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size
+  games/<game>.webp  ← the sidebar's two game emblems, white on transparency (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
 
@@ -133,14 +134,16 @@ src/
 
   web/              ← SPA
     index.ts        ← app entry: random logo, hash-router dispatch (grid, detail, events,
-                      endfield), and which game the sidebar marks
+                      endfield), which game the sidebar and which page the section links
+                      mark, and the phone's games drawer
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
-    format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers
+    format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers,
+                      crumbsHtml (the breadcrumb over a dossier and the schedule)
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
     event-index.ts  ← schedule data store: getEvents/getPools/lagDays, and the GameEvent / GamePool types
@@ -468,28 +471,49 @@ variables and does not persist across popup close/reopen.
 ## Web SPA (`src/web/`)
 
 Vanilla TS, no framework. Hash-routed: `#/` shows the operator grid; `#/op/<id>` shows the
-operator dossier; `#/events` shows the Global event schedule, reached from the Events link
-beside the operator count (the wordmark is the way back); `#/endfield` shows the second
-game's roster.
+operator dossier; `#/events` shows the Global event schedule; `#/endfield` shows the second
+game's roster. Every link to `#/` (the wordmark, the Arknights tile, Operators, a
+breadcrumb) is taken over on a plain click to land on the bare URL instead (`index.ts`).
 
-**The sidebar** (`.sidebar`, in `index.html`) lists the games, one tile each: down the
-window's left edge, and along its foot on a phone (640px and under), where a rail would
-cost the grid a column. It is fixed, and `body` is padded to clear it (`--side-w` and
-`--side-h`, one of which is always zero), so nothing in the page moved into a wrapper. A
-tile carries the game's initials (AK, EF), since the repo has no icons for them. Everything
-outside the `#/endfield` prefix is Arknights', so a link made before there were two games
-still lands where it did. The Events link is hidden while Endfield is showing: the schedule
-is Arknights'.
+**The sidebar** (`.sidebar`, in `index.html`) lists the games, one tile each, down the
+window's left edge. It is fixed, and `body` is padded to clear it (`--side-w`), so nothing in
+the page moved into a wrapper. A tile carries the game's emblem, painted as an alpha mask in
+the tile's colour (金藍, the text colour under the pointer, the accent's gold for the game
+showing): Rhodes Island's triangle for Arknights and Endfield Industries' for Endfield, from
+the two wikis' `File:Rhodes_Island.png` and `File:Endfield_Industries.png`, baked once to
+128px WebP in `icons/games/` (alpha times luminance, so the tower's black detail is cut out,
+then white). Everything outside the `#/endfield` prefix is Arknights', so a link made before
+there were two games still lands where it did.
+
+**On a phone (640px and under) the sidebar is a drawer**, since a rail would cost the grid a
+column (it was a bar along the window's foot before, which the owner found was not a sidebar
+at all). A menu button at the start of the topbar (`#side-toggle`) pulls it out from the left
+over a dimmed page; it shows a "Games" heading and a close button, and a row per game with
+the emblem and the name. It closes on the scrim, the close button, Escape, any change of
+page (which is how picking a game closes it), and the window widening past 640px. While it
+is out the topbar and the page are `inert`. Like the filter panel it animates whatever
+`prefers-reduced-motion` says.
+
+**The section links** (`.sections`, at the topbar's right end on every page) are the game's
+own pages as a segmented pair: Operators and Events, the one showing filled in 群青. They
+replaced a lone Events link, from which the only way back was the wordmark. Operators goes to
+the roster of whichever game is showing (`#/` or `#/endfield`) and stays lit on a dossier;
+Events is Arknights' alone and hides on Endfield. On a phone they drop their glyphs.
 
 **The topbar lays itself out by its own width**, a container query on `.topbar`, because the
-sidebar takes a share of the window that the bar never has. With 860px or more it is one
-row: wordmark, search box, count, Events link. The search box is the one thing that gives
-way, from 420px down to about 340. Under 860px it is two rows: the wordmark, the count and
-the Events link above, the search box below at the bar's full width. (Before this the bar
-overflowed between the phone layout and about 890px of window, and the page scrolled
-sideways.) The phone rules at the foot of `styles.scss` lay the bar out the same way by the
-window's width, which is what a browser without container queries is left with, and set
-the phone's sizes.
+sidebar takes a share of the window that the bar never has. With 960px or more it is one
+row: wordmark, search box, count, then the section links at the far end. The search box is
+the one thing that gives way, from 420px down to about 340. Under 960px it is two rows: the
+wordmark, the count and the section links above, the search box below at the bar's full
+width. The phone rules at the foot of `styles.scss` lay the bar out the same way by the
+window's width, which is what a browser without container queries is left with, with the
+menu button first; on the grid the count pill gives its room in row 1 to the section links
+and shows instead as a bare number inside the search box (`#search-count`), which `body`'s
+`data-view` (set by `index.ts`) decides. Under 360px the wordmark shrinks to fit a 320px phone.
+
+**Breadcrumbs** (`crumbsHtml` in `format.ts`) open a dossier and the schedule: the way back
+as a pill with a back chevron ("‹ Operators"), a chevron, and the page's own name, in the
+small caps the section labels use. A long name ellipsizes before the pill gives way.
 
 ### Grid (`src/web/views/grid.ts`)
 
@@ -775,7 +799,8 @@ card: class where the class sits, element and weapon on the branch line, faction
 strip, tags on the back, rarity (4 to 6) on the tab. There are 33, the Endministrator's two
 forms as two cards, told apart on the line an alter's epithet takes. The cards turn like the
 others but open nothing (`div.op-card`, not a link, with a grab cursor), and carry no glyphs.
-The search box and the Events link are Arknights' and are hidden; the count pill stays.
+The search box and the Events section link are Arknights' and are hidden; the count pill
+stays, and Operators links here.
 
 `scripts/build-endfield-index.mjs` bakes it from the wiki's `Operators` table:
 `endfield/operators.json` (id, name, rarity, class, element, weapon, faction, tags; highest

@@ -163,6 +163,7 @@ function render(container: HTMLElement): void {
   more?.disconnect();
   const ops = sortOps(filterOps(getOperators(), state), state.sort);
   document.getElementById('count')!.textContent = `${ops.length} operators`;
+  document.getElementById('search-count')!.textContent = String(ops.length);
   if (ops.length === 0) {
     container.innerHTML = `<div class="state-msg"><div class="label">No results</div>Try a different name or filter.</div>`;
     return;

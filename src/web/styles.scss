@@ -6,22 +6,22 @@
 @use '../styles/tokens' as *;
 
 body {
-  // The sidebar's share of the window: its width down the left edge, or on a phone its
-  // height along the foot. One of the two is always nothing. The page is padded to clear
-  // it, so nothing in the page had to move into a wrapper to make room.
+  // The sidebar's width down the left edge, which the page is padded to clear, so nothing
+  // in the page had to move into a wrapper to make room. Nothing on a phone, where the
+  // sidebar is a drawer over the page.
   --side-w: 72px;
-  --side-h: 0px;
 
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  padding: 0 0 var(--side-h) var(--side-w);
+  padding-left: var(--side-w);
 }
 
 // ── Sidebar ──
 // The games, one tile each. Fixed in place; the topbar and the page sit beside it. The
 // first tile is as far down as the topbar's logo and the same size, so the two line up.
+// On a phone it is a drawer (the phone rules at the foot of the file).
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -35,6 +35,9 @@ body {
   background: var(--surface);
   border-right: 1px solid var(--border);
 }
+
+// The drawer's own heading and way out; the rail has no need of either.
+.side-head { display: none; }
 
 .side-game {
   display: flex;
@@ -54,8 +57,10 @@ body {
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 }
 
-// The game's initials on a tile. Lit in the accent for the game being shown, like the
-// Events link for its page.
+// The game's emblem on a tile, painted in the tile's colour: 金藍 at rest, the text colour
+// under the pointer, the accent's gold for the game being shown, like the section link for
+// its page. The two emblems are white on transparency (icons/games/), so the default alpha
+// mask is the right one.
 .side-mark {
   display: grid;
   place-items: center;
@@ -64,17 +69,36 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--bg);
-  font-size: var(--fs-base);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  transition: border-color 0.16s, color 0.16s;
+  color: var(--muted);
+  transition: border-color 0.16s, color 0.16s, background-color 0.16s;
 }
 
-.side-game:hover .side-mark { border-color: var(--muted); }
+.side-logo {
+  width: 30px;
+  height: 30px;
+  background: currentColor;
+  -webkit-mask: var(--logo) center / contain no-repeat;
+          mask: var(--logo) center / contain no-repeat;
+}
+
+.side-game:hover .side-mark {
+  border-color: var(--muted);
+  color: var(--text);
+}
 
 .side-game.active .side-mark {
   border-color: var(--accent);
+  background: rgb(232 200 112 / 8%);
   color: var(--accent);
+}
+
+// The menu button that pulls the drawer out, and the dimmed page behind it: a phone's
+// alone (see the phone rules at the foot of the file).
+.side-toggle,
+.side-scrim { display: none; }
+
+@media (forced-colors: active) {
+  .side-logo { forced-color-adjust: none; background: CanvasText; }
 }
 
 // ── Scrollbars ──
@@ -454,25 +478,71 @@ body {
   flex-shrink: 0;
 }
 
-// The way to the Events page, beside the operator count. It is a link wearing the Filters
-// button's pill, lit while that page is the one showing, and gone while the other game is:
-// the schedule is Arknights'.
-.nav-events {
-  text-decoration: none;
+// The game's own pages, a segmented pair at the bar's right end: Operators and Events. It
+// is the one thing in the bar on every page, at the same place on every page, so the way
+// back from the schedule or a dossier is where the way there was. The one being shown is
+// filled; on a dossier that is Operators, which the dossier is one of.
+.sections {
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+}
 
+.section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-6) 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.16s, color 0.16s;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  &:hover { color: var(--text); }
+
+  &.active {
+    background: var(--chip);
+    color: var(--text);
+  }
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  // Events, on Endfield's pages: the schedule is Arknights'.
   &[hidden] { display: none; }
 }
 
+// The result count inside the search box. Only a phone shows it, where the pill beside the
+// box has given its room to the section links (the phone rules at the foot of the file).
+.search-count { display: none; }
+
 // Too narrow for one row, the bar becomes a two-row grid rather than relying on flex-wrap,
 // so the break always lands in the same place instead of shifting with the width of the
-// operator count: the wordmark, the count and the Events link above, the search box below
-// at the bar's full width. One row wants about 860px; under that the search box, which is
-// what gives way, would be narrower than 340px.
+// operator count: the wordmark, the count and the section links above, the search box
+// below at the bar's full width. One row wants about 960px; under that the search box,
+// which is what gives way, would be narrower than 340px.
 //
 // The phone rules at the foot of the file lay the bar out the same way by the window's
 // width, which is what a browser without container queries is left with, and set the
 // phone's sizes.
-@container topbar (max-width: 860px) {
+@container topbar (max-width: 960px) {
   .topbar header {
     display: grid;
     grid-template-columns: 1fr auto auto;
@@ -489,7 +559,7 @@ body {
     justify-self: end;
   }
 
-  .nav-events {
+  .sections {
     grid-area: 1 / 3;
     align-self: center;
   }
@@ -614,9 +684,7 @@ body {
   flex-direction: column;
   gap: var(--sp-16);
   padding: var(--sp-16);
-  // Less the sidebar where it runs along the foot of the window, which the panel would
-  // otherwise reach in behind.
-  max-height: calc(100vh - 120px - var(--side-h));
+  max-height: calc(100vh - 120px);
   overflow-y: auto;
   opacity: 0;
   transition: opacity 0.12s;
@@ -1858,23 +1926,64 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   min-width: 0;
 }
 
+// The trail over a page that hangs off the grid, a dossier or the schedule (crumbsHtml in
+// format.ts): the way back as a pill, with a back chevron, then where you are. Small caps,
+// as the section labels and the tabs below it are set, so it reads as part of the page's
+// furniture rather than as a heading of its own.
 .crumbs {
   display: flex;
   align-items: center;
-  gap: var(--sp-12);
-  font-size: var(--fs-xl);
+  gap: var(--sp-8);
+  min-width: 0;
   margin-bottom: var(--sp-16);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 
-  a {
-    color: var(--link);
-    text-decoration: none;
-
-    &:hover { text-decoration: underline; }
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 }
 
-.crumb-sep { color: var(--muted); }
-.crumb-current { font-weight: 700; }
+.crumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-shrink: 0;
+  padding: var(--sp-6) 14px var(--sp-6) var(--sp-8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--dim);
+  text-decoration: none;
+  transition: border-color 0.16s, color 0.16s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+.crumb-sep { color: var(--muted); opacity: 0.6; }
+
+// A long name (Kal'tsit·Esperanta, an alter's epithet) gives way before the pill does.
+.crumb-current {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
 
 // ── Splash artwork ──
 .splash {
@@ -3410,7 +3519,7 @@ a.pool-op:hover { text-decoration: underline; }
 // rather than wrapping every label onto two lines.
 @media (max-width: 560px) {
   .detail { padding: var(--sp-12); }
-  .crumbs { font-size: var(--fs-base); margin-bottom: var(--sp-12); }
+  .crumbs { margin-bottom: var(--sp-12); font-size: var(--fs-sm); }
 
   .splash { min-height: 18rem; }
   .splash-thumb { width: 48px; height: 48px; }
@@ -3469,68 +3578,195 @@ a.pool-op:hover { text-decoration: underline; }
 // The topbar becomes a two-row grid rather than relying on flex-wrap, so the break always
 // lands in the same place instead of shifting with the width of the operator count.
 @media (max-width: 640px) {
-  // The sidebar lies along the window's foot here: down the edge it would take a column
-  // of cards off a phone. Tile and name sit side by side, since the bar is short.
-  body {
-    --side-w: 0px;
-    --side-h: 56px;
-  }
+  // The sidebar is a drawer here: down the edge it would take a column of cards off a
+  // phone. It comes out from the left edge over a dimmed page when the menu button at the
+  // start of the topbar is pressed, and goes back on the scrim, its close button, Escape,
+  // or a change of page (index.ts). Like the filter panel it animates whatever
+  // `prefers-reduced-motion` says; the motion is one panel, set off by the reader's press.
+  body { --side-w: 0px; }
+
+  .side-open { overflow: hidden; }
 
   .sidebar {
-    inset: auto 0 0 0;
-    width: auto;
-    height: var(--side-h);
-    flex-direction: row;
-    justify-content: center;
-    gap: var(--sp-24);
-    padding: 0 var(--sp-12);
-    border-right: 0;
-    border-top: 1px solid var(--border);
+    z-index: 40;
+    width: min(280px, 82vw);
+    align-items: stretch;
+    gap: var(--sp-4);
+    padding: 0 var(--sp-12) var(--sp-12);
+    overscroll-behavior: contain;
+    transform: translateX(-100%);
+    // Out of the tab order while it is away, once it has finished going.
+    visibility: hidden;
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.2, 1), visibility 0s linear 0.3s, box-shadow 0.3s;
   }
 
+  .side-open .sidebar {
+    transform: none;
+    visibility: visible;
+    box-shadow: 8px 0 40px rgb(0 0 0 / 50%);
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.2, 1), box-shadow 0.3s;
+  }
+
+  // As tall as the topbar's first row, so its rule lines up with the bar's foot.
+  .side-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 57px;
+    margin: 0 calc(-1 * var(--sp-12)) var(--sp-8);
+    padding: 0 var(--sp-12) 0 var(--sp-16);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .side-title {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .side-close {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+
+    svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+
+    &:hover { color: var(--text); border-color: var(--muted); }
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  }
+
+  // A row each: the emblem's tile, then the game's name at reading size.
   .side-game {
     flex-direction: row;
-    gap: var(--sp-8);
-    width: auto;
-    font-size: var(--fs-xs);
+    gap: var(--sp-12);
+    padding: var(--sp-8);
+    border-radius: var(--radius-lg);
+    font-size: var(--fs-lg);
+    letter-spacing: 0.02em;
+
+    &.active { background: rgb(255 255 255 / 4%); }
   }
 
   .side-mark {
-    width: 36px;
-    height: 36px;
-    font-size: var(--fs-sm);
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
   }
 
+  .side-logo { width: 28px; height: 28px; }
+
+  .side-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgb(5 12 20 / 60%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0s linear 0.3s;
+  }
+
+  .side-open .side-scrim {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s;
+  }
+
+  // The way to the drawer, at the start of the bar: the side the drawer comes from.
+  .side-toggle {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+
+    svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+
+    &:hover { color: var(--text); border-color: var(--muted); }
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  }
+
+  // Row 1: the menu button, the wordmark, the count where there is room for it, the section
+  // links. Row 2: the search box at the bar's full width, on the grid only.
   .topbar header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: var(--sp-10);
     padding: var(--sp-10) var(--sp-12);
 
-    h1 { font-size: 17px; grid-area: 1 / 1; letter-spacing: 0.06em; }
+    h1 { font-size: 17px; grid-area: 1 / 2; letter-spacing: 0.06em; }
+
+    h1 a { gap: var(--sp-8); }
   }
+
+  .side-toggle { grid-area: 1 / 1; }
 
   .logo-mark { width: 32px; height: 32px; }
 
   // Search and Filters travel together now, so the pair takes the whole second row rather
   // than being squeezed into the auto column beside the wordmark — at 390px that left the
-  // search box 141px wide. The count moves up to row 1, where the wordmark leaves room.
+  // search box 141px wide.
   .topbar-actions { grid-area: 2 / 1 / 3 / -1; }
 
   #count {
-    grid-area: 1 / 2;
+    grid-area: 1 / 3;
     padding: var(--sp-4) var(--sp-10);
     font-size: var(--fs-xs);
     align-self: center;
     justify-self: end;
   }
 
-  // The Events link ends row 1, after the count, at the count's size.
-  .nav-events {
-    grid-area: 1 / 3;
+  // On the grid row 1 has no room for the pill beside the section links, so the count moves
+  // into the search box, at its right end before the magnifier.
+  [data-view='grid'] #count { display: none; }
+
+  .search-count {
+    display: block;
+    flex-shrink: 0;
+    padding: 0 var(--sp-2) 0 var(--sp-6);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+
+    &:empty { display: none; }
+  }
+
+  // The section links end row 1, at the count's size and without their glyphs, which the
+  // row has no room for beside the wordmark.
+  .sections {
+    grid-area: 1 / 4;
+    align-self: center;
+    padding: 2px;
+  }
+
+  .section-link {
     padding: var(--sp-4) var(--sp-10);
     font-size: var(--fs-xs);
-    align-self: center;
+
+    svg { display: none; }
+  }
+
+  // The narrowest phones (320px) were 14px short of fitting row 1: a smaller wordmark and
+  // tighter gaps take it back.
+  @media (max-width: 359px) {
+    .topbar header { column-gap: var(--sp-6); }
+    .topbar header h1 { font-size: var(--fs-lg); letter-spacing: 0.04em; }
+    .topbar header h1 a { gap: var(--sp-6); }
+    .section-link { padding: var(--sp-4) var(--sp-8); }
   }
 
   .events { padding: var(--sp-12); }
