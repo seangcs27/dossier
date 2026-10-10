@@ -5,6 +5,7 @@ import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
 import { mountEvents } from './views/events';
 import { mountEndfield } from './views/endfield';
+import { mountEndfieldDetail } from './views/endfield-detail';
 import { mountTooltips } from './tooltip';
 import { mountScrollbars } from './scrollbar';
 
@@ -21,7 +22,7 @@ const sideToggle = document.getElementById('side-toggle')!;
 
 function dispatch(): void {
   const route = currentRoute();
-  const endfield = route.view === 'endfield';
+  const endfield = route.view === 'endfield' || route.view === 'endfield-detail';
   // Which page is showing, for the few rules that differ by it (the phone's count).
   document.body.dataset.view = route.view;
   setDrawer(false);
@@ -37,6 +38,8 @@ function dispatch(): void {
     void mountDetail(view, route.id);
   } else if (route.view === 'events') {
     mountEvents(view, route.tab);
+  } else if (route.view === 'endfield-detail') {
+    mountEndfieldDetail(view, route.id);
   } else if (endfield) {
     mountEndfield(view);
   } else {

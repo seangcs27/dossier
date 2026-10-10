@@ -2,6 +2,7 @@
 // src/styles/; everything below is full-page layout the extension popup doesn't share.
 @use 'sass:map';
 @use 'sass:math';
+@use 'sass:meta';
 @use '../styles/base';
 @use '../styles/tokens' as *;
 
@@ -1142,10 +1143,6 @@ body {
   // would otherwise sit under the next card in DOM order.
   &:hover { z-index: 1; }
 }
-
-// A card that opens nothing, which is every Endfield card until that game has a dossier
-// page: it can still be turned, so it says that and not "press me".
-div.op-card { cursor: grab; }
 
 // Everything that stays inside the card's own bounds. A plain rectangle: the art, the
 // gradient and the text are the whole silhouette, with nothing chamfering the frame.
@@ -3840,3 +3837,9 @@ a.pool-op:hover { text-decoration: underline; }
 
   .state-msg { padding: 40px var(--sp-16); }
 }
+
+// ── Endfield ──
+// The second game's own rules, a file for each of its pages, loaded last so that they sit
+// over the shared rules above wherever the two meet.
+@include meta.load-css('endfield-grid');
+@include meta.load-css('endfield-detail');

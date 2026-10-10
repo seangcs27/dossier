@@ -1,0 +1,13 @@
+// Arknights: Endfield's dossier page (views/endfield-detail.ts): what it needs beyond the
+// rules it shares with the Arknights dossier in styles.scss, which loads this file last.
+// Classes of its own start `ef-`.
+
+// The header with no faction badge, which the build bakes none of for this game. Left as
+// .op-header lays it out, the badge's empty column would still take its gap, and the name
+// would sit that far in from the stars above it.
+.ef-header {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    'name'
+    'classes';
+}

@@ -207,7 +207,7 @@ const CLASS_ORDER: Profession[] = [
 
 // A selector that finds the same control again after renderMore() rebuilds the panel.
 // Every panel control is identified by its id or by its data-* attributes.
-function focusSelector(el: HTMLElement): string | null {
+export function focusSelector(el: HTMLElement): string | null {
   const control = el.closest<HTMLElement>('button');
   if (!control) return null;
   if (control.id) return `#${CSS.escape(control.id)}`;
@@ -474,6 +474,18 @@ function clearAll(): void {
 // way through Clear and the close button folding in or out, so it is observed, not read once.
 let tabWatch: ResizeObserver | undefined;
 
+// Started by whichever grid mounts first. The Endfield grid (views/endfield.ts) hangs the
+// same panel from the same box, and a visitor can open that page before this one.
+export function watchFilterTab(actions: HTMLElement, wrap: HTMLElement): void {
+  if (tabWatch) return;
+  const tab = actions.querySelector<HTMLElement>('.filter-tab')!;
+  tabWatch = new ResizeObserver(() => {
+    actions.style.setProperty('--tab-w', `${tab.offsetWidth}px`);
+    actions.style.setProperty('--box-h', `${wrap.offsetHeight}px`);
+  });
+  tabWatch.observe(tab);
+}
+
 export function mountGrid(container: HTMLElement): void {
   const search  = document.getElementById('search') as HTMLInputElement;
   const actions = document.querySelector<HTMLElement>('.topbar-actions')!;
@@ -481,14 +493,7 @@ export function mountGrid(container: HTMLElement): void {
   wrap.style.display = '';
   actions.style.display = '';
 
-  if (!tabWatch) {
-    const tab = actions.querySelector<HTMLElement>('.filter-tab')!;
-    tabWatch = new ResizeObserver(() => {
-      actions.style.setProperty('--tab-w', `${tab.offsetWidth}px`);
-      actions.style.setProperty('--box-h', `${wrap.offsetHeight}px`);
-    });
-    tabWatch.observe(tab);
-  }
+  watchFilterTab(actions, wrap);
 
   search.value = state.query;
   syncChips();

@@ -1,0 +1,29 @@
+// Arknights: Endfield's roster page (views/endfield.ts): what its grid and its filter panel
+// need beyond the rules they share with the Arknights grid in styles.scss, which loads this
+// file last. Classes of its own start `ef-`.
+
+// ── Filter panel ──
+// The tiles, the segments and the chips are the Arknights panel's own. All that differs is
+// how many stand in a row: each class below goes on the same element as the Arknights class
+// whose columns it changes.
+
+// Six classes where Arknights has eight: three across keeps them in two even rows at any
+// width, as four across does there.
+.ef-class-row { grid-template-columns: repeat(3, 1fr); }
+
+// Elements and weapons come five to a group, in one row. A column is never narrower than
+// its own label, and that is for one label: "Handcannon" is about 56px wide at the tile's
+// 10px, and a fifth of the panel leaves a label 50px on a 360px phone (and as little where
+// the topbar squeezes the box on a desktop). Its tile keeps the width it needs there and
+// the other four share what is left; wherever every label fits a fifth, the five are equal.
+.ef-five-row { grid-template-columns: repeat(5, minmax(min-content, 1fr)); }
+
+// Three rarities, 4★ to 6★, in the group Arknights cuts six ways.
+.ef-rarity-row { grid-template-columns: repeat(3, 1fr); }
+
+// ── Narrow screens ──
+// The count is inside the search box here, as it is on the Arknights grid (the phone rules
+// in styles.scss). Without this the pill beside the section links would say it twice.
+@media (max-width: 640px) {
+  [data-view='endfield'] #count { display: none; }
+}

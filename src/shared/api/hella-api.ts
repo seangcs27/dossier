@@ -49,6 +49,18 @@ export function endfieldPortraitUrl(id: string): string {
   return `endfield/portraits/${encodeURIComponent(id)}.webp`;
 }
 
+// The same operator's full illustration, baked by the same script to 1024px WebP.
+export function endfieldSplashUrl(id: string): string {
+  return `endfield/splash/${encodeURIComponent(id)}.webp`;
+}
+
+// One of Endfield's glyphs: an operator's class, element or weapon type, baked by the same
+// script. Named for the kind and the value's own name ('Great Sword' is weapon-great-sword).
+// A value the build has no glyph for is a 404, so callers hide the <img> on error.
+export function endfieldIconUrl(kind: 'class' | 'element' | 'weapon', name: string): string {
+  return `endfield/icons/${kind}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.webp`;
+}
+
 // The faction badge printed on the back of a card and in the detail page's header, keyed
 // by the game's own faction id ('rim', 'kjerag', 'penguin'). Baked into the bundle by the
 // build like branch-icons/, and held as a mask rather than a picture, so whatever shows it
