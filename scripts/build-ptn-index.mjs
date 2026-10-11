@@ -1,6 +1,6 @@
 // Generates src/shared/generated/ptn/, what the web target has of Path to Nowhere:
-// sinners.json, the roster; mugshots/ and originals/, its card art under either look; and
-// sinner-details/, a payload per Sinner for the dossier page.
+// sinners.json, the roster; figures/, every Sinner whole, as a mugshot and as an original;
+// and sinner-details/, a payload per Sinner for the dossier page.
 //
 // One source, pathtonowhere.wiki.gg. It keeps no Cargo tables. A playable Sinner's page is
 // one call of a page template, {{SinnerPage}}, or {{ReforgePage}} for a Sinner the game has
@@ -11,31 +11,30 @@
 // attributes, skills, shackles, the crimebrand and the documents, and lib/ptn-page.mjs reads
 // that into the dossier's payload from the same text, at no further request.
 //
-// A Sinner's page opens on the mugshot, File:<page> Prisonphoto.png, the picture the wiki's
-// own infobox shows: a standing figure cut out on transparency. The originals are PNGs of
-// 200 to 700 KB, about 440 by 1090, so each is baked once to WebP, 360 wide and cut at two
-// widths, which is what the roster's cards showed of it when it had cards (the owner
-// approved the downloads on 11 October 2026). An entry's `art` is the baked file, or the
-// original's address on the wiki where the bake could not get it.
+// A Sinner has two pictures the site bakes: the mugshot, File:<page> Prisonphoto.png, the
+// one the wiki's own infobox shows, and the original illustration, File:<page>.png. Both
+// are standing figures cut out on transparency, PNGs of 200 KB to a few MB. The roster is
+// a line-up wall, which stands every Sinner whole, on a floor line, at their stated height
+// against a ruled wall, as either picture; and a Sinner's own page stands them the same
+// way, larger. So each is baked whole and cut back to the figure's own edges
+// (figures/mugshot/ and figures/original/; the owner approved downloading those 285 files,
+// about 125 MB, on 12 October 2026, having approved the same files cut for the cards the
+// roster then had the day before). An entry's `figure` and `figureOriginal` are the baked
+// file and its shape, and its `height` the centimetres a wall scales it to.
 //
-// The rest of a Sinner's art is found, not fetched: the original, the phase-up art, the
-// interrogation's pictures and every attire, which the Sinner's Attires and Gallery subpages
-// name (lib/ptn-page.mjs reads them). The wiki is asked for each file's address, and a
+// The rest of a Sinner's art is found, not fetched: the phase-up art, the interrogation's
+// pictures and every attire, which the Sinner's Attires and Gallery subpages name
+// (lib/ptn-page.mjs reads them). The wiki is asked for each file's address, and a
 // dossier's payload carries those; the page loads them through the resizing proxy the
 // Arknights art goes through, since the originals are 1 to 9 MB each and about 1.5 GB in
 // all.
 //
-// The roster is a line-up wall: it stands every Sinner whole, on a floor line, at their
-// stated height against a ruled wall, as their mugshot or as their original illustration.
-// So both pictures are baked a second time, whole and cut back to the figure's own edges
-// (figures/mugshot/ and figures/original/; the owner approved downloading those 285 files
-// again, about 125 MB, on 12 October 2026). An entry's `figure` and `figureOriginal` are
-// the baked file and its shape, and its `height` the centimetres the wall scales it to.
-//
-// Nothing on the wiki dates a Sinner's release, so the roster is dealt by rank and then
-// name. What it can say is when a Sinner was first seen, an entry's `firstSeen`: the day
-// their original or mugshot was first uploaded, or the first dated banner they stood on,
-// whichever came first. That is an order for the newer Sinners only (ORDER_SINCE below).
+// Two things are not the wiki's and come from a record kept by hand, lib/ptn-record.mjs,
+// which says where it was read from. The day each Sinner was released, an entry's
+// `released`: nothing on the wiki dates one, so the roster's own order is rank and then
+// name, and that day is what its Newest order goes by. And the head of the file of a
+// Sinner the game has released and the wiki has no page for yet, so that they stand on the
+// roster too; their pictures are the wiki's, which has those before it has the page.
 //
 // Nothing here is load-bearing. With the wiki unreachable the last build's file is kept, or
 // an empty one written: the page then has no Sinners to list, and the build goes on.
@@ -45,7 +44,8 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
-import { parseBannerDates, parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
+import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
+import { LAUNCH, LAUNCH_DAY, RELEASES, UNFILED } from './lib/ptn-record.mjs';
 import { templateBodies, templateParams } from './lib/wiki-text.mjs';
 
 const outDir = path.join(
@@ -53,11 +53,8 @@ const outDir = path.join(
 );
 const SINNERS_FILE = path.join(outDir, 'sinners.json');
 const detailDir = path.join(outDir, 'sinner-details');
-const mugshotDir = path.join(outDir, 'mugshots');
-// Where webpack.web.js copies that directory to beside the page, and so what an entry's
-// `art` starts with.
-const MUGSHOT_PATH = 'ptn/mugshots';
-// The same two for the whole figures, a directory under each to a picture.
+// The whole figures, a directory under it to a picture, and where webpack.web.js copies
+// that to beside the page, which is what a figure's `art` starts with.
 const figureDir = path.join(outDir, 'figures');
 const FIGURE_PATH = 'ptn/figures';
 
@@ -71,14 +68,15 @@ const BATCH = 50;
 // The game's three ranks, highest first: the order the roster is dealt in.
 const RANKS = ['S', 'A', 'B'];
 
-// The first day a Sinner's `firstSeen` is believed from. From 2024 on the wiki has had a
-// new Sinner's pictures within days of the announcement (65 of 68 have both uploaded within
-// three days of each other), and the order that gives matches the order of the rows on the
-// Arrests page's event banners in 97% of pairs. Before it the wiki was catching up: its
-// editors uploaded the launch roster in batches as late as November 2023, and a launch
-// Sinner's first dated banner is often a later rate-up. So a Sinner first seen before this
-// day has no `firstSeen` at all, and the page has no order to give those.
-const ORDER_SINCE = '2024-01-01';
+// A Sinner's name, which is their page's title, in a form that can go in an address or name
+// a file: 'mr-fox', 'necresta-hella', '000'.
+const slugOf = title => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// The day each Sinner in the record was released, by their name.
+const RELEASED = new Map([
+  ...LAUNCH.map(name => [name, LAUNCH_DAY]),
+  ...RELEASES.flatMap(([day, names]) => names.map(name => [name, day])),
+]);
 
 // The text of every page in the roster's category, by title: the category's members come
 // with their text, so listing them and reading them is one question.
@@ -100,21 +98,6 @@ async function fetchPages() {
     next = json.continue;
   } while (next);
   return textOf;
-}
-
-// Twice the 180px a plate is drawn at, which is as sharp as a card gets on a dense screen.
-const MUGSHOT_WIDTH = 360;
-
-// A mugshot as a card shows it. The plate is 1:2 and the figure is drawn as wide as the
-// plate from the top down (_ptn.scss), so whatever lies below two widths, the legs of
-// nearly every one, is never seen and is cut here. A figure wider than 1:2 is shorter than
-// that and keeps all of itself.
-async function toPlate(original) {
-  const { width, height } = await sharp(original).metadata();
-  const w = Math.min(MUGSHOT_WIDTH, width);
-  const h = Math.min(Math.floor(height * w / width), 2 * w);
-  return sharp(original).resize({ width: w }).extract({ left: 0, top: 0, width: w, height: h })
-    .webp({ quality: 80, effort: 4 }).toBuffer();
 }
 
 // As tall as a mugshot's file is, which is taller than a wall stands anyone on a 1080 screen.
@@ -179,38 +162,6 @@ async function fetchFileUrls(files) {
   return urlOf;
 }
 
-// The day each of these files was first uploaded, 'YYYY-MM-DD', by the file's title: every
-// version's timestamp is asked for and the oldest kept, since a file redrawn since has a
-// later one on top.
-async function fetchFirstUploads(files) {
-  const first = new Map();
-  for (let i = 0; i < files.length; i += BATCH) {
-    let next = {};
-    do {
-      const json = await wiki({
-        action: 'query', titles: files.slice(i, i + BATCH).map(file => `File:${file}`).join('|'),
-        prop: 'imageinfo', iiprop: 'timestamp', iilimit: 'max', ...next,
-      });
-      for (const page of json.query?.pages ?? []) {
-        const file = page.title.replace(/^File:/, '');
-        for (const { timestamp } of page.imageinfo ?? []) {
-          const day = timestamp.slice(0, 10);
-          const had = first.get(file);
-          if (!had || day < had) first.set(file, day);
-        }
-      }
-      next = json.continue;
-    } while (next);
-  }
-  return first;
-}
-
-// The day each of these Sinners first stood on a dated banner, by title.
-async function fetchBannerDates(titles) {
-  const json = await wiki({ action: 'query', titles: 'Arrests', prop: 'revisions', rvprop: 'content', rvslots: 'main' });
-  return parseBannerDates(json.query?.pages?.[0]?.revisions?.[0]?.slots.main.content ?? '', titles);
-}
-
 async function buildRoster() {
   const sinners = [];
   const details = [];
@@ -225,9 +176,7 @@ async function buildRoster() {
       unfinished.push(title);
       continue;
     }
-    // The page's title, which is the Sinner's name, in a form that can go in an address or
-    // name a file: 'mr-fox', 'necresta-hella', '000'.
-    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const id = slugOf(title);
     details.push({ id, ...parseSinnerDetail(named, title) });
     // '162cm', '166', 'Approx. 160cm': the centimetres, for the wall to stand them at.
     const height = Number(/\d+(\.\d+)?/.exec(named.Height ?? '')?.[0]);
@@ -250,6 +199,22 @@ async function buildRoster() {
   // A renamed category would come back empty, a renamed template as pages with no fields.
   if (!sinners.length) throw new Error('no page in the category reads as a Sinner\'s file');
 
+  // The Sinners the wiki has no page for, from the record: the head of a file and nothing
+  // under it, and a first paragraph that says so. One the wiki has written up since is
+  // already here, and its page is the one that counts.
+  for (const { height, ...file } of UNFILED) {
+    if (sinners.some(s => s.name === file.name)) continue;
+    const id = slugOf(file.name);
+    sinners.push({ id, ...file, height });
+    details.push({
+      id,
+      ...parseSinnerDetail({
+        Height: `${height}cm`,
+        Bio: 'The wiki has not written this Sinner\'s page yet. What is here of their file (number, rank, tendency, libram, birthplace, height and tags) is as S1N has it.',
+      }, file.name),
+    });
+  }
+
   // Every Sinner's art, as the files their two subpages name, and then the address of each
   // file the wiki really has: a page names a few that were never uploaded.
   const titles = sinners.map(s => s.name);
@@ -268,55 +233,42 @@ async function buildRoster() {
     if (addressOf('original')) originalOf.set(detail.id, addressOf('original'));
   }
 
-  // When each Sinner was first seen (ORDER_SINCE). Not worth the roster: without it the
-  // page only has one order fewer to offer.
-  try {
-    const picturesOf = s => artFiles.get(s.id).filter(art => art.kind === 'original' || art.kind === 'mugshot').map(art => art.file);
-    const [uploaded, bannered] = await Promise.all([
-      fetchFirstUploads(sinners.flatMap(picturesOf)),
-      fetchBannerDates(titles),
-    ]);
-    for (const s of sinners) {
-      const [first] = [bannered.get(s.name), ...picturesOf(s).map(file => uploaded.get(file))].filter(Boolean).sort();
-      if (first >= ORDER_SINCE) s.firstSeen = first;
-    }
-  } catch (err) {
-    console.warn(`ptn: no first-seen days, so no newest-first order: ${err.message}`);
-  }
-
   // One set after another, not side by side: two at once is eight fetches at a time from
   // the one wiki.
   const figureOf = await bakeFigures('mugshot', sinners, mugshotOf);
   const figureOriginalOf = await bakeFigures('original', sinners, originalOf);
-  const baked = await bakeImages(
-    'ptn mugshots', mugshotDir,
-    sinners.filter(s => mugshotOf.has(s.id)).map(s => ({ name: s.id, url: mugshotOf.get(s.id), label: s.name })), toPlate,
-  );
   for (const s of sinners) {
-    // The cut mugshot, which a Sinner's page still opens on, or the wiki's own file.
-    if (mugshotOf.has(s.id)) s.art = baked.has(s.id) ? `${MUGSHOT_PATH}/${s.id}.webp` : mugshotOf.get(s.id);
     if (figureOf.has(s.id)) s.figure = figureOf.get(s.id);
     if (figureOriginalOf.has(s.id)) s.figureOriginal = figureOriginalOf.get(s.id);
+    // One the record has no day for has been released since it was last added to, and goes
+    // without: the page takes that to mean newer than everyone with one.
+    if (RELEASED.has(s.name)) s.released = RELEASED.get(s.name);
   }
   // Nothing on a page dates the Sinner's release, so the order is rank and then name.
   sinners.sort((a, b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank) || a.name.localeCompare(b.name));
-  return { sinners, details, unfinished };
+  // A name in the record that is nobody's is a slip of the hand, or a page the wiki has
+  // renamed: either way a Sinner has lost their day, and it is said.
+  const strays = [...RELEASED.keys()].filter(name => !sinners.some(s => s.name === name));
+  return { sinners, details, unfinished, strays };
 }
 
 await mkdir(detailDir, { recursive: true });
 try {
-  const { sinners, details, unfinished } = await buildRoster();
+  const { sinners, details, unfinished, strays } = await buildRoster();
   await writeFile(SINNERS_FILE, JSON.stringify(sinners));
   // Written again every build, since a page changes with the game.
   await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));
   console.log(`ptn details: ${details.length} -> ${path.relative(process.cwd(), detailDir)}`);
-  const artless = sinners.filter(s => !s.art).map(s => s.name);
+  const artless = sinners.filter(s => !s.figure).map(s => s.name);
+  const undated = sinners.filter(s => !s.released).map(s => s.name);
   console.log(
-    `ptn: ${sinners.length} sinners, ${sinners.filter(s => s.firstSeen).length} first seen since ${ORDER_SINCE}` +
+    `ptn: ${sinners.length} sinners` +
     `${artless.length ? ` — no mugshot for ${artless.join(', ')}` : ''}` +
     `${unfinished.length ? ` — unfinished pages left out: ${unfinished.join(', ')}` : ''}` +
     ` -> ${path.relative(process.cwd(), SINNERS_FILE)}`,
   );
+  if (undated.length) console.warn(`ptn: no release recorded for ${undated.join(', ')} — add them to scripts/lib/ptn-record.mjs`);
+  if (strays.length) console.warn(`ptn: the release record names ${strays.join(', ')}, whom the roster does not have`);
 } catch (err) {
   // The page imports this file, so one has to exist for the bundle to build at all.
   const kept = await readFile(SINNERS_FILE, 'utf8').then(() => true, () => false);

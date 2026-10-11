@@ -36,7 +36,6 @@ module.exports = {
         { from: 'src/shared/generated/endfield/splash', to: 'endfield/splash', noErrorOnMissing: true },
         { from: 'src/shared/generated/endfield/icons', to: 'endfield/icons', noErrorOnMissing: true },
         { from: 'src/shared/generated/endfield/operator-details', to: 'endfield/operator-details', noErrorOnMissing: true },
-        { from: 'src/shared/generated/ptn/mugshots', to: 'ptn/mugshots', noErrorOnMissing: true },
         { from: 'src/shared/generated/ptn/figures', to: 'ptn/figures', noErrorOnMissing: true },
         { from: 'src/shared/generated/ptn/sinner-details', to: 'ptn/sinner-details', noErrorOnMissing: true },
         { from: 'src/shared/generated/fgo/figures', to: 'fgo/figures', noErrorOnMissing: true },

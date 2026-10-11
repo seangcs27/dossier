@@ -18,29 +18,37 @@ yet:
 - **A design of its own for each game.** The owner means them to differ. Path to Nowhere
   is the first: its roster is a line-up wall (CLAUDE.md), built on 12 October 2026 to a
   brief the owner confirmed. The others are on the Arknights card and dossier still.
+  A Sinner's page is in the same world, and the wall is set in Barlow Condensed.
 - **What the line-up wall still wants:**
-  - **A Sinner's page in the same world.** The brief has it: the wall continues down the
-    left, the figure whole at nearly the window's height with their height marked, the
-    other pictures as a row of frames along the wall's foot (a standing one takes the
-    figure's place, a wide one hangs as a print), the file and its five tabs on the right.
-    Until then a page opened from the wall is Dossier's navy, shell and all.
-  - **A placard face of its own.** The wall is set in the reader's own narrow face
-    (Bahnschrift, where Windows has it). A font to ship is a download for the owner to
-    approve; Barlow Condensed, League Gothic and Big Shoulders were the shortlist, all
-    under the Open Font License in `google/fonts`.
-  - **The cut mugshots go when that page is rebuilt**: `ptn/mugshots/` and an entry's `art`
-    are only its first picture now. `ptn/originals/`, which the cards' other look read, is
-    read by nothing; the directory is still on disk and in CI's cache.
+  - **The placard face as WOFF2.** The two TTFs are 213 KB; a Latin-only WOFF2 of each
+    would be about a quarter of that. Nothing on this machine makes one (`fonttools` is not
+    installed), and fetching Google's own would be another download for the owner to
+    approve.
+  - **The attires and the phase-up art hang as prints**, since they are scenes. If the
+    owner wants them standing, each would need cutting out by hand, or a look at which of
+    the 331 are a lone figure on transparency (the build could ask the proxy for each
+    one's trimmed shape, which is 331 requests).
   - **It is long**: 144 whole figures are about 25 rows on a desktop and 56 on a phone.
-  - The design skill's own finish review and its `DESIGN.md` are left for when the Sinner's
-    page is in the world too.
+  - **The roster's numerals are not in the placard's face**: they are a picture the wall
+    is masked by, and a picture cannot load a font. A Sinner's page has real ones.
+  - `ptn/mugshots/` and `ptn/originals/`, the cut pictures the cards read, are read by
+    nothing now; the directories are still on disk and in CI's cache.
+  - The design skill's own finish review and its `DESIGN.md` have not been run.
 - **The gallery's larger pictures are not for baking**: the phase-up art, the attires and
   the interrogation pictures are 399 files and about 1.4 GB. (The originals, for the cards,
   are baked: 142 files.)
-- **A release order for Path to Nowhere**, looked into on 11 October 2026 and built for
-  the 68 Sinners of 2024 on (the roster's Newest order, from the upload days below;
-  CLAUDE.md). The 76 before them still have none, and no day was checked against an
-  official one. What was found:
+- **Path to Nowhere's release record is kept by hand** (`scripts/lib/ptn-record.mjs`, read
+  off S1N on 12 October 2026; CLAUDE.md has how and why). Each release wants a line added:
+  the day of the Sinner's first Global banner, from the Archive tab of `s1n.gg/banners`,
+  and their names as the wiki titles their pages. The build says so when the roster has a
+  Sinner the record lacks. Its last line is 8 October 2026 (Phanuel, Evie); S1N lists five
+  more as unreleased (Famorene Eirene, Requiem, Helix, Daffodil, Arancia).
+- **Five Sinners are on the roster with no file**, since the wiki has no page for them:
+  Norma, Isomer, Pixel, Phanuel, Evie. The head of each is in the same record; skills,
+  shackles and documents come when the wiki writes the page, with nothing to do here then.
+  Pixel has no pictures on the wiki either.
+
+  What the look into a release order found on the wiki, before S1N's was read:
   - The English wiki's `Arrests` page is its banner history, 115 banners in four tabs, each
     with its dates and the Sinners it features. It dates 81 of the 144 by their first
     banner; 39 more are only in banners whose dates were never filled in (the later rows),
@@ -60,14 +68,9 @@ yet:
     a month. Before 2024 it does not: the wiki's editors uploaded in batches (14 Sinners
     in December 2022, 9 in April 2023, 9 in June 2023), so a launch Sinner with no banner
     lands up to a year late, and against the banner dates it puts 81 to 84% of pairs in
-    the same order. Hence a "newest first" order that is right for the last three years
-    and has none to give the Sinners before them. A full one still wants `s1n.gg`'s say or
-    the Chinese wiki's dates.
-  - `s1n.gg` sorts its own roster by release and has a `release_date` in its data, but the
-    data comes from a backend of its own with no documentation, and the site states no
-    terms. Not a thing to build on without asking its owners.
-  - The game's Chinese wiki prints a release date on every Sinner's page (上线日期) and
-    blocks scripts.
+    the same order.
+  - The game's Chinese wiki prints a release date on every Sinner's page (上线日期), the
+    CN server's, and blocks scripts.
 - **What a Sinner's dossier lacks beside its reference** (the game's Chinese wiki's page):
   - An attire's description and how it is got, which the `Attires` subpage the build
     already reads has, and the attack and skill animations it lists as GIFs.

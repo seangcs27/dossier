@@ -25,20 +25,16 @@ export interface PtnSinner {
   // In centimetres, which is what the wall scales a figure to. Every Sinner's file has one;
   // optional because nothing but the wiki's typing makes it so.
   height?: number;
-  // The mugshot cut at the knee, a Sinner's page's first picture: the baked file beside the
-  // page ('ptn/mugshots/hecate.webp', 360 wide and cut at two widths), or its original's
-  // address on the wiki where the build could not fetch it. Absent where the wiki has none.
-  art?: string;
-  // The mugshot whole and the original illustration whole, the wall's two pictures of a
-  // Sinner. Absent where the wiki has no such file (Pine has neither, Kisugi Ai no
-  // original) or the build could not fetch it.
+  // The mugshot whole and the original illustration whole, the two pictures of a Sinner
+  // that the roster's wall and their own page stand. Absent where the wiki has no such
+  // file (Pine has neither, Kisugi Ai no original) or the build could not fetch it.
   figure?: PtnFigure;
   figureOriginal?: PtnFigure;
-  // The day the Sinner was first seen, '2026-10-02': their pictures' first upload to the
-  // wiki or their first dated banner, whichever came first. Only where that is 2024 or
-  // later, which is as far back as it can be believed (build-ptn-index.mjs, ORDER_SINCE):
-  // absent for the other 76, whom nothing dates.
-  firstSeen?: string;
+  // The day the Sinner was released on the Global server, '2026-10-08'; the day it opened,
+  // '2022-10-27', for the 45 who were there. From a record kept by hand, since nothing the
+  // build reads dates one (scripts/lib/ptn-record.mjs). Absent for a Sinner released since
+  // the record was last added to, which makes them newer than everyone with a day.
+  released?: string;
 }
 
 // Baked in at build time, highest rank first and then by name: no runtime fetch. Empty when

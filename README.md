@@ -80,6 +80,7 @@ the deploy workflow keeps the published site current as new operators release.
 | [Wikimedia Commons](https://commons.wikimedia.org) | The four crossover logos kept in `scripts/collab-logos/` (Persona 3 Reload, Monster Hunter, Ave Mujica, Delicious in Dungeon), and hololive's triangle for the hololive Dreams tile |
 | [Fate/Grand Order Wiki](https://fategrandorder.fandom.com) | Chaldea's emblem, for the Fate/Grand Order tile |
 | [无期迷途WIKI](https://wiki.biligame.com/wqmt) and [S1N](https://s1n.gg) | The model for Path to Nowhere's roster filters and Sinner page; nothing is read from either by the build |
+| [S1N](https://s1n.gg) | When each Path to Nowhere Sinner was released (its banner archive and release order), and the head of the file of five Sinners the wiki has no page for yet; written down by hand in `scripts/lib/ptn-record.mjs`, not fetched |
 | [endfield.wiki.gg](https://endfield.wiki.gg) | Arknights: Endfield's roster, card art, splash art, glyphs and each operator's page (Cargo and MediaWiki APIs), read by `scripts/build-endfield-index.mjs` |
 | [pathtonowhere.wiki.gg](https://pathtonowhere.wiki.gg) | Path to Nowhere's roster and each Sinner's dossier, from the Sinner's page (MediaWiki API), the mugshots and original illustrations its roster stands against its wall, and the game's logo for its sidebar tile, read by `scripts/build-ptn-index.mjs`. A Sinner's other pictures (the original, the phase-up art, interrogation pictures, attires) are listed by the build and loaded by the page from the wiki, resized through [wsrv.nl](https://wsrv.nl) |
 | [HolodoriDB](https://github.com/HolodoriDB/holodori-db-eng-diff) | hololive Dreams' roster, from a community dump of the game's master data, read by `scripts/build-holodori-index.mjs`; text only, no artwork |
@@ -197,5 +198,8 @@ trademarks of their respective owners. They are shown only to mark which crossov
 operator came from. The sidebar's emblems (Rhodes Island's, Endfield Industries', Path to
 Nowhere's, hololive's and Chaldea's) are likewise their owners', shown only to name the
 game a tile opens.
+
+Path to Nowhere's pages are set in **Barlow Condensed**, © The Barlow Project Authors,
+under the SIL Open Font License 1.1 (`src/web/fonts/barlow-condensed/OFL.txt`).
 
 *Scaffolded from [hololive-helper](https://github.com/seangcs27/hololive-helper); Phase 2+ replaced the original feature set entirely.*

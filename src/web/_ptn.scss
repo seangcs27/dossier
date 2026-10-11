@@ -17,6 +17,24 @@ $bone: #ecebe3;
 $bone-dim: #b4b3a8;
 $red: #b8141c;
 
+// The placard's face: Barlow Condensed, a highway sign's lettering, in the two weights the
+// wall is set in (the owner's pick of three, 12 October 2026; fonts/barlow-condensed/ has
+// the files as the Google Fonts repository has them, with their licence). They are asked
+// for only where something is set in them, which is on this game's pages.
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/barlow-condensed/BarlowCondensed-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/barlow-condensed/BarlowCondensed-Bold.ttf') format('truetype');
+}
+
 // The wall shows 0 to 210 cm over the top 86% of a row, and the floor, where the placards
 // stand, is the rest: so a row is this many centimetres tall, and everything on it is
 // placed in centimetres.
@@ -60,12 +78,13 @@ $row-cm: math.div($top-cm, $band);
   @return url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 #{$row-cm}' text-anchor='end' font-family='Bahnschrift, DIN Alternate, Arial Narrow, sans-serif'%3E#{$text}%3C/svg%3E");
 }
 
-// The shell, while the roster is showing: the sidebar, the topbar, the filter panel and the
-// tooltip take every colour from the site's surface variables, so restating those turns
-// them from Dossier's navy and gold to the bureau's ink and bone. The page under them is
-// the wall, and restates them again for itself below. (A Sinner's own page is not in this
-// world yet, and keeps Dossier's.)
-body[data-view='ptn'] {
+// The game's two pages, the roster and a Sinner's own, by the view each route puts on
+// <body>.
+$world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
+
+// The site's surface variables as ink and bone: what is printed, as a placard is. Twice
+// over: for the shell, and for a Sinner's file, which is a slab of it standing on the wall.
+@mixin ink-surfaces {
   --bg: #{$ink};
   --surface: #1e2022;
   --surface2: #2a2c2f;
@@ -77,10 +96,19 @@ body[data-view='ptn'] {
   --dim: #cdccc3;
   --accent: #{$bone};
   --link: #{$bone};
+}
 
-  // What stands on the wall is set in a placard's face: narrow capitals. The reader's own
-  // for now, until one is chosen to ship with the site.
-  --ptn-placard: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+// The shell, on this game's pages: the sidebar, the topbar, the filter panel and the
+// tooltip take every colour from the site's surface variables, so restating those turns
+// them from Dossier's navy and gold to the bureau's ink and bone. The page under them is
+// the wall, and restates them again for itself below.
+#{$world} {
+  @include ink-surfaces;
+
+  // What stands on the wall is set in the placard's face: narrow capitals. After it, the
+  // reader's own nearest, which the widths asked for below are for (Bahnschrift is as wide
+  // as it is told to be; Barlow Condensed has the one width).
+  --ptn-placard: 'Barlow Condensed', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
 
   background: $wall;
 
@@ -108,25 +136,29 @@ body[data-view='ptn'] {
   }
 }
 
-[data-view='ptn'] #view {
+#{$world} #view {
   --bg: #{$wall};
-  --surface2: #b2b4a7;
+  --surface: #b2b4a7;
+  --surface2: #bcbeb1;
   --border: #{$ink};
   --chip: #{$ink};
+  --edge: #{$ink-soft};
   --text: #{$ink};
   --muted: #{$ink-soft};
   --dim: #{$ink-soft};
   --accent: #{$ink};
+  --link: #{$ink};
 
   --ptn-rule: rgb(23 24 26 / 24%);
   --ptn-rule-strong: rgb(23 24 26 / 52%);
-  // A row of the wall, floor and all. Everything on it is a share of this.
+  // A row of the roster's wall, floor and all. Everything on it is a share of this.
   --ptn-row: clamp(430px, 68vh, 760px);
   --ptn-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   color: $ink;
-  padding-bottom: 64px;
 }
+
+[data-view='ptn'] #view { padding-bottom: 64px; }
 
 // The two switches, on the wall: outlined in ink, the one that is on filled with it.
 [data-view='ptn'] .roster-bar {
@@ -430,12 +462,344 @@ body[data-view='ptn'] {
   .plate-rank { font-size: var(--fs-3xl); }
 }
 
-// ── The dossier ──
+// ── A Sinner's page ──
+// The wall goes on down the left of it, with the one Sinner against it, and their file
+// stands on the right as a slab of ink: the Arknights dossier's panel, tabs and entries
+// (styles.scss), in this world's colours and its placard's face, squared off.
 
-// The header with no faction badge to give a column to.
-.ptn-header {
-  grid-template-columns: 1fr;
-  grid-template-areas: 'name' 'classes';
+// The wall here is one row, and its scale is the Sinner's own (views/ptn-detail.ts gives
+// --top-cm, a little over their height), so that whoever they are they stand at nearly
+// the window's height: what is left of it under the topbar and the trail. The floor is as
+// deep as the frames on it need.
+.cell {
+  --cell-h: clamp(460px, calc(100vh - 159px), 1100px);
+  --floor-h: 116px;
+  --band-h: calc(var(--cell-h) - var(--floor-h));
+  --gutter: 46px;
+
+  position: relative;
+  height: var(--cell-h);
+  overflow: hidden;
+  container-type: inline-size;
+  background: linear-gradient(to top, $floor var(--floor-h), $ink-soft var(--floor-h), $ink-soft calc(var(--floor-h) + 1.5px), transparent calc(var(--floor-h) + 1.5px));
+}
+
+// A rule, at its height up the wall, with its numeral standing on its left end.
+.cell-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--floor-h) + var(--band-h) * var(--at) / var(--top-cm));
+  border-top: 1px solid var(--ptn-rule);
+
+  b {
+    position: absolute;
+    left: 0;
+    bottom: 2px;
+    width: calc(var(--gutter) - var(--sp-8));
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-weight: 500;
+    font-size: var(--fs-lg);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-align: right;
+  }
+
+  &.strong {
+    border-top: 2px solid var(--ptn-rule-strong);
+
+    b { font-weight: 700; font-size: var(--fs-3xl); }
+  }
+}
+
+// The Sinner's own height, which is where their picture's top is: the one red line.
+.cell-mark {
+  position: absolute;
+  left: var(--gutter);
+  right: 0;
+  bottom: calc(var(--floor-h) + var(--band-h) * var(--cm) / var(--top-cm));
+  z-index: 1;
+  border-top: 2px solid $red;
+
+  b {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    padding: var(--sp-2) var(--sp-8);
+    background: $red;
+    color: $bone;
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-weight: 700;
+    font-size: var(--fs-xl);
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+}
+
+// The figure, on the floor, in the middle of what the numerals leave of the wall. A press
+// opens it in the viewer.
+.cell-stand,
+.cell-print {
+  position: absolute;
+  left: calc(50% + var(--gutter) / 2);
+  z-index: 2;
+  padding: 0;
+  border: 0;
+  background: none;
+  transform: translateX(-50%);
+  cursor: zoom-in;
+
+  &:disabled { cursor: default; }
+  &:focus-visible { outline: 2px solid $ink; outline-offset: 4px; }
+}
+
+.cell-stand {
+  bottom: var(--floor-h);
+
+  // Where the feet meet the floor.
+  &::after {
+    content: '';
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: -7px;
+    z-index: -1;
+    height: 16px;
+    background: radial-gradient(closest-side, rgb(0 0 0 / 45%), transparent);
+    filter: blur(4px);
+  }
+
+  // Nobody's picture: the outline of where they would stand.
+  &.none {
+    outline: 1px dashed var(--ptn-rule-strong);
+    outline-offset: -1px;
+    cursor: default;
+
+    &::after { content: none; }
+  }
+}
+
+// As tall as the Sinner is on this wall. A wide one (a great weapon, a mount) is held to
+// the wall's width, and stands smaller on the same floor.
+.cell-fig {
+  display: block;
+  width: auto;
+  max-width: calc(100cqw - var(--gutter) - var(--sp-16));
+  height: calc(var(--band-h) * var(--cm) / var(--top-cm));
+  object-fit: contain;
+  object-position: 50% 100%;
+  filter: drop-shadow(0 8px 12px rgb(23 24 26 / 30%));
+  transition: filter 0.22s var(--ptn-ease), transform 0.22s var(--ptn-ease);
+  transform-origin: 50% 100%;
+
+  .cell-stand:not(:disabled):hover & {
+    filter: drop-shadow(0 14px 20px rgb(23 24 26 / 38%));
+    transform: scale(1.012);
+  }
+
+  .cell-stand.none & {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 0.4;
+    padding: var(--sp-12);
+    filter: none;
+    color: $ink-soft;
+    font-size: var(--fs-base);
+    text-align: center;
+  }
+}
+
+// A scene, hung: ink frame, bone mount, a little off the wall. As large as the wall has
+// room for over the floor, whichever of its sides that binds.
+.cell-print {
+  top: calc(var(--band-h) * 0.07);
+  padding: var(--sp-10);
+  border: 6px solid $ink;
+  background: $bone;
+  box-shadow: 0 14px 22px rgb(23 24 26 / 32%);
+  transition: box-shadow 0.22s var(--ptn-ease);
+
+  &:not(:disabled):hover { box-shadow: 0 20px 30px rgb(23 24 26 / 40%); }
+
+  img {
+    display: block;
+    max-width: min(calc(100cqw - var(--gutter) - 64px), 760px);
+    max-height: calc(var(--band-h) * 0.8);
+  }
+}
+
+// The floor: the name of the picture on show, over a frame for each picture there is.
+.cell-floor {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  height: var(--floor-h);
+  padding: var(--sp-8) var(--sp-12) var(--sp-10) calc(var(--gutter) + var(--sp-4));
+  color: $bone;
+}
+
+.cell-caption {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  min-width: 0;
+  font-family: var(--ptn-placard);
+  font-stretch: 85%;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cell-collection {
+  color: $bone-dim;
+  font-size: var(--fs-md);
+  letter-spacing: 0.08em;
+}
+
+.cell-title {
+  overflow: hidden;
+  font-weight: 700;
+  font-size: var(--fs-2xl);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+}
+
+.cell-stars { font-size: var(--fs-md); letter-spacing: 0.1em; }
+
+// The frames. They run on sideways where a Sinner has more pictures than the wall is wide.
+.exhibits {
+  display: flex;
+  gap: var(--sp-8);
+  min-height: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+.exhibit {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 68px;
+  padding: 0;
+  border: 2px solid $ink;
+  background: $wall;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ptn-ease);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 0;
+  }
+
+  &:hover { border-color: $bone; }
+  &:focus-visible { outline: 2px solid $bone; outline-offset: 2px; }
+  &.on { border-color: $red; }
+}
+
+.ptn-detail {
+  // The trail, on the wall: the way back as a board, not a pill.
+  .crumb-back { border-radius: 0; }
+
+  // The file: ink, square, and its own colours back, since the wall's are all around it.
+  .op-panel {
+    @include ink-surfaces;
+
+    --radius-xs: 0;
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+
+    background: $ink;
+    color: $bone;
+    box-shadow: 0 18px 30px rgb(23 24 26 / 28%);
+  }
+
+  .op-tabs { background: #101112; }
+
+  .op-tab,
+  .entry-name {
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    letter-spacing: 0.04em;
+  }
+
+  .op-tab { font-size: var(--fs-2xl); }
+
+  // The dossier sets these in a serif, which is the Arknights page's one flourish and
+  // nobody's handwriting here.
+  .entry-name {
+    font-weight: 700;
+    font-size: 22px; // off-scale: between --fs-3xl and --fs-4xl, as wide as the serif it replaces
+    text-transform: uppercase;
+  }
+}
+
+// The file's head: the Sinner's placard, at a page's size.
+.file-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: var(--sp-20);
+  padding: var(--sp-20) var(--sp-24) var(--sp-16);
+  font-family: var(--ptn-placard);
+  text-transform: uppercase;
+}
+
+.file-no,
+.file-kind {
+  color: $bone-dim;
+  font-stretch: 85%;
+  font-size: var(--fs-xl);
+  letter-spacing: 0.1em;
+}
+
+.file-kind { grid-column: 1; margin-top: var(--sp-4); letter-spacing: 0.06em; }
+
+.file-name {
+  grid-column: 1;
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: clamp(40px, 4.4vw, 60px);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.file-rank {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  font-weight: 700;
+  font-size: 88px;
+  line-height: 0.8;
+}
+
+// One column, the wall first: shorter, so that the file's head shows under it.
+@media (max-width: 1200px) {
+  .cell { --cell-h: clamp(420px, 72vh, 760px); }
+}
+
+@media (max-width: 560px) {
+  .cell {
+    --floor-h: 104px;
+    --gutter: 36px;
+  }
+
+  .cell-rule b { font-size: var(--fs-sm); }
+  .cell-rule.strong b { font-size: var(--fs-xl); }
+  .exhibit { width: 46px; height: 60px; }
+  .file-head { padding: var(--sp-16) var(--sp-16) var(--sp-12); column-gap: var(--sp-12); }
+  .file-no, .file-kind { font-size: var(--fs-md); }
+  .file-rank { font-size: 60px; }
 }
 
 // A skill's later levels: the level, then what it changes. Quieter and smaller than the

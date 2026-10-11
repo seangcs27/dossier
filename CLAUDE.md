@@ -82,13 +82,15 @@ scripts/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
-  build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/mugshots/ + ptn/sinner-details/
+  build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/sinner-details/
   build-holodori-index.mjs   ← holodori/characters.json
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
   lib/endfield-page.mjs      ← reads an endfield.wiki.gg operator page into its payload
   lib/ptn-page.mjs           ← reads a pathtonowhere.wiki.gg Sinner page into its payload
+  lib/ptn-record.mjs         ← when each Sinner was released, and the files of five the wiki has
+                               no page for: recorded by hand from S1N, one line a release
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -131,11 +133,10 @@ src/
       endfield/splash/<id>.webp     ← each operator's full illustration at 1024px, copied as static files
       endfield/icons/<kind>-<name>.webp  ← 16 class, element and weapon glyphs, 64px
       endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
-      ptn/sinners.json           ← Path to Nowhere's roster (144), bundled into the web target
-      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the roster's wall stands them (143), up to 1100 tall
-      ptn/figures/original/<id>.webp  ← the same of their original illustration (142); both copied as static files
-      ptn/mugshots/<id>.webp     ← the mugshot cut at the knee (143), 360 wide: a Sinner's page's first picture
-      ptn/sinner-details/<id>.json  ← 144 dossier payloads parsed from the wiki's pages, copied as static files
+      ptn/sinners.json           ← Path to Nowhere's roster (149), bundled into the web target
+      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the wall stands them (147), up to 1100 tall
+      ptn/figures/original/<id>.webp  ← the same of their original illustration (146); both copied as static files
+      ptn/sinner-details/<id>.json  ← 149 dossier payloads parsed from the wiki's pages, copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
@@ -200,6 +201,7 @@ src/
       ptn.ts / holodori.ts / fgo.ts  ← those games' roster pages: each fills card.ts's slots
       ptn-detail.ts  ← a Sinner's dossier, after the game's Chinese wiki (see below)
     index.html      ← markup shell; links styles.css
+    fonts/barlow-condensed/  ← Path to Nowhere's placard face, two TTFs and their licence (tracked)
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
 ```
@@ -209,7 +211,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/mugshots/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -1003,7 +1005,8 @@ changes nothing. The owner approved those downloads on 11 October 2026 (143 PNGs
 5.3 MB), and on 12 October the same PtN files a second time, with the 142 originals, to be
 baked whole for the wall (285 files, about 125 MB, baked to 20.5 MB).
 
-**Path to Nowhere** (`#/ptn`, 144 Sinners). `scripts/build-ptn-index.mjs` reads
+**Path to Nowhere** (`#/ptn`, 149 Sinners: the wiki's 144 and five it has no page for yet,
+below). `scripts/build-ptn-index.mjs` reads
 `pathtonowhere.wiki.gg`, which has no Cargo tables. A playable Sinner's page is one call of
 `{{SinnerPage}}` (or `{{ReforgePage}}`, ten of them), and both templates file the page
 under `Category:Playable Sinners`, so that category is the roster and the head of the call
@@ -1013,11 +1016,10 @@ and the mugshots' addresses are asked for the same way: six requests a build. An
 id (the page title as a slug), name, number (what follows `MBCC-S-`, which is not unique),
 rank, height in centimetres (every file has one, 115 to 191), tendency, libram, birthplace,
 tags, and the pictures: `figure` and `figureOriginal`, the mugshot (the standing figure the
-wiki's own infobox shows, `File:<page> Prisonphoto.png`, 143 of 144) and the original
-illustration (142), each baked whole, cut back to the figure's own edges and no taller
-than 1100px, with its width over its height; and `art`, the mugshot cut at the knee, 360
-wide, which a Sinner's page still opens on. The order is rank S, A, B and then name:
-nothing dates a release (the roster's Newest order, below, is what stands in for one).
+wiki's own infobox shows, `File:<page> Prisonphoto.png`, 147 of 149) and the original
+illustration (146), each baked whole, cut back to the figure's own edges and no taller
+than 1100px, with its width over its height; and `released`, the day they came to the
+Global server, which is not the wiki's (below). The order is rank S, A, B and then name.
 
 Its two references are the owner's: the game's Chinese wiki (`wiki.biligame.com/wqmt`,
 which a browser can read and a script cannot, so it is a model for the pages and never a
@@ -1045,8 +1047,9 @@ placard with what a card printed: `MBCC-S-019`, the name, the rank's letter, ten
 libram. The wall wraps, six or seven to a row on a desktop and two or three on a phone, and
 its rules, floor and numerals are backgrounds a row tall, so they fall under however many
 rows there are. **Rank is no longer a colour but a place**: by rank there is a line-up to
-each of S, A and B, with its name and head count; newest first there are two, "Arrivals
-since 2024" (whose placards give the month first seen) and "No arrival on file". Under the
+each of S, A and B, with its name and head count; newest first there is one to a year of
+arrivals ("Arrivals 2026" down to "Arrivals 2022", which is the launch and the four that
+year then added), whose placards give the month each arrived. Under the
 pointer or the keyboard's focus a figure steps forward, the rest of its wall falls back,
 its placard takes the world's one red and its height is read off over its head. A press
 opens its page. **Only the figure and the placard answer the pointer**: a Sinner's box is a
@@ -1061,53 +1064,93 @@ Three things about it that are not what they seem:
   the picture the wall opens on: in it every Sinner stands for a line-up already, name
   board in hand.
 - **A figure's place is held before its picture comes**, by the picture's shape (an entry's
-  `ratio`): an outline at the right height, which is also all Pine has, with "No
+  `ratio`): an outline at the right height, which is also all Pine and Pixel have, with "No
   photograph on file". Kisugi Ai, with no original, stands as her mugshot under either.
 - **The numerals are a picture the wall's edge is masked by**, so that they take the
   wall's ink, and a picture cannot load a font: they are set in the reader's own narrow
   face whatever the placards come to be set in.
 
-**The shell goes with it**: while the roster is showing (`body[data-view='ptn']`), the
-sidebar, the topbar, the filter panel and the tooltip go from Dossier's navy and gold to
-ink and bone, which is nothing but the surface variables restated, since the shell takes
-every colour from them; the page under them restates them again for the wall. The placard
-face is the reader's own for now (`--ptn-placard`, Bahnschrift first), until one is chosen
-to ship. **A Sinner's own page is not in this world yet**: it is on the Arknights dossier's
-parts and Dossier's colours, so opening one from the wall changes the whole window.
+**The shell goes with it**: on this game's two pages (`body[data-view='ptn']` and
+`'ptn-detail'`, `$world` in `_ptn.scss`), the sidebar, the topbar, the filter panel and the
+tooltip go from Dossier's navy and gold to ink and bone, which is nothing but the surface
+variables restated, since the shell takes every colour from them; the page under them
+restates them again for the wall. **The placard face is Barlow Condensed**, the owner's
+pick of three on 12 October 2026 (the others were League Gothic and Big Shoulders): its
+Medium and Bold, as the Google Fonts repository has them, in `src/web/fonts/barlow-
+condensed/` with their Open Font License beside them. They are TTFs, 213 KB the pair,
+since nothing on this machine makes a WOFF2 of them; a stylesheet's `url()` to a file is
+all webpack needs to emit one, and a browser asks for them only on a page that sets
+something in them. After it in `--ptn-placard` is the reader's own nearest (Bahnschrift,
+where Windows has it), which is what the wall was designed in.
 
 **Beside that switch is the order's: Newest, which the page opens in by the owner's choice,
-or Rank, the roster's own.** The wiki has no
-release dates and no version history (its `Patch History` page is a table's header), so
-Newest goes by an entry's `firstSeen`: the day the Sinner's original or mugshot was first
-uploaded to the wiki (every version's timestamp, the oldest kept), or the first dated
-banner on the `Arrests` page that names them, whichever came first. Seven more requests a
-build, and one more wherever an answer runs on. **It is kept only where it is 2024 or later** (`ORDER_SINCE` in the build script),
-68 of the 144: from then on the wiki has had a new Sinner's pictures within days of the
-announcement, and the order agrees with the order of that page's event banners' rows in
-97% of pairs. Before 2024 the wiki was catching up (its editors uploaded the launch roster
-in batches into November 2023, and a launch Sinner's first dated banner is often a later
-rate-up), so those 76 have no `firstSeen` and follow the dated ones in the roster's own
-order, which the switch's tooltip says. With the wiki's dates out of reach no entry has one
-and the page shows no such switch. A day here is the wiki's, not the game's: it was never
-checked against an official date.
+or Rank, the roster's own.** Newest goes by an entry's `released`, the day the Sinner came
+to the Global server, and **that day is recorded by hand**, in `scripts/lib/ptn-record.mjs`:
+the 45 who were there when it opened on 27 October 2022, and every release since as a line
+of a day and its Sinners, 48 of them to October 2026. The wiki has no release dates (no
+field for one on a page, a `Patch History` page that is a table's header, an `Arrests`
+page that leaves its later banners undated). **They were read off S1N** (`s1n.gg`, the
+owner's reference), which has them on its own pages: its Sinners page is sorted by release,
+and its Banners page has an Archive tab of every Global banner, dated, with who stood on
+it; a Sinner's day is the first banner they are on. Where the wiki dates the same banner
+the two agree to the day (40 Sinners of 51). Recorded and not fetched, as the Arknights
+mode-only operators' places are: the site has no API a build is meant to read and states
+no terms. **A new release is one line added there.** A Sinner the roster has and the record
+has not is taken to be newer than everyone in it: no `released`, first under Newest in a
+line-up of their own, and named in a build warning; so is a name in the record that is
+nobody's, which is a slip or a page the wiki has renamed. A Sinner's page gives the day
+among its facts.
 
-**A Sinner's dossier** (`#/ptn/sinner/<id>`, `views/ptn-detail.ts`) is that wiki's Sinner
-page, section for section, built from the Arknights dossier's parts: the art column, and a
-panel whose header has the rank on the strip, the name with `MBCC-S-019` where an alter's
-epithet goes, and tendency and libram. **The art column is the game's gallery**: a rail of
-every picture the game has of the Sinner (the original, the phase-up art, the mugshot, the
-interrogation's pictures where the wiki has them, then each attire, newest first), the one
-picked shown large with its name, an attire's collection and stars under it, and a press
-on it opening the Arknights art viewer (`openArtViewer`, which takes a `thumbOf` for
-callers whose pieces have no outfit avatars). The list is the payload's `arts`: 684 pieces
-across the roster (142 originals, 140 phase-up, 143 mugshots, 68 interrogation pictures,
-191 attires), which `parseSinnerArt` reads out of each Sinner's `Attires` and `Gallery`
-subpages (six requests, 50 titles each) before the build asks the wiki for every file's
-address (another dozen); a file a page names and the wiki never got is left out. **None of
-them is downloaded for the page**: the files are 1 to 9 MB each and about 1.5 GB in all, so the page
-asks the resizing proxy for each at the size shown (`artUrl`: 128px for a thumbnail, 1024
-on the page, 2048 in the viewer), as the Arknights illustrations are and for the same
-reason. Its long page of tables becomes five
+The first Newest order, a day earlier, was made from what the wiki does have (the day a
+Sinner's pictures were first uploaded, and the banners it dates) and kept only from 2024
+on. Against the record it had 97% of pairs right, 11 Sinners more than 60 days out
+(Lysandra by 320) and 31 Sinners of 2022 and 2023 with no day at all. It was made that way
+because the first look at S1N went to its data, found a backend no build should lean on,
+and never read the pages; the owner said there was a sorting out there, and there was.
+
+**Five Sinners have no page on the wiki and are on the roster anyway** (Norma, Isomer,
+Pixel, Phanuel and Evie, released from July to October 2026). The wiki has their pictures
+and their `Attires` and `Gallery` subpages before it has the page, so those are read as
+anyone's; the head of their file (number, rank, tendency, libram, birthplace, height and
+tags) is in the same record (`UNFILED`), as S1N's own page for each has it, and their page
+here says so in its first paragraph and has nothing under the other tabs. Pixel has no
+pictures either. Once the wiki writes a Sinner's page, that page is read and the record's
+entry is passed over.
+
+**A Sinner's dossier** (`#/ptn/sinner/<id>`, `views/ptn-detail.ts`) is in the same world:
+the wall goes on down its left, and the Sinner's file stands on the right as a slab of ink.
+What the file shows is that wiki's Sinner page, section for section, on the Arknights
+dossier's panel, tabs, entries and fact lists, squared off and set in the placard's face
+where the Arknights page has a serif; its head is the roster's placard at a page's size
+(`.file-head`: the number, the name, the rank beside both, tendency and libram).
+
+**The wall there is one Sinner's** (`.cell`). It is as tall as the window has left under
+the topbar and the trail, and **its scale is the Sinner's own**, where the roster's is one
+for everybody: it tops out at their height and a twelfth (`HEADROOM`), so whoever they are
+they stand at about 60% of an 800px window and 70% of a 1080px one. Its rules and numerals
+are real elements, a rule every 10 cm from the floor, in the placard's face; a red line
+marks their own height, labelled. On the floor is the name of the picture on show (an
+attire's led by its collection, with its stars) over **a frame for each picture the game
+has of them**, the owner's ask for this game: the original, the phase-up art, the mugshot,
+the interrogation's pictures where the wiki has them, then each attire, newest first. **The
+mugshot and the original stand on the floor**, from the baked figures, so the first of them
+is on the wall before the payload has come. **Every other picture hangs on the wall as a
+framed print**: the attires and the phase-up art were to stand too and turned out to be
+scenes as wide as they are tall, the Sinner among effects and scenery with no floor under
+them (Hecate's are 1178 by 1100 once their empty margin is cut). A press on either opens
+the Arknights art viewer (`openArtViewer`, which takes a `thumbOf` for callers whose pieces
+have no outfit avatars). The list is the payload's `arts`: 684 pieces across the roster
+(142 originals, 140 phase-up, 143 mugshots, 68 interrogation pictures, 191 attires), which
+`parseSinnerArt` reads out of each Sinner's `Attires` and `Gallery` subpages (six requests,
+50 titles each) before the build asks the wiki for every file's address (another dozen); a
+file a page names and the wiki never got is left out. **None of the prints is downloaded**:
+the files are 1 to 9 MB each and about 1.4 GB in all, so the page asks the resizing proxy
+for each at the size shown (`artUrl`: 128px for a frame, 1024 on the wall with `trim` to
+cut an empty margin away, 2048 in the viewer), as the Arknights illustrations are and for
+the same reason. Pine and Pixel, with no picture, are an outline at their height. Under 1200px the
+wall is on top, at about 70% of the screen's height, and the file under it.
+
+The file's long page of tables becomes five
 tabs. **Profile** is its basic information and attributes: the wiki's lead paragraph, a fact
 list, the tags, each stat as "level 1 / highest level the wiki has" as that page prints
 one, the trait, and Mania Intensify. **Skills** is the basic attack, the ultimate and the
@@ -1129,7 +1172,7 @@ numbers at all yet, and 20 have only level 1 of each skill.
 Not on the dossier, though that wiki has them: skill range diagrams (the English wiki names
 a range, `MultiRow_3`, and draws it from an image), what anything costs, voice lines and
 the interrogation records' own pages, an attire's description and how it is got (its
-`Attires` subpage has both), a title, a release date.
+`Attires` subpage has both), a title.
 
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's
@@ -1164,8 +1207,8 @@ which puts the two cut corners at its top out of sight; the bake cuts at the sam
 (`LIFT` in the script), and the two have to agree. Atlas Academy's data is ODC-BY 1.0
 and asks for credit, which the README gives and the site itself does not yet.
 
-Not built for any of the three: glyphs, a release order (Path to Nowhere's Newest is one
-for its last three years only). Not built for hololive Dreams or FGO: search, filters, a
+Not built for any of the three: glyphs; a release order for hololive Dreams or FGO (Path
+to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams or FGO: search, filters, a
 dossier.
 
 ## Testing

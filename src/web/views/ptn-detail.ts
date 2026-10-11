@@ -1,27 +1,31 @@
-// A Sinner's dossier, the page a card on the Path to Nowhere roster opens.
+// A Sinner's dossier, the page a figure on the Path to Nowhere roster's wall opens.
 //
-// What it shows, and in what order, is the page the game's Chinese wiki gives a Sinner
-// (wiki.biligame.com/wqmt, the owner's reference): basic information, the exclusive
+// What its file shows, and in what order, is the page the game's Chinese wiki gives a
+// Sinner (wiki.biligame.com/wqmt, the owner's reference): basic information, the exclusive
 // crimebrand, attributes, then skills, shackles, compliance and materials, and the file.
-// What it is built from is this site's own: the Arknights dossier's page (detail.ts has the
-// reasoning behind the layout), its panel, tabs, entries and fact lists. That wiki's long
-// page of tables becomes five tabs, one for each of its sections.
+// That wiki's long page of tables becomes five tabs, one for each of its sections, built
+// from the Arknights dossier's panel, tabs, entries and fact lists (detail.ts has the
+// reasoning behind those).
 //
-// The header is the roster's entry, which the bundle already has; everything under the tabs
-// is the Sinner's own payload, fetched when the page opens.
+// The page is in the roster's world (_ptn.scss): down its left the wall goes on, with this
+// one Sinner standing against it at nearly the window's height, their height marked on it.
+// The owner's ask for this game's design was every picture the game has of a Sinner, and
+// they are a row of small frames on the wall's floor: the original, the phase-up art, the
+// mugshot, the interrogation's pictures, each attire. The mugshot and the original stand
+// on the floor, as they do on the roster; every other is a scene, and hangs on the wall as
+// a print. A press on either opens the viewer the Arknights art opens. It starts on
+// whichever of the mugshot and the original the roster was showing.
 //
-// The art column is the game's own gallery, the owner's ask for this game's design: every
-// picture the game has of the Sinner down a rail (the original, the phase-up art, the
-// mugshot, the interrogation's pictures, each attire), the one picked shown large, and a
-// press on it opening the viewer the Arknights art opens. It starts on whichever of the
-// mugshot and the original the roster's cards were showing. The pictures are the wiki's
-// own files, megabytes each, asked for through the resizing proxy at the size shown.
+// The header and the first figure are the roster's entry, which the bundle already has;
+// everything under the tabs, and the list of pictures, is the Sinner's own payload, fetched
+// when the page opens. The two pictures that stand are baked; the rest are the wiki's own
+// files, megabytes each, asked for through the resizing proxy.
 
 import { artUrl } from '../../shared/api/hella-api';
 import { openArtViewer } from '../art-viewer';
 import { crumbsHtml, descriptionToHtml, escHtml } from '../format';
-import { fetchPtnSinner, getPtnSinners, type PtnArt, type PtnSinner, type PtnSinnerDetail } from '../ptn-index';
-import { PTN_TIER, ptnRoster } from './ptn';
+import { fetchPtnSinner, getPtnSinners, type PtnArt, type PtnFigure, type PtnSinner, type PtnSinnerDetail } from '../ptn-index';
+import { ptnRoster } from './ptn';
 
 const TABS = [
   { id: 'profile', label: 'Profile' },
@@ -38,56 +42,140 @@ let tab: TabId = 'profile';
 
 const rich = (text: string): string => descriptionToHtml(text);
 
-// The Arknights header without its faction badge: the rank where the stars are, the serif
-// name with the number the game files the Sinner under where an alter's epithet goes, and
-// tendency and libram in the row that holds class and branch there.
+// The file's head, set as the placard the Sinner stood over on the roster's wall, at a
+// page's size: the number, the name, the rank beside both, the tendency and the libram.
 function headerHtml(s: PtnSinner): string {
   return `
-    <div class="op-rarity-strip r${PTN_TIER[s.rank]}">
-      <span class="visually-hidden">Rank ${s.rank}</span>
-      <span class="strip-star" aria-hidden="true">${s.rank}</span>
-    </div>
-    <div class="op-header ptn-header">
-      <h1 class="op-header-name">${escHtml(s.name)}<span class="alter"> MBCC-S-${escHtml(s.number)}</span></h1>
-      <div class="op-header-classes">
-        <span class="hdr-item">${escHtml(s.tendency)}</span>
-        <span class="hdr-item">${escHtml(s.libram)}</span>
+    <header class="file-head">
+      <span class="file-no">MBCC-S-${escHtml(s.number)}</span>
+      <h1 class="file-name">${escHtml(s.name)}</h1>
+      <span class="file-rank" aria-hidden="true">${s.rank}</span>
+      <span class="file-kind">${escHtml(s.tendency)} · ${escHtml(s.libram)}<span class="visually-hidden">, rank ${s.rank}</span></span>
+    </header>
+  `;
+}
+
+// ── The wall ──
+
+// What the wall stands a Sinner at when their file gives no height, which none lacks today:
+// the roster's median.
+const USUAL_CM = 166;
+
+// How much taller than the Sinner this page's wall is: a hand of wall over the head, for
+// the mark at their height to stand clear of the top. The roster's wall is one scale for
+// everybody, 210 cm to a row, so that they can be told apart by height; here there is one
+// of them, and the scale is theirs, so that they fill the wall whoever they are.
+const HEADROOM = 1.08;
+
+/** A picture as the wall shows it: standing on the floor, or hung on the wall as a print. */
+interface Shown {
+  label: string;
+  collection?: string;
+  rarity?: number;
+  // One of the two the build has baked whole and cut to the figure.
+  stand?: PtnFigure;
+  // Any other, through the proxy, with the wiki's own file for when the proxy fails.
+  print?: { src: string; raw: string };
+}
+
+// The roster's own two pictures of a Sinner, which the build has baked whole.
+function bakedOf(s: PtnSinner, kind: PtnArt['kind']): PtnFigure | undefined {
+  if (kind === 'mugshot') return s.figure;
+  if (kind === 'original') return s.figureOriginal;
+  return undefined;
+}
+
+// Only the two baked pictures stand. The rest hang, the attires and the phase-up art with
+// the interrogation's: they were to stand too, and turned out to be scenes as wide as they
+// are tall, the Sinner among effects and scenery with no floor to put their feet on. The
+// proxy is asked to cut away any empty margin, so that the frame holds the picture.
+function shownOf(s: PtnSinner, art: PtnArt): Shown {
+  const { label, collection, rarity } = art;
+  const stand = bakedOf(s, art.kind);
+  return stand
+    ? { label, stand }
+    : { label, collection, rarity, print: { src: `${artUrl(art.url, 1024)}&trim=10`, raw: art.url } };
+}
+
+// Before the payload is here there is no list of pictures: the wall stands the one the
+// roster was showing, from the roster's own entry.
+function firstShown(s: PtnSinner): Shown | undefined {
+  const original = ptnRoster.look === 'original' && s.figureOriginal;
+  const stand = original || s.figure;
+  return stand && { label: original ? 'Original' : 'Mugshot', stand };
+}
+
+// A rule every 10 cm from the floor to the top of the wall, each with its numeral, the
+// fifties heavier. Real elements, where the roster's are a background: there is one row
+// here, and they can be set in the placard's own face.
+function rulesHtml(top: number): string {
+  let rules = '';
+  for (let cm = 10; cm < top; cm += 10) {
+    rules += `<span class="cell-rule${cm % 50 ? '' : ' strong'}" style="--at: ${cm}"><b>${cm}</b></span>`;
+  }
+  return rules;
+}
+
+// The thumbnail in a frame on the floor: the baked figure where there is one, which the
+// page has by then, and otherwise the proxy's smallest.
+function thumbOf(s: PtnSinner, art: PtnArt): string {
+  return bakedOf(s, art.kind)?.art ?? artUrl(art.url, 128);
+}
+
+// The wall with the Sinner on it, and on its floor the name of the picture on show (an
+// attire's led by its collection) over a frame for each picture there is.
+function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
+  const cm = s.height ?? USUAL_CM;
+  const top = Math.round(cm * HEADROOM);
+  const shown = arts.length ? shownOf(s, arts[picked]) : firstShown(s);
+  // The viewer wants the list, so a picture is not pressed until the list is here.
+  const press = arts.length ? `data-art-open aria-label="Open ${escHtml(shown?.label ?? '')} at full size"` : 'disabled';
+  let picture = `<span class="cell-stand none"><span class="cell-fig">No photograph on file</span></span>`;
+  if (shown?.stand) {
+    picture = `
+      <button class="cell-stand" ${press}>
+        <img class="cell-fig" src="${escHtml(shown.stand.art)}" alt="${escHtml(`${s.name}, ${shown.label}`)}"
+             style="aspect-ratio: ${shown.stand.ratio}" fetchpriority="high" decoding="async">
+      </button>
+    `;
+  } else if (shown?.print) {
+    picture = `
+      <button class="cell-print" ${press}>
+        <img src="${escHtml(shown.print.src)}" alt="${escHtml(`${s.name}, ${shown.label}`)}" fetchpriority="high" decoding="async"
+             onerror="this.onerror=null;this.src='${shown.print.raw.replace(/'/g, '%27')}'">
+      </button>
+    `;
+  }
+  return `
+    <div class="cell" style="--cm: ${cm}; --top-cm: ${top}">
+      <div class="cell-rules" aria-hidden="true">${rulesHtml(top)}</div>
+      <span class="cell-mark"><b>${cm} cm</b></span>
+      ${picture}
+      <div class="cell-floor">
+        <p class="cell-caption">
+          ${shown?.collection ? `<span class="cell-collection">${escHtml(shown.collection)}</span>` : ''}
+          <span class="cell-title">${escHtml(shown?.label ?? 'No pictures')}</span>
+          ${shown?.rarity ? `<span class="cell-stars" aria-label="${shown.rarity} stars">${'★'.repeat(shown.rarity)}</span>` : ''}
+        </p>
+        ${arts.length > 1 ? `
+          <div class="exhibits" role="tablist" aria-label="Pictures">
+            ${arts.map((a, i) => `
+              <button class="exhibit${i === picked ? ' on' : ''}" data-art="${i}"
+                      role="tab" aria-selected="${i === picked}" data-tip="${escHtml(a.label)}">
+                <img src="${escHtml(thumbOf(s, a))}" alt="${escHtml(a.label)}" loading="lazy" decoding="async">
+              </button>
+            `).join('')}
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
 }
 
-// The art column: the rail, the picture picked, and its caption, which for an attire leads
-// with its collection (the rest are named for what they are). Until the payload is here
-// there is no list to turn through, and the picture is the card's own.
-function splashHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
-  if (!arts.length) {
-    return `<div class="splash">${s.art ? `<img class="splash-img" src="${escHtml(s.art)}" alt="${escHtml(s.name)}" fetchpriority="high">` : ''}</div>`;
-  }
-  const art = arts[picked];
-  return `
-    <div class="splash">
-      ${arts.length > 1 ? `
-        <div class="splash-rail" role="tablist" aria-label="Artwork">
-          ${arts.map((a, i) => `
-            <button class="splash-thumb${i === picked ? ' on' : ''}" data-art="${i}"
-                    role="tab" aria-selected="${i === picked}" data-tip="${escHtml(a.label)}">
-              <img src="${artUrl(a.url, 128)}" alt="${escHtml(a.label)}" loading="lazy" decoding="async">
-            </button>
-          `).join('')}
-        </div>
-      ` : ''}
-      <img class="splash-img" src="${artUrl(art.url, 1024)}" alt="${escHtml(art.label)}"
-           fetchpriority="high" decoding="async"
-           data-art-open role="button" tabindex="0" aria-label="Open ${escHtml(art.label)} at full size"
-           onerror="this.onerror=null;this.src='${art.url.replace(/'/g, '%27')}'">
-      <div class="splash-caption">
-        ${art.collection ? `<span class="section-label">${escHtml(art.collection)}</span>` : ''}
-        <span class="splash-name">${escHtml(art.label)}</span>
-        ${art.rarity ? `<span class="splash-artist" aria-label="${art.rarity} stars">${'★'.repeat(art.rarity)}</span>` : ''}
-      </div>
-    </div>
-  `;
+// '2026-10-08' as a file prints a day: '8 October 2026'. In UTC, which is how the record's
+// days are written, so that no reader's clock moves one.
+function dayOf(day: string): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
 function factsHtml(facts: [string, string][]): string {
@@ -130,6 +218,7 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       ['Libram', s.libram],
       ['Birthplace', s.birthplace],
       ['Ability', d.ability],
+      ['Released', s.released ? dayOf(s.released) : ''],
     ])}
     ${tags ? `<div class="detail-tags">${tags}</div>` : ''}
     <section class="entry">
@@ -259,12 +348,11 @@ function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, pic
     ? panelHtml(s, detail)
     : `<p class="empty-msg">${detail === null ? 'This Sinner\'s file could not be loaded.' : 'Loading…'}</p>`;
   return `
-    <div class="detail">
-      ${s.art ? `<div class="detail-bg" style="background-image:url('${escHtml(s.art)}')"></div>` : ''}
+    <div class="detail ptn-detail">
       <div class="detail-body">
         <div class="detail-art-col">
           ${crumbsHtml(s.name, '#/ptn', 'Sinners')}
-          ${splashHtml(s, detail?.arts ?? [], picked)}
+          ${wallHtml(s, detail?.arts ?? [], picked)}
         </div>
         <div class="detail-data-col">
           <section class="op-panel">
@@ -330,12 +418,6 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
       }
       if (target.closest('[data-art-open]')) openViewer();
     });
-    // The picture is a button to the keyboard too.
-    root?.querySelector<HTMLElement>('[data-art-open]')?.addEventListener('keydown', (ev) => {
-      if (ev.key !== 'Enter' && ev.key !== ' ') return;
-      ev.preventDefault();
-      openViewer();
-    });
   };
   // The Arknights viewer, on this game's pictures: its pieces are that game's type, which
   // wants an outfit's code and an illustrator this one has none of, and its thumbnails are
@@ -351,14 +433,14 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
     );
   };
   render();
-  // A card is pressed from anywhere down the roster, and the window would stay that far down.
+  // A figure is pressed from anywhere down the wall, and the window would stay that far down.
   window.scrollTo(0, 0);
 
   // If the page has been left by the time the file arrives, it is not this one's to draw.
   const arrived = (file: PtnSinnerDetail | null): void => {
     if (!root?.isConnected) return;
     detail = file;
-    // On the picture the roster's cards were showing, where the Sinner has it.
+    // On the picture the roster was showing, where the Sinner has it.
     picked = Math.max(0, (file?.arts ?? []).findIndex(a => a.kind === (ptnRoster.look || 'mugshot')));
     render();
   };

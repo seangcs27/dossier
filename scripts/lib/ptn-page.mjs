@@ -101,45 +101,6 @@ export function parseSinnerArt(title, attires = '', gallery = '') {
   ];
 }
 
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-const monthOf = text => MONTHS.indexOf(/[A-Za-z]{3}/.exec(text)?.[0].toLowerCase());
-
-// The day a banner opened, 'YYYY-MM-DD', from the run its row on the Arrests page gives,
-// typed by hand: 'June 6th, 14:00 - June 20th, 2024, 13:59 (Server Time)' is most of them,
-// with the one year at the end. So the year is read off the end even where the start has
-// one too (one row opens in 'July 8th, 2024' and closes a fortnight on in 2025), and a run
-// over New Year opened the year before. A row with no dates, or none with a year, has none.
-function bannerStart(row) {
-  const [from, to = ''] = (/Date:'''\s*([^<\n]*)/.exec(row)?.[1] ?? '').split(' - ');
-  const day = /[A-Za-z]+\.?\s+(\d{1,2})/.exec(from)?.[1];
-  const year = Number(/\b20\d{2}\b/.exec(to)?.[0]);
-  const month = monthOf(from);
-  const endMonth = monthOf(to);
-  if (!day || !year || month < 0 || endMonth < 0) return null;
-  return `${endMonth < month ? year - 1 : year}-${String(month + 1).padStart(2, '0')}-${day.padStart(2, '0')}`;
-}
-
-// The day each of these Sinners first stood on a dated banner, by title, from the text of
-// the wiki's Arrests page: its banner history, a banner to a row, each row the run's dates
-// and an icon linked to every Sinner on it. A banner names a Sinner as its page does, give
-// or take its punctuation. A Sinner on no dated banner is not in the answer.
-export function parseBannerDates(text, titles) {
-  const plain = name => name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const titleOf = new Map(titles.map(title => [plain(title), title]));
-  const first = new Map();
-  for (const row of text.split(/\n\|-\s*\n/).slice(1)) {
-    const date = bannerStart(row);
-    if (!date) continue;
-    for (const [, name] of row.matchAll(/link=([^\]|]+)\]\]/g)) {
-      const title = titleOf.get(plain(name));
-      if (!title) continue;
-      const had = first.get(title);
-      if (!had || date < had) first.set(title, date);
-    }
-  }
-  return first;
-}
-
 // The attribute table's ten columns.
 const LEVELS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90];
 
