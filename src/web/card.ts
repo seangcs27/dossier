@@ -50,15 +50,20 @@ export interface RosterState {
   picks: Record<string, Set<string>>;   // by group; a group nobody has picked in has no entry
   open: boolean;                        // the filter panel
   unfolded: Set<string>;                // the folded groups that have been opened
+  look: string;                         // which of the roster's `looks` is on; '' is the first
 }
 
 export function newRosterState(): RosterState {
-  return { query: '', picks: {}, open: false, unfolded: new Set() };
+  return { query: '', picks: {}, open: false, unfolded: new Set(), look: '' };
 }
 
 export interface Roster<T> {
   items: T[];
-  toCard: (item: T) => RosterCard;
+  // `look` is the one of `looks` that is on, or '' on a roster that has none.
+  toCard: (item: T, look: string) => RosterCard;
+  // Two or more ways to draw the same cards, with a switch over the grid to choose between
+  // them: a game whose own roster shows its cast in more than one kind of picture.
+  looks?: { state: RosterState; options: { id: string; label: string }[] };
   noun: string;         // what the game calls its cast, in the plural: 'sinners'
   emptyNote: string;    // what the page says when the build had nothing to bake
   cta?: string;         // what a card that opens a page says under the pointer: 'View sinner'
@@ -153,14 +158,35 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
       : `<div class="state-msg"><div class="label">No ${escHtml(roster.noun)}</div>${escHtml(roster.emptyNote)}</div>`;
     return;
   }
-  container.innerHTML = `<div id="grid"></div><div id="grid-end"></div>`;
+  const looks = roster.looks;
+  const look = looks ? looks.state.look || looks.options[0].id : '';
+  container.innerHTML = `
+    ${looks ? `
+      <div class="roster-bar">
+        <span class="seg" role="group" aria-label="Card art">
+          ${looks.options.map(o => `
+            <button class="seg-btn${o.id === look ? ' on' : ''}" data-look="${escHtml(o.id)}" aria-pressed="${o.id === look}">${escHtml(o.label)}</button>
+          `).join('')}
+        </span>
+      </div>
+    ` : ''}
+    <div id="grid"></div><div id="grid-end"></div>
+  `;
+  // The switch redraws the same cards the other way, and takes the focus with it.
+  container.querySelector<HTMLElement>('.roster-bar')?.addEventListener('click', (ev) => {
+    const pressed = (ev.target as Element).closest<HTMLElement>('[data-look]');
+    if (!pressed || !looks || pressed.dataset.look === look) return;
+    looks.state.look = pressed.dataset.look!;
+    deal(container, roster, items);
+    container.querySelector<HTMLElement>(`[data-look="${looks.state.look}"]`)?.focus();
+  });
   const grid = document.getElementById('grid')!;
   const end = document.getElementById('grid-end')!;
   const cta = roster.cta ?? '';
   let shown = 0;
   const append = (): void => {
     const batch = document.createElement('template');
-    batch.innerHTML = items.slice(shown, shown += BATCH).map(item => buildCard(roster.toCard(item), cta)).join('');
+    batch.innerHTML = items.slice(shown, shown += BATCH).map(item => buildCard(roster.toCard(item, look), cta)).join('');
     mountCardSpin(batch.content);
     grid.append(batch.content);
   };

@@ -20,6 +20,10 @@ export interface PtnSinner {
   // ('ptn/mugshots/hecate.webp', 360 wide and cut at two widths), or its original's address
   // on the wiki where the build could not fetch it. Absent where the wiki has no such file.
   art?: string;
+  // The original illustration's address on the wiki, a standing figure too: what a card
+  // shows where the roster is switched from mugshots to originals. Not baked: the card asks
+  // the resizing proxy for it (plateArtUrl). Absent for the two the wiki has none of.
+  portrait?: string;
 }
 
 // Baked in at build time, highest rank first and then by name: no runtime fetch. Empty when
@@ -58,6 +62,18 @@ export interface PtnEntry {
   text: string;
 }
 
+/**
+ * One piece of a Sinner's art, as the game's own gallery has them: the original, the
+ * phase-up art, the mugshot, a picture from the interrogation, or an attire.
+ */
+export interface PtnArt {
+  kind: 'original' | 'phase' | 'mugshot' | 'interrogation' | 'attire';
+  label: string;        // 'Original', 'Phase-up', 'Mugshot', or the picture's or attire's own name
+  url: string;          // the file's address on the wiki: 1 to 9 MB, so shown through artUrl
+  collection?: string;  // an attire's: 'Airy Fantasia'
+  rarity?: number;      // an attire's stars
+}
+
 export interface PtnSinnerDetail {
   id: string;
   names: { cn: string; jp: string; kr: string };
@@ -83,6 +99,8 @@ export interface PtnSinnerDetail {
   materials: { phase: string[]; skill: string; disSea: string };
   // The documents, each under the wiki's own heading for it: 'Criminal Record', …
   file: { title: string; text: string }[];
+  // In the order the gallery turns to them; only what the wiki really has a file for.
+  arts: PtnArt[];
 }
 
 // A change of hash reaches the router twice (TODO.md), so the page that asks is mounted

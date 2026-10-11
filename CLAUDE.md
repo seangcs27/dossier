@@ -309,6 +309,7 @@ endfieldSplashUrl(id)                      // the same operator's full illustrat
 endfieldIconUrl(kind, name)                // an Endfield class, element or weapon glyph, bundle-relative endfield/icons/
 factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — a mask; takes any faction id
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
+plateArtUrl(rawUrl)                        // the same proxy, cutting a standing figure to a card's 1:2 plate
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
 eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a mask, see eliteIcon()
@@ -956,7 +957,9 @@ looks in, and a list of `RosterFilter` groups, each its values and one of three 
 (tiles as the Arknights classes are, a joined row as its rarities are, loose chips), with
 `folded` for a list too long to stand open. Any pick within a group, every group across
 them. The search and the picks live in a `RosterState` the game's own view keeps, so they
-survive a visit elsewhere and never show on another game's roster. The handling of the box
+survive a visit elsewhere and never show on another game's roster. With `looks`, a switch
+over the grid (`.roster-bar`, the Any / All switch's construction) chooses between two or
+more ways of drawing the same cards, and `toCard` is told which. The handling of the box
 and the panel is `grid.ts`'s once more (assigned handlers, since every roster works the
 same elements; `data-group` / `data-value` on the buttons, as Endfield's), written here
 once for any game that asks; a roster without `find` puts the box away. Whichever roster
@@ -1014,10 +1017,30 @@ own, as far as the English one has the data: a Sinner is found by name or by num
 tiles), Libram (16 chips) and, folded, Tags (47). That wiki's Limited and Core-damage
 groups have no field on the English one.
 
+**Path to Nowhere is the first game to get a design of its own, and the owner's brief for
+it is the game's**: its roster turns between its Sinners' mugshots and their original
+illustrations, and a Sinner's page shows every picture the game has of them. So the roster
+has a Mugshot / Original switch over its grid (`looks`, above), and the dossier opens on
+whichever of the two the cards were showing. A card's original is not baked: it is the
+wiki's file asked of the resizing proxy, cut to the plate (`plateArtUrl` in `hella-api.ts`).
+
 **A Sinner's dossier** (`#/ptn/sinner/<id>`, `views/ptn-detail.ts`) is that wiki's Sinner
-page, section for section, built from the Arknights dossier's parts: the mugshot in the art
-column, and a panel whose header has the rank on the strip, the name with `MBCC-S-019`
-where an alter's epithet goes, and tendency and libram. Its long page of tables becomes five
+page, section for section, built from the Arknights dossier's parts: the art column, and a
+panel whose header has the rank on the strip, the name with `MBCC-S-019` where an alter's
+epithet goes, and tendency and libram. **The art column is the game's gallery**: a rail of
+every picture the game has of the Sinner (the original, the phase-up art, the mugshot, the
+interrogation's pictures where the wiki has them, then each attire, newest first), the one
+picked shown large with its name, an attire's collection and stars under it, and a press
+on it opening the Arknights art viewer (`openArtViewer`, which takes a `thumbOf` for
+callers whose pieces have no outfit avatars). The list is the payload's `arts`: 684 pieces
+across the roster (142 originals, 140 phase-up, 143 mugshots, 68 interrogation pictures,
+191 attires), which `parseSinnerArt` reads out of each Sinner's `Attires` and `Gallery`
+subpages (six requests, 50 titles each) before the build asks the wiki for every file's
+address (another dozen); a file a page names and the wiki never got is left out. **None of
+them is downloaded**: the originals are 1 to 9 MB each and about 1.5 GB in all, so the page
+asks the resizing proxy for each at the size shown (`artUrl`: 128px for a thumbnail, 1024
+on the page, 2048 in the viewer), as the Arknights illustrations are and for the same
+reason. Its long page of tables becomes five
 tabs. **Profile** is its basic information and attributes: the wiki's lead paragraph, a fact
 list, the tags, each stat as "level 1 / highest level the wiki has" as that page prints
 one, the trait, and Mania Intensify. **Skills** is the basic attack, the ultimate and the
@@ -1036,10 +1059,10 @@ mended on the way (an unclosed style attribute, a stray brace in a template, a p
 nobody filled in), and a stat level it marks "TBA" is left out; three Sinners have no
 numbers at all yet, and 20 have only level 1 of each skill.
 
-Not on the dossier, though that wiki has them: the full illustrations and their phases
-(only the mugshot is baked), skill range diagrams (the English wiki names a range,
-`MultiRow_3`, and draws it from an image), what anything costs, voice lines and the
-interrogation records' own pages, a title, a release date.
+Not on the dossier, though that wiki has them: skill range diagrams (the English wiki names
+a range, `MultiRow_3`, and draws it from an image), what anything costs, voice lines and
+the interrogation records' own pages, an attire's description and how it is got (its
+`Attires` subpage has both), a title, a release date.
 
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's

@@ -1,3 +1,4 @@
+import { plateArtUrl } from '../../shared/api/hella-api';
 import { mountRoster, newRosterState, type RosterCard } from '../card';
 import { getPtnSinners, type PtnSinner } from '../ptn-index';
 
@@ -8,15 +9,25 @@ export const PTN_TIER: Record<PtnSinner['rank'], number> = { S: 6, A: 5, B: 4 };
 // The game's six tendencies, in the order its own roster lists them.
 const TENDENCIES = ['Endura', 'Fury', 'Umbra', 'Reticle', 'Arcane', 'Catalyst'];
 
-// This page's search and picks, kept across visits.
-const state = newRosterState();
+// This page's search and picks, kept across visits, and which of the two pictures its cards
+// are showing. A Sinner's dossier reads the last, to open on the same picture.
+export const ptnRoster = newRosterState();
+
+// The game's own roster turns between its Sinners' mugshots and their original
+// illustrations, and so does this one. Mugshots first: they are the ones the build bakes.
+const PTN_LOOKS = [
+  { id: 'mugshot', label: 'Mugshot' },
+  { id: 'original', label: 'Original' },
+];
 
 // A Sinner's own lines on the site's plate: the tendency where the class sits, the libram on
 // the micro line, the birthplace up the edge as a nation is on an Arknights card, the game's
 // tags on the back. It has no glyphs, since the build bakes none: the wiki has a badge for
 // each tendency and each libram, to be looked at when its images are.
-function toCard(s: PtnSinner): RosterCard {
+function toCard(s: PtnSinner, look: string): RosterCard {
   const tier = PTN_TIER[s.rank];
+  // The two Sinners with no original keep their mugshot under either look.
+  const art = look === 'original' && s.portrait ? plateArtUrl(s.portrait) : s.art;
   return {
     // The number the game files the Sinner under, where the other rosters print an id.
     id: `MBCC-S-${s.number}`,
@@ -30,7 +41,7 @@ function toCard(s: PtnSinner): RosterCard {
     serial: s.libram,
     edge: s.birthplace,
     tags: s.tags,
-    art: s.art,
+    art,
     href: `#/ptn/sinner/${encodeURIComponent(s.id)}`,
   };
 }
@@ -48,10 +59,11 @@ export function mountPtn(container: HTMLElement): void {
     noun: 'sinners',
     emptyNote: 'The last build could not reach the Path to Nowhere wiki.',
     cta: 'View sinner',
+    looks: { state: ptnRoster, options: PTN_LOOKS },
     // The groups the game's Chinese wiki filters its own roster by (rank, tendency, faction,
     // tags), as far as the English one has them. A Sinner is found by name or by number.
     find: {
-      state,
+      state: ptnRoster,
       text: s => `${s.name} MBCC-S-${s.number}`,
       filters: [
         { key: 'rank', label: 'Rank', values: ['S', 'A', 'B'], look: 'ranks', tier: r => PTN_TIER[r as PtnSinner['rank']], of: s => s.rank },

@@ -99,6 +99,13 @@ export function artUrl(rawUrl: string, width: number, quality = 82): string {
   return `https://wsrv.nl/?url=${encodeURIComponent(source)}&w=${width}&output=webp&q=${quality}`;
 }
 
+// The same proxy, cutting a standing figure to a card's 1:2 plate: twice the plate's 180px
+// across, and from the top down, so that it is the legs that go. For card art the build has
+// not baked, which is a Path to Nowhere Sinner's original illustration.
+export function plateArtUrl(rawUrl: string): string {
+  return `${artUrl(rawUrl, 360, 80)}&h=720&fit=cover&a=top`;
+}
+
 // A material's icon, keyed by item_table's iconId ('MTL_SL_BN'), which is not the item id
 // ('30125'). Baked at 96px for the costs the detail page prices; the build only fetches the
 // ~90 a payload actually references, so callers hide the <img> on error for any it missed.

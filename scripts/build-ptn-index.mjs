@@ -18,6 +18,13 @@
 // the downloads on 11 October 2026). An entry's `art` is the baked file, or the original's
 // address on the wiki where the bake could not get it.
 //
+// The rest of a Sinner's art is found, not fetched: the original, the phase-up art, the
+// interrogation's pictures and every attire, which the Sinner's Attires and Gallery subpages
+// name (lib/ptn-page.mjs reads them). The wiki is asked for each file's address, and a
+// dossier's payload carries those; the page loads them through the resizing proxy the
+// Arknights art goes through, since the originals are 1 to 9 MB each and about 1.5 GB in
+// all. An entry's `portrait` is the original's address, for a card to show in its place.
+//
 // Nothing here is load-bearing. With the wiki unreachable the last build's file is kept, or
 // an empty one written: the page then has no Sinners to list, and the build goes on.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -26,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
-import { parseSinnerDetail } from './lib/ptn-page.mjs';
+import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
 import { templateBodies, templateParams } from './lib/wiki-text.mjs';
 
 const outDir = path.join(
@@ -48,8 +55,6 @@ const BATCH = 50;
 
 // The game's three ranks, highest first: the order the roster is dealt in.
 const RANKS = ['S', 'A', 'B'];
-
-const mugshotTitle = name => `File:${name} Prisonphoto.png`;
 
 // The text of every page in the roster's category, by title: the category's members come
 // with their text, so listing them and reading them is one question.
@@ -88,21 +93,37 @@ async function toPlate(original) {
     .webp({ quality: 80, effort: 4 }).toBuffer();
 }
 
-// Gives each Sinner the address of their mugshot on the wiki, where it has one. Only the
-// address is asked for here.
-async function addMugshots(sinners) {
-  for (let i = 0; i < sinners.length; i += BATCH) {
-    const batch = sinners.slice(i, i + BATCH);
+// One of every Sinner's subpages ('Attires', 'Gallery'), by the Sinner's own title. A Sinner
+// with no such page is not in the answer.
+async function fetchSubpages(titles, kind) {
+  const textOf = new Map();
+  for (let i = 0; i < titles.length; i += BATCH) {
     const json = await wiki({
-      action: 'query', titles: batch.map(s => mugshotTitle(s.name)).join('|'),
-      prop: 'imageinfo', iiprop: 'url',
+      action: 'query', titles: titles.slice(i, i + BATCH).map(title => `${title}/${kind}`).join('|'),
+      prop: 'revisions', rvprop: 'content', rvslots: 'main',
     });
-    const urlOf = new Map(json.query.pages.map(page => [page.title, page.imageinfo?.[0].url]));
-    for (const sinner of batch) {
-      const art = urlOf.get(mugshotTitle(sinner.name));
-      if (art) sinner.art = art;
+    for (const page of json.query?.pages ?? []) {
+      if (page.revisions) textOf.set(page.title.slice(0, -(kind.length + 1)), page.revisions[0].slots.main.content);
     }
   }
+  return textOf;
+}
+
+// The address of each of these files that the wiki has, by the file's title. Only the
+// address is asked for: no file is fetched here.
+async function fetchFileUrls(files) {
+  const urlOf = new Map();
+  for (let i = 0; i < files.length; i += BATCH) {
+    const json = await wiki({
+      action: 'query', titles: files.slice(i, i + BATCH).map(file => `File:${file}`).join('|'),
+      prop: 'imageinfo', iiprop: 'url',
+    });
+    for (const page of json.query?.pages ?? []) {
+      const url = page.imageinfo?.[0]?.url;
+      if (url) urlOf.set(page.title.replace(/^File:/, ''), url);
+    }
+  }
+  return urlOf;
 }
 
 async function buildRoster() {
@@ -141,7 +162,22 @@ async function buildRoster() {
   // A renamed category would come back empty, a renamed template as pages with no fields.
   if (!sinners.length) throw new Error('no page in the category reads as a Sinner\'s file');
 
-  await addMugshots(sinners);
+  // Every Sinner's art, as the files their two subpages name, and then the address of each
+  // file the wiki really has: a page names a few that were never uploaded.
+  const titles = sinners.map(s => s.name);
+  const attires = await fetchSubpages(titles, 'Attires');
+  const galleries = await fetchSubpages(titles, 'Gallery');
+  const artFiles = new Map(sinners.map(s => [s.id, parseSinnerArt(s.name, attires.get(s.name), galleries.get(s.name))]));
+  const urlOf = await fetchFileUrls([...new Set([...artFiles.values()].flat().map(art => art.file))]);
+  for (const detail of details) {
+    detail.arts = artFiles.get(detail.id).filter(art => urlOf.has(art.file))
+      .map(({ file, ...art }) => ({ ...art, url: urlOf.get(file) }));
+    const sinner = sinners.find(s => s.id === detail.id);
+    const addressOf = kind => detail.arts.find(art => art.kind === kind)?.url;
+    if (addressOf('mugshot')) sinner.art = addressOf('mugshot');
+    if (addressOf('original')) sinner.portrait = addressOf('original');
+  }
+
   const baked = await bakeImages(
     'ptn mugshots', mugshotDir,
     sinners.filter(s => s.art).map(s => ({ name: s.id, url: s.art, label: s.name })), toPlate,

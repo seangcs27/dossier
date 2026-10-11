@@ -9,7 +9,7 @@
 // reforge nodes, and the interrogation and voice subpages.
 //
 // Pure text in, plain objects out: no fetching here, so it can be run against a saved page.
-import { templateParams } from './wiki-text.mjs';
+import { templateBodies, templateParams } from './wiki-text.mjs';
 
 // The two things the wiki colours: a number, in blue, and a kind of damage or a state, in
 // orange. Written as a hex in a <span>'s style or as a name in {{Color}}, with a few shades
@@ -61,6 +61,44 @@ export function toGameText(source, title) {
     .replace(/ ?\n ?/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+// A file's name as the wiki titles it: spaces for underscores, the first letter a capital.
+// Pages write the same file both ways ('Hecate_Skin3.png', 'Hecate Skin3.png').
+export function fileTitle(name) {
+  const title = name.replace(/^\[\[File:|\]\]$/gi, '').replace(/\|.*$/, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+// The art the game itself shows of a Sinner, in the order its own gallery turns to it: the
+// original, the phase-up art (which the wiki files as the first skin), the mugshot, the
+// interrogation's pictures where there are any, then each attire, newest first as the
+// Attires page lists them. `attires` and `gallery` are the texts of the Sinner's two
+// subpages, either of which may be missing. Files are named, not checked: the caller asks
+// the wiki which exist.
+export function parseSinnerArt(title, attires = '', gallery = '') {
+  // The gallery's first block is the game's own art, a file and its caption to a line.
+  const shown = (/<gallery[^>]*>([\s\S]*?)<\/gallery>/.exec(gallery)?.[1] ?? '')
+    .split('\n').map(line => line.split('|')).filter(([file]) => file.trim());
+  const interrogations = shown.filter(([file, caption = '']) => /interrogation/i.test(`${file} ${caption}`))
+    .map(([file, caption = '']) => ({ kind: 'interrogation', label: toGameText(caption, title) || 'Interrogation', file: fileTitle(file) }));
+  const skins = templateBodies(attires, 'Attire').map(body => templateParams(body).named)
+    .filter(named => named.Title && named.Image)
+    .map(named => ({
+      kind: 'attire',
+      label: toGameText(named.Title, title),
+      file: fileTitle(named.Image),
+      collection: toGameText(named.Collection, title),
+      // '★★★', as a count.
+      rarity: (named.Rarity?.match(/★/g) ?? []).length,
+    }));
+  return [
+    { kind: 'original', label: 'Original', file: fileTitle(`${title}.png`) },
+    { kind: 'phase', label: 'Phase-up', file: fileTitle(`${title} Skin1.png`) },
+    { kind: 'mugshot', label: 'Mugshot', file: fileTitle(`${title} Prisonphoto.png`) },
+    ...interrogations,
+    ...skins,
+  ];
 }
 
 // The attribute table's ten columns.

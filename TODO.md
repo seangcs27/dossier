@@ -15,11 +15,29 @@ figures, 5.3 MB), and the three emblems are in; the owner approved those downloa
 October 2026. Path to Nowhere also has search, filters and a dossier per Sinner. Not built
 yet:
 
-- **A design of its own for each game.** The owner means them to differ and has not decided
-  how; every game is on the Arknights card and dossier until then.
+- **A design of its own for each game.** The owner means them to differ. Path to Nowhere
+  is the first: its roster switches between mugshots and originals, and a Sinner's page has
+  the game's gallery (CLAUDE.md). The others are on the Arknights card and dossier still.
+- **The Original look's cards are not baked.** Each is the wiki's file through the resizing
+  proxy, so a card's first showing is a cold fetch (the reason the mugshots were baked).
+  Baking them means downloading 142 PNGs, 81.3 MB by the wiki's own sizes (median 559 KB),
+  which would come to about 6 MB as the mugshots did; that download wants the owner's word.
+  The gallery's larger pictures are not for baking at all: 399 files, about 1.4 GB.
+- **A release order for Path to Nowhere**, looked into on 11 October 2026 and not built:
+  - The English wiki's `Arrests` page is its banner history, 115 banners in four tabs, each
+    with its dates and the Sinners it features. It dates 81 of the 144 by their first
+    banner; 39 more are only in banners whose dates were never filled in (the later rows),
+    and can be ordered by row; 24 are in no banner, the launch roster and the newest alike,
+    which nothing on the page tells apart.
+  - `s1n.gg` sorts its own roster by release and has a `release_date` in its data, but the
+    data comes from a backend of its own with no documentation, and the site states no
+    terms. Not a thing to build on without asking its owners.
+  - The game's Chinese wiki prints a release date on every Sinner's page (上线日期) and
+    blocks scripts.
 - **What a Sinner's dossier lacks beside its reference** (the game's Chinese wiki's page):
-  - The illustrations: the full art and its phases. Only the mugshot is baked. They are
-    new image downloads, so they want the owner's word and their sizes first.
+  - An attire's description and how it is got, which the `Attires` subpage the build
+    already reads has, and the attack and skill animations it lists as GIFs.
+  - 43 interrogation pictures the Sinners' galleries name and the wiki has no file for.
   - Skill range diagrams: the English wiki names a range (`MultiRow_3`, `Cross_1`, about
     60 of them, some typed with a space for the underscore) and draws it from an image.
   - What anything costs. The wiki's template works the counts out from the rank, the same

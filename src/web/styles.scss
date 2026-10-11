@@ -1132,6 +1132,18 @@ body {
   padding: var(--sp-20);
 }
 
+// A roster's switch between two kinds of card art (card.ts), over the grid at its right
+// end: the Any / All switch's construction, at a size to be the page's own control.
+.roster-bar {
+  display: flex;
+  padding: var(--sp-16) var(--sp-20) 0;
+
+  .seg-btn {
+    padding: var(--sp-6) var(--sp-12);
+    font-size: var(--fs-xs);
+  }
+}
+
 // ── Operator card ──
 // Structure mirrors Sanity Gone's operator grid item: a fixed-height box holding the
 // illustration edge to edge, with a single absolutely-positioned overlay layer on top
@@ -3811,6 +3823,9 @@ a.pool-op:hover { text-decoration: underline; }
   // Right padding has to clear the rarity tab, not just look like a margin. The tab hangs
   // 20px past the last column in every row, so at 12px the page became horizontally
   // scrollable and the tab was cut off at the screen edge on a phone.
+  // In from the edges as far as the grid under it is.
+  .roster-bar { padding: var(--sp-12) var(--sp-24) 0 var(--sp-12); }
+
   #grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: var(--sp-12) var(--sp-24);

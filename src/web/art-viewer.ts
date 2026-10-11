@@ -28,10 +28,13 @@ const SWIPE_REST_MS = 200;
 
 /**
  * Opens the viewer on `arts[start]`. `onClose` is told which piece was showing when it
- * closed, so the page behind can follow the viewer rather than snap back.
+ * closed, so the page behind can follow the viewer rather than snap back. `thumbOf` is the
+ * small picture for a piece's thumbnail: an operator's outfit avatar, unless the caller's
+ * pieces are another game's and have none.
  */
 export function openArtViewer(
   opId: OperatorId, arts: OperatorArt[], start: number, onClose: (index: number) => void,
+  thumbOf: (art: OperatorArt) => string = art => operatorSkinAvatarUrl(opId, art.suffix),
 ): void {
   let index = start;
   let zoom = ZOOM_FIT;
@@ -60,7 +63,7 @@ export function openArtViewer(
       <div class="av-thumbs" role="tablist" aria-label="Artwork">
         ${arts.map((a, i) => `
           <button class="av-thumb" data-av="pick" data-value="${i}" role="tab" data-tip="${escHtml(a.label)}">
-            <img src="${operatorSkinAvatarUrl(opId, a.suffix)}" alt="${escHtml(a.label)}" loading="lazy"
+            <img src="${thumbOf(a)}" alt="${escHtml(a.label)}" loading="lazy"
                  onerror="this.onerror=null;this.src='${a.url.replace(/'/g, '%27')}'">
           </button>
         `).join('')}

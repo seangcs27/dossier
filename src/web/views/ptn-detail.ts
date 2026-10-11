@@ -7,12 +7,21 @@
 // reasoning behind the layout), its panel, tabs, entries and fact lists. That wiki's long
 // page of tables becomes five tabs, one for each of its sections.
 //
-// The header and the art are the roster's entry, which the bundle already has; everything
-// under the tabs is the Sinner's own payload, fetched when the page opens.
+// The header is the roster's entry, which the bundle already has; everything under the tabs
+// is the Sinner's own payload, fetched when the page opens.
+//
+// The art column is the game's own gallery, the owner's ask for this game's design: every
+// picture the game has of the Sinner down a rail (the original, the phase-up art, the
+// mugshot, the interrogation's pictures, each attire), the one picked shown large, and a
+// press on it opening the viewer the Arknights art opens. It starts on whichever of the
+// mugshot and the original the roster's cards were showing. The pictures are the wiki's
+// own files, megabytes each, asked for through the resizing proxy at the size shown.
 
+import { artUrl } from '../../shared/api/hella-api';
+import { openArtViewer } from '../art-viewer';
 import { crumbsHtml, descriptionToHtml, escHtml } from '../format';
-import { fetchPtnSinner, getPtnSinners, type PtnSinner, type PtnSinnerDetail } from '../ptn-index';
-import { PTN_TIER } from './ptn';
+import { fetchPtnSinner, getPtnSinners, type PtnArt, type PtnSinner, type PtnSinnerDetail } from '../ptn-index';
+import { PTN_TIER, ptnRoster } from './ptn';
 
 const TABS = [
   { id: 'profile', label: 'Profile' },
@@ -43,6 +52,39 @@ function headerHtml(s: PtnSinner): string {
       <div class="op-header-classes">
         <span class="hdr-item">${escHtml(s.tendency)}</span>
         <span class="hdr-item">${escHtml(s.libram)}</span>
+      </div>
+    </div>
+  `;
+}
+
+// The art column: the rail, the picture picked, and its caption, which for an attire leads
+// with its collection (the rest are named for what they are). Until the payload is here
+// there is no list to turn through, and the picture is the card's own.
+function splashHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
+  if (!arts.length) {
+    return `<div class="splash">${s.art ? `<img class="splash-img" src="${escHtml(s.art)}" alt="${escHtml(s.name)}" fetchpriority="high">` : ''}</div>`;
+  }
+  const art = arts[picked];
+  return `
+    <div class="splash">
+      ${arts.length > 1 ? `
+        <div class="splash-rail" role="tablist" aria-label="Artwork">
+          ${arts.map((a, i) => `
+            <button class="splash-thumb${i === picked ? ' on' : ''}" data-art="${i}"
+                    role="tab" aria-selected="${i === picked}" data-tip="${escHtml(a.label)}">
+              <img src="${artUrl(a.url, 128)}" alt="${escHtml(a.label)}" loading="lazy" decoding="async">
+            </button>
+          `).join('')}
+        </div>
+      ` : ''}
+      <img class="splash-img" src="${artUrl(art.url, 1024)}" alt="${escHtml(art.label)}"
+           fetchpriority="high" decoding="async"
+           data-art-open role="button" tabindex="0" aria-label="Open ${escHtml(art.label)} at full size"
+           onerror="this.onerror=null;this.src='${art.url.replace(/'/g, '%27')}'">
+      <div class="splash-caption">
+        ${art.collection ? `<span class="section-label">${escHtml(art.collection)}</span>` : ''}
+        <span class="splash-name">${escHtml(art.label)}</span>
+        ${art.rarity ? `<span class="splash-artist" aria-label="${art.rarity} stars">${'★'.repeat(art.rarity)}</span>` : ''}
       </div>
     </div>
   `;
@@ -211,7 +253,8 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
 }
 
 // `detail` is undefined while the payload is on its way and null when it could not be had.
-function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined): string {
+// `picked` is the picture on show, among the payload's.
+function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, picked: number): string {
   const panel = detail
     ? panelHtml(s, detail)
     : `<p class="empty-msg">${detail === null ? 'This Sinner\'s file could not be loaded.' : 'Loading…'}</p>`;
@@ -221,9 +264,7 @@ function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined): st
       <div class="detail-body">
         <div class="detail-art-col">
           ${crumbsHtml(s.name, '#/ptn', 'Sinners')}
-          <div class="splash">
-            ${s.art ? `<img class="splash-img" src="${escHtml(s.art)}" alt="${escHtml(s.name)}" fetchpriority="high" decoding="async">` : ''}
-          </div>
+          ${splashHtml(s, detail?.arts ?? [], picked)}
         </div>
         <div class="detail-data-col">
           <section class="op-panel">
@@ -264,19 +305,50 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   }
 
   let detail: PtnSinnerDetail | null | undefined;
+  let picked = 0;
   let root: Element | null = null;
   const render = (): void => {
-    container.innerHTML = shellHtml(sinner, detail);
+    container.innerHTML = shellHtml(sinner, detail, picked);
     root = container.firstElementChild;
     // Bound to this render's own page, not to the container every view shares: a handler
     // left there would answer a press on the Arknights dossier's tabs too.
     root?.addEventListener('click', (ev) => {
-      const pressed = (ev.target as Element).closest<HTMLElement>('[data-tab]');
-      if (!pressed) return;
-      tab = pressed.dataset.tab as TabId;
-      render();
-      container.querySelector<HTMLElement>(`[data-tab="${tab}"]`)?.focus();
+      const target = ev.target as Element;
+      const tabButton = target.closest<HTMLElement>('[data-tab]');
+      if (tabButton) {
+        tab = tabButton.dataset.tab as TabId;
+        render();
+        container.querySelector<HTMLElement>(`[data-tab="${tab}"]`)?.focus();
+        return;
+      }
+      const thumb = target.closest<HTMLElement>('[data-art]');
+      if (thumb) {
+        picked = Number(thumb.dataset.art);
+        render();
+        container.querySelector<HTMLElement>(`[data-art="${picked}"]`)?.focus();
+        return;
+      }
+      if (target.closest('[data-art-open]')) openViewer();
     });
+    // The picture is a button to the keyboard too.
+    root?.querySelector<HTMLElement>('[data-art-open]')?.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter' && ev.key !== ' ') return;
+      ev.preventDefault();
+      openViewer();
+    });
+  };
+  // The Arknights viewer, on this game's pictures: its pieces are that game's type, which
+  // wants an outfit's code and an illustrator this one has none of, and its thumbnails are
+  // asked of the proxy since there are no outfit avatars to show. The page follows the
+  // viewer to whichever picture it closed on.
+  const openViewer = (): void => {
+    const arts = detail?.arts ?? [];
+    if (!arts.length) return;
+    openArtViewer(
+      sinner.id, arts.map(a => ({ suffix: a.kind, label: a.label, artist: null, url: a.url })), picked,
+      (index) => { picked = index; render(); },
+      art => artUrl(art.url, 128),
+    );
   };
   render();
   // A card is pressed from anywhere down the roster, and the window would stay that far down.
@@ -286,6 +358,8 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   const arrived = (file: PtnSinnerDetail | null): void => {
     if (!root?.isConnected) return;
     detail = file;
+    // On the picture the roster's cards were showing, where the Sinner has it.
+    picked = Math.max(0, (file?.arts ?? []).findIndex(a => a.kind === (ptnRoster.look || 'mugshot')));
     render();
   };
   fetchPtnSinner(id).then(arrived, () => arrived(null));
