@@ -16,8 +16,24 @@ October 2026. Path to Nowhere also has search, filters and a dossier per Sinner.
 yet:
 
 - **A design of its own for each game.** The owner means them to differ. Path to Nowhere
-  is the first: its roster switches between mugshots and originals, and a Sinner's page has
-  the game's gallery (CLAUDE.md). The others are on the Arknights card and dossier still.
+  is the first: its roster is a line-up wall (CLAUDE.md), built on 12 October 2026 to a
+  brief the owner confirmed. The others are on the Arknights card and dossier still.
+- **What the line-up wall still wants:**
+  - **A Sinner's page in the same world.** The brief has it: the wall continues down the
+    left, the figure whole at nearly the window's height with their height marked, the
+    other pictures as a row of frames along the wall's foot (a standing one takes the
+    figure's place, a wide one hangs as a print), the file and its five tabs on the right.
+    Until then a page opened from the wall is Dossier's navy, shell and all.
+  - **A placard face of its own.** The wall is set in the reader's own narrow face
+    (Bahnschrift, where Windows has it). A font to ship is a download for the owner to
+    approve; Barlow Condensed, League Gothic and Big Shoulders were the shortlist, all
+    under the Open Font License in `google/fonts`.
+  - **The cut mugshots go when that page is rebuilt**: `ptn/mugshots/` and an entry's `art`
+    are only its first picture now. `ptn/originals/`, which the cards' other look read, is
+    read by nothing; the directory is still on disk and in CI's cache.
+  - **It is long**: 144 whole figures are about 25 rows on a desktop and 56 on a phone.
+  - The design skill's own finish review and its `DESIGN.md` are left for when the Sinner's
+    page is in the world too.
 - **The gallery's larger pictures are not for baking**: the phase-up art, the attires and
   the interrogation pictures are 399 files and about 1.4 GB. (The originals, for the cards,
   are baked: 142 files.)

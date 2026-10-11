@@ -82,7 +82,7 @@ scripts/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
-  build-ptn-index.mjs        ← ptn/sinners.json + ptn/mugshots/ + ptn/originals/ + ptn/sinner-details/
+  build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/mugshots/ + ptn/sinner-details/
   build-holodori-index.mjs   ← holodori/characters.json
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
@@ -132,8 +132,9 @@ src/
       endfield/icons/<kind>-<name>.webp  ← 16 class, element and weapon glyphs, 64px
       endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
       ptn/sinners.json           ← Path to Nowhere's roster (144), bundled into the web target
-      ptn/mugshots/<id>.webp     ← its card art (143), 360 wide and cut at two widths, copied as static files
-      ptn/originals/<id>.webp    ← the cards' other look (142), 360x720, copied as static files
+      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the roster's wall stands them (143), up to 1100 tall
+      ptn/figures/original/<id>.webp  ← the same of their original illustration (142); both copied as static files
+      ptn/mugshots/<id>.webp     ← the mugshot cut at the knee (143), 360 wide: a Sinner's page's first picture
       ptn/sinner-details/<id>.json  ← 144 dossier payloads parsed from the wiki's pages, copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
@@ -188,7 +189,8 @@ src/
     styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events; loads
                       the games' own partials last
     _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
-    _ptn.scss / _fgo.scss  ← how those two games' art sits on the plate; PtN's dossier's own rules
+    _ptn.scss / _fgo.scss  ← PtN's roster, a world of its own (the line-up wall), and its dossier's
+                      own rules; how FGO's art sits on the plate
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
@@ -207,7 +209,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/mugshots/`, `ptn/originals/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/mugshots/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -310,7 +312,6 @@ endfieldSplashUrl(id)                      // the same operator's full illustrat
 endfieldIconUrl(kind, name)                // an Endfield class, element or weapon glyph, bundle-relative endfield/icons/
 factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — a mask; takes any faction id
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
-plateArtUrl(rawUrl)                        // the same proxy, cutting a standing figure to a card's 1:2 plate; for one the build could not bake
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
 eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a mask, see eliteIcon()
@@ -943,9 +944,10 @@ again on 11 October. hololive Dreams and FGO are each a roster and nothing else:
 no search, no filters, no dossier, cards that turn and open nothing. Path to Nowhere has
 search, filters and a dossier per Sinner as well (below).
 
-**The owner means each game to have a design of its own in time**, and has not decided
-them. Until then every game is on the Arknights card and the Arknights dossier's parts,
-and a game's pages copy what its own reference site shows, in this site's elements.
+**The owner means each game to have a design of its own in time.** Path to Nowhere's roster
+is the first to have one (the line-up wall, below). Until a game's turn comes it is on the
+Arknights card and the Arknights dossier's parts, and its pages copy what its own reference
+site shows, in this site's elements.
 
 **One card, one page.** `card.ts` has both. `RosterCard` is the Arknights plate with a
 game's own words in its slots (name, epithet, class line, micro line, the word up the edge,
@@ -961,9 +963,13 @@ them. The search and the picks live in a `RosterState` the game's own view keeps
 survive a visit elsewhere and never show on another game's roster. With `looks`, a switch
 over the grid (`.roster-bar`, the Any / All switch's construction) chooses between two or
 more ways of drawing the same cards, and `toCard` is told which; with `orders`, a second
-switch beside it chooses the order they are dealt in (the first is the roster's own, any
+switch beside it chooses the order they are dealt in (the first is the one a page opens in;
+one with no `compare` is the roster's own, any
 other a `compare`, and the sort is stable, so what an order does not rank stays as the
-roster has it). The handling of the box
+roster has it). **A roster that is not a grid of cards gives `draw` in place of `toCard`**:
+it is handed the element to fill and the items in the order to show them, with the look
+and the order that are on, and draws its own page; the count, the search, the filters and
+the two switches are still `card.ts`'s. The handling of the box
 and the panel is `grid.ts`'s once more (assigned handlers, since every roster works the
 same elements; `data-group` / `data-value` on the buttons, as Endfield's), written here
 once for any game that asks; a roster without `find` puts the box away. Whichever roster
@@ -979,8 +985,8 @@ to know:
   on every roster.
 - **`art` is optional.** Without it the plate shows the name's first letter.
 - **The plate is 1:2 and `.op-avatar` contains its picture**, which suits the Arknights
-  bust and neither of the other sources: a game's own partial (`_ptn.scss`, `_fgo.scss`,
-  loaded last by `styles.scss`) switches its page to `object-fit: cover`, scoped by the
+  bust and not Fate/Grand Order's figure: that game's own partial (`_fgo.scss`, loaded
+  last by `styles.scss`) switches its page to `object-fit: cover`, scoped by the
   `data-view` its route puts on `<body>`.
 
 On a phone the pill drops the noun and keeps the number (`.count-noun`): the section link
@@ -991,11 +997,11 @@ call: each picture is fetched from its source once, four at a time, cut to what 
 of it and written as WebP beside the roster, and kept from then on (CI restores it with the
 rest of the generated data; delete the directory to refresh). An entry's `art` is the baked
 file's address beside the page, or the original's on the source's own host for a picture
-the bake could not get, which is why the two partials above keep their rules: on a baked
-picture they change nothing. The owner approved those downloads on 11 October 2026 (143
-PNGs and about 44 MB from the PtN wiki, 470 PNGs and 42.5 MB from Atlas Academy, which baked
-to 6.1 MB and 5.3 MB), and later that day the 142 originals PtN's cards turn to (81 MB,
-baked to 7.3 MB).
+the bake could not get, which is why FGO's partial keeps its rule: on a baked picture it
+changes nothing. The owner approved those downloads on 11 October 2026 (143 PNGs and about
+44 MB from the PtN wiki, 470 PNGs and 42.5 MB from Atlas Academy, which baked to 6.1 MB and
+5.3 MB), and on 12 October the same PtN files a second time, with the 142 originals, to be
+baked whole for the wall (285 files, about 125 MB, baked to 20.5 MB).
 
 **Path to Nowhere** (`#/ptn`, 144 Sinners). `scripts/build-ptn-index.mjs` reads
 `pathtonowhere.wiki.gg`, which has no Cargo tables. A playable Sinner's page is one call of
@@ -1005,14 +1011,13 @@ is the Sinner's file. (`Category:Sinners`, the likelier name, holds the two temp
 nothing else.) The category is read as a generator with the pages' text, 50 to a request,
 and the mugshots' addresses are asked for the same way: six requests a build. An entry is
 id (the page title as a slug), name, number (what follows `MBCC-S-`, which is not unique),
-rank, tendency, libram, birthplace, tags, and `art`, the mugshot: the standing figure the
-wiki's own infobox shows, `File:<page> Prisonphoto.png` (143 of 144; Pine has none and
-shows a "P"), baked 360 wide and cut at two widths, below which a card shows nothing of a
-figure anyway. The order is rank S, A, B and then name: nothing dates
-a release (the roster's Newest order, below, is what stands in for one). On the card: S / A / B on tiers 6 / 5 / 4, with the letter at the foot of a tab
-as many lines tall as the tier, so the tab's height still says the rank; tendency on the
-class line, libram on the micro line, birthplace up the edge (for 20 of them the game's own
-redaction or "Unknown"), and on the back `MBCC-S-019` and the game's tags.
+rank, height in centimetres (every file has one, 115 to 191), tendency, libram, birthplace,
+tags, and the pictures: `figure` and `figureOriginal`, the mugshot (the standing figure the
+wiki's own infobox shows, `File:<page> Prisonphoto.png`, 143 of 144) and the original
+illustration (142), each baked whole, cut back to the figure's own edges and no taller
+than 1100px, with its width over its height; and `art`, the mugshot cut at the knee, 360
+wide, which a Sinner's page still opens on. The order is rank S, A, B and then name:
+nothing dates a release (the roster's Newest order, below, is what stands in for one).
 
 Its two references are the owner's: the game's Chinese wiki (`wiki.biligame.com/wqmt`,
 which a browser can read and a script cannot, so it is a model for the pages and never a
@@ -1025,14 +1030,53 @@ groups have no field on the English one.
 **Path to Nowhere is the first game to get a design of its own, and the owner's brief for
 it is the game's**: its roster turns between its Sinners' mugshots and their original
 illustrations, and a Sinner's page shows every picture the game has of them. So the roster
-has a Mugshot / Original switch over its grid (`looks`, above), and the dossier opens on
-whichever of the two the cards were showing. A card's original is baked as its mugshot is
-(`ptn/originals/<id>.webp`, the plate filled from the top down, so that the legs go; an
-entry's `portrait`). It was first the wiki's file asked of the resizing proxy at that cut
-(`plateArtUrl` in `hella-api.ts`), which took most of a second a card the first time, and
-that is still what a card falls back to for an original the bake could not get.
+has a Mugshot / Original switch (`looks`, above), and the dossier opens on whichever of the
+two the roster was showing.
 
-**Beside that switch is the order's: Rank, the roster's own, or Newest.** The wiki has no
+**The roster is a line-up wall, not a grid of cards** (`drawWall` in `views/ptn.ts`,
+`_ptn.scss`). The owner found the cards' art too small and the roster flat, and picked this
+on 12 October 2026 from a page of directions, then slate over a paler wall and the mugshot
+as the picture it opens on, after a proof that stood ten Sinners against both. Every Sinner
+stands whole on a floor line, against a wall ruled every 10 cm with its numerals down the
+left edge, **scaled to the height their file gives**: the wall shows 0 to 210 cm over the
+top 86% of a row and the floor is the rest, so a figure's picture is its centimetres tall
+and everything on a row is placed in centimetres. Under each, on the floor, is a black
+placard with what a card printed: `MBCC-S-019`, the name, the rank's letter, tendency and
+libram. The wall wraps, six or seven to a row on a desktop and two or three on a phone, and
+its rules, floor and numerals are backgrounds a row tall, so they fall under however many
+rows there are. **Rank is no longer a colour but a place**: by rank there is a line-up to
+each of S, A and B, with its name and head count; newest first there are two, "Arrivals
+since 2024" (whose placards give the month first seen) and "No arrival on file". Under the
+pointer or the keyboard's focus a figure steps forward, the rest of its wall falls back,
+its placard takes the world's one red and its height is read off over its head. A press
+opens its page. **Only the figure and the placard answer the pointer**: a Sinner's box is a
+row tall, and the owner found the bare wall at the 200 line setting off whoever stood
+under it, so the box itself takes no pointer events. There is no card to turn: the tags
+are in the filters and on the page.
+
+Three things about it that are not what they seem:
+- **The height is the picture's, so it is only as true as the picture.** A raised arm or
+  a carried thing counts: 000, at 168 cm, has her head near 150, and under Original
+  Demon's shield and OwO's lion head stand taller than they do. That is why the mugshot is
+  the picture the wall opens on: in it every Sinner stands for a line-up already, name
+  board in hand.
+- **A figure's place is held before its picture comes**, by the picture's shape (an entry's
+  `ratio`): an outline at the right height, which is also all Pine has, with "No
+  photograph on file". Kisugi Ai, with no original, stands as her mugshot under either.
+- **The numerals are a picture the wall's edge is masked by**, so that they take the
+  wall's ink, and a picture cannot load a font: they are set in the reader's own narrow
+  face whatever the placards come to be set in.
+
+**The shell goes with it**: while the roster is showing (`body[data-view='ptn']`), the
+sidebar, the topbar, the filter panel and the tooltip go from Dossier's navy and gold to
+ink and bone, which is nothing but the surface variables restated, since the shell takes
+every colour from them; the page under them restates them again for the wall. The placard
+face is the reader's own for now (`--ptn-placard`, Bahnschrift first), until one is chosen
+to ship. **A Sinner's own page is not in this world yet**: it is on the Arknights dossier's
+parts and Dossier's colours, so opening one from the wall changes the whole window.
+
+**Beside that switch is the order's: Newest, which the page opens in by the owner's choice,
+or Rank, the roster's own.** The wiki has no
 release dates and no version history (its `Patch History` page is a table's header), so
 Newest goes by an entry's `firstSeen`: the day the Sinner's original or mugshot was first
 uploaded to the wiki (every version's timestamp, the oldest kept), or the first dated

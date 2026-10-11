@@ -11,12 +11,12 @@
 // attributes, skills, shackles, the crimebrand and the documents, and lib/ptn-page.mjs reads
 // that into the dossier's payload from the same text, at no further request.
 //
-// The card art is the mugshot, File:<page> Prisonphoto.png, the picture the wiki's own
-// infobox shows: a standing figure cut out on transparency, narrower than the card's 1:2 on
-// four pages in five and never much wider. The originals are PNGs of 200 to 700 KB, about
-// 440 by 1090, so each is baked once to WebP at the size a card shows it (the owner approved
-// the downloads on 11 October 2026). An entry's `art` is the baked file, or the original's
-// address on the wiki where the bake could not get it.
+// A Sinner's page opens on the mugshot, File:<page> Prisonphoto.png, the picture the wiki's
+// own infobox shows: a standing figure cut out on transparency. The originals are PNGs of
+// 200 to 700 KB, about 440 by 1090, so each is baked once to WebP, 360 wide and cut at two
+// widths, which is what the roster's cards showed of it when it had cards (the owner
+// approved the downloads on 11 October 2026). An entry's `art` is the baked file, or the
+// original's address on the wiki where the bake could not get it.
 //
 // The rest of a Sinner's art is found, not fetched: the original, the phase-up art, the
 // interrogation's pictures and every attire, which the Sinner's Attires and Gallery subpages
@@ -25,11 +25,12 @@
 // Arknights art goes through, since the originals are 1 to 9 MB each and about 1.5 GB in
 // all.
 //
-// One of those is baked after all: the original illustration, which a card shows where the
-// roster is switched from mugshots. Through the proxy a card's first showing took most of a
-// second. They are the smallest of the sets, 142 PNGs and 81 MB (the owner approved that
-// download on 11 October 2026), and an entry's `portrait` is the baked file, or the
-// original's address where the bake could not get it.
+// The roster is a line-up wall: it stands every Sinner whole, on a floor line, at their
+// stated height against a ruled wall, as their mugshot or as their original illustration.
+// So both pictures are baked a second time, whole and cut back to the figure's own edges
+// (figures/mugshot/ and figures/original/; the owner approved downloading those 285 files
+// again, about 125 MB, on 12 October 2026). An entry's `figure` and `figureOriginal` are
+// the baked file and its shape, and its `height` the centimetres the wall scales it to.
 //
 // Nothing on the wiki dates a Sinner's release, so the roster is dealt by rank and then
 // name. What it can say is when a Sinner was first seen, an entry's `firstSeen`: the day
@@ -56,9 +57,9 @@ const mugshotDir = path.join(outDir, 'mugshots');
 // Where webpack.web.js copies that directory to beside the page, and so what an entry's
 // `art` starts with.
 const MUGSHOT_PATH = 'ptn/mugshots';
-// The same two for the originals, and an entry's `portrait`.
-const originalDir = path.join(outDir, 'originals');
-const ORIGINAL_PATH = 'ptn/originals';
+// The same two for the whole figures, a directory under each to a picture.
+const figureDir = path.join(outDir, 'figures');
+const FIGURE_PATH = 'ptn/figures';
 
 const WIKI_API = 'https://pathtonowhere.wiki.gg/api.php';
 const wiki = wikiApi(WIKI_API);
@@ -116,13 +117,33 @@ async function toPlate(original) {
     .webp({ quality: 80, effort: 4 }).toBuffer();
 }
 
-// An original as a card shows it: the plate filled from the top down, so that it is the
-// legs that go, and a figure wider than 1:2 losing its sides. The cut the resizing proxy
-// made of it (plateArtUrl), which is what a card falls back to.
-function toOriginalPlate(original) {
-  return sharp(original)
-    .resize({ width: MUGSHOT_WIDTH, height: 2 * MUGSHOT_WIDTH, fit: 'cover', position: 'top' })
+// As tall as a mugshot's file is, which is taller than a wall stands anyone on a 1080 screen.
+const FIGURE_HEIGHT = 1100;
+
+// A picture whole, for the wall: cut back to the figure's own edges, so that the picture's
+// foot is the Sinner's feet and stands on the floor line, and its top is the top of them,
+// which is what the wall scales to their height.
+function toFigure(original) {
+  return sharp(original).trim()
+    .resize({ height: FIGURE_HEIGHT, withoutEnlargement: true })
     .webp({ quality: 80, effort: 4 }).toBuffer();
+}
+
+// One picture of every Sinner that has it, whole, by the Sinner's id: where the baked file
+// is beside the page, and its width over its height, which lets the wall hold the figure's
+// place before the picture has come. `urlOf` is where each Sinner's original is.
+async function bakeFigures(kind, sinners, urlOf) {
+  const dir = path.join(figureDir, kind);
+  const baked = await bakeImages(
+    `ptn figures, ${kind}`, dir,
+    sinners.filter(s => urlOf.has(s.id)).map(s => ({ name: s.id, url: urlOf.get(s.id), label: s.name })), toFigure,
+  );
+  const figureOf = new Map();
+  await Promise.all([...baked].map(async (id) => {
+    const { width, height } = await sharp(path.join(dir, `${id}.webp`)).metadata();
+    figureOf.set(id, { art: `${FIGURE_PATH}/${kind}/${id}.webp`, ratio: Math.round(width / height * 1000) / 1000 });
+  }));
+  return figureOf;
 }
 
 // One of every Sinner's subpages ('Attires', 'Gallery'), by the Sinner's own title. A Sinner
@@ -208,11 +229,14 @@ async function buildRoster() {
     // name a file: 'mr-fox', 'necresta-hella', '000'.
     const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     details.push({ id, ...parseSinnerDetail(named, title) });
+    // '162cm', '166', 'Approx. 160cm': the centimetres, for the wall to stand them at.
+    const height = Number(/\d+(\.\d+)?/.exec(named.Height ?? '')?.[0]);
     sinners.push({
       id,
       name: title,
       number: named.SinnerNo,
       rank: named.Rank,
+      ...(height ? { height } : {}),
       // 'Core Arcane' is how the wiki picks the tendency's badge with the core mark on it.
       // The tendency is the word after it.
       tendency: named.Roles.replace(/^Core /, ''),
@@ -233,13 +257,15 @@ async function buildRoster() {
   const galleries = await fetchSubpages(titles, 'Gallery');
   const artFiles = new Map(sinners.map(s => [s.id, parseSinnerArt(s.name, attires.get(s.name), galleries.get(s.name))]));
   const urlOf = await fetchFileUrls([...new Set([...artFiles.values()].flat().map(art => art.file))]);
+  // Where each Sinner's mugshot and original are on the wiki, for the bakes below.
+  const mugshotOf = new Map();
+  const originalOf = new Map();
   for (const detail of details) {
     detail.arts = artFiles.get(detail.id).filter(art => urlOf.has(art.file))
       .map(({ file, ...art }) => ({ ...art, url: urlOf.get(file) }));
-    const sinner = sinners.find(s => s.id === detail.id);
     const addressOf = kind => detail.arts.find(art => art.kind === kind)?.url;
-    if (addressOf('mugshot')) sinner.art = addressOf('mugshot');
-    if (addressOf('original')) sinner.portrait = addressOf('original');
+    if (addressOf('mugshot')) mugshotOf.set(detail.id, addressOf('mugshot'));
+    if (addressOf('original')) originalOf.set(detail.id, addressOf('original'));
   }
 
   // When each Sinner was first seen (ORDER_SINCE). Not worth the roster: without it the
@@ -258,18 +284,20 @@ async function buildRoster() {
     console.warn(`ptn: no first-seen days, so no newest-first order: ${err.message}`);
   }
 
+  // One set after another, not side by side: two at once is eight fetches at a time from
+  // the one wiki.
+  const figureOf = await bakeFigures('mugshot', sinners, mugshotOf);
+  const figureOriginalOf = await bakeFigures('original', sinners, originalOf);
   const baked = await bakeImages(
     'ptn mugshots', mugshotDir,
-    sinners.filter(s => s.art).map(s => ({ name: s.id, url: s.art, label: s.name })), toPlate,
+    sinners.filter(s => mugshotOf.has(s.id)).map(s => ({ name: s.id, url: mugshotOf.get(s.id), label: s.name })), toPlate,
   );
-  for (const s of sinners) if (baked.has(s.id)) s.art = `${MUGSHOT_PATH}/${s.id}.webp`;
-  // After the mugshots, not beside them: two sets at once is eight fetches at a time from
-  // the one wiki.
-  const bakedOriginals = await bakeImages(
-    'ptn originals', originalDir,
-    sinners.filter(s => s.portrait).map(s => ({ name: s.id, url: s.portrait, label: s.name })), toOriginalPlate,
-  );
-  for (const s of sinners) if (bakedOriginals.has(s.id)) s.portrait = `${ORIGINAL_PATH}/${s.id}.webp`;
+  for (const s of sinners) {
+    // The cut mugshot, which a Sinner's page still opens on, or the wiki's own file.
+    if (mugshotOf.has(s.id)) s.art = baked.has(s.id) ? `${MUGSHOT_PATH}/${s.id}.webp` : mugshotOf.get(s.id);
+    if (figureOf.has(s.id)) s.figure = figureOf.get(s.id);
+    if (figureOriginalOf.has(s.id)) s.figureOriginal = figureOriginalOf.get(s.id);
+  }
   // Nothing on a page dates the Sinner's release, so the order is rank and then name.
   sinners.sort((a, b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank) || a.name.localeCompare(b.name));
   return { sinners, details, unfinished };

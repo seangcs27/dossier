@@ -1,23 +1,433 @@
-// Path to Nowhere's pages (views/ptn.ts, views/ptn-detail.ts): what they need beyond the
-// rules they share with the Arknights grid and dossier in styles.scss.
+// Path to Nowhere's pages (views/ptn.ts, views/ptn-detail.ts). The roster is a world of its
+// own, the first game's to be one: MBCC's line-up room. The dossier is on the Arknights
+// dossier's parts still, and has only what it needs beyond the rules it shares with it.
+@use 'sass:math';
+@use 'sass:string';
 
-// ── The roster ──
+// ── The roster's world ──
+// A wall under flat light, ruled for height; ink for its rules, its type and the shell;
+// bone for what is printed on ink; and one red, kept for the Sinner being looked at. Slate
+// and not a paler wall by the owner's choice of the two a proof stood ten Sinners against:
+// the palest of them (Hecate, 000, Mr. Fox) keep their edges on it.
+$wall: #a3a598;
+$floor: #5d6059;
+$ink: #17181a;
+$ink-soft: #2e2f2b;   // secondary text on the wall, 5.6:1 on it
+$bone: #ecebe3;
+$bone-dim: #b4b3a8;
+$red: #b8141c;
 
-// The art is the mugshot, a standing figure cut out on transparency, about 440 by 1090:
-// narrower than the plate's 1:2 on four Sinners in five. Contained, as the Arknights busts
-// are, the whole figure showed between two bare strips, with a face too small to know.
-// Covering, it is as wide as the plate and its legs run off the foot, under the gradient
-// and the name. The 28 that are wider than 1:2 lose up to 9% off each side instead.
-//
-// The build bakes a mugshot already cut at the plate's foot (build-ptn-index.mjs), so for
-// most of them this now changes nothing. It still fits the wider ones, and a mugshot the
-// build could not fetch, which the card loads whole from the wiki.
-[data-view='ptn'] .op-avatar { object-fit: cover; }
+// The wall shows 0 to 210 cm over the top 86% of a row, and the floor, where the placards
+// stand, is the rest: so a row is this many centimetres tall, and everything on it is
+// placed in centimetres.
+$top-cm: 210;
+$band: 0.86;
+$row-cm: math.div($top-cm, $band);
 
-// The roster has the search box, and on a phone the count is inside it, as on the Arknights
-// grid: row 1 has no room for the pill beside the section link.
+// The rules, as one background a row tall: a line every 10 cm from 100 to 200, the fifties
+// heavier. Below a metre there is nobody's head to read off.
+@function wall-rules() {
+  $stops: '';
+  @for $i from 0 through 10 {
+    $cm: 200 - $i * 10;
+    $at: math.div($top-cm - $cm, $row-cm) * 100%;
+    $half: 0.5px;
+    $colour: 'var(--ptn-rule)';
+    @if $cm % 50 == 0 {
+      $half: 1px;
+      $colour: 'var(--ptn-rule-strong)';
+    }
+    $stops: $stops + ', transparent calc(#{$at} - #{$half}), #{$colour} calc(#{$at} - #{$half}), #{$colour} calc(#{$at} + #{$half}), transparent calc(#{$at} + #{$half})';
+  }
+  @return string.unquote('linear-gradient(to bottom#{$stops})');
+}
+
+// Their numerals, as a picture a row tall for the wall's left edge to be masked by, so that
+// they are drawn in the wall's own ink. A picture cannot load a font, so these are in the
+// reader's own narrow face whatever the placards come to be set in.
+@function wall-numerals() {
+  $text: '';
+  @for $i from 0 through 10 {
+    $cm: 200 - $i * 10;
+    $size: 6.5;
+    $weight: 400;
+    @if $cm % 50 == 0 {
+      $size: 8.5;
+      $weight: 700;
+    }
+    $text: $text + "%3Ctext x='18' y='#{$top-cm - $cm - 2}' font-size='#{$size}' font-weight='#{$weight}'%3E#{$cm}%3C/text%3E";
+  }
+  @return url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 #{$row-cm}' text-anchor='end' font-family='Bahnschrift, DIN Alternate, Arial Narrow, sans-serif'%3E#{$text}%3C/svg%3E");
+}
+
+// The shell, while the roster is showing: the sidebar, the topbar, the filter panel and the
+// tooltip take every colour from the site's surface variables, so restating those turns
+// them from Dossier's navy and gold to the bureau's ink and bone. The page under them is
+// the wall, and restates them again for itself below. (A Sinner's own page is not in this
+// world yet, and keeps Dossier's.)
+body[data-view='ptn'] {
+  --bg: #{$ink};
+  --surface: #1e2022;
+  --surface2: #2a2c2f;
+  --border: #3d4043;
+  --chip: #4d5053;
+  --edge: #8d8f88;
+  --text: #{$bone};
+  --muted: #a7a89f;
+  --dim: #cdccc3;
+  --accent: #{$bone};
+  --link: #{$bone};
+
+  // What stands on the wall is set in a placard's face: narrow capitals. The reader's own
+  // for now, until one is chosen to ship with the site.
+  --ptn-placard: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+
+  background: $wall;
+
+  // The page's scrollbar is on the wall, where the site's blue and the shell's bone are
+  // both lost: ink at rest, the red while it is being scrolled. Every other scroller here
+  // is on ink, and rests in the shell's grey.
+  --thumb: #{$ink};
+  &.is-scrolling { --thumb: #{$red}; }
+  *:not(.is-scrolling) { --thumb: var(--muted); }
+
+  ::selection { background: $red; color: $bone; }
+
+  // The site's gold, written out where it tints the tile of the game being shown.
+  .side-game.active .side-mark { background: rgb(236 235 227 / 10%); }
+
+  // The section link being shown: bone with ink on it, as a placard's reverse.
+  .sections-blob,
+  .sections-drop { background: $bone; }
+  .section-link.active { color: $ink; }
+
+  // The roster has the search box, and on a phone the count is inside it, as on the
+  // Arknights grid: row 1 has no room for the pill beside the section link.
+  @media (max-width: 640px) {
+    #count { display: none; }
+  }
+}
+
+[data-view='ptn'] #view {
+  --bg: #{$wall};
+  --surface2: #b2b4a7;
+  --border: #{$ink};
+  --chip: #{$ink};
+  --text: #{$ink};
+  --muted: #{$ink-soft};
+  --dim: #{$ink-soft};
+  --accent: #{$ink};
+
+  --ptn-rule: rgb(23 24 26 / 24%);
+  --ptn-rule-strong: rgb(23 24 26 / 52%);
+  // A row of the wall, floor and all. Everything on it is a share of this.
+  --ptn-row: clamp(430px, 68vh, 760px);
+  --ptn-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color: $ink;
+  padding-bottom: 64px;
+}
+
+// The two switches, on the wall: outlined in ink, the one that is on filled with it.
+[data-view='ptn'] .roster-bar {
+  padding: var(--sp-24) var(--sp-24) 0;
+
+  .seg {
+    border: 1.5px solid $ink;
+    border-radius: 0;
+  }
+
+  .seg-btn {
+    padding: var(--sp-6) var(--sp-12);
+    background: transparent;
+    color: $ink;
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-size: var(--fs-md);
+    letter-spacing: 0.08em;
+    transition: background-color 0.15s var(--ptn-ease), color 0.15s var(--ptn-ease);
+
+    & + .seg-btn { border-left: 1.5px solid $ink; }
+    &:hover { background: rgb(23 24 26 / 10%); color: $ink; }
+    &:focus-visible { outline: 2px solid $ink; outline-offset: 2px; }
+    &.on { background: $ink; color: $bone; }
+  }
+}
+
+// A line-up: its name and its head count, then its wall.
+.lineup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-4) var(--sp-16);
+  padding: 44px var(--sp-24) var(--sp-12);
+
+  h2 {
+    font-family: var(--ptn-placard);
+    font-stretch: 75%;
+    font-weight: 700;
+    font-size: clamp(34px, 4.6vw, 60px);
+    line-height: 0.95;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+}
+
+.roster-bar + .roster-page .lineup:first-child .lineup-head { padding-top: var(--sp-8); }
+
+// Where there is the width for both, the switches stand on the first line-up's own line,
+// at its far end, and not on a line of their own over it.
+@media (min-width: 900px) {
+  [data-view='ptn'] .roster-bar {
+    position: relative;
+    z-index: 1;
+    height: 0;
+    padding-top: 0;
+    transform: translateY(var(--sp-24));
+  }
+
+  .roster-bar + .roster-page .lineup:first-child .lineup-head {
+    min-height: 76px;
+    padding-top: var(--sp-16);
+    padding-right: 360px;
+  }
+}
+
+.lineup-count {
+  color: $ink-soft;
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+}
+
+// The wall. Every figure's box is a row tall, so the rules, the floor and the numerals,
+// which repeat a row at a time, fall under however many rows the figures wrap into.
+.wall {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  // The numerals' column, as wide as their picture comes out at this row's height.
+  --ptn-gutter: calc(var(--ptn-row) * #{math.div(20, $row-cm)});
+  padding: 0 var(--sp-24) 0 calc(var(--ptn-gutter) + var(--sp-12));
+  background:
+    linear-gradient(to bottom, transparent calc(#{$band * 100%} - 1.5px), #{$ink-soft} calc(#{$band * 100%} - 1.5px), #{$ink-soft} #{$band * 100%}, #{$floor} #{$band * 100%}),
+    wall-rules();
+  background-size: 100% var(--ptn-row);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--ptn-gutter);
+    background: $ink;
+    -webkit-mask: wall-numerals() left top / auto var(--ptn-row) repeat-y;
+            mask: wall-numerals() left top / auto var(--ptn-row) repeat-y;
+  }
+}
+
+// One Sinner: the figure over the floor line, the placard under it. Its neighbours stand a
+// little into its box, shoulder to shoulder; what reaches furthest is a blade or a sleeve.
+.suspect {
+  position: relative;
+  display: grid;
+  grid-template-rows: #{$band * 100}fr #{(1 - $band) * 100}fr;
+  justify-items: center;
+  height: var(--ptn-row);
+  min-width: 7.5rem;
+  margin-inline: calc(var(--ptn-row) * -0.006);
+  color: inherit;
+  text-decoration: none;
+  // The box is a row tall and a placard wide, far more wall than Sinner. Only the figure
+  // and the placard answer the pointer: the bare wall over a short one's head is nobody's
+  // to light or to press (the owner found the 200 line setting off whoever stood under it).
+  pointer-events: none;
+
+  &:hover,
+  &:focus-visible { z-index: 2; }
+  &:focus-visible { outline: 2px solid $ink; outline-offset: -4px; }
+}
+
+// The figure's place, held at its height from the first: outlined until its picture has
+// come, and for good where there is none.
+.stand {
+  position: relative;
+  align-self: end;
+  display: block;
+  outline: 1px dashed var(--ptn-rule);
+  outline-offset: -1px;
+  pointer-events: auto;
+
+  &.in { outline: 0; }
+  &.none { outline-color: var(--ptn-rule-strong); }
+
+  // Their height, read off the wall over their head, while they are the one looked at.
+  &::before {
+    content: attr(data-cm) ' cm';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    z-index: 3;
+    padding: 1px var(--sp-6);
+    background: $red;
+    color: $bone;
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-size: var(--fs-sm);
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity 0.18s var(--ptn-ease), transform 0.18s var(--ptn-ease);
+    pointer-events: none;
+  }
+
+  &:hover::before,
+  .suspect:focus-visible &::before {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  // Where the feet meet the floor.
+  &.in::after {
+    content: '';
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    bottom: -5px;
+    z-index: -1;
+    height: 12px;
+    background: radial-gradient(closest-side, rgb(0 0 0 / 42%), transparent);
+    filter: blur(3px);
+  }
+}
+
+.fig {
+  display: block;
+  width: auto;
+  height: calc(var(--ptn-row) * #{$band} * var(--cm) / #{$top-cm});
+  opacity: 0;
+  filter: drop-shadow(0 5px 7px rgb(23 24 26 / 26%));
+  transform-origin: 50% 100%;
+  transition: transform 0.22s var(--ptn-ease), opacity 0.22s var(--ptn-ease), filter 0.22s var(--ptn-ease);
+
+  .stand.in & { opacity: 1; }
+
+  // Nobody's picture: the outline of the place, as wide as a figure usually is, and why.
+  .stand.none & {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 0.4;
+    padding: var(--sp-8);
+    opacity: 1;
+    filter: none;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    text-align: center;
+  }
+}
+
+.stand.in:hover .fig,
+.suspect:focus-visible .stand.in .fig {
+  transform: translateY(-3px) scale(1.035);
+  filter: drop-shadow(0 12px 16px rgb(23 24 26 / 34%));
+}
+
+// The rest of the room falls back while one is looked at, where there is a pointer to
+// look with.
+@media (hover: hover) {
+  .wall:has(.stand:hover) .stand.in:not(:hover) .fig {
+    opacity: 0.5;
+    filter: saturate(0.55) drop-shadow(0 5px 7px rgb(23 24 26 / 18%));
+  }
+}
+
+// The placard: what a card printed, on the board a line-up holds. Number over name, the
+// rank beside both, then the tendency and libram (or, in order of arrival, the month).
+.plate {
+  align-self: start;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--sp-10);
+  align-items: center;
+  width: max-content;
+  max-width: calc(100% + 1.5rem);
+  margin-top: 7px;
+  padding: 5px 9px var(--sp-6);
+  background: $ink;
+  color: $bone;
+  font-family: var(--ptn-placard);
+  transition: background-color 0.18s var(--ptn-ease);
+  pointer-events: auto;
+
+  // Under the pointer on the figure or on the board itself, which is all of the box that
+  // answers it.
+  .suspect:hover &,
+  .suspect:focus-visible & { background: $red; }
+}
+
+.plate-no,
+.plate-kind {
+  font-stretch: 85%;
+  font-size: 10.5px;
+  color: $bone-dim;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.18s var(--ptn-ease);
+
+  .suspect:hover &,
+  .suspect:focus-visible & { color: $bone; }
+}
+
+.plate-no { letter-spacing: 0.1em; }
+
+.plate-kind {
+  grid-column: 1 / -1;
+  letter-spacing: 0.06em;
+}
+
+.plate-name {
+  grid-column: 1;
+  overflow: hidden;
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.plate-rank {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+}
+
+// A phone stands two or three to a row: a shorter wall, and a smaller board under each.
 @media (max-width: 640px) {
-  [data-view='ptn'] #count { display: none; }
+  [data-view='ptn'] #view { --ptn-row: clamp(300px, 44vh, 400px); }
+  [data-view='ptn'] .roster-bar { padding: var(--sp-16) var(--sp-12) 0; }
+  .lineup-head { padding: var(--sp-24) var(--sp-12) var(--sp-8); }
+
+  .wall {
+    padding-right: var(--sp-8);
+    padding-left: calc(var(--ptn-gutter) + var(--sp-6));
+  }
+
+  .suspect { min-width: 5.75rem; }
+
+  .plate {
+    column-gap: 7px;
+    padding: var(--sp-4) 7px 5px;
+  }
+
+  .plate-name { font-size: var(--fs-base); }
+  .plate-rank { font-size: var(--fs-3xl); }
 }
 
 // ── The dossier ──

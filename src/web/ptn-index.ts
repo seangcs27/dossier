@@ -2,9 +2,15 @@ import bundled from '../shared/generated/ptn/sinners.json';
 
 /**
  * One Path to Nowhere Sinner, baked by scripts/build-ptn-index.mjs from the head of the
- * Sinner's page on the Path to Nowhere wiki. No field is ever empty: the build leaves out a
- * page that is short of one.
+ * Sinner's page on the Path to Nowhere wiki. No required field is ever empty: the build
+ * leaves out a page that is short of one.
  */
+/** A Sinner whole, as the roster's wall stands them: the baked picture, cut to the figure. */
+export interface PtnFigure {
+  art: string;          // beside the page: 'ptn/figures/mugshot/hecate.webp'
+  ratio: number;        // its width over its height, to hold its place before it has loaded
+}
+
 export interface PtnSinner {
   id: string;           // the wiki page's title as a slug: 'hecate', 'mr-fox', 'necresta-hella'
   name: string;         // the page's title: 'Hecate', 'Mr. Fox', '000'
@@ -16,16 +22,18 @@ export interface PtnSinner {
   libram: string;       // the sin the game files the Sinner under, in its capitals: 'LIMBO', 'LOVE', …
   birthplace: string;   // as the file has it, redactions and all: 'Eastside', 'Syndicate', '■■', 'Unknown'
   tags: string[];       // the game's own: 'Core DMG', 'Skill DMG', 'Magic DMG'; [] where the wiki lists none
-  // The mugshot, a standing figure on transparency: the baked file beside the page
-  // ('ptn/mugshots/hecate.webp', 360 wide and cut at two widths), or its original's address
-  // on the wiki where the build could not fetch it. Absent where the wiki has no such file.
+  // In centimetres, which is what the wall scales a figure to. Every Sinner's file has one;
+  // optional because nothing but the wiki's typing makes it so.
+  height?: number;
+  // The mugshot cut at the knee, a Sinner's page's first picture: the baked file beside the
+  // page ('ptn/mugshots/hecate.webp', 360 wide and cut at two widths), or its original's
+  // address on the wiki where the build could not fetch it. Absent where the wiki has none.
   art?: string;
-  // The original illustration, a standing figure too: what a card shows where the roster is
-  // switched from mugshots to originals. The baked file beside the page
-  // ('ptn/originals/hecate.webp', 360 by 720), or its original's address on the wiki where
-  // the build could not fetch it, which the card asks the resizing proxy for (plateArtUrl).
-  // Absent for the two the wiki has none of.
-  portrait?: string;
+  // The mugshot whole and the original illustration whole, the wall's two pictures of a
+  // Sinner. Absent where the wiki has no such file (Pine has neither, Kisugi Ai no
+  // original) or the build could not fetch it.
+  figure?: PtnFigure;
+  figureOriginal?: PtnFigure;
   // The day the Sinner was first seen, '2026-10-02': their pictures' first upload to the
   // wiki or their first dated banner, whichever came first. Only where that is 2024 or
   // later, which is as far back as it can be believed (build-ptn-index.mjs, ORDER_SINCE):

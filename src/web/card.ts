@@ -73,7 +73,12 @@ export interface RosterOrder<T> extends RosterOption {
 export interface Roster<T> {
   items: T[];
   // `look` is the one of `looks` that is on, or '' on a roster that has none.
-  toCard: (item: T, look: string) => RosterCard;
+  toCard?: (item: T, look: string) => RosterCard;
+  // A page of the game's own in place of the cards, for a game whose roster is not a grid
+  // of them: handed the element to fill and the items in the order to show them, with the
+  // look and the order that are on. The count, the search box, the filter panel and the
+  // switches stay this file's. A roster has this or `toCard`.
+  draw?: (page: HTMLElement, items: T[], look: string, order: string) => void;
   // Two or more ways to draw the same cards, with a switch over the grid to choose between
   // them: a game whose own roster shows its cast in more than one kind of picture.
   looks?: { state: RosterState; options: RosterOption[] };
@@ -201,7 +206,7 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
         ${looks ? switchHtml('Card art', 'look', looks.options, look) : ''}
       </div>
     ` : ''}
-    <div id="grid"></div><div id="grid-end"></div>
+    ${roster.draw ? '<div class="roster-page"></div>' : '<div id="grid"></div><div id="grid-end"></div>'}
   `;
   // Either switch redraws the same cards its other way, and takes the focus with it.
   container.querySelector<HTMLElement>('.roster-bar')?.addEventListener('click', (ev) => {
@@ -213,13 +218,19 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
     deal(container, roster, items);
     container.querySelector<HTMLElement>(pickedLook ? `[data-look="${pickedLook}"]` : `[data-order="${pickedOrder}"]`)?.focus();
   });
+  if (roster.draw) {
+    roster.draw(container.querySelector<HTMLElement>('.roster-page')!, dealt, look, order?.id ?? '');
+    return;
+  }
+  const toCard = roster.toCard;
+  if (!toCard) return;
   const grid = document.getElementById('grid')!;
   const end = document.getElementById('grid-end')!;
   const cta = roster.cta ?? '';
   let shown = 0;
   const append = (): void => {
     const batch = document.createElement('template');
-    batch.innerHTML = dealt.slice(shown, shown += BATCH).map(item => buildCard(roster.toCard(item, look), cta)).join('');
+    batch.innerHTML = dealt.slice(shown, shown += BATCH).map(item => buildCard(toCard(item, look), cta)).join('');
     mountCardSpin(batch.content);
     grid.append(batch.content);
   };
