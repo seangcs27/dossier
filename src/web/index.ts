@@ -1,13 +1,17 @@
 import './styles.scss';
 import { applyRandomLogo } from './logo';
-import { currentRoute, goHome, onRouteChange } from './router';
+import { currentRoute, goHome, onRouteChange, type Route } from './router';
 import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
 import { mountEvents } from './views/events';
 import { mountEndfield } from './views/endfield';
 import { mountEndfieldDetail } from './views/endfield-detail';
+import { mountFgo } from './views/fgo';
+import { mountHolodori } from './views/holodori';
+import { mountPtn } from './views/ptn';
 import { mountTooltips } from './tooltip';
 import { mountScrollbars } from './scrollbar';
+import { markSection } from './sections';
 
 applyRandomLogo();
 mountTooltips();
@@ -15,33 +19,62 @@ mountScrollbars();
 
 const view = document.getElementById('view')!;
 const operatorsLink = document.getElementById('nav-operators') as HTMLAnchorElement;
+const operatorsLabel = document.getElementById('nav-operators-label')!;
 const eventsLink = document.getElementById('nav-events')!;
-const arknightsLink = document.getElementById('nav-arknights')!;
-const endfieldLink = document.getElementById('nav-endfield')!;
 const sideToggle = document.getElementById('side-toggle')!;
+
+// The games: where each one's roster is, and its word for its cast, which is what the
+// section link that leads there is called. A game's tile in the sidebar is #nav-<its name
+// here>.
+const GAMES = {
+  arknights: { roster: '#/', cast: 'Operators' },
+  endfield: { roster: '#/endfield', cast: 'Operators' },
+  ptn: { roster: '#/ptn', cast: 'Sinners' },
+  holodori: { roster: '#/holodori', cast: 'Holomems' },
+  fgo: { roster: '#/fgo', cast: 'Servants' },
+};
+type Game = keyof typeof GAMES;
+
+// The game a page belongs to. Whatever is not another game's is Arknights', as it was
+// before there were others, so a link made then still lands where it did.
+function gameOf(page: Route['view']): Game {
+  if (page === 'endfield' || page === 'endfield-detail') return 'endfield';
+  if (page === 'ptn' || page === 'holodori' || page === 'fgo') return page;
+  return 'arknights';
+}
 
 function dispatch(): void {
   const route = currentRoute();
-  const endfield = route.view === 'endfield' || route.view === 'endfield-detail';
+  const game = gameOf(route.view);
   // Which page is showing, for the few rules that differ by it (the phone's count).
   document.body.dataset.view = route.view;
   setDrawer(false);
-  arknightsLink.classList.toggle('active', !endfield);
-  endfieldLink.classList.toggle('active', endfield);
-  // Operators is the roster of the game being shown, and stays lit on a dossier, which is
-  // one of its operators. The schedule is Arknights'; the other game has none to link to.
-  operatorsLink.href = endfield ? '#/endfield' : '#/';
+  for (const name of Object.keys(GAMES)) {
+    document.getElementById(`nav-${name}`)!.classList.toggle('active', name === game);
+  }
+  // The first section link is the roster of the game being shown, under that game's word
+  // for its cast, and stays lit on a dossier, which is one of them. The schedule is
+  // Arknights'; the other games have none to link to.
+  operatorsLink.href = GAMES[game].roster;
+  operatorsLabel.textContent = GAMES[game].cast;
   setCurrent(operatorsLink, route.view !== 'events');
   setCurrent(eventsLink, route.view === 'events');
-  eventsLink.hidden = endfield;
+  eventsLink.hidden = game !== 'arknights';
+  markSection(route.view === 'events' ? eventsLink : operatorsLink);
   if (route.view === 'detail') {
     void mountDetail(view, route.id);
   } else if (route.view === 'events') {
     mountEvents(view, route.tab);
   } else if (route.view === 'endfield-detail') {
     mountEndfieldDetail(view, route.id);
-  } else if (endfield) {
+  } else if (route.view === 'endfield') {
     mountEndfield(view);
+  } else if (route.view === 'ptn') {
+    mountPtn(view);
+  } else if (route.view === 'holodori') {
+    mountHolodori(view);
+  } else if (route.view === 'fgo') {
+    mountFgo(view);
   } else {
     mountGrid(view);
   }

@@ -3,21 +3,29 @@ export type Route =
   | { view: 'detail'; id: string }
   | { view: 'events'; tab: EventsTab }
   | { view: 'endfield' }
-  | { view: 'endfield-detail'; id: string };
+  | { view: 'endfield-detail'; id: string }
+  | { view: RosterGame };
 
 // The Events page's tabs: #/events is the list of events, and the other two hang off it.
 export type EventsTab = 'list' | 'pools' | 'calendar';
+
+// The games that are a roster and nothing else so far: one page each, at '#/' and the
+// game's name.
+const ROSTER_GAMES = ['ptn', 'holodori', 'fgo'] as const;
+type RosterGame = (typeof ROSTER_GAMES)[number];
 
 export function parseHash(hash: string): Route {
   const m = /^#\/op\/([^/]+)$/.exec(hash);
   if (m && m[1]) return { view: 'detail', id: decodeURIComponent(m[1]) };
   const ev = /^#\/events(?:\/(pools|calendar))?$/.exec(hash);
   if (ev) return { view: 'events', tab: (ev[1] ?? 'list') as EventsTab };
-  // The second game. Everything outside this prefix is Arknights', as it was before there
-  // were two, so links made then still land where they did.
+  // The other games, each under its own prefix. Everything outside those is Arknights', as
+  // it was before there were others, so links made then still land where they did.
   if (hash === '#/endfield') return { view: 'endfield' };
   const ef = /^#\/endfield\/op\/([^/]+)$/.exec(hash);
   if (ef) return { view: 'endfield-detail', id: decodeURIComponent(ef[1]) };
+  const roster = ROSTER_GAMES.find(game => hash === `#/${game}`);
+  if (roster) return { view: roster };
   return { view: 'grid' };
 }
 

@@ -2,8 +2,11 @@
 // (plain, no suffix — also what manifest.json and the static fallback markup use)
 // and the 6 expressions from her April Fools 2026 emoticon set (see design/source/).
 // Picking one at random per page load gives the header logo and favicon some
-// variety without needing a build-time choice. Hovering the header logo rolls again.
+// variety without needing a build-time choice. Hovering the header logo rolls again, and
+// goes on rolling for as long as the pointer rests on it.
 const VARIANT_COUNT = 7;
+// How often, while it rests there.
+const HOVER_ROLL_MS = 1000;
 
 let current = 0;
 
@@ -28,5 +31,16 @@ function rollLogo(): void {
 
 export function applyRandomLogo(): void {
   rollLogo();
-  document.querySelector('.logo-mark')?.addEventListener('mouseenter', rollLogo);
+  const logoMark = document.querySelector<HTMLImageElement>('.logo-mark');
+  logoMark?.addEventListener('mouseenter', rollLogo);
+
+  // A mouse only: a finger's tap arrives the same way and never leaves, so on a phone the
+  // face would go on changing by itself until something else was touched.
+  let rolling: number | undefined;
+  logoMark?.addEventListener('pointerenter', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    window.clearInterval(rolling);
+    rolling = window.setInterval(rollLogo, HOVER_ROLL_MS);
+  });
+  logoMark?.addEventListener('pointerleave', () => window.clearInterval(rolling));
 }

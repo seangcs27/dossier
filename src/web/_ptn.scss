@@ -1,0 +1,13 @@
+// Path to Nowhere's roster page (views/ptn.ts): what its cards need beyond the rules they
+// share with the Arknights grid in styles.scss.
+
+// The art is the mugshot, a standing figure cut out on transparency, about 440 by 1090:
+// narrower than the plate's 1:2 on four Sinners in five. Contained, as the Arknights busts
+// are, the whole figure showed between two bare strips, with a face too small to know.
+// Covering, it is as wide as the plate and its legs run off the foot, under the gradient
+// and the name. The 28 that are wider than 1:2 lose up to 9% off each side instead.
+//
+// The build bakes a mugshot already cut at the plate's foot (build-ptn-index.mjs), so for
+// most of them this now changes nothing. It still fits the wider ones, and a mugshot the
+// build could not fetch, which the card loads whole from the wiki.
+[data-view='ptn'] .op-avatar { object-fit: cover; }

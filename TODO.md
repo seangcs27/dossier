@@ -5,30 +5,104 @@ picking one up later doesn't need re-investigation.
 
 ## Planned
 
+### Path to Nowhere, hololive Dreams, Fate/Grand Order — what is left
+
+Each has a sidebar tile and a roster and nothing else (`#/ptn` 144 Sinners, `#/holodori` 54
+holomems, `#/fgo` 470 Servants); CLAUDE.md, "Roster-only games", has how. They are the rest
+of the owner's plan of 20 September 2026 (a Hololive section beside the game is the one part
+of it not started). PtN's and FGO's card art is baked (143 mugshots, 6.1 MB; 470 figures,
+5.3 MB; the owner approved the downloads on 11 October 2026). Not built yet:
+
+- **Emblems for the three tiles**, which show initials (PN, HD, FG). Not part of what was
+  approved. Candidates found, none downloaded and none looked at:
+  - PtN: `File:PtN Logo.png` (2416x1459, 405 KB, likely the wordmark), `File:Site-logo.png`
+    (137x137, 31 KB, the wiki's own), `File:MP Icon.png` (58x50, 1.7 KB), all on the PtN
+    wiki. No file there is named for the MBCC's crest, which would be the counterpart of
+    Rhodes Island's.
+  - FGO: the Fandom wiki's `File:Chaldea Security Organization Logo.png` (2280x2281, 86 KB)
+    or `File:Chaldea Security Logo.png` (301x303, 19 KB); Wikimedia Commons'
+    `File:Fate GO logo.svg` (the wordmark, 3.4 times as wide as it is tall).
+  - hololive Dreams: Commons' `File:Hololive 2026 logo triangle.svg` (1 KB; hololive's mark,
+    not the game's, and the one a Hololive section would want), or the game's own icon
+    (`hololive-dreams.com/favicon.svg`, 52 KB), which its terms do not license.
+- **Search, filters, a dossier page** for each. What the indexes already carry for a filter
+  panel: PtN's rank, tendency (6), libram (16) and tags (47); hololive Dreams' branch (4),
+  group (15) and debut year; FGO's rarity, class (17), attribute (5), alignment and JP only.
+  PtN's birthplace would need folding first (`WhiteSands Region` beside `WhiteSands`, and
+  four ways of saying unknown).
+- **Credit on the site itself.** Atlas Academy's data is ODC-BY 1.0, which asks for credit
+  where the data is used. The README credits every source; the site has no page that does.
+- **hololive Dreams has no art.** The game's assets are encrypted and its terms forbid
+  extracted ones. HolodoriDB's dump is unofficial and unlicensed, though what is baked from
+  it (names, groups, birthdays, debuts) the official site also publishes; the owner was
+  told so on 11 October 2026 and kept the roster. Fan art by the artist's permission is the one clearly allowed
+  source of pictures. Short of pictures: the `Character` table has five image colours per
+  talent, which could tint the plate (that needs a colour slot in `card.ts`).
+- **What else the sources have**, for later passes.
+  - hololive Dreams: 216 songs with four charts each, 192 cards (where the game's rarity
+    is, ★3 to ★5), 200 costumes, 23 gacha pools, stories. The dump includes rows not yet
+    released, so anything dated has to be filtered by its start time. The eight graduated
+    talents are in the table and left out.
+  - FGO: gender, 107 traits, ATK and HP, costumes, later ascensions' art, and a flag on 57
+    Servants that looks like the welfare set (not verified).
+  - PtN: gender, date of birth, height, case files, voice actors, the "Core" mark on 35
+    tendencies, the ten reforged Sinners, and badges for tendency and libram (there is no
+    `Umbra Icon.png`: the wiki uses the Corebreak one for it).
+- **PtN ids are page-title slugs**, so a page the wiki renames changes its id. `pageid`
+  would survive that and is opaque; the game's own ids are in `gilmarion/PtNData` for 105 of
+  the 144. It matters once a dossier's address is built from the id.
+- **Two FGO cards cannot be told apart** but by number and picture: Kishinami Hakuno, No.
+  424 and No. 425.
+- **Art the bake does not have.** Pine has no mugshot on the PtN wiki, and its card shows a
+  "P". FGO's figures are the first ascension's; the later ones are on the same host
+  (`@1`, `@2`). A picture redrawn at its source never reaches the site, since baked files
+  are kept: delete `ptn/mugshots/` or `fgo/figures/` to fetch them again.
+- **The drawer shows the short names** (PtN, Holodori, FGO) where it has room for the full
+  ones.
+
+### Every change of hash mounts its view twice
+
+`onRouteChange` (`router.ts`) listens to both `hashchange` and `popstate`, and a change of
+hash fires both, `popstate` first. So `dispatch()` runs twice per navigation: the grid is
+built twice, a dossier mounted twice. Seen on 11 October 2026, when the second run
+cancelled the section links' blob as it set off; `sections.ts` now only re-places the fill
+when called for the link already marked. Nothing else is known to break, but every view was
+written as if it mounted once. `popstate` is there for Back and Forward across `goHome()`,
+which changes the address through the history API and fires no `hashchange`. Skipping a
+route equal to the one just dispatched would make it once.
+
 ### Arknights: Endfield — what is left
 
-The second game has a sidebar tile (Endfield Industries' emblem) and a roster (`#/endfield`,
-33 operators on the Arknights card), baked from `endfield.wiki.gg`'s `Operators` table. That
-is the start, and all of it. Not built yet, roughly in the order worth doing:
+The second game has a sidebar tile (Endfield Industries' emblem), a roster (`#/endfield`, 33
+operators on the Arknights card, with name search and a filter panel for class, element,
+weapon, rarity and faction) and a first dossier page (`#/endfield/op/<id>`: splash art, name,
+class / element / weapon, quote, the profile facts, tags), all baked from `endfield.wiki.gg`.
+CLAUDE.md has how. Not built yet, roughly in the order worth doing:
 
-- **A dossier page.** The cards open nothing. The same table already has each operator's
-  quote, expertise, hobbies, gift preference, birthday and gender, and names a 2048px splash
-  (2-4 MB PNG, so it has to be baked smaller or resized on the way) and a 900px banner.
-  Skills, talents and potentials are not in any Cargo table: they are in each page's
-  wikitext, as on the Arknights wiki, and would need parsing like `scripts/lib/wiki-text.mjs`.
-  The wiki's other tables that could feed it: `Weapons`, `WeaponSkills`, `Gears`, `GearSets`,
-  `BaseSkills`, `AbilityMatrixUpgrades`.
-- **Search and filters.** The topbar's are Arknights' and are hidden on this page. Class (6),
-  element (5), weapon (5), rarity (3) and faction (9) are all in the index.
-- **Glyphs.** Class, element and weapon are words on the card; the wiki has icons for them
-  that the build does not fetch.
+- **The dossier's sections from the payload.** The build already bakes
+  `endfield/operator-details/<id>.json` for all 33 (the rest of the file, attributes at six
+  levels, potentials, skills with twelve ranks, talents, base skills) and `endfield-index.ts`
+  has its types and `fetchEndfieldOperator`, but nothing reads either: the page shows only
+  what the roster index has. `views/endfield-detail.ts` builds its body a function per
+  section, so these are appended.
+- **Costs.** Promotions, skill ranks, talents and base skills each list items and counts on
+  the page; the parser leaves them there. They need the wiki's `Items` table and its icons.
 - **Order.** Rarity, then name. The `Operators` table has no release date; `Versions` and
   `Banners` might date them.
-- **Two copies of the card's markup**, `grid.ts` and `views/endfield.ts`. Sharing one template
-  meant rewriting the Arknights card's builder, which was not broken; worth doing if a third
-  game or a second change to the plate comes.
+- **Four cards elide their element and weapon line at a phone's two columns**, with no
+  tooltip to read it in full: the line's `data-tip` is the operator's id alone.
+- **Left on the wiki page by choice:** its opening paragraph, "Additional Info", the weapons
+  the game recommends, the voice actors. The wiki's other tables that could feed a later
+  pass: `Weapons`, `WeaponSkills`, `Gears`, `GearSets`, `BaseSkills`, `AbilityMatrixUpgrades`.
+- **Three copies of the card's markup**: `grid.ts`, `views/endfield.ts`, and `card.ts`, the
+  one the roster-only games share. Folding the first two into the third means rewriting two
+  builders that are not broken; the Arknights card has slots the shared one lacks (the
+  portrait's fallback chain, the mode badge, the faction logo on the back, the link).
+- **Two copies of the search box's and filter panel's handling**, `grid.ts` and
+  `views/endfield.ts`, about 45 lines.
 - **Three copies of the build scripts' fetch helpers** (`timedFetch`, `wiki`): the operator,
-  event and Endfield scripts each carry their own.
+  event and Endfield scripts each carry their own. The newer scripts share
+  `scripts/lib/fetch.mjs`.
 
 ### Global schedule — what is left
 
@@ -61,8 +135,10 @@ the places recorded in `scripts/lib/mode-order.mjs`. What is left:
 - **Seven wiki release dates disagree with the release order.** Skadi, Dur-nar, Breeze,
   Broca, Purestream, Chiave and Raidian carry a wiki date weeks or months later than the
   operators ordered after them (the wiki's "debut event" for them is a later one). Nothing
-  shows it: the date is only the sort's fallback, and all seven have an order. Mayer is the
-  one operator with no order, and sorts by its date, correctly, among the launch operators.
+  shows it: the date is only the sort's fallback, and all seven have an order. Mayer had no
+  order here until October 2026, and then Scene had none: the build was giving Timeslot,
+  which Sanity Gone has not numbered, the ordinal of whichever entry came after it. Fixed;
+  an operator with no order now is one Sanity Gone has not numbered, and sorts by its date.
 
 ### The filter blob — its animation unseen by me
 

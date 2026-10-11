@@ -1,0 +1,22 @@
+// Fate/Grand Order's roster page (views/fgo.ts): what its cards need beyond the rules they
+// share with the Arknights grid in styles.scss.
+
+// The art is the figure the game stands in a party slot, 148x375, where an Arknights
+// portrait is the plate's own 1:2. Contained, as those are, it would stand at four fifths
+// of the plate's width between two bare strips. Covering, it fills the plate and loses its
+// lowest fifth, which is under the gradient and the name.
+//
+// Not anchored to the top, as the shared rule has it: the figure's four corners are cut, 13px
+// across and 14 down, and at the top of the plate the two upper cuts showed as dark notches.
+// The figure overhangs the plate by 0.534 of the plate's width and its first 14 rows are
+// 0.095 of that width, so 18% of the overhang lifts exactly those rows out of sight, at
+// any card size.
+//
+// The build bakes a figure already cut to exactly this (build-fgo-index.mjs, whose LIFT is
+// the 18% here: change one and change the other), so on a baked figure these two lines
+// change nothing. They are for a figure the build could not fetch, which the card loads
+// whole from Atlas Academy.
+[data-view='fgo'] .op-avatar {
+  object-fit: cover;
+  object-position: 50% 18%;
+}

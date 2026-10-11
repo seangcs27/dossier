@@ -37,6 +37,10 @@ from a same-origin file (~100 ms) instead of a third-party API round trip. See
   live, what has been announced, and what CN has already run with a predicted Global date
   (the CN run plus the recent gap between the two servers, about 160 days), as two lists and
   a month calendar, modelled on [Arkpedia](https://www.arkpedia.net/schedule)'s
+- **Other games**, a tile each on the sidebar — Arknights: Endfield at `#/endfield` (a
+  roster with name search and filters, and a first dossier page per operator), and a roster
+  each for Path to Nowhere (`#/ptn`), hololive Dreams (`#/holodori`) and Fate/Grand Order
+  (`#/fgo`)
 - **Hash routing** — back/forward navigation and refresh-safe deep links, no server config needed
 
 ### Browser extension
@@ -73,7 +77,10 @@ the deploy workflow keeps the published site current as new operators release.
 | [PuppiizSunniiz/Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images) | Avatars, class icons, skill icons, full illustrations |
 | [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) | 180×360 bust portraits for grid cards |
 | [Wikimedia Commons](https://commons.wikimedia.org) | The four crossover logos kept in `scripts/collab-logos/` (Persona 3 Reload, Monster Hunter, Ave Mujica, Delicious in Dungeon) |
-| [endfield.wiki.gg](https://endfield.wiki.gg) | Arknights: Endfield's roster and card art (Cargo API), read by `scripts/build-endfield-index.mjs` |
+| [endfield.wiki.gg](https://endfield.wiki.gg) | Arknights: Endfield's roster, card art, splash art, glyphs and each operator's page (Cargo and MediaWiki APIs), read by `scripts/build-endfield-index.mjs` |
+| [pathtonowhere.wiki.gg](https://pathtonowhere.wiki.gg) | Path to Nowhere's roster, from each Sinner's page (MediaWiki API), and the mugshots its cards show, read by `scripts/build-ptn-index.mjs` |
+| [HolodoriDB](https://github.com/HolodoriDB/holodori-db-eng-diff) | hololive Dreams' roster, from a community dump of the game's master data, read by `scripts/build-holodori-index.mjs`; text only, no artwork |
+| [Atlas Academy](https://atlasacademy.io) | Fate/Grand Order's roster, from its export API (data under [ODC-BY 1.0](https://opendatacommons.org/licenses/by/1-0/)), and the party figures its cards show, from its file host, read by `scripts/build-fgo-index.mjs` |
 
 Every source except HellaAPI is supplemental: if one is unreachable the build logs a
 warning and degrades rather than failing. All network calls carry a 20 s timeout.
@@ -176,7 +183,9 @@ dossier/
 ## Attribution
 
 All Arknights game data and artwork is the property of **Hypergryph / Yostar**, and
-Arknights: Endfield's of **Hypergryph / Gryphline**. This is a
+Arknights: Endfield's of **Hypergryph / Gryphline**. Path to Nowhere's is the property of
+**AISNO Games**; hololive Dreams' of **COVER Corporation** and **QualiArts**; Fate/Grand
+Order's of **TYPE-MOON / FGO PROJECT**. This is a
 non-commercial fan reference built on community-maintained data mirrors (credited above),
 and carries no affiliation or endorsement. Assets will be removed on request.
 

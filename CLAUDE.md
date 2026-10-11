@@ -8,8 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **Browser extension** (Firefox/Chrome, Manifest V3) — operator lookup in a popup
 2. **Web SPA** — operator search and detail view, plus the Global event schedule,
-   deployable to GitHub Pages. It also carries a second game, **Arknights: Endfield**, so
-   far as a roster only (see "Endfield" below); the extension is Arknights alone.
+   deployable to GitHub Pages. It also carries four more games: **Arknights: Endfield**, as
+   a roster and a first dossier page (see "Endfield" below), and **Path to Nowhere**,
+   **hololive Dreams** and **Fate/Grand Order**, each as a roster and nothing else yet (see
+   "Roster-only games"); the extension is Arknights alone.
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
@@ -39,10 +41,12 @@ npm run design       # build:web, then regenerate design/components/*.html previ
 npm run clean        # Remove ./dist/
 ```
 
-`build:index` is four scripts: `build:index:operators` (the index, the per-operator detail
+`build:index` is seven scripts: `build:index:operators` (the index, the per-operator detail
 payloads, the branch icons), `build:index:ranges` (`ranges.json`), `build:index:events`
-(`events.json` and the event banners) and `build:index:endfield` (the Endfield roster and
-its portraits). All run under `node --no-network-family-autoselection`.
+(`events.json` and the event banners), `build:index:endfield` (the Endfield roster, its
+portraits, splash art and glyphs, and a payload per operator), and `build:index:ptn`,
+`build:index:holodori` and `build:index:fgo` (a roster each, and for the first and the last
+its card art). All run under `node --no-network-family-autoselection`.
 
 **Building behind an HTTP proxy** (sandboxes, some corporate networks): the build scripts
 fetch with Node's built-in `fetch`, which — unlike `curl` and `git` — **ignores
@@ -76,8 +80,15 @@ scripts/
   build-operator-index.mjs   ← operators.json + operator-details/ + branch-icons/ + portraits/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
-  build-endfield-index.mjs   ← endfield/operators.json + endfield/portraits/
+  build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
+  build-ptn-index.mjs        ← ptn/sinners.json + ptn/mugshots/
+  build-holodori-index.mjs   ← holodori/characters.json
+  build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
+  lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
+  lib/endfield-page.mjs      ← reads an endfield.wiki.gg operator page into its payload
+  lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
+  lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
 
@@ -113,6 +124,14 @@ src/
       event-banners/<stem>.webp  ← those events' banners at 960px, copied as static files
       endfield/operators.json    ← the Endfield roster (33), bundled into the web target
       endfield/portraits/<id>.webp  ← its card art, 180x360, copied as static files
+      endfield/splash/<id>.webp     ← each operator's full illustration at 1024px, copied as static files
+      endfield/icons/<kind>-<name>.webp  ← 16 class, element and weapon glyphs, 64px
+      endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
+      ptn/sinners.json           ← Path to Nowhere's roster (144), bundled into the web target
+      ptn/mugshots/<id>.webp     ← its card art (143), 360 wide and cut at two widths, copied as static files
+      holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
+      fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
+      fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
     types/
       operator.ts   ← Operator, OperatorData, Rarity, Profession, Position, …
       index.ts      ← re-export barrel
@@ -134,11 +153,17 @@ src/
 
   web/              ← SPA
     index.ts        ← app entry: random logo, hash-router dispatch (grid, detail, events,
-                      endfield), which game the sidebar and which page the section links
-                      mark, and the phone's games drawer
+                      the other games' pages), the table of games (GAMES: each one's
+                      roster and its word for its cast), which game the sidebar and which
+                      page the section links mark, and the phone's games drawer
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
-                      #/events/calendar , #/endfield)
-    logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, and again on hover
+                      #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
+                      #/holodori , #/fgo)
+    card.ts         ← the card and the page of a game that is a roster only: RosterCard, mountRoster
+    logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, again on hover, and
+                      then once a second for as long as a mouse rests on the logo
+    sections.ts     ← the fill behind the section link being shown, and its move from one
+                      link to the other as a drop with a tail (markSection)
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
@@ -147,13 +172,20 @@ src/
     icons.ts        ← inline SVG glyphs for the detail page (stats, skill meta, elite ranks)
     operator-index.ts  ← grid data store: getOperators/filterOps/sortOps/subclassesFor/allTags
     event-index.ts  ← schedule data store: getEvents/getPools/lagDays, and the GameEvent / GamePool types
-    endfield-index.ts  ← Endfield data store: getEndfieldOperators, and the EndfieldOperator type
-    styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events
+    endfield-index.ts  ← Endfield data store: getEndfieldOperators, fetchEndfieldOperator, and
+                         the roster entry's and the payload's types
+    ptn-index.ts / holodori-index.ts / fgo-index.ts  ← each roster-only game's data store and entry type
+    styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events; loads
+                      the games' own partials last
+    _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
+    _ptn.scss / _fgo.scss  ← how those two games' art sits on the plate
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
       events.ts     ← the Global event schedule, after Arkpedia's (see below)
-      endfield.ts   ← the Endfield roster, on the Arknights card (see below)
+      endfield.ts   ← the Endfield roster, on the Arknights card, with its search and filters (see below)
+      endfield-detail.ts  ← the Endfield dossier (see below)
+      ptn.ts / holodori.ts / fgo.ts  ← the roster-only games' pages: each fills card.ts's slots
     index.html      ← markup shell; links styles.css
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
@@ -164,7 +196,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/mugshots/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -263,6 +295,8 @@ operatorAvatarUrl(id)                      // square crop      — Arknight-Imag
 operatorPortraitUrl(id, '1' | '2')         // 180x360 bust     — yuanyan3060 CDN
 operatorPortraitLocalUrl(id)               // the same bust, bundle-relative portraits/ WebP
 endfieldPortraitUrl(id)                    // an Endfield operator's bust, bundle-relative endfield/portraits/
+endfieldSplashUrl(id)                      // the same operator's full illustration, bundle-relative endfield/splash/
+endfieldIconUrl(kind, name)                // an Endfield class, element or weapon glyph, bundle-relative endfield/icons/
 factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — a mask; takes any faction id
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
@@ -395,7 +429,10 @@ minutes, twice, before this).
   batched requests — the wiki answers a page-by-page crawl with a 429 after about a dozen —
   `scripts/lib/wiki-text.mjs` parses them and converts wiki markup to the game's, and
   `applyWikiText` fills in only what is still Chinese, and only on an exact elite/potential
-  match. Pages are matched by the game id in the infobox, not the name ("Viy" is Вий). The
+  match. A page is read without its editors' comments, as the wiki reads it: a new operator's
+  page keeps the untranslated Chinese in one where the English is to go, and taken as text
+  it came out on the site inside its `<!-- -->` markers (de Toledo's and Homebound's skills
+  did). Pages are matched by the game id in the infobox, not the name ("Viy" is Вий). The
   handbook comes from two more places on the same wiki: the `OperatorFiles` table answers
   Basic Info and the Physical Exam line by line, and each operator's `/File` subpage holds
   the prose files — in English only where someone has translated them (Aphrissa in full, a
@@ -411,7 +448,10 @@ minutes, twice, before this).
   can't date at all, so it's the **preferred** sort signal at runtime; `releaseDate` is the
   fallback, not the reverse. The asset URL is content-hashed and changes on every deploy,
   so it's discovered live by chasing page → `OperatorList.[hash].js` →
-  `operators-index.json.[hash].js` rather than hardcoded.
+  `operators-index.json.[hash].js` rather than hardcoded. An operator Sanity Gone has not
+  numbered yet has no `releaseOrder` in its entry, so the pattern that reads one stays
+  inside the entry's own braces: left free to run on, it gave Timeslot the next entry's
+  ordinal (Mayer's 57, then Scene's 148) and left that operator with none.
 - **PuppiizSunniiz/AN-EN-Tags** — community translations applied to CN-only operators'
   baked payloads: `tl-skills.json` / `tl-talents.json` (Ace), `puppiiz/riic_data.json`
   (RIIC buffs, keyed by `buffId`), `tl-potential.json` (a keyword substitution table —
@@ -471,9 +511,11 @@ variables and does not persist across popup close/reopen.
 ## Web SPA (`src/web/`)
 
 Vanilla TS, no framework. Hash-routed: `#/` shows the operator grid; `#/op/<id>` shows the
-operator dossier; `#/events` shows the Global event schedule; `#/endfield` shows the second
-game's roster. Every link to `#/` (the wordmark, the Arknights tile, Operators, a
-breadcrumb) is taken over on a plain click to land on the bare URL instead (`index.ts`).
+operator dossier; `#/events` shows the Global event schedule; `#/endfield` and
+`#/endfield/op/<id>` are the second game's roster and dossier; `#/ptn`, `#/holodori` and
+`#/fgo` are the rosters of the three games that have nothing else yet. Every link to `#/`
+(the wordmark, the Arknights tile, Operators, a breadcrumb) is taken over on a plain click
+to land on the bare URL instead (`index.ts`).
 
 **The sidebar** (`.sidebar`, in `index.html`) lists the games, one tile each, down the
 window's left edge. It is fixed, and `body` is padded to clear it (`--side-w`), so nothing in
@@ -482,8 +524,12 @@ the tile's colour (金藍, the text colour under the pointer, the accent's gold 
 showing): Rhodes Island's triangle for Arknights and Endfield Industries' for Endfield, from
 the two wikis' `File:Rhodes_Island.png` and `File:Endfield_Industries.png`, baked once to
 128px WebP in `icons/games/` (alpha times luminance, so the tower's black detail is cut out,
-then white). Everything outside the `#/endfield` prefix is Arknights', so a link made before
-there were two games still lands where it did.
+then white). The three games after them (PtN, Holodori, FGO, the owner's names for them)
+have no emblem yet and show two initials on the tile, as the first two did before theirs.
+Which game a page belongs to is `gameOf()` in `index.ts`, by the route: everything that is
+not another game's is Arknights', so a link made before there were others still lands where
+it did. `GAMES` beside it holds each game's roster and its word for its cast; a game's tile
+is `#nav-<its name there>`.
 
 **On a phone (640px and under) the sidebar is a drawer**, since a rail would cost the grid a
 column (it was a bar along the window's foot before, which the owner found was not a sidebar
@@ -496,9 +542,28 @@ is out the topbar and the page are `inert`. Like the filter panel it animates wh
 
 **The section links** (`.sections`, at the topbar's right end on every page) are the game's
 own pages as a segmented pair: Operators and Events, the one showing filled in 群青. They
-replaced a lone Events link, from which the only way back was the wordmark. Operators goes to
-the roster of whichever game is showing (`#/` or `#/endfield`) and stays lit on a dossier;
-Events is Arknights' alone and hides on Endfield. On a phone they drop their glyphs.
+replaced a lone Events link, from which the only way back was the wordmark. The first goes
+to the roster of whichever game is showing and is named for that game's cast (Operators,
+Sinners, Holomems, Servants: `GAMES` in `index.ts`); it stays lit on a dossier. Events is
+Arknights' alone and hides on the other games. On a phone they drop their glyphs.
+
+**The fill travels between the two as a drop of water** (`sections.ts`; the owner's ask:
+"a water drop or blob moving to another"). It is not the link's own background: a blob
+(`.sections-blob`) sits under the link being shown, in a layer of its own under the links
+(`.sections-goo`), and on a change of section it goes to the other link over 520 ms, its
+front edge setting off first so that it draws out on the way, trailing a thinner tail
+(`.sections-drop`) that it pulls in after it. The layer wears a second goo filter,
+`#goo-drop` in `index.html` (the filter panel's blur and cut, with no rim and a blur of 3,
+since a wider one would cut the tail away), which is what tapers the tail into the blob.
+The move is written out as 25 keyframes for each of the two, not left to an easing: the
+tail's length is the gap between two edges that each ease on their own. The blob is placed
+by measuring the link, and a `ResizeObserver` on the links re-places it when one changes
+size (another game's label, a phone's smaller type); CSS cannot lay it out against the
+links, for the reason the filter panel's tab is measured. `markSection()` does nothing but
+re-place for the link already marked, which matters: **one change of page reaches the
+router twice**, as a `popstate` and then a `hashchange` (`onRouteChange` listens to both, so
+every view is mounted twice per navigation), and cancelling on the second call killed the
+move as it began. Like the filter panel it plays whatever `prefers-reduced-motion` says.
 
 **The topbar lays itself out by its own width**, a container query on `.topbar`, because the
 sidebar takes a share of the window that the bar never has. With 960px or more it is one
@@ -787,34 +852,162 @@ without shop times and rotating pools.
 
 Not built: Arkpedia's birthdays on the calendar and its pull planner.
 
-### Endfield (`src/web/views/endfield.ts`)
+### Endfield (`src/web/views/endfield.ts`, `endfield-detail.ts`)
 
 Arknights: Endfield, the second game. It was the owner's "you pick one", and picked because
 its wiki (`endfield.wiki.gg`, the same platform as the Arknights one) keeps the same kind of
 Cargo table the Arknights build already reads, and because an operator there is close enough
 to one here to go on the same card.
 
-So far it is a roster and nothing else. `#/endfield` deals every operator onto the Arknights
-card: class where the class sits, element and weapon on the branch line, faction up the edge
-strip, tags on the back, rarity (4 to 6) on the tab. There are 33, the Endministrator's two
-forms as two cards, told apart on the line an alter's epithet takes. The cards turn like the
-others but open nothing (`div.op-card`, not a link, with a grab cursor), and carry no glyphs.
-The search box and the Events section link are Arknights' and are hidden; the count pill
-stays, and Operators links here.
+**The roster** (`#/endfield`) deals every operator onto the Arknights card: class where the
+class sits, beside the class's glyph; element and weapon on the branch line, behind the
+element's glyph; faction up the edge strip, tags on the back, rarity (4 to 6) on the tab.
+There are 33, the Endministrator's two forms as two cards, told apart on the line an alter's
+epithet takes. A card opens the operator's dossier. The Events section link is Arknights'
+and is hidden; Operators links here.
 
-`scripts/build-endfield-index.mjs` bakes it from the wiki's `Operators` table:
-`endfield/operators.json` (id, name, rarity, class, element, weapon, faction, tags; highest
-rarity first, then by name) and each operator's portrait, the image the table calls
+It has the topbar's search box and filter panel, which are the same elements the Arknights
+grid works: whichever grid mounted last has them, each keeps its own state, and every handler
+is assigned, not added, so that only one grid is listening. The search is by name. The
+panel's groups are Class (6 tiles), Element (5), Weapon (5), Rarity (4 to 6) and Faction (9
+chips): any pick within a group, every group across them. Its buttons carry `data-group` /
+`data-value` where the Arknights panel's carry `data-kind`, so that neither grid's handler
+takes the other's buttons in the half second the panel takes to hide after a change of page.
+`grid.ts` exports the two things both grids need, `focusSelector` and `watchFilterTab`; the
+rest of the box's and the panel's handling is a second copy of `grid.ts`'s, about 45 lines,
+as the card's markup is: a change to either there has to be made here too.
+
+**The dossier** (`#/endfield/op/<id>`, `views/endfield-detail.ts`) is on the Arknights
+dossier's layout: the splash art behind the page and in the art column, and in the panel the
+rarity strip, the name (with the form, for the Endministrator), class / element / weapon
+with their glyphs, the quote, a fact list (faction, gender, birthday, main and secondary
+attribute, headhunting, expertise, hobbies, gift preference; a row the wiki has nothing for
+is left out) and the tags. All of that is from the roster index. **It does not read the
+per-operator payload yet**, so it has no attributes, potentials, skills, talents, base skills
+or file; `fetchEndfieldOperator` and the payload's types in `endfield-index.ts` are there
+for that pass, and the page's body is one function per section so that those sections are
+appended. An id the index lacks reads "Unknown operator".
+
+`scripts/build-endfield-index.mjs` bakes all of it from the one wiki. From its `Operators`
+table: `endfield/operators.json` (id, name, rarity, class, element, weapon, faction, tags,
+and the profile: gender, birthday, quote, expertise, hobbies, gift preference, main and
+secondary attribute, headhunting; a '???' the wiki writes for "not known yet" is dropped;
+highest rarity first, then by name); each operator's portrait, the image the table calls
 `tooltip`, which is the same 180x360 bust as an Arknights card's (the Endministrator's two
-are a little smaller), re-encoded to WebP at about 21 KB. Portraits already on disk are
-kept. None of it is load-bearing: with the wiki unreachable the last file is kept, or an
-empty one written, and the page says it has no operators.
+are a little smaller), re-encoded to WebP at about 21 KB; and each one's splash, fetched as
+the wiki's 1024px thumbnail of a 2048px PNG and re-encoded to WebP (8.5 MB for the 33). The
+16 glyphs are the files the wiki keeps under each class, element and weapon type's own name
+(`Guard.png`, `Great Sword.png`), baked to 64px WebP; three of them (Guard, Caster, Defender)
+carry a soft shadow, so they are shown as pictures, not painted as masks. And from each
+operator's own page, read 50 pages to a request and parsed by `scripts/lib/endfield-page.mjs`:
+`endfield/operator-details/<id>.json`, with the rest of the file (full name, race, the
+physical exam, what each expertise and hobby is, the profile), attributes at six levels,
+potentials, skills with their twelve ranks (Arcane's two sets, each under its form's name),
+talents and base skills. The Endministrator's two ids share a page and so a payload. Costs
+are left on the page, as are the lead paragraph, the recommended weapons and the voice
+actors.
 
-Not built: a dossier page, search and filters, class / element / weapon glyphs, a release
-order. The same table also has each operator's quote, expertise, hobbies, gift preference
-and birthday, and names a 2048px splash and a 900px banner; none of that is read yet. The
-card's markup here is a second copy of the one in `grid.ts`: a change to the plate there
-has to be made here too.
+Images already on disk are kept; the payloads are written again every build. None of it is
+load-bearing: with the wiki unreachable the last roster is kept, or an empty one written,
+and the page says it has no operators; a single image or page that cannot be had is named
+in that set's summary line and whatever is on disk for it stays.
+
+Not built: the dossier's sections from the payload, what anything costs, a release order.
+
+### Roster-only games (`src/web/card.ts`, `views/ptn.ts`, `views/holodori.ts`, `views/fgo.ts`)
+
+Path to Nowhere, hololive Dreams and Fate/Grand Order (PtN, Holodori and FGO on the sidebar,
+the owner's names for them) are each a roster and nothing else: one page, no search, no
+filters, no dossier, cards that turn and open nothing. They are the rest of the owner's plan
+of 20 September 2026 for the site to carry the games they play. The sources were researched
+then, and each was checked again on 11 October.
+
+**One card, one page.** `card.ts` has both. `RosterCard` is the Arknights plate with a
+game's own words in its slots (name, epithet, class line, micro line, the word up the edge,
+tags on the back, art), and `mountRoster(container, cards, noun, emptyNote)` shows them: the
+count in the topbar's pill, the search box hidden, the cards built 48 at a time as the
+Arknights grid builds its own. A game's view is a function from its entry to a `RosterCard`
+and one call. Three things about the plate that a view has to know:
+
+- **`tier` is the colour and `marks` is the tab**, and the two are separate. `tier` (1–6)
+  picks the rarity colour; `marks` is what stands on the tab, a character to a line. The
+  stylesheet cuts a tab's edges under each rarity class for a tab of that many lines, so
+  `card.ts` gives the tab the class of its line count and sets the colour by hand. A view is
+  then free to put five stars in the top colour (FGO) or a year in the plainest (hololive
+  Dreams). `marksLabel` is the tab as a screen reader is to say it, since it is not a rarity
+  on every roster.
+- **`art` is optional.** Without it the plate shows the name's first letter.
+- **The plate is 1:2 and `.op-avatar` contains its picture**, which suits the Arknights
+  bust and neither of the other sources: a game's own partial (`_ptn.scss`, `_fgo.scss`,
+  loaded last by `styles.scss`) switches its page to `object-fit: cover`, scoped by the
+  `data-view` its route puts on `<body>`.
+
+On a phone the pill drops the noun and keeps the number (`.count-noun`): the section link
+beside it is the same word, and "54 holomems" beside "Holomems" did not fit the row.
+
+**PtN's and FGO's art is baked**, by `scripts/lib/bake-images.mjs`, which both scripts
+call: each picture is fetched from its source once, four at a time, cut to what a card shows
+of it and written as WebP beside the roster, and kept from then on (CI restores it with the
+rest of the generated data; delete the directory to refresh). An entry's `art` is the baked
+file's address beside the page, or the original's on the source's own host for a picture
+the bake could not get, which is why the two partials above keep their rules: on a baked
+picture they change nothing. The owner approved those downloads on 11 October 2026 (143
+PNGs and about 44 MB from the PtN wiki, 470 PNGs and 42.5 MB from Atlas Academy, which baked
+to 6.1 MB and 5.3 MB). The three sidebar tiles still show initials: their emblems were not
+part of that approval, and the candidates are in TODO.md.
+
+**Path to Nowhere** (`#/ptn`, 144 Sinners). `scripts/build-ptn-index.mjs` reads
+`pathtonowhere.wiki.gg`, which has no Cargo tables. A playable Sinner's page is one call of
+`{{SinnerPage}}` (or `{{ReforgePage}}`, ten of them), and both templates file the page
+under `Category:Playable Sinners`, so that category is the roster and the head of the call
+is the Sinner's file. (`Category:Sinners`, the likelier name, holds the two templates and
+nothing else.) The category is read as a generator with the pages' text, 50 to a request,
+and the mugshots' addresses are asked for the same way: six requests a build. An entry is
+id (the page title as a slug), name, number (what follows `MBCC-S-`, which is not unique),
+rank, tendency, libram, birthplace, tags, and `art`, the mugshot: the standing figure the
+wiki's own infobox shows, `File:<page> Prisonphoto.png` (143 of 144; Pine has none and
+shows a "P"), baked 360 wide and cut at two widths, below which a card shows nothing of a
+figure anyway. The order is rank S, A, B and then name: nothing dates
+a release. On the card: S / A / B on tiers 6 / 5 / 4, with the letter at the foot of a tab
+as many lines tall as the tier, so the tab's height still says the rank; tendency on the
+class line, libram on the micro line, birthplace up the edge (for 20 of them the game's own
+redaction or "Unknown"), and on the back `MBCC-S-019` and the game's tags.
+
+**hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
+`scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's
+master database from `raw.githubusercontent.com` (`HolodoriDB/holodori-db-eng-diff`, one of
+six per-language repositories that are each the whole database; a bot refreshes them every
+three hours). The roster is the `Character` table's playable rows, 54 of 62, which are
+exactly the talents the game's own site lists; the other eight, talents who have graduated,
+have a name and a costume and no profile. An entry is id, name, short name, branch, groups,
+fan name, birthday and debut, in the game's own order. On the card: the generation or unit
+on the class line, the debut on the micro line, the branch up the edge, the birthday on the
+back, and the debut year on the tab in the plainest colour, since the game ranks no talent
+above another (its rarity is its cards'). **There is no art, and none will come from the
+game**: its assets are encrypted, and its terms and posting guidelines forbid extracted
+assets. The dump itself is unofficial and carries no licence; what is baked from it are
+facts the official site also publishes. The owner was told so on 11 October 2026 and kept
+the roster.
+
+**Fate/Grand Order** (`#/fgo`, 470 Servants, 52 of them JP only).
+`scripts/build-fgo-index.mjs` reads Atlas Academy's two "basic" exports, NA's and JP's with
+English names (about half a megabyte each; the full exports are tens of megabytes, which is
+not for a build to download), and joins them as the Arknights index joins Global and CN: a
+Servant only JP has is kept and flagged `jpOnly`. A row is playable when its `type` is
+`normal` or `heroine` (Mash alone); the rest are the enemy-only entries the game still
+numbers. An entry is id, collection number, name (the true name, with the first as `alias`
+for the eight who are summoned under another), rarity, class, attribute, alignment, and
+`art`, the figure the game stands in a party slot (`NarrowFigure/<id>/<id>@0.png`,
+148x375), baked as the 148x296 of it a card shows. The order is the collection number's. On the card: a star to a line with 5★ on
+tier 6, the site's red, as every game's highest is; the class, `No. 002` (and "JP only"),
+the attribute up the edge, the alignment on the back, and a bracketed variant ("Santa
+Alter") on the epithet's line. `_fgo.scss` also lifts the figure by 18% of its overhang,
+which puts the two cut corners at its top out of sight; the bake cuts at the same 18%
+(`LIFT` in the script), and the two have to agree. Atlas Academy's data is ODC-BY 1.0
+and asks for credit, which the README gives and the site itself does not yet.
+
+Not built for any of the three: search, filters, a dossier, glyphs, a release order, an
+emblem.
 
 ## Testing
 

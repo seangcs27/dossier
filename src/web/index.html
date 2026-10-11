@@ -17,7 +17,8 @@
   <!-- The games, down the window's left edge. On a phone it is a drawer instead, pulled out
        from the same edge by the menu button at the start of the topbar, since a rail there
        would take a column of cards. Each tile carries the game's emblem: Rhodes Island's for
-       Arknights, Endfield Industries' for Endfield. -->
+       Arknights, Endfield Industries' for Endfield. The three after them have none yet and
+       show initials in its place. -->
   <nav class="sidebar" id="sidebar" aria-label="Games">
     <div class="side-head">
       <span class="side-title">Games</span>
@@ -32,6 +33,18 @@
     <a class="side-game" id="nav-endfield" href="#/endfield">
       <span class="side-mark" aria-hidden="true"><span class="side-logo" style="--logo:url('icons/games/endfield.webp')"></span></span>
       <span class="side-name">Endfield</span>
+    </a>
+    <a class="side-game" id="nav-ptn" href="#/ptn">
+      <span class="side-mark" aria-hidden="true">PN</span>
+      <span class="side-name">PtN</span>
+    </a>
+    <a class="side-game" id="nav-holodori" href="#/holodori">
+      <span class="side-mark" aria-hidden="true">HD</span>
+      <span class="side-name">Holodori</span>
+    </a>
+    <a class="side-game" id="nav-fgo" href="#/fgo">
+      <span class="side-mark" aria-hidden="true">FG</span>
+      <span class="side-name">FGO</span>
     </a>
   </nav>
   <div class="side-scrim" id="side-scrim" aria-hidden="true"></div>
@@ -88,14 +101,18 @@
         </div>
       </div>
       <span id="count"></span>
-      <!-- The game's own pages. Operators goes to the roster of whichever game is showing;
-           Events is Arknights' alone and hides on Endfield. -->
+      <!-- The game's own pages. The first goes to the roster of whichever game is showing,
+           under that game's word for its cast; Events is Arknights' alone and hides on the
+           others. -->
       <nav class="sections" aria-label="Sections">
+        <!-- The fill behind whichever link is showing: a blob that travels from one link to
+             the other, and the tail it trails on the way (sections.ts). -->
+        <span class="sections-goo" aria-hidden="true"><span class="sections-blob"></span><span class="sections-drop"></span></span>
         <a class="section-link" id="nav-operators" href="#/">
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path d="M2.5 2.5h4v4h-4zM9.5 2.5h4v4h-4zM2.5 9.5h4v4h-4zM9.5 9.5h4v4h-4z"></path>
           </svg>
-          Operators
+          <span id="nav-operators-label">Operators</span>
         </a>
         <a class="section-link" id="nav-events" href="#/events">
           <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -126,6 +143,14 @@
       <feFlood class="goo-rim" result="ink"></feFlood>
       <feComposite in="ink" in2="fat" operator="in" result="rim"></feComposite>
       <feMerge><feMergeNode in="rim"></feMergeNode><feMergeNode in="goo"></feMergeNode></feMerge>
+    </filter>
+    <!-- The same blur and cut for the section links' fill (.sections-goo), which is a blob
+         and the thinner tail it trails as it moves: here the cut is what tapers the one
+         into the other. No rim, since the fill has no outline, and a smaller blur, since
+         the tail is only a few pixels thick and a wider one would cut it away. -->
+    <filter id="goo-drop" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3"></feGaussianBlur>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 11 -5"></feColorMatrix>
     </filter>
   </svg>
   <script src="app.js"></script>

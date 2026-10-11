@@ -61,7 +61,8 @@ body {
 // The game's emblem on a tile, painted in the tile's colour: 金藍 at rest, the text colour
 // under the pointer, the accent's gold for the game being shown, like the section link for
 // its page. The two emblems are white on transparency (icons/games/), so the default alpha
-// mask is the right one.
+// mask is the right one. A game with no emblem yet has its initials on the tile, which is
+// what the type here is for.
 .side-mark {
   display: grid;
   place-items: center;
@@ -71,6 +72,9 @@ body {
   border-radius: var(--radius-lg);
   background: var(--bg);
   color: var(--muted);
+  font-size: var(--fs-base);
+  font-weight: 700;
+  letter-spacing: 0.08em;
   transition: border-color 0.16s, color 0.16s, background-color 0.16s;
 }
 
@@ -484,6 +488,7 @@ body {
 // back from the schedule or a dossier is where the way there was. The one being shown is
 // filled; on a dossier that is Operators, which the dossier is one of.
 .sections {
+  position: relative; // the fill's layer is laid out against it
   display: flex;
   flex-shrink: 0;
   margin-left: auto;
@@ -493,7 +498,25 @@ body {
   background: var(--bg);
 }
 
+// The fill: a blob under the link being shown, and the tail it trails when it travels to
+// the other one. sections.ts places and moves both; the filter (index.html) runs the two
+// together, so the layer holds nothing else, and the links are raised over it.
+.sections-goo {
+  position: absolute;
+  inset: 0;
+  filter: url(#goo-drop);
+  pointer-events: none;
+}
+
+.sections-blob,
+.sections-drop {
+  position: absolute;
+  border-radius: var(--radius-pill);
+  background: var(--chip);
+}
+
 .section-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--sp-6);
@@ -504,7 +527,7 @@ body {
   color: var(--muted);
   text-decoration: none;
   white-space: nowrap;
-  transition: background-color 0.16s, color 0.16s;
+  transition: color 0.16s;
 
   svg {
     width: 14px;
@@ -519,14 +542,11 @@ body {
 
   &:hover { color: var(--text); }
 
-  &.active {
-    background: var(--chip);
-    color: var(--text);
-  }
+  &.active { color: var(--text); }
 
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-  // Events, on Endfield's pages: the schedule is Arknights'.
+  // Events, on the other games' pages: the schedule is Arknights'.
   &[hidden] { display: none; }
 }
 
@@ -1143,6 +1163,10 @@ body {
   // would otherwise sit under the next card in DOM order.
   &:hover { z-index: 1; }
 }
+
+// A card that opens nothing, which is every card of a game with a roster and no dossier
+// pages (card.ts): it can still be turned, so it says that and not "press me".
+div.op-card { cursor: grab; }
 
 // Everything that stays inside the card's own bounds. A plain rectangle: the art, the
 // gradient and the text are the whole silhouette, with nothing chamfering the frame.
@@ -3730,6 +3754,11 @@ a.pool-op:hover { text-decoration: underline; }
   // into the search box, at its right end before the magnifier.
   [data-view='grid'] #count { display: none; }
 
+  // A roster-only game's pill (card.ts) keeps its number and drops the word after it. The
+  // section link beside it is that word, and the two together are wider than row 1 has:
+  // "54 holomems" beside "Holomems" wrapped the pill onto two lines and squeezed the wordmark.
+  .count-noun { display: none; }
+
   .search-count {
     display: block;
     flex-shrink: 0;
@@ -3843,3 +3872,8 @@ a.pool-op:hover { text-decoration: underline; }
 // over the shared rules above wherever the two meet.
 @include meta.load-css('endfield-grid');
 @include meta.load-css('endfield-detail');
+
+// ── The roster-only games ──
+// What each one's cards need beyond card.ts's plate, loaded the same way.
+@include meta.load-css('ptn');
+@include meta.load-css('fgo');
