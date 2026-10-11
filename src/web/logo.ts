@@ -4,6 +4,12 @@
 // Picking one at random per page load gives the header logo and favicon some
 // variety without needing a build-time choice. Hovering the header logo rolls again, and
 // goes on rolling for as long as the pointer rests on it.
+//
+// The avatar is a cut-out with nothing behind it, where the six expressions came on a red
+// patterned square, and in the rotation it was the odd one out. So the logo has its own
+// copy of it (-1) on that square, rebuilt from the six: its frame from the lines along
+// their edges, its field from what shows round their shared silhouette. The plain file is
+// left as it was for the extension's toolbar and the fallback markup.
 const VARIANT_COUNT = 7;
 // How often, while it rests there.
 const HOVER_ROLL_MS = 1000;
@@ -11,7 +17,7 @@ const HOVER_ROLL_MS = 1000;
 let current = 0;
 
 function iconPath(size: 16 | 32 | 48 | 96, variant: number): string {
-  return variant === 1 ? `icons/icon-${size}.png` : `icons/icon-${size}-${variant}.png`;
+  return `icons/icon-${size}-${variant}.png`;
 }
 
 // Never repeats the variant on show, so every hover visibly changes the face.

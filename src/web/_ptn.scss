@@ -1,5 +1,7 @@
-// Path to Nowhere's roster page (views/ptn.ts): what its cards need beyond the rules they
-// share with the Arknights grid in styles.scss.
+// Path to Nowhere's pages (views/ptn.ts, views/ptn-detail.ts): what they need beyond the
+// rules they share with the Arknights grid and dossier in styles.scss.
+
+// ── The roster ──
 
 // The art is the mugshot, a standing figure cut out on transparency, about 440 by 1090:
 // narrower than the plate's 1:2 on four Sinners in five. Contained, as the Arknights busts
@@ -11,3 +13,43 @@
 // most of them this now changes nothing. It still fits the wider ones, and a mugshot the
 // build could not fetch, which the card loads whole from the wiki.
 [data-view='ptn'] .op-avatar { object-fit: cover; }
+
+// The roster has the search box, and on a phone the count is inside it, as on the Arknights
+// grid: row 1 has no room for the pill beside the section link.
+@media (max-width: 640px) {
+  [data-view='ptn'] #count { display: none; }
+}
+
+// ── The dossier ──
+
+// The header with no faction badge to give a column to.
+.ptn-header {
+  grid-template-columns: 1fr;
+  grid-template-areas: 'name' 'classes';
+}
+
+// A skill's later levels: the level, then what it changes. Quieter and smaller than the
+// description above it, which is the skill; these are its footnotes.
+.ptn-levels {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-4) var(--sp-12);
+  margin-top: var(--sp-12);
+  padding-top: var(--sp-12);
+  border-top: 1px solid var(--border);
+
+  > div { display: contents; }
+
+  dt {
+    color: var(--muted);
+    font-size: var(--fs-md);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  .rich {
+    color: var(--dim);
+    font-size: var(--fs-lg);
+  }
+}

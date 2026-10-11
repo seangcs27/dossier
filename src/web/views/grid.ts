@@ -495,6 +495,8 @@ export function mountGrid(container: HTMLElement): void {
 
   watchFilterTab(actions, wrap);
 
+  // Another game's roster words the box for its own cast (card.ts).
+  search.placeholder = 'Search operators…';
   search.value = state.query;
   syncChips();
   renderMore();

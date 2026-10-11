@@ -9,9 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. **Browser extension** (Firefox/Chrome, Manifest V3) — operator lookup in a popup
 2. **Web SPA** — operator search and detail view, plus the Global event schedule,
    deployable to GitHub Pages. It also carries four more games: **Arknights: Endfield**, as
-   a roster and a first dossier page (see "Endfield" below), and **Path to Nowhere**,
-   **hololive Dreams** and **Fate/Grand Order**, each as a roster and nothing else yet (see
-   "Roster-only games"); the extension is Arknights alone.
+   a roster and a first dossier page (see "Endfield" below), **Path to Nowhere**, as a
+   roster with search and filters and a dossier per Sinner, and **hololive Dreams** and
+   **Fate/Grand Order**, each as a roster and nothing else yet (see "The other games'
+   rosters"); the extension is Arknights alone.
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
@@ -87,6 +88,7 @@ scripts/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
   lib/endfield-page.mjs      ← reads an endfield.wiki.gg operator page into its payload
+  lib/ptn-page.mjs           ← reads a pathtonowhere.wiki.gg Sinner page into its payload
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -94,8 +96,10 @@ scripts/
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
                      (gitignored), source/ holds the icon artwork
-icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size
-  games/<game>.webp  ← the sidebar's two game emblems, white on transparency (tracked)
+icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size (-1 to -7, the
+                     logo's rotation), and the plain avatar with no suffix, which the
+                     extension and the fallback markup use
+  games/<game>.webp  ← the sidebar's five game emblems, white on transparency (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
 
@@ -129,6 +133,7 @@ src/
       endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
       ptn/sinners.json           ← Path to Nowhere's roster (144), bundled into the web target
       ptn/mugshots/<id>.webp     ← its card art (143), 360 wide and cut at two widths, copied as static files
+      ptn/sinner-details/<id>.json  ← 144 dossier payloads parsed from the wiki's pages, copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
@@ -158,10 +163,13 @@ src/
                       page the section links mark, and the phone's games drawer
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
-                      #/holodori , #/fgo)
-    card.ts         ← the card and the page of a game that is a roster only: RosterCard, mountRoster
+                      #/ptn/sinner/<id> , #/holodori , #/fgo)
+    card.ts         ← the card and the roster page the games after Endfield share: RosterCard,
+                      mountRoster, and its search box and filter panel for a game that asks
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, again on hover, and
-                      then once a second for as long as a mouse rests on the logo
+                      then once a second for as long as a mouse rests on the logo. All seven
+                      are on the emoticon set's red square: the plain avatar's copy (-1) was
+                      given one, rebuilt from the other six
     sections.ts     ← the fill behind the section link being shown, and its move from one
                       link to the other as a drop with a tail (markSection)
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
@@ -174,18 +182,20 @@ src/
     event-index.ts  ← schedule data store: getEvents/getPools/lagDays, and the GameEvent / GamePool types
     endfield-index.ts  ← Endfield data store: getEndfieldOperators, fetchEndfieldOperator, and
                          the roster entry's and the payload's types
-    ptn-index.ts / holodori-index.ts / fgo-index.ts  ← each roster-only game's data store and entry type
+    ptn-index.ts / holodori-index.ts / fgo-index.ts  ← each of those games' data store and entry
+                      type; PtN's also has the dossier payload's types and fetchPtnSinner
     styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events; loads
                       the games' own partials last
     _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
-    _ptn.scss / _fgo.scss  ← how those two games' art sits on the plate
+    _ptn.scss / _fgo.scss  ← how those two games' art sits on the plate; PtN's dossier's own rules
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
       events.ts     ← the Global event schedule, after Arkpedia's (see below)
       endfield.ts   ← the Endfield roster, on the Arknights card, with its search and filters (see below)
       endfield-detail.ts  ← the Endfield dossier (see below)
-      ptn.ts / holodori.ts / fgo.ts  ← the roster-only games' pages: each fills card.ts's slots
+      ptn.ts / holodori.ts / fgo.ts  ← those games' roster pages: each fills card.ts's slots
+      ptn-detail.ts  ← a Sinner's dossier, after the game's Chinese wiki (see below)
     index.html      ← markup shell; links styles.css
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
@@ -196,7 +206,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/mugshots/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/mugshots/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -512,8 +522,9 @@ variables and does not persist across popup close/reopen.
 
 Vanilla TS, no framework. Hash-routed: `#/` shows the operator grid; `#/op/<id>` shows the
 operator dossier; `#/events` shows the Global event schedule; `#/endfield` and
-`#/endfield/op/<id>` are the second game's roster and dossier; `#/ptn`, `#/holodori` and
-`#/fgo` are the rosters of the three games that have nothing else yet. Every link to `#/`
+`#/endfield/op/<id>` are the second game's roster and dossier; `#/ptn` and
+`#/ptn/sinner/<id>` are Path to Nowhere's; `#/holodori` and `#/fgo` are the rosters of the
+two games that have nothing else yet. Every link to `#/`
 (the wordmark, the Arknights tile, Operators, a breadcrumb) is taken over on a plain click
 to land on the bare URL instead (`index.ts`).
 
@@ -525,7 +536,14 @@ showing): Rhodes Island's triangle for Arknights and Endfield Industries' for En
 the two wikis' `File:Rhodes_Island.png` and `File:Endfield_Industries.png`, baked once to
 128px WebP in `icons/games/` (alpha times luminance, so the tower's black detail is cut out,
 then white). The three games after them (PtN, Holodori, FGO, the owner's names for them)
-have no emblem yet and show two initials on the tile, as the first two did before theirs.
+have theirs from files the owner approved on 11 October 2026, baked the same way: for Fate/
+Grand Order, Chaldea's laurel (the FGO Fandom wiki's `Chaldea Security Organization Logo`,
+black on transparency, so its alpha is the shape); for hololive Dreams, hololive's triangle
+(Wikimedia Commons' `Hololive 2026 logo triangle.svg`; hololive's mark, not the game's own);
+for Path to Nowhere, the X of its logo (the wiki's `PtN Logo.png` is the name in white
+across a red X of chain and brush, which one colour cannot hold and a 30px tile cannot
+read, so the emblem is how red a pixel is, its gaps closed and its spatter dropped). A
+squarer emblem dropped into `icons/games/` under the same name replaces any of them.
 Which game a page belongs to is `gameOf()` in `index.ts`, by the route: everything that is
 not another game's is Arknights', so a link made before there were others still lands where
 it did. `GAMES` beside it holds each game's roster and its word for its cast; a game's tile
@@ -577,7 +595,7 @@ and shows instead as a bare number inside the search box (`#search-count`), whic
 `data-view` (set by `index.ts`) decides. Under 360px the wordmark shrinks to fit a 320px phone.
 
 **Breadcrumbs** (`crumbsHtml` in `format.ts`) open a dossier and the schedule: the way back
-as a pill with a back chevron ("‹ Operators"), a chevron, and the page's own name, in the
+as a pill with a back chevron ("‹ Operators", or "‹ Sinners" on a Sinner's page), a chevron, and the page's own name, in the
 small caps the section labels use. A long name ellipsizes before the pill gives way.
 
 ### Grid (`src/web/views/grid.ts`)
@@ -914,20 +932,36 @@ in that set's summary line and whatever is on disk for it stays.
 
 Not built: the dossier's sections from the payload, what anything costs, a release order.
 
-### Roster-only games (`src/web/card.ts`, `views/ptn.ts`, `views/holodori.ts`, `views/fgo.ts`)
+### The other games' rosters (`src/web/card.ts`, `views/ptn.ts`, `views/holodori.ts`, `views/fgo.ts`)
 
 Path to Nowhere, hololive Dreams and Fate/Grand Order (PtN, Holodori and FGO on the sidebar,
-the owner's names for them) are each a roster and nothing else: one page, no search, no
-filters, no dossier, cards that turn and open nothing. They are the rest of the owner's plan
-of 20 September 2026 for the site to carry the games they play. The sources were researched
-then, and each was checked again on 11 October.
+the owner's names for them) are the rest of the owner's plan of 20 September 2026 for the
+site to carry the games they play. The sources were researched then, and each was checked
+again on 11 October. hololive Dreams and FGO are each a roster and nothing else: one page,
+no search, no filters, no dossier, cards that turn and open nothing. Path to Nowhere has
+search, filters and a dossier per Sinner as well (below).
+
+**The owner means each game to have a design of its own in time**, and has not decided
+them. Until then every game is on the Arknights card and the Arknights dossier's parts,
+and a game's pages copy what its own reference site shows, in this site's elements.
 
 **One card, one page.** `card.ts` has both. `RosterCard` is the Arknights plate with a
 game's own words in its slots (name, epithet, class line, micro line, the word up the edge,
-tags on the back, art), and `mountRoster(container, cards, noun, emptyNote)` shows them: the
-count in the topbar's pill, the search box hidden, the cards built 48 at a time as the
-Arknights grid builds its own. A game's view is a function from its entry to a `RosterCard`
-and one call. Three things about the plate that a view has to know:
+tags on the back, art, and `href` where the card opens a page), and `mountRoster(container,
+roster)` shows a `Roster`: its items, the function that makes a card of one, the noun the
+count uses, and what to say when the build baked nothing. The count goes in the topbar's
+pill, and the cards are built 48 at a time as the Arknights grid builds its own. With
+`find`, the page also has the topbar's search box and filter panel: the text the search
+looks in, and a list of `RosterFilter` groups, each its values and one of three looks
+(tiles as the Arknights classes are, a joined row as its rarities are, loose chips), with
+`folded` for a list too long to stand open. Any pick within a group, every group across
+them. The search and the picks live in a `RosterState` the game's own view keeps, so they
+survive a visit elsewhere and never show on another game's roster. The handling of the box
+and the panel is `grid.ts`'s once more (assigned handlers, since every roster works the
+same elements; `data-group` / `data-value` on the buttons, as Endfield's), written here
+once for any game that asks; a roster without `find` puts the box away. Whichever roster
+mounts words the search box for its own cast. Three things about the plate that a view has
+to know:
 
 - **`tier` is the colour and `marks` is the tab**, and the two are separate. `tier` (1–6)
   picks the rarity colour; `marks` is what stands on the tab, a character to a line. The
@@ -953,8 +987,7 @@ file's address beside the page, or the original's on the source's own host for a
 the bake could not get, which is why the two partials above keep their rules: on a baked
 picture they change nothing. The owner approved those downloads on 11 October 2026 (143
 PNGs and about 44 MB from the PtN wiki, 470 PNGs and 42.5 MB from Atlas Academy, which baked
-to 6.1 MB and 5.3 MB). The three sidebar tiles still show initials: their emblems were not
-part of that approval, and the candidates are in TODO.md.
+to 6.1 MB and 5.3 MB).
 
 **Path to Nowhere** (`#/ptn`, 144 Sinners). `scripts/build-ptn-index.mjs` reads
 `pathtonowhere.wiki.gg`, which has no Cargo tables. A playable Sinner's page is one call of
@@ -972,6 +1005,41 @@ a release. On the card: S / A / B on tiers 6 / 5 / 4, with the letter at the foo
 as many lines tall as the tier, so the tab's height still says the rank; tendency on the
 class line, libram on the micro line, birthplace up the edge (for 20 of them the game's own
 redaction or "Unknown"), and on the back `MBCC-S-019` and the game's tags.
+
+Its two references are the owner's: the game's Chinese wiki (`wiki.biligame.com/wqmt`,
+which a browser can read and a script cannot, so it is a model for the pages and never a
+source for the build) and `s1n.gg`. **The roster's search and filters** are that wiki's
+own, as far as the English one has the data: a Sinner is found by name or by number
+("019"), and the panel's groups are Rank (S / A / B, in their tiers' colours), Tendency (six
+tiles), Libram (16 chips) and, folded, Tags (47). That wiki's Limited and Core-damage
+groups have no field on the English one.
+
+**A Sinner's dossier** (`#/ptn/sinner/<id>`, `views/ptn-detail.ts`) is that wiki's Sinner
+page, section for section, built from the Arknights dossier's parts: the mugshot in the art
+column, and a panel whose header has the rank on the strip, the name with `MBCC-S-019`
+where an alter's epithet goes, and tendency and libram. Its long page of tables becomes five
+tabs. **Profile** is its basic information and attributes: the wiki's lead paragraph, a fact
+list, the tags, each stat as "level 1 / highest level the wiki has" as that page prints
+one, the trait, and Mania Intensify. **Skills** is the basic attack, the ultimate and the
+passives, each as it is at level 1 and then a line for what each later level changes, which
+is how both wikis write them (there is no full text per level to put under a slider).
+**Crimebrand** is the exclusive crimebrand and the skill it grants. **Shackles** is the
+five shackles, then compliance (what each tenth gives, and the sticker at 100%) and the
+materials' names. **File** is who the Sinner is and each document under the wiki's heading
+for it, folded away as the Arknights archive files are. The tab on show is kept from one
+Sinner to the next. The header and the art are the roster's entry; everything under the
+tabs is `ptn/sinner-details/<id>.json`, fetched when the page opens, which the same build
+script bakes from the rest of the same page text (`scripts/lib/ptn-page.mjs`), at no
+further request. Its texts are in the game markup `descriptionToHtml` renders: a number the
+wiki colours blue is a raised value, what it colours orange a reminder. The wiki's slips are
+mended on the way (an unclosed style attribute, a stray brace in a template, a placeholder
+nobody filled in), and a stat level it marks "TBA" is left out; three Sinners have no
+numbers at all yet, and 20 have only level 1 of each skill.
+
+Not on the dossier, though that wiki has them: the full illustrations and their phases
+(only the mugshot is baked), skill range diagrams (the English wiki names a range,
+`MultiRow_3`, and draws it from an image), what anything costs, voice lines and the
+interrogation records' own pages, a title, a release date.
 
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's
@@ -1006,8 +1074,8 @@ which puts the two cut corners at its top out of sight; the bake cuts at the sam
 (`LIFT` in the script), and the two have to agree. Atlas Academy's data is ODC-BY 1.0
 and asks for credit, which the README gives and the site itself does not yet.
 
-Not built for any of the three: search, filters, a dossier, glyphs, a release order, an
-emblem.
+Not built for any of the three: glyphs, a release order. Not built for hololive Dreams or
+FGO: search, filters, a dossier.
 
 ## Testing
 

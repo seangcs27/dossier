@@ -34,8 +34,10 @@ function toCard(c: HolodoriCharacter): RosterCard {
 export function mountHolodori(container: HTMLElement): void {
   // 'holomems' is the game's own word for its cast, in its English text and on its site.
   // 'Character' is its table's name and no more.
-  mountRoster(
-    container, getHolodoriCharacters().map(toCard), 'holomems',
-    'The last build could not reach the game data on GitHub.',
-  );
+  mountRoster(container, {
+    items: getHolodoriCharacters(),
+    toCard,
+    noun: 'holomems',
+    emptyNote: 'The last build could not reach the game data on GitHub.',
+  });
 }

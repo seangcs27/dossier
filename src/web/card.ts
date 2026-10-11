@@ -1,10 +1,11 @@
 import { escHtml } from './format';
 import { mountCardSpin } from './card-spin';
+import { focusSelector, watchFilterTab } from './views/grid';
 
 /**
- * One card on the roster of a game that has a roster and nothing else yet: the plate the
+ * One card on the roster of a game that is not Arknights or Endfield: the plate the
  * Arknights grid deals (views/grid.ts has the reasoning behind each layer), with the game's
- * own words in its slots. It opens nothing, since there is no page for it to open.
+ * own words in its slots.
  */
 export interface RosterCard {
   id: string;           // printed on the back, and the micro line's tooltip
@@ -23,9 +24,50 @@ export interface RosterCard {
   // The picture: a 1:2 bust fills the plate as the Arknights portraits do. Without one the
   // plate shows the name's first letter where the picture would be.
   art?: string;
+  // The page the card opens. Without one it opens nothing, and only turns.
+  href?: string;
 }
 
-function buildCard(card: RosterCard): string {
+/** One group of the filter panel: the values to pick among, and which of them an item has. */
+export interface RosterFilter<T> {
+  key: string;          // names the group in the picks and on its buttons
+  label: string;
+  values: string[];     // in the order their buttons stand in
+  // Tiles as the Arknights classes are, a joined row as its rarities are, or loose chips.
+  look: 'tiles' | 'ranks' | 'chips';
+  across?: number;      // tiles and ranks: how many to a row, where not all of them
+  tier?: (value: string) => number;   // ranks: the rarity colour a value's button takes
+  of: (item: T) => string | string[];
+  folded?: boolean;     // shut behind its label until asked for: a list too long to stand open
+}
+
+/**
+ * A roster's search and picks. The game's own view keeps one, so that they are still there
+ * after a visit to another page, and never turn up on another game's roster.
+ */
+export interface RosterState {
+  query: string;
+  picks: Record<string, Set<string>>;   // by group; a group nobody has picked in has no entry
+  open: boolean;                        // the filter panel
+  unfolded: Set<string>;                // the folded groups that have been opened
+}
+
+export function newRosterState(): RosterState {
+  return { query: '', picks: {}, open: false, unfolded: new Set() };
+}
+
+export interface Roster<T> {
+  items: T[];
+  toCard: (item: T) => RosterCard;
+  noun: string;         // what the game calls its cast, in the plural: 'sinners'
+  emptyNote: string;    // what the page says when the build had nothing to bake
+  cta?: string;         // what a card that opens a page says under the pointer: 'View sinner'
+  // With this the page has the topbar's search box and filter panel; without it, neither.
+  // `text` is what the search looks in.
+  find?: { state: RosterState; text: (item: T) => string; filters: RosterFilter<T>[] };
+}
+
+function buildCard(card: RosterCard, cta: string): string {
   // As many repeats as fill the strip, the same sum as the Arknights card's.
   const edgeText = Array(Math.max(2, Math.round(55 / (card.edge.length + 3))))
     .fill(card.edge).join(' · ');
@@ -34,8 +76,9 @@ function buildCard(card: RosterCard): string {
   // lines and the colour are two things, a 5★ Servant being five lines in the top colour:
   // the class is the number of lines, and the colour it would also set is given by hand.
   const lines = Math.min(6, Math.max(1, [...card.marks].length));
+  const tag = card.href ? 'a' : 'div';
   return `
-    <div class="op-card r${card.tier}">
+    <${tag} class="op-card r${card.tier}"${card.href ? ` href="${escHtml(card.href)}"` : ''}>
       <div class="op-plate">
       <div class="op-card-body">
         ${card.art
@@ -55,6 +98,7 @@ function buildCard(card: RosterCard): string {
               <span class="op-serial-text">${escHtml(card.serial)}</span>
             </div>
           </div>
+          ${card.href ? `<span class="op-cta">${escHtml(cta)}</span>` : ''}
         </div>
         <div class="op-edge" aria-hidden="true">${escHtml(edgeText)}</div>
         <div class="op-light" aria-hidden="true"></div>
@@ -85,7 +129,7 @@ function buildCard(card: RosterCard): string {
         ${[...card.marks].map(m => `<span>${escHtml(m)}</span>`).join('')}
       </div>
       </div>
-    </div>
+    </${tag}>
   `;
 }
 
@@ -94,45 +138,215 @@ function buildCard(card: RosterCard): string {
 const BATCH = 48;
 let more: IntersectionObserver | undefined;
 
-/**
- * Shows a roster and nothing else: the count in the topbar's pill, then the cards, in the
- * order given. `noun` is what the game calls its cast, in the plural ('sinners'); `emptyNote`
- * is what the page says when the build had nothing to bake.
- */
-export function mountRoster(container: HTMLElement, cards: RosterCard[], noun: string, emptyNote: string): void {
+// The count in the topbar's pill and, for a phone, inside the search box; then the cards, in
+// the order given. `items` is what a search or a pick has left of the roster, or all of it.
+function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   more?.disconnect();
-  // The search box and its filters are the Arknights and Endfield grids', as on a dossier.
-  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
-  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
-  document.getElementById('more-filters')!.hidden = true;
-
   // The word is in a span of its own for a phone to drop (styles.scss, .count-noun).
   document.getElementById('count')!.innerHTML =
-    `${cards.length} <span class="count-noun">${escHtml(noun)}</span>`;
-  if (cards.length === 0) {
-    container.innerHTML = `<div class="state-msg"><div class="label">No ${escHtml(noun)}</div>${escHtml(emptyNote)}</div>`;
+    `${items.length} <span class="count-noun">${escHtml(roster.noun)}</span>`;
+  document.getElementById('search-count')!.textContent = String(items.length);
+  if (items.length === 0) {
+    // With no roster at all it is the build that came back empty, not the filters.
+    container.innerHTML = roster.items.length
+      ? `<div class="state-msg"><div class="label">No results</div>Try a different name or filter.</div>`
+      : `<div class="state-msg"><div class="label">No ${escHtml(roster.noun)}</div>${escHtml(roster.emptyNote)}</div>`;
     return;
   }
   container.innerHTML = `<div id="grid"></div><div id="grid-end"></div>`;
   const grid = document.getElementById('grid')!;
   const end = document.getElementById('grid-end')!;
+  const cta = roster.cta ?? '';
   let shown = 0;
   const append = (): void => {
     const batch = document.createElement('template');
-    batch.innerHTML = cards.slice(shown, shown += BATCH).map(buildCard).join('');
+    batch.innerHTML = items.slice(shown, shown += BATCH).map(item => buildCard(roster.toCard(item), cta)).join('');
     mountCardSpin(batch.content);
     grid.append(batch.content);
   };
   append();
-  if (shown >= cards.length) return;
+  if (shown >= items.length) return;
   const observer = new IntersectionObserver((entries) => {
     if (!entries[0].isIntersecting) return;
     append();
     // Re-observing reports the marker's position afresh, so a tall screen keeps filling
     // until the marker is out of range, rather than waiting for a scroll that won't come.
     observer.unobserve(end);
-    if (shown < cards.length) observer.observe(end);
+    if (shown < items.length) observer.observe(end);
   }, { rootMargin: '1500px' });
   observer.observe(end);
   more = observer;
+}
+
+// ── Search and filters ──
+// The topbar's search box and the panel under it, which are the Arknights and Endfield
+// grids' too: whichever page mounted last has them, and every handler below is assigned,
+// not added, so that it is the only one listening (views/grid.ts has the reasoning behind
+// each rule, and views/endfield.ts the same handling for that game's own groups).
+
+function picksOf(state: RosterState, key: string): Set<string> {
+  return state.picks[key] ??= new Set();
+}
+
+// What the search and the picks leave of the roster, in its own order. Within a group any
+// one pick will do; across groups an item has to pass every group that has a pick.
+function matching<T>(roster: Roster<T>): T[] {
+  const { state, text, filters } = roster.find!;
+  const q = state.query.toLowerCase().trim();
+  return roster.items.filter(item =>
+    text(item).toLowerCase().includes(q)
+    && filters.every((f) => {
+      const picked = picksOf(state, f.key);
+      if (!picked.size) return true;
+      const has = f.of(item);
+      return Array.isArray(has) ? has.some(v => picked.has(v)) : picked.has(has);
+    }));
+}
+
+// One group's buttons. A pick is under data-group and data-value, as Endfield's are and
+// for its reason: the Arknights panel's buttons carry data-kind, and neither page's handler
+// may take the other's for its own in the half second the panel takes to hide.
+function groupHtml<T>(f: RosterFilter<T>, state: RosterState): string {
+  const picked = picksOf(state, f.key);
+  const button = (value: string): string => {
+    const on = picked.has(value);
+    const attrs = `data-group="${escHtml(f.key)}" data-value="${escHtml(value)}" aria-pressed="${on}"`;
+    if (f.look === 'tiles') return `<button class="class-btn${on ? ' on' : ''}" ${attrs}><span>${escHtml(value)}</span></button>`;
+    if (f.look === 'ranks') return `<button class="rarity-btn r${f.tier?.(value) ?? 1}${on ? ' on' : ''}" ${attrs}>${escHtml(value)}</button>`;
+    return `<button class="chip${on ? ' active' : ''}" ${attrs}>${escHtml(value)}</button>`;
+  };
+  const buttons = f.values.map(button).join('');
+  const row = f.look === 'chips'
+    ? `<div class="collab-row">${buttons}</div>`
+    : `<div class="${f.look === 'ranks' ? 'rarity-row' : 'class-row'}"
+            style="grid-template-columns: repeat(${f.across ?? f.values.length}, 1fr)">${buttons}</div>`;
+  if (!f.folded) {
+    return `<div class="filter-group"><div class="filter-label">${escHtml(f.label)}</div>${row}</div>`;
+  }
+  // Shut, the label still says how many are picked inside.
+  const open = state.unfolded.has(f.key);
+  return `
+    <button class="filter-disclosure${open ? ' open' : ''}" data-fold="${escHtml(f.key)}" aria-expanded="${open}">
+      ${escHtml(f.label)}${picked.size ? ` · ${picked.size}` : ''}
+      <svg class="disclosure-caret" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5 8 10.5l4-4"></path></svg>
+    </button>
+    <div class="filter-advanced"${open ? '' : ' hidden'}>${row}</div>
+  `;
+}
+
+function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
+  const { state, filters } = roster.find!;
+  const search  = document.getElementById('search') as HTMLInputElement;
+  const clear   = document.getElementById('search-clear') as HTMLButtonElement;
+  const actions = document.querySelector<HTMLElement>('.topbar-actions')!;
+  const wrap    = document.querySelector<HTMLElement>('.search-wrap')!;
+  const toggle  = document.getElementById('more-toggle')!;
+  const panel   = document.getElementById('more-filters')!;
+  wrap.style.display = '';
+  actions.style.display = '';
+  watchFilterTab(actions, wrap);
+  search.placeholder = `Search ${roster.noun}…`;
+  search.value = state.query;
+  clear.disabled = !state.query;
+
+  const render = (): void => deal(container, roster, matching(roster));
+
+  // The Filters button's label and lit state, the open panel's class on the cluster,
+  // whether Clear has anything to clear, and the panel itself, rebuilt.
+  const refreshChrome = (): void => {
+    const n = filters.reduce((sum, f) => sum + picksOf(state, f.key).size, 0);
+    document.getElementById('more-label')!.textContent = n ? `Filters · ${n}` : 'Filters';
+    toggle.classList.toggle('active', state.open || n > 0);
+    toggle.setAttribute('aria-expanded', String(state.open));
+    actions.classList.toggle('filters-open', state.open);
+    (document.getElementById('clear-filters') as HTMLButtonElement).disabled = !n;
+
+    panel.hidden = !state.open;
+    if (!state.open) return;
+    // The rebuild takes the button just pressed with it, and the keyboard's focus with the
+    // button: note which it was and put the focus on its replacement.
+    const focused = document.activeElement as HTMLElement | null;
+    const refocus = focused && panel.contains(focused) ? focusSelector(focused) : null;
+    panel.innerHTML = filters.map(f => groupHtml(f, state)).join('');
+    if (refocus) panel.querySelector<HTMLElement>(refocus)?.focus();
+  };
+  // The cards are rebuilt only by what changes which items match; opening or closing the
+  // panel, or a group in it, leaves them alone.
+  const refresh = (): void => { refreshChrome(); render(); };
+
+  const syncQuery = (): void => { state.query = search.value; clear.disabled = !state.query; render(); };
+  search.oninput = syncQuery;
+  clear.onclick = () => { search.value = ''; syncQuery(); search.focus(); };
+
+  actions.onclick = (ev) => {
+    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('#more-toggle, #clear-filters, #close-filters');
+    if (!el) return;
+    if (el.id === 'clear-filters') {
+      for (const f of filters) picksOf(state, f.key).clear();
+      refresh();
+    } else {
+      // The close button only closes.
+      state.open = el === toggle && !state.open;
+      refreshChrome();
+    }
+    // Clear has just disabled itself and the close button has folded away, and neither can
+    // hold the focus then, so it goes to the toggle.
+    if (el !== toggle) toggle.focus();
+  };
+
+  panel.onclick = (ev) => {
+    const el = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-group], button[data-fold]');
+    if (!el) return;
+    const fold = el.dataset.fold;
+    if (fold) {
+      if (!state.unfolded.delete(fold)) state.unfolded.add(fold);
+      refreshChrome();
+      return;
+    }
+    // A button the panel still holds from another page names a group this one has not.
+    if (!filters.some(f => f.key === el.dataset.group)) return;
+    const picked = picksOf(state, el.dataset.group!);
+    const value = el.dataset.value!;
+    if (!picked.delete(value)) picked.add(value);
+    refresh();
+  };
+
+  // Shut by a press anywhere outside the cluster: the search box is the panel's head, and
+  // typing a name while picking filters is one job.
+  document.onpointerdown = (ev) => {
+    if (!state.open || panel.hidden) return;
+    if ((ev.target as Element).closest('.topbar-actions')) return;
+    state.open = false;
+    refreshChrome();
+  };
+
+  // Escape, while the panel is on screen. Never from the search box, where Escape is the
+  // browser's own clear. The focus goes back to the toggle only if it was in the panel.
+  document.onkeydown = (ev) => {
+    if (ev.key !== 'Escape' || panel.hidden) return;
+    const target = ev.target as HTMLElement;
+    if (target.id === 'search') return;
+    const fromPanel = panel.contains(target);
+    state.open = false;
+    refreshChrome();
+    if (fromPanel) toggle.focus();
+  };
+
+  refresh();
+}
+
+/**
+ * Shows a roster: the count in the topbar's pill, then the cards. With `find`, under the
+ * topbar's search box and filter panel; without, with both put away.
+ */
+export function mountRoster<T>(container: HTMLElement, roster: Roster<T>): void {
+  if (roster.find) {
+    wireFinder(container, roster);
+    return;
+  }
+  // The search box and its filters are other pages', as on a dossier.
+  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
+  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
+  document.getElementById('more-filters')!.hidden = true;
+  deal(container, roster, roster.items);
 }

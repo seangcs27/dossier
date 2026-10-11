@@ -7,29 +7,40 @@ picking one up later doesn't need re-investigation.
 
 ### Path to Nowhere, hololive Dreams, Fate/Grand Order — what is left
 
-Each has a sidebar tile and a roster and nothing else (`#/ptn` 144 Sinners, `#/holodori` 54
-holomems, `#/fgo` 470 Servants); CLAUDE.md, "Roster-only games", has how. They are the rest
-of the owner's plan of 20 September 2026 (a Hololive section beside the game is the one part
-of it not started). PtN's and FGO's card art is baked (143 mugshots, 6.1 MB; 470 figures,
-5.3 MB; the owner approved the downloads on 11 October 2026). Not built yet:
+Each has a sidebar tile with an emblem and a roster (`#/ptn` 144 Sinners, `#/holodori` 54
+holomems, `#/fgo` 470 Servants); CLAUDE.md, "The other games' rosters", has how. They are
+the rest of the owner's plan of 20 September 2026 (a Hololive section beside the game is the
+one part of it not started). PtN's and FGO's card art is baked (143 mugshots, 6.1 MB; 470
+figures, 5.3 MB), and the three emblems are in; the owner approved those downloads on 11
+October 2026. Path to Nowhere also has search, filters and a dossier per Sinner. Not built
+yet:
 
-- **Emblems for the three tiles**, which show initials (PN, HD, FG). Not part of what was
-  approved. Candidates found, none downloaded and none looked at:
-  - PtN: `File:PtN Logo.png` (2416x1459, 405 KB, likely the wordmark), `File:Site-logo.png`
-    (137x137, 31 KB, the wiki's own), `File:MP Icon.png` (58x50, 1.7 KB), all on the PtN
-    wiki. No file there is named for the MBCC's crest, which would be the counterpart of
-    Rhodes Island's.
-  - FGO: the Fandom wiki's `File:Chaldea Security Organization Logo.png` (2280x2281, 86 KB)
-    or `File:Chaldea Security Logo.png` (301x303, 19 KB); Wikimedia Commons'
-    `File:Fate GO logo.svg` (the wordmark, 3.4 times as wide as it is tall).
-  - hololive Dreams: Commons' `File:Hololive 2026 logo triangle.svg` (1 KB; hololive's mark,
-    not the game's, and the one a Hololive section would want), or the game's own icon
-    (`hololive-dreams.com/favicon.svg`, 52 KB), which its terms do not license.
-- **Search, filters, a dossier page** for each. What the indexes already carry for a filter
-  panel: PtN's rank, tendency (6), libram (16) and tags (47); hololive Dreams' branch (4),
-  group (15) and debut year; FGO's rarity, class (17), attribute (5), alignment and JP only.
-  PtN's birthplace would need folding first (`WhiteSands Region` beside `WhiteSands`, and
-  four ways of saying unknown).
+- **A design of its own for each game.** The owner means them to differ and has not decided
+  how; every game is on the Arknights card and dossier until then.
+- **What a Sinner's dossier lacks beside its reference** (the game's Chinese wiki's page):
+  - The illustrations: the full art and its phases. Only the mugshot is baked. They are
+    new image downloads, so they want the owner's word and their sizes first.
+  - Skill range diagrams: the English wiki names a range (`MultiRow_3`, `Cross_1`, about
+    60 of them, some typed with a space for the underscore) and draws it from an image.
+  - What anything costs. The wiki's template works the counts out from the rank, the same
+    for every Sinner of it, so the numbers are in `Template:SinnerPage`, not on the pages.
+  - Voice lines, the interrogation records' own pages, a reforged Sinner's reforge nodes
+    (ten Sinners), Mirage and trivia sections.
+  - A title ("西区教母"), a release date, and whether a Sinner is limited or a collab: that
+    wiki has all three and the English one has no field for any. No release date means no
+    release order either, which is why the roster is rank, then name.
+- **PtN's emblem is the X of the game's logo**, mended from the wordmark, since the wiki's
+  logo file is the name across that X. It is the weakest of the five at tile size. No file
+  on the wiki is named for the MBCC's crest, which would be the counterpart of Rhodes
+  Island's; `File:Site-logo.png` (137x137, 31 KB) and `File:MP Icon.png` (58x50, 1.7 KB)
+  were found and not looked at. hololive Dreams' tile is hololive's triangle, not the
+  game's own mark.
+- **Search, filters, a dossier page** for hololive Dreams and FGO. `card.ts` has the search
+  box and the filter panel for any roster that asks (`find`), so each is a list of groups
+  away. What their indexes already carry: hololive Dreams' branch (4), group (15) and debut
+  year; FGO's rarity, class (17), attribute (5), alignment and JP only.
+- **PtN's birthplace is not a filter**: it would need folding first (`WhiteSands Region`
+  beside `WhiteSands`, and four ways of saying unknown).
 - **Credit on the site itself.** Atlas Academy's data is ODC-BY 1.0, which asks for credit
   where the data is used. The README credits every source; the site has no page that does.
 - **hololive Dreams has no art.** The game's assets are encrypted and its terms forbid

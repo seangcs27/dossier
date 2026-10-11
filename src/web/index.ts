@@ -9,6 +9,7 @@ import { mountEndfieldDetail } from './views/endfield-detail';
 import { mountFgo } from './views/fgo';
 import { mountHolodori } from './views/holodori';
 import { mountPtn } from './views/ptn';
+import { mountPtnDetail } from './views/ptn-detail';
 import { mountTooltips } from './tooltip';
 import { mountScrollbars } from './scrollbar';
 import { markSection } from './sections';
@@ -39,6 +40,7 @@ type Game = keyof typeof GAMES;
 // before there were others, so a link made then still lands where it did.
 function gameOf(page: Route['view']): Game {
   if (page === 'endfield' || page === 'endfield-detail') return 'endfield';
+  if (page === 'ptn-detail') return 'ptn';
   if (page === 'ptn' || page === 'holodori' || page === 'fgo') return page;
   return 'arknights';
 }
@@ -69,6 +71,8 @@ function dispatch(): void {
     mountEndfieldDetail(view, route.id);
   } else if (route.view === 'endfield') {
     mountEndfield(view);
+  } else if (route.view === 'ptn-detail') {
+    mountPtnDetail(view, route.id);
   } else if (route.view === 'ptn') {
     mountPtn(view);
   } else if (route.view === 'holodori') {

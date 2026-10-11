@@ -1,12 +1,15 @@
-// Generates src/shared/generated/ptn/: sinners.json, the roster of Path to Nowhere, a game
-// the web target carries as a roster and nothing else, and mugshots/, its card art.
+// Generates src/shared/generated/ptn/, what the web target has of Path to Nowhere:
+// sinners.json, the roster; mugshots/, its card art; and sinner-details/, a payload per
+// Sinner for the dossier page.
 //
 // One source, pathtonowhere.wiki.gg. It keeps no Cargo tables. A playable Sinner's page is
 // one call of a page template, {{SinnerPage}}, or {{ReforgePage}} for a Sinner the game has
 // reforged, and both templates file the page under Category:Playable Sinners. So that
 // category is the roster, and the head of the call is the Sinner's file: number, rank,
 // tendency, libram, birthplace and tags. (Category:Sinners, the likelier name, holds the
-// two templates and nothing else.)
+// two templates and nothing else.) The rest of the call is everything else the page shows,
+// attributes, skills, shackles, the crimebrand and the documents, and lib/ptn-page.mjs reads
+// that into the dossier's payload from the same text, at no further request.
 //
 // The card art is the mugshot, File:<page> Prisonphoto.png, the picture the wiki's own
 // infobox shows: a standing figure cut out on transparency, narrower than the card's 1:2 on
@@ -23,12 +26,14 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
+import { parseSinnerDetail } from './lib/ptn-page.mjs';
 import { templateBodies, templateParams } from './lib/wiki-text.mjs';
 
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated', 'ptn',
 );
 const SINNERS_FILE = path.join(outDir, 'sinners.json');
+const detailDir = path.join(outDir, 'sinner-details');
 const mugshotDir = path.join(outDir, 'mugshots');
 // Where webpack.web.js copies that directory to beside the page, and so what an entry's
 // `art` starts with.
@@ -102,6 +107,7 @@ async function addMugshots(sinners) {
 
 async function buildRoster() {
   const sinners = [];
+  const details = [];
   const unfinished = [];
   for (const [title, text] of await fetchPages()) {
     // {{ReforgePage}} opens with the same fields as {{SinnerPage}}.
@@ -113,10 +119,12 @@ async function buildRoster() {
       unfinished.push(title);
       continue;
     }
+    // The page's title, which is the Sinner's name, in a form that can go in an address or
+    // name a file: 'mr-fox', 'necresta-hella', '000'.
+    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    details.push({ id, ...parseSinnerDetail(named, title) });
     sinners.push({
-      // The page's title, which is the Sinner's name, in a form that can go in an address
-      // or name a file: 'mr-fox', 'necresta-hella', '000'.
-      id: title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      id,
       name: title,
       number: named.SinnerNo,
       rank: named.Rank,
@@ -141,13 +149,16 @@ async function buildRoster() {
   for (const s of sinners) if (baked.has(s.id)) s.art = `${MUGSHOT_PATH}/${s.id}.webp`;
   // Nothing on a page dates the Sinner's release, so the order is rank and then name.
   sinners.sort((a, b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank) || a.name.localeCompare(b.name));
-  return { sinners, unfinished };
+  return { sinners, details, unfinished };
 }
 
-await mkdir(outDir, { recursive: true });
+await mkdir(detailDir, { recursive: true });
 try {
-  const { sinners, unfinished } = await buildRoster();
+  const { sinners, details, unfinished } = await buildRoster();
   await writeFile(SINNERS_FILE, JSON.stringify(sinners));
+  // Written again every build, since a page changes with the game.
+  await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));
+  console.log(`ptn details: ${details.length} -> ${path.relative(process.cwd(), detailDir)}`);
   const artless = sinners.filter(s => !s.art).map(s => s.name);
   console.log(
     `ptn: ${sinners.length} sinners` +

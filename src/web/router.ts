@@ -4,13 +4,14 @@ export type Route =
   | { view: 'events'; tab: EventsTab }
   | { view: 'endfield' }
   | { view: 'endfield-detail'; id: string }
+  | { view: 'ptn-detail'; id: string }
   | { view: RosterGame };
 
 // The Events page's tabs: #/events is the list of events, and the other two hang off it.
 export type EventsTab = 'list' | 'pools' | 'calendar';
 
-// The games that are a roster and nothing else so far: one page each, at '#/' and the
-// game's name.
+// The games whose roster is card.ts's page, at '#/' and the game's name. Path to Nowhere
+// has a dossier under its own as well.
 const ROSTER_GAMES = ['ptn', 'holodori', 'fgo'] as const;
 type RosterGame = (typeof ROSTER_GAMES)[number];
 
@@ -24,6 +25,8 @@ export function parseHash(hash: string): Route {
   if (hash === '#/endfield') return { view: 'endfield' };
   const ef = /^#\/endfield\/op\/([^/]+)$/.exec(hash);
   if (ef) return { view: 'endfield-detail', id: decodeURIComponent(ef[1]) };
+  const sinner = /^#\/ptn\/sinner\/([^/]+)$/.exec(hash);
+  if (sinner) return { view: 'ptn-detail', id: decodeURIComponent(sinner[1]) };
   const roster = ROSTER_GAMES.find(game => hash === `#/${game}`);
   if (roster) return { view: roster };
   return { view: 'grid' };

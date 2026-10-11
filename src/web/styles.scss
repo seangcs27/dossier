@@ -60,9 +60,8 @@ body {
 
 // The game's emblem on a tile, painted in the tile's colour: 金藍 at rest, the text colour
 // under the pointer, the accent's gold for the game being shown, like the section link for
-// its page. The two emblems are white on transparency (icons/games/), so the default alpha
-// mask is the right one. A game with no emblem yet has its initials on the tile, which is
-// what the type here is for.
+// its page. The emblems are white on transparency (icons/games/), so the default alpha
+// mask is the right one.
 .side-mark {
   display: grid;
   place-items: center;
@@ -72,9 +71,6 @@ body {
   border-radius: var(--radius-lg);
   background: var(--bg);
   color: var(--muted);
-  font-size: var(--fs-base);
-  font-weight: 700;
-  letter-spacing: 0.08em;
   transition: border-color 0.16s, color 0.16s, background-color 0.16s;
 }
 

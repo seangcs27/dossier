@@ -28,8 +28,10 @@ function toCard(s: FgoServant): RosterCard {
 }
 
 export function mountFgo(container: HTMLElement): void {
-  mountRoster(
-    container, getFgoServants().map(toCard), 'servants',
-    'The last build could not reach Atlas Academy.',
-  );
+  mountRoster(container, {
+    items: getFgoServants(),
+    toCard,
+    noun: 'servants',
+    emptyNote: 'The last build could not reach Atlas Academy.',
+  });
 }

@@ -227,6 +227,8 @@ export function mountEndfield(container: HTMLElement): void {
   actions.style.display = '';
   watchFilterTab(actions, wrap);
 
+  // Another game's roster words the box for its own cast (card.ts).
+  search.placeholder = 'Search operators…';
   search.value = state.query;
   syncChips();
   renderMore();

@@ -45,14 +45,15 @@ export function escHtml(s: string): string {
  * The trail above a page that hangs off the operator grid (a dossier, the schedule): the
  * way back as a pill with a back chevron, then the page's own name. With no name it is the
  * pill alone, for a page still loading or one that failed. `roster` is where the pill
- * leads: the Arknights grid, unless the page belongs to the other game.
+ * leads and `cast` what it says: the Arknights grid and its operators, unless the page
+ * belongs to another game.
  */
-export function crumbsHtml(current?: string, roster = '#/'): string {
+export function crumbsHtml(current?: string, roster = '#/', cast = 'Operators'): string {
   return `
     <nav class="crumbs" aria-label="Breadcrumb">
       <a class="crumb-back" href="${roster}">
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"></path></svg>
-        Operators
+        ${cast}
       </a>
       ${current === undefined ? '' : `
         <svg class="crumb-sep" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5L10.5 8 6 12.5"></path></svg>
