@@ -1,5 +1,5 @@
 import { plateArtUrl } from '../../shared/api/hella-api';
-import { mountRoster, newRosterState, type RosterCard } from '../card';
+import { mountRoster, newRosterState, type RosterCard, type RosterOrder } from '../card';
 import { getPtnSinners, type PtnSinner } from '../ptn-index';
 
 // A rank's place among the site's rarity colours. S is the game's highest and takes 6, the
@@ -20,14 +20,30 @@ const PTN_LOOKS = [
   { id: 'original', label: 'Original' },
 ];
 
+// The roster's own order, rank and then name, and newest first. Only the Sinners of 2024 on
+// have a day to go by (PtnSinner.firstSeen); the rest follow them as the roster has them,
+// which the switch's tooltip says, since the seam shows.
+const PTN_ORDERS: RosterOrder<PtnSinner>[] = [
+  { id: 'rank', label: 'Rank' },
+  {
+    id: 'newest',
+    label: 'Newest',
+    tip: 'Newest first, by when each Sinner was first seen. Sinners from before 2024 have no date and follow by rank.',
+    compare: (a, b) => (b.firstSeen ?? '').localeCompare(a.firstSeen ?? ''),
+  },
+];
+
 // A Sinner's own lines on the site's plate: the tendency where the class sits, the libram on
 // the micro line, the birthplace up the edge as a nation is on an Arknights card, the game's
 // tags on the back. It has no glyphs, since the build bakes none: the wiki has a badge for
 // each tendency and each libram, to be looked at when its images are.
 function toCard(s: PtnSinner, look: string): RosterCard {
   const tier = PTN_TIER[s.rank];
+  // An original the build could not bake is still the wiki's file, and is asked of the
+  // proxy cut as the baked ones are.
+  const original = s.portrait?.startsWith('http') ? plateArtUrl(s.portrait) : s.portrait;
   // The two Sinners with no original keep their mugshot under either look.
-  const art = look === 'original' && s.portrait ? plateArtUrl(s.portrait) : s.art;
+  const art = look === 'original' && original ? original : s.art;
   return {
     // The number the game files the Sinner under, where the other rosters print an id.
     id: `MBCC-S-${s.number}`,
@@ -60,6 +76,9 @@ export function mountPtn(container: HTMLElement): void {
     emptyNote: 'The last build could not reach the Path to Nowhere wiki.',
     cta: 'View sinner',
     looks: { state: ptnRoster, options: PTN_LOOKS },
+    // With no day on any Sinner the build could not reach the wiki's upload dates, and
+    // there is one order only.
+    orders: sinners.some(s => s.firstSeen) ? { state: ptnRoster, options: PTN_ORDERS } : undefined,
     // The groups the game's Chinese wiki filters its own roster by (rank, tendency, faction,
     // tags), as far as the English one has them. A Sinner is found by name or by number.
     find: {

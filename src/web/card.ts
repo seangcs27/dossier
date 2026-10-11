@@ -51,10 +51,23 @@ export interface RosterState {
   open: boolean;                        // the filter panel
   unfolded: Set<string>;                // the folded groups that have been opened
   look: string;                         // which of the roster's `looks` is on; '' is the first
+  order: string;                        // which of its `orders`; '' is the first
 }
 
 export function newRosterState(): RosterState {
-  return { query: '', picks: {}, open: false, unfolded: new Set(), look: '' };
+  return { query: '', picks: {}, open: false, unfolded: new Set(), look: '', order: '' };
+}
+
+/** One choice of a switch over the grid. `tip` is its tooltip, where the label wants one. */
+export interface RosterOption {
+  id: string;
+  label: string;
+  tip?: string;
+}
+
+/** An order to deal a roster in. One without `compare` is the order its items came in. */
+export interface RosterOrder<T> extends RosterOption {
+  compare?: (a: T, b: T) => number;
 }
 
 export interface Roster<T> {
@@ -63,7 +76,9 @@ export interface Roster<T> {
   toCard: (item: T, look: string) => RosterCard;
   // Two or more ways to draw the same cards, with a switch over the grid to choose between
   // them: a game whose own roster shows its cast in more than one kind of picture.
-  looks?: { state: RosterState; options: { id: string; label: string }[] };
+  looks?: { state: RosterState; options: RosterOption[] };
+  // Two or more orders to deal the cards in, with a switch of their own beside that one.
+  orders?: { state: RosterState; options: RosterOrder<T>[] };
   noun: string;         // what the game calls its cast, in the plural: 'sinners'
   emptyNote: string;    // what the page says when the build had nothing to bake
   cta?: string;         // what a card that opens a page says under the pointer: 'View sinner'
@@ -138,13 +153,27 @@ function buildCard(card: RosterCard, cta: string): string {
   `;
 }
 
+// One of the switches over the grid: a joined row of buttons, the choice that is on pressed.
+// `kind` is the data attribute a press is read from.
+function switchHtml(name: string, kind: 'look' | 'order', options: RosterOption[], on: string): string {
+  return `
+    <span class="seg" role="group" aria-label="${name}">
+      ${options.map(o => `
+        <button class="seg-btn${o.id === on ? ' on' : ''}" data-${kind}="${escHtml(o.id)}" aria-pressed="${o.id === on}"
+                ${o.tip ? `data-tip="${escHtml(o.tip)}"` : ''}>${escHtml(o.label)}</button>
+      `).join('')}
+    </span>
+  `;
+}
+
 // Cards are built in batches as the page nears the end of what exists, as the Arknights
 // grid's are (grid.ts has the measurements): one of these rosters is several hundred cards.
 const BATCH = 48;
 let more: IntersectionObserver | undefined;
 
 // The count in the topbar's pill and, for a phone, inside the search box; then the cards, in
-// the order given. `items` is what a search or a pick has left of the roster, or all of it.
+// the roster's order or the one its switch is on. `items` is what a search or a pick has
+// left of the roster, or all of it.
 function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   more?.disconnect();
   // The word is in a span of its own for a phone to drop (styles.scss, .count-noun).
@@ -160,25 +189,29 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   }
   const looks = roster.looks;
   const look = looks ? looks.state.look || looks.options[0].id : '';
+  const orders = roster.orders;
+  const order = orders?.options.find(o => o.id === orders.state.order) ?? orders?.options[0];
+  // A sort keeps the order it was given wherever `compare` has nothing to say, so what an
+  // order does not rank stays as the roster has it.
+  const dealt = order?.compare ? [...items].sort(order.compare) : items;
   container.innerHTML = `
-    ${looks ? `
+    ${looks || orders ? `
       <div class="roster-bar">
-        <span class="seg" role="group" aria-label="Card art">
-          ${looks.options.map(o => `
-            <button class="seg-btn${o.id === look ? ' on' : ''}" data-look="${escHtml(o.id)}" aria-pressed="${o.id === look}">${escHtml(o.label)}</button>
-          `).join('')}
-        </span>
+        ${orders ? switchHtml('Order', 'order', orders.options, order!.id) : ''}
+        ${looks ? switchHtml('Card art', 'look', looks.options, look) : ''}
       </div>
     ` : ''}
     <div id="grid"></div><div id="grid-end"></div>
   `;
-  // The switch redraws the same cards the other way, and takes the focus with it.
+  // Either switch redraws the same cards its other way, and takes the focus with it.
   container.querySelector<HTMLElement>('.roster-bar')?.addEventListener('click', (ev) => {
-    const pressed = (ev.target as Element).closest<HTMLElement>('[data-look]');
-    if (!pressed || !looks || pressed.dataset.look === look) return;
-    looks.state.look = pressed.dataset.look!;
+    const pressed = (ev.target as Element).closest<HTMLElement>('[data-look], [data-order]');
+    if (!pressed || pressed.getAttribute('aria-pressed') === 'true') return;
+    const { look: pickedLook, order: pickedOrder } = pressed.dataset;
+    if (pickedLook) looks!.state.look = pickedLook;
+    else orders!.state.order = pickedOrder!;
     deal(container, roster, items);
-    container.querySelector<HTMLElement>(`[data-look="${looks.state.look}"]`)?.focus();
+    container.querySelector<HTMLElement>(pickedLook ? `[data-look="${pickedLook}"]` : `[data-order="${pickedOrder}"]`)?.focus();
   });
   const grid = document.getElementById('grid')!;
   const end = document.getElementById('grid-end')!;
@@ -186,7 +219,7 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   let shown = 0;
   const append = (): void => {
     const batch = document.createElement('template');
-    batch.innerHTML = items.slice(shown, shown += BATCH).map(item => buildCard(roster.toCard(item, look), cta)).join('');
+    batch.innerHTML = dealt.slice(shown, shown += BATCH).map(item => buildCard(roster.toCard(item, look), cta)).join('');
     mountCardSpin(batch.content);
     grid.append(batch.content);
   };

@@ -20,10 +20,17 @@ export interface PtnSinner {
   // ('ptn/mugshots/hecate.webp', 360 wide and cut at two widths), or its original's address
   // on the wiki where the build could not fetch it. Absent where the wiki has no such file.
   art?: string;
-  // The original illustration's address on the wiki, a standing figure too: what a card
-  // shows where the roster is switched from mugshots to originals. Not baked: the card asks
-  // the resizing proxy for it (plateArtUrl). Absent for the two the wiki has none of.
+  // The original illustration, a standing figure too: what a card shows where the roster is
+  // switched from mugshots to originals. The baked file beside the page
+  // ('ptn/originals/hecate.webp', 360 by 720), or its original's address on the wiki where
+  // the build could not fetch it, which the card asks the resizing proxy for (plateArtUrl).
+  // Absent for the two the wiki has none of.
   portrait?: string;
+  // The day the Sinner was first seen, '2026-10-02': their pictures' first upload to the
+  // wiki or their first dated banner, whichever came first. Only where that is 2024 or
+  // later, which is as far back as it can be believed (build-ptn-index.mjs, ORDER_SINCE):
+  // absent for the other 76, whom nothing dates.
+  firstSeen?: string;
 }
 
 // Baked in at build time, highest rank first and then by name: no runtime fetch. Empty when

@@ -82,7 +82,7 @@ scripts/
   build-range-index.mjs      ← ranges.json
   build-event-index.mjs      ← events.json + event-banners/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
-  build-ptn-index.mjs        ← ptn/sinners.json + ptn/mugshots/
+  build-ptn-index.mjs        ← ptn/sinners.json + ptn/mugshots/ + ptn/originals/ + ptn/sinner-details/
   build-holodori-index.mjs   ← holodori/characters.json
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
@@ -133,6 +133,7 @@ src/
       endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
       ptn/sinners.json           ← Path to Nowhere's roster (144), bundled into the web target
       ptn/mugshots/<id>.webp     ← its card art (143), 360 wide and cut at two widths, copied as static files
+      ptn/originals/<id>.webp    ← the cards' other look (142), 360x720, copied as static files
       ptn/sinner-details/<id>.json  ← 144 dossier payloads parsed from the wiki's pages, copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
@@ -206,7 +207,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/mugshots/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/mugshots/`, `ptn/originals/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -309,7 +310,7 @@ endfieldSplashUrl(id)                      // the same operator's full illustrat
 endfieldIconUrl(kind, name)                // an Endfield class, element or weapon glyph, bundle-relative endfield/icons/
 factionLogoUrl(nationId)                   // bundle-relative faction-logos/ — a mask; takes any faction id
 artUrl(rawUrl, width, quality?)            // full illustration, resized through wsrv.nl
-plateArtUrl(rawUrl)                        // the same proxy, cutting a standing figure to a card's 1:2 plate
+plateArtUrl(rawUrl)                        // the same proxy, cutting a standing figure to a card's 1:2 plate; for one the build could not bake
 operatorSkinAvatarUrl(id, suffix)          // per-outfit avatar — Arknight-Images CDN
 itemIconUrl(iconId)                        // bundle-relative item-icons/ — keyed by iconId, not item id
 eliteIconUrl(phase)                        // bundle-relative elite-icons/ — a mask, see eliteIcon()
@@ -959,7 +960,10 @@ looks in, and a list of `RosterFilter` groups, each its values and one of three 
 them. The search and the picks live in a `RosterState` the game's own view keeps, so they
 survive a visit elsewhere and never show on another game's roster. With `looks`, a switch
 over the grid (`.roster-bar`, the Any / All switch's construction) chooses between two or
-more ways of drawing the same cards, and `toCard` is told which. The handling of the box
+more ways of drawing the same cards, and `toCard` is told which; with `orders`, a second
+switch beside it chooses the order they are dealt in (the first is the roster's own, any
+other a `compare`, and the sort is stable, so what an order does not rank stays as the
+roster has it). The handling of the box
 and the panel is `grid.ts`'s once more (assigned handlers, since every roster works the
 same elements; `data-group` / `data-value` on the buttons, as Endfield's), written here
 once for any game that asks; a roster without `find` puts the box away. Whichever roster
@@ -990,7 +994,8 @@ file's address beside the page, or the original's on the source's own host for a
 the bake could not get, which is why the two partials above keep their rules: on a baked
 picture they change nothing. The owner approved those downloads on 11 October 2026 (143
 PNGs and about 44 MB from the PtN wiki, 470 PNGs and 42.5 MB from Atlas Academy, which baked
-to 6.1 MB and 5.3 MB).
+to 6.1 MB and 5.3 MB), and later that day the 142 originals PtN's cards turn to (81 MB,
+baked to 7.3 MB).
 
 **Path to Nowhere** (`#/ptn`, 144 Sinners). `scripts/build-ptn-index.mjs` reads
 `pathtonowhere.wiki.gg`, which has no Cargo tables. A playable Sinner's page is one call of
@@ -1004,7 +1009,7 @@ rank, tendency, libram, birthplace, tags, and `art`, the mugshot: the standing f
 wiki's own infobox shows, `File:<page> Prisonphoto.png` (143 of 144; Pine has none and
 shows a "P"), baked 360 wide and cut at two widths, below which a card shows nothing of a
 figure anyway. The order is rank S, A, B and then name: nothing dates
-a release. On the card: S / A / B on tiers 6 / 5 / 4, with the letter at the foot of a tab
+a release (the roster's Newest order, below, is what stands in for one). On the card: S / A / B on tiers 6 / 5 / 4, with the letter at the foot of a tab
 as many lines tall as the tier, so the tab's height still says the rank; tendency on the
 class line, libram on the micro line, birthplace up the edge (for 20 of them the game's own
 redaction or "Unknown"), and on the back `MBCC-S-019` and the game's tags.
@@ -1021,8 +1026,26 @@ groups have no field on the English one.
 it is the game's**: its roster turns between its Sinners' mugshots and their original
 illustrations, and a Sinner's page shows every picture the game has of them. So the roster
 has a Mugshot / Original switch over its grid (`looks`, above), and the dossier opens on
-whichever of the two the cards were showing. A card's original is not baked: it is the
-wiki's file asked of the resizing proxy, cut to the plate (`plateArtUrl` in `hella-api.ts`).
+whichever of the two the cards were showing. A card's original is baked as its mugshot is
+(`ptn/originals/<id>.webp`, the plate filled from the top down, so that the legs go; an
+entry's `portrait`). It was first the wiki's file asked of the resizing proxy at that cut
+(`plateArtUrl` in `hella-api.ts`), which took most of a second a card the first time, and
+that is still what a card falls back to for an original the bake could not get.
+
+**Beside that switch is the order's: Rank, the roster's own, or Newest.** The wiki has no
+release dates and no version history (its `Patch History` page is a table's header), so
+Newest goes by an entry's `firstSeen`: the day the Sinner's original or mugshot was first
+uploaded to the wiki (every version's timestamp, the oldest kept), or the first dated
+banner on the `Arrests` page that names them, whichever came first. Seven more requests a
+build, and one more wherever an answer runs on. **It is kept only where it is 2024 or later** (`ORDER_SINCE` in the build script),
+68 of the 144: from then on the wiki has had a new Sinner's pictures within days of the
+announcement, and the order agrees with the order of that page's event banners' rows in
+97% of pairs. Before 2024 the wiki was catching up (its editors uploaded the launch roster
+in batches into November 2023, and a launch Sinner's first dated banner is often a later
+rate-up), so those 76 have no `firstSeen` and follow the dated ones in the roster's own
+order, which the switch's tooltip says. With the wiki's dates out of reach no entry has one
+and the page shows no such switch. A day here is the wiki's, not the game's: it was never
+checked against an official date.
 
 **A Sinner's dossier** (`#/ptn/sinner/<id>`, `views/ptn-detail.ts`) is that wiki's Sinner
 page, section for section, built from the Arknights dossier's parts: the art column, and a
@@ -1037,7 +1060,7 @@ across the roster (142 originals, 140 phase-up, 143 mugshots, 68 interrogation p
 191 attires), which `parseSinnerArt` reads out of each Sinner's `Attires` and `Gallery`
 subpages (six requests, 50 titles each) before the build asks the wiki for every file's
 address (another dozen); a file a page names and the wiki never got is left out. **None of
-them is downloaded**: the originals are 1 to 9 MB each and about 1.5 GB in all, so the page
+them is downloaded for the page**: the files are 1 to 9 MB each and about 1.5 GB in all, so the page
 asks the resizing proxy for each at the size shown (`artUrl`: 128px for a thumbnail, 1024
 on the page, 2048 in the viewer), as the Arknights illustrations are and for the same
 reason. Its long page of tables becomes five
@@ -1097,8 +1120,9 @@ which puts the two cut corners at its top out of sight; the bake cuts at the sam
 (`LIFT` in the script), and the two have to agree. Atlas Academy's data is ODC-BY 1.0
 and asks for credit, which the README gives and the site itself does not yet.
 
-Not built for any of the three: glyphs, a release order. Not built for hololive Dreams or
-FGO: search, filters, a dossier.
+Not built for any of the three: glyphs, a release order (Path to Nowhere's Newest is one
+for its last three years only). Not built for hololive Dreams or FGO: search, filters, a
+dossier.
 
 ## Testing
 

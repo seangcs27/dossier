@@ -18,17 +18,35 @@ yet:
 - **A design of its own for each game.** The owner means them to differ. Path to Nowhere
   is the first: its roster switches between mugshots and originals, and a Sinner's page has
   the game's gallery (CLAUDE.md). The others are on the Arknights card and dossier still.
-- **The Original look's cards are not baked.** Each is the wiki's file through the resizing
-  proxy, so a card's first showing is a cold fetch (the reason the mugshots were baked).
-  Baking them means downloading 142 PNGs, 81.3 MB by the wiki's own sizes (median 559 KB),
-  which would come to about 6 MB as the mugshots did; that download wants the owner's word.
-  The gallery's larger pictures are not for baking at all: 399 files, about 1.4 GB.
-- **A release order for Path to Nowhere**, looked into on 11 October 2026 and not built:
+- **The gallery's larger pictures are not for baking**: the phase-up art, the attires and
+  the interrogation pictures are 399 files and about 1.4 GB. (The originals, for the cards,
+  are baked: 142 files.)
+- **A release order for Path to Nowhere**, looked into on 11 October 2026 and built for
+  the 68 Sinners of 2024 on (the roster's Newest order, from the upload days below;
+  CLAUDE.md). The 76 before them still have none, and no day was checked against an
+  official one. What was found:
   - The English wiki's `Arrests` page is its banner history, 115 banners in four tabs, each
     with its dates and the Sinners it features. It dates 81 of the 144 by their first
     banner; 39 more are only in banners whose dates were never filled in (the later rows),
     and can be ordered by row; 24 are in no banner, the launch roster and the newest alike,
-    which nothing on the page tells apart.
+    which nothing on the page tells apart. **A first dated banner is not a release date**,
+    though: 27 of the 81 had their pictures on the wiki more than 60 days before it (a
+    launch Sinner's later rate-up, as Crache's, or the Global run of one CN had first).
+  - The wiki has no version history to fill the gap. `Patch History` is a table's header
+    and no rows; there are six patch pages, all of 2023 and 2024; a Sinner's page has no
+    date field; the day a page joined `Category:Playable Sinners` is 8 December 2025 for
+    nearly all of them (a template change set it); and the `Events` page's reward column
+    dates 11 Sinners, every one of whom a banner dates already.
+  - What does reach the roster is **the day a Sinner's pictures were first uploaded**
+    (`prop=imageinfo`, every version's timestamp, the oldest kept): 143 of 144, all but
+    Pine. From 2024 on it reads as the day the Sinner was announced: 65 of those 68 have
+    the original and the mugshot uploaded within three days of each other, a release or two
+    a month. Before 2024 it does not: the wiki's editors uploaded in batches (14 Sinners
+    in December 2022, 9 in April 2023, 9 in June 2023), so a launch Sinner with no banner
+    lands up to a year late, and against the banner dates it puts 81 to 84% of pairs in
+    the same order. Hence a "newest first" order that is right for the last three years
+    and has none to give the Sinners before them. A full one still wants `s1n.gg`'s say or
+    the Chinese wiki's dates.
   - `s1n.gg` sorts its own roster by release and has a `release_date` in its data, but the
     data comes from a backend of its own with no documentation, and the site states no
     terms. Not a thing to build on without asking its owners.

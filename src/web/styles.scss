@@ -1132,11 +1132,18 @@ body {
   padding: var(--sp-20);
 }
 
-// A roster's switch between two kinds of card art (card.ts), over the grid at its right
-// end: the Any / All switch's construction, at a size to be the page's own control.
+// A roster's switches (card.ts): which order its cards are in and which of two kinds of art
+// they show, over the grid at its right end. The Any / All switch's construction, at a
+// size to be the page's own control. They wrap where a narrow phone has no room for both.
 .roster-bar {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-8) var(--sp-12);
   padding: var(--sp-16) var(--sp-20) 0;
+
+  // .seg pushes itself to its row's end, which between two would part them.
+  .seg { margin-left: 0; }
 
   .seg-btn {
     padding: var(--sp-6) var(--sp-12);
