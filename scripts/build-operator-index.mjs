@@ -598,8 +598,11 @@ async function fetchReleaseOrder() {
     if (!dataRes.ok) throw new Error(`${dataRef} ${dataRes.status}`);
     const dataJs = await dataRes.text();
 
+    // Within the entry's own braces. An operator Sanity Gone has not numbered yet has no
+    // releaseOrder, and a match free to run on took the next entry's: Timeslot sorted as
+    // Scene (148, from 2020) and Scene was left with none.
     const byId = new Map(
-      [...dataJs.matchAll(/charId:"(char_[^"]+)"[\s\S]{0,400}?releaseOrder:(\d+)/g)]
+      [...dataJs.matchAll(/charId:"(char_[^"]+)"[^{}]{0,400}?releaseOrder:(\d+)/g)]
         .map(m => [m[1], parseInt(m[2], 10)]),
     );
     if (byId.size < 300) throw new Error(`only parsed ${byId.size} entries — asset shape may have changed`);

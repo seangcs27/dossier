@@ -91,6 +91,11 @@ export function wikiToGameText(source) {
     .trim();
 }
 
+// A page as the wiki itself reads it, which is without its editors' comments. A new
+// operator's page keeps the untranslated Chinese in one where the English is to go
+// (`effect = <!-- 攻击力… -->`), and taken as the text it came out on the site, markers and all.
+const withoutComments = text => text.replace(/<!--[\s\S]*?-->/g, '');
+
 const phaseOf = condition => Number(/elite\s*(\d)/i.exec(condition ?? '')?.[1] ?? 0);
 
 // Talents as the game groups them: one list per talent, each entry the text at one elite
@@ -162,7 +167,7 @@ function parseModules(text) {
 // titles are the game's own ("Profile", "Archive File 2"). A page nobody has translated yet
 // holds the Chinese text under the same titles, which the caller tells apart by script.
 export function parseFilePage(text) {
-  return templateBodies(text, 'Archive')
+  return templateBodies(withoutComments(text), 'Archive')
     .map(body => templateParams(body).named)
     .filter(named => named.title && named.text)
     .map(named => ({ title: named.title, text: wikiToGameText(named.text) }));
@@ -172,6 +177,7 @@ export function parseFilePage(text) {
 // (`filename = char_4235_thumpy`) — the one field that doesn't depend on how the wiki
 // spells the name ("Viy" for Вий, "Kal'tsit - Esperanta" for Kal'tsit·Esperanta).
 export function parseOperatorPage(text) {
+  text = withoutComments(text);
   const infobox = templateParams(templateBodies(text, 'Operator infobox')[0] ?? '').named;
   const info = templateParams(templateBodies(text, 'Operator info')[0] ?? '').named;
   return {
