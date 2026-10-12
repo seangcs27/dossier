@@ -20,19 +20,26 @@ $red: #b8141c;
 // The placard's face: Barlow Condensed, a highway sign's lettering, in the two weights the
 // wall is set in (the owner's pick of three, 12 October 2026; fonts/barlow-condensed/ has
 // the files as the Google Fonts repository has them, with their licence). They are asked
-// for only where something is set in them, which is on this game's pages.
+// for only where something is set in them, which is on this game's pages. The WOFF2 is
+// Google Fonts' own Latin cut of each, a tenth the size; the TTF is behind it for a
+// browser that cannot read one. Neither has Chinese: that side falls through to the
+// reader's own face.
 @font-face {
   font-family: 'Barlow Condensed';
   font-weight: 500;
   font-display: swap;
-  src: url('./fonts/barlow-condensed/BarlowCondensed-Medium.ttf') format('truetype');
+  src:
+    url('./fonts/barlow-condensed/BarlowCondensed-Medium.woff2') format('woff2'),
+    url('./fonts/barlow-condensed/BarlowCondensed-Medium.ttf') format('truetype');
 }
 
 @font-face {
   font-family: 'Barlow Condensed';
   font-weight: 700;
   font-display: swap;
-  src: url('./fonts/barlow-condensed/BarlowCondensed-Bold.ttf') format('truetype');
+  src:
+    url('./fonts/barlow-condensed/BarlowCondensed-Bold.woff2') format('woff2'),
+    url('./fonts/barlow-condensed/BarlowCondensed-Bold.ttf') format('truetype');
 }
 
 // The wall shows 0 to 210 cm over the top 86% of a row, and the floor, where the placards
@@ -151,19 +158,33 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
 
   --ptn-rule: rgb(23 24 26 / 24%);
   --ptn-rule-strong: rgb(23 24 26 / 52%);
-  // A row of the roster's wall, floor and all. Everything on it is a share of this.
-  --ptn-row: clamp(430px, 68vh, 760px);
   --ptn-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   color: $ink;
 }
 
-[data-view='ptn'] #view { padding-bottom: 64px; }
+// The roster is one wall, a window tall: what the window has left under the topbar
+// (--ptn-over, and the switches where they have a line of their own), less the band the
+// line-ups' names are in over the wall and the rail under its floor. `body` is in the
+// selector to outrank the rule above, which an earlier phone rule here did not.
+body[data-view='ptn'] #view {
+  --ptn-over: 77px;
+  --ptn-head: 72px;
+  --ptn-title: 44px;
+  --ptn-rail: 34px;
+  // A row of the wall, floor and all. Everything on it is a share of this.
+  --ptn-row: clamp(430px, calc(100vh - var(--ptn-over) - var(--ptn-head) - var(--ptn-rail)), 920px);
 
-// The two switches, on the wall: outlined in ink, the one that is on filled with it.
-[data-view='ptn'] .roster-bar {
-  padding: var(--sp-24) var(--sp-24) 0;
+  // The topbar in two rows, and the switches on a line of their own under it.
+  @media (max-width: 1031px) { --ptn-over: 182px; }
+}
 
+[data-view='ptn'] .roster-bar { padding: var(--sp-12) var(--sp-24); }
+
+// The switches, on the wall: outlined in ink, the one that is on filled with it. The
+// roster's three, and the language's again beside a Sinner's trail.
+[data-view='ptn'] .roster-bar,
+.ptn-trail {
   .seg {
     border: 1.5px solid $ink;
     border-radius: 0;
@@ -186,43 +207,137 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   }
 }
 
-// A line-up: its name and its head count, then its wall.
-.lineup-head {
+// Where there is the width for both, the switches stand in the band the line-ups' names
+// are in, at its far end, and not on a line of their own over it. A name on its way along
+// the wall goes out under them, into the wall's own colour.
+@media (min-width: 1032px) {
+  [data-view='ptn'] .roster-bar {
+    --bar-h: 31px; // a switch's own height
+    position: relative;
+    top: calc((var(--ptn-head) - var(--bar-h)) / 2);
+    z-index: 5;
+    width: max-content;
+    height: 0;
+    margin-left: auto;
+    padding-block: 0;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: calc((var(--ptn-head) - var(--bar-h)) / -2);
+      right: 0;
+      left: -48px;
+      z-index: -1;
+      height: var(--ptn-head);
+      background: linear-gradient(to right, transparent, #{$wall} 48px);
+    }
+  }
+}
+
+// The rules over the floor, a row tall under the band of names: the wall's own surface,
+// and its scale's again.
+@mixin wall-surface {
+  background:
+    wall-rules(),
+    linear-gradient(to bottom, #{$wall} calc(#{$band * 100%} - 1.5px), #{$ink-soft} calc(#{$band * 100%} - 1.5px), #{$ink-soft} #{$band * 100%}, #{$floor} #{$band * 100%});
+  background-color: $wall;
+  background-position: 0 var(--ptn-head);
+  background-size: 100% var(--ptn-row);
+  background-repeat: no-repeat;
+}
+
+// The wall and the ways along it: an arrow at each end, and the rail under its floor.
+.wall-frame {
+  position: relative;
+  // The numerals' column, as wide as their picture comes out at this row's height, and the
+  // scale they are on.
+  --ptn-gutter: calc(var(--ptn-row) * #{math.div(20, $row-cm)});
+  --ptn-scale: calc(var(--ptn-gutter) + var(--sp-12));
+}
+
+// The wall. The line-ups stand one after another along it, and it runs on sideways past
+// the window's edge (the owner's ask of 12 October 2026: one wall, where there was a wall
+// to a line-up down the page): the wall is what scrolls, and its rules and floor, which
+// are its background, stay where they are while the figures pass along them. It has no
+// scrollbar of its own: the rail under it is that (views/ptn.ts).
+.wall {
+  @include wall-surface;
+
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  height: calc(var(--ptn-head) + var(--ptn-row));
+  padding-right: var(--sp-24);
+  overflow: auto hidden;
+  scrollbar-width: none;
+  // A figure brought into view by the keyboard stops clear of the scale.
+  scroll-padding-left: var(--ptn-scale);
+  // It is dragged along by a mouse, so a press on it is not the start of a selection.
+  cursor: grab;
+  user-select: none;
+
+  &::-webkit-scrollbar { display: none; }
+  &.dragging { cursor: grabbing; }
+}
+
+// The scale, which stays at the wall's left edge while the line-ups move: a strip of the
+// same wall, so that a figure leaving goes behind the numerals and not through them.
+.wall-scale {
+  @include wall-surface;
+
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  flex: none;
+  align-self: stretch;
+  width: var(--ptn-scale);
+  // The edge a figure goes behind.
+  border-right: 1px solid var(--ptn-rule);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: var(--ptn-head) auto 0 0;
+    width: var(--ptn-gutter);
+    background: $ink;
+    -webkit-mask: wall-numerals() left top / auto var(--ptn-row) no-repeat;
+            mask: wall-numerals() left top / auto var(--ptn-row) no-repeat;
+  }
+}
+
+// A line-up: its name and head count in the band over the wall, its Sinners on the wall
+// under them. It is as wide as the wider of the two, so a line-up of one still has its
+// name whole. A rule down the wall parts it from the one before.
+.lineup {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+
+  & + & { border-left: 2px solid var(--ptn-rule-strong); }
+}
+
+// The name stays at the wall's left end for as long as any of its line-up is showing, and
+// is pushed out by the next one's.
+.lineup-head {
+  position: sticky;
+  left: var(--ptn-scale);
+  z-index: 3;
+  align-self: flex-start;
+  display: flex;
   align-items: baseline;
-  gap: var(--sp-4) var(--sp-16);
-  padding: 44px var(--sp-24) var(--sp-12);
+  gap: var(--sp-12);
+  height: var(--ptn-head);
+  padding: calc((var(--ptn-head) - var(--ptn-title)) / 2) var(--sp-24) 0 var(--sp-12);
+  white-space: nowrap;
 
   h2 {
     font-family: var(--ptn-placard);
     font-stretch: 75%;
     font-weight: 700;
-    font-size: clamp(34px, 4.6vw, 60px);
-    line-height: 0.95;
+    font-size: var(--ptn-title);
+    line-height: 1;
     letter-spacing: 0.01em;
     text-transform: uppercase;
-    text-wrap: balance;
-  }
-}
-
-.roster-bar + .roster-page .lineup:first-child .lineup-head { padding-top: var(--sp-8); }
-
-// Where there is the width for both, the switches stand on the first line-up's own line,
-// at its far end, and not on a line of their own over it.
-@media (min-width: 900px) {
-  [data-view='ptn'] .roster-bar {
-    position: relative;
-    z-index: 1;
-    height: 0;
-    padding-top: 0;
-    transform: translateY(var(--sp-24));
-  }
-
-  .roster-bar + .roster-page .lineup:first-child .lineup-head {
-    min-height: 76px;
-    padding-top: var(--sp-16);
-    padding-right: 360px;
   }
 }
 
@@ -232,30 +347,95 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   font-variant-numeric: tabular-nums;
 }
 
-// The wall. Every figure's box is a row tall, so the rules, the floor and the numerals,
-// which repeat a row at a time, fall under however many rows the figures wrap into.
-.wall {
+.lineup-row {
+  display: flex;
+  align-items: flex-start;
+  height: var(--ptn-row);
+  padding-inline: var(--sp-8);
+}
+
+// An arrow at each end of the wall, half way up it: what says the wall goes on, and moves
+// it most of a window at a time. Gone at the end it would lead past.
+.wall-nav {
+  position: absolute;
+  top: calc(var(--ptn-head) + var(--ptn-row) * #{$band * 0.5});
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 76px;
+  padding: 0;
+  border: 0;
+  background: $ink;
+  color: $bone;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 0.15s var(--ptn-ease), color 0.15s var(--ptn-ease), opacity 0.15s var(--ptn-ease);
+
+  svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: square;
+  }
+
+  &.prev { left: var(--ptn-scale); }
+  &.next { right: 0; }
+  &.next svg { transform: scaleX(-1); }
+
+  &:hover { background: $bone; color: $ink; }
+  &:focus-visible { outline: 2px solid $ink; outline-offset: 2px; }
+
+  &:disabled {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+// The rail: the wall end to end, in little. A part to a line-up, as wide as its share of
+// the wall, and a window on it over what is showing, under the world's one red. It is
+// the wall's scrollbar: a press goes to a line-up, a drag takes the wall along.
+.wall-rail {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  // The numerals' column, as wide as their picture comes out at this row's height.
-  --ptn-gutter: calc(var(--ptn-row) * #{math.div(20, $row-cm)});
-  padding: 0 var(--sp-24) 0 calc(var(--ptn-gutter) + var(--sp-12));
-  background:
-    linear-gradient(to bottom, transparent calc(#{$band * 100%} - 1.5px), #{$ink-soft} calc(#{$band * 100%} - 1.5px), #{$ink-soft} #{$band * 100%}, #{$floor} #{$band * 100%}),
-    wall-rules();
-  background-size: 100% var(--ptn-row);
+  height: var(--ptn-rail);
+  background: $ink;
+  touch-action: none;
+  user-select: none;
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: var(--ptn-gutter);
-    background: $ink;
-    -webkit-mask: wall-numerals() left top / auto var(--ptn-row) repeat-y;
-            mask: wall-numerals() left top / auto var(--ptn-row) repeat-y;
-  }
+.rail-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 3px var(--sp-4) 0;
+  overflow: hidden;
+  border: 0;
+  background: none;
+  color: $bone-dim;
+  font-family: var(--ptn-placard);
+  font-stretch: 85%;
+  font-size: var(--fs-md);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s var(--ptn-ease);
+
+  & + & { border-left: 1px solid #3d4043; }
+  &:hover,
+  &.on { color: $bone; }
+  &:focus-visible { outline: 2px solid $bone; outline-offset: -3px; }
+}
+
+.rail-here {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-top: 3px solid $red;
+  background: rgb(236 235 227 / 14%);
+  pointer-events: none;
 }
 
 // One Sinner: the figure over the floor line, the placard under it. Its neighbours stand a
@@ -265,6 +445,7 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   display: grid;
   grid-template-rows: #{$band * 100}fr #{(1 - $band) * 100}fr;
   justify-items: center;
+  flex: none;
   height: var(--ptn-row);
   min-width: 7.5rem;
   margin-inline: calc(var(--ptn-row) * -0.006);
@@ -440,17 +621,29 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   line-height: 1;
 }
 
-// A phone stands two or three to a row: a shorter wall, and a smaller board under each.
+// A phone shows two or three at a time: a smaller board under each, and less around the
+// wall, which has the switches on a line of their own over it.
 @media (max-width: 640px) {
-  [data-view='ptn'] #view { --ptn-row: clamp(300px, 44vh, 400px); }
-  [data-view='ptn'] .roster-bar { padding: var(--sp-16) var(--sp-12) 0; }
-  .lineup-head { padding: var(--sp-24) var(--sp-12) var(--sp-8); }
-
-  .wall {
-    padding-right: var(--sp-8);
-    padding-left: calc(var(--ptn-gutter) + var(--sp-6));
+  body[data-view='ptn'] #view {
+    --ptn-over: 152px;
+    --ptn-head: 48px;
+    --ptn-title: 28px;
+    --ptn-rail: 30px;
   }
 
+  [data-view='ptn'] .roster-bar {
+    gap: var(--sp-8);
+    padding: var(--sp-8) var(--sp-12);
+
+    .seg-btn { padding: var(--sp-6) var(--sp-8); font-size: var(--fs-sm); letter-spacing: 0.04em; }
+  }
+
+  .wall-frame { --ptn-scale: calc(var(--ptn-gutter) + var(--sp-6)); }
+  .wall { padding-right: var(--sp-8); }
+  .lineup-head { gap: var(--sp-8); padding-inline: var(--sp-8) var(--sp-16); }
+  .lineup-row { padding-inline: var(--sp-4); }
+  .wall-nav { width: 30px; height: 56px; }
+  .rail-seg { font-size: var(--fs-xs); letter-spacing: 0.04em; }
   .suspect { min-width: 5.75rem; }
 
   .plate {
@@ -703,6 +896,22 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   &:hover { border-color: $bone; }
   &:focus-visible { outline: 2px solid $bone; outline-offset: 2px; }
   &.on { border-color: $red; }
+}
+
+// The trail and, at its far end, the language's switch: one line, the trail's own height.
+.ptn-trail {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-12);
+  margin-bottom: var(--sp-16);
+
+  .crumbs {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .seg { flex: none; }
+  .seg-btn { padding: 3px var(--sp-10); font-size: var(--fs-sm); }
 }
 
 .ptn-detail {

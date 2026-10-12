@@ -33,12 +33,30 @@ export interface RosterFilter<T> {
   key: string;          // names the group in the picks and on its buttons
   label: string;
   values: string[];     // in the order their buttons stand in
-  // Tiles as the Arknights classes are, a joined row as its rarities are, or loose chips.
-  look: 'tiles' | 'ranks' | 'chips';
+  // Tiles as the Arknights classes are, a joined row as its rarities are, loose chips, or
+  // badges: a button to a value with the game's own picture for it before its name.
+  look: 'tiles' | 'ranks' | 'chips' | 'badges';
   across?: number;      // tiles and ranks: how many to a row, where not all of them
   tier?: (value: string) => number;   // ranks: the rarity colour a value's button takes
   of: (item: T) => string | string[];
   folded?: boolean;     // shut behind its label until asked for: a list too long to stand open
+  // What a value's button says, where that is not the value itself: its name in the
+  // language the page is in, the value staying what the picks are kept by.
+  text?: (value: string) => string;
+  icon?: (value: string) => string | undefined;   // badges: the picture's address, where there is one
+  // The values in named rows, where the game sorts them into kinds: every one of `values`
+  // is in some row.
+  sets?: { label: string; values: string[] }[];
+}
+
+/** A switch of the page's own over the grid, beside the order's and the look's. */
+export interface RosterSwitch {
+  name: string;         // what it chooses, for a screen reader
+  options: RosterOption[];
+  on: string;           // the id of the choice that is on
+  // What a press on another does. The page is the caller's to redraw: the switch may
+  // change what every part of it says.
+  pick: (id: string) => void;
 }
 
 /**
@@ -84,7 +102,9 @@ export interface Roster<T> {
   looks?: { state: RosterState; options: RosterOption[] };
   // Two or more orders to deal the cards in, with a switch of their own beside that one.
   orders?: { state: RosterState; options: RosterOrder<T>[] };
+  switches?: RosterSwitch[];
   noun: string;         // what the game calls its cast, in the plural: 'sinners'
+  prompt?: string;      // the search box's placeholder, where 'Search <noun>…' is not it
   emptyNote: string;    // what the page says when the build had nothing to bake
   cta?: string;         // what a card that opens a page says under the pointer: 'View sinner'
   // With this the page has the topbar's search box and filter panel; without it, neither.
@@ -159,12 +179,12 @@ function buildCard(card: RosterCard, cta: string): string {
 }
 
 // One of the switches over the grid: a joined row of buttons, the choice that is on pressed.
-// `kind` is the data attribute a press is read from.
-function switchHtml(name: string, kind: 'look' | 'order', options: RosterOption[], on: string): string {
+// `mark` gives the data attributes a press on a choice is read from.
+function switchHtml(name: string, options: RosterOption[], on: string, mark: (id: string) => string): string {
   return `
-    <span class="seg" role="group" aria-label="${name}">
+    <span class="seg" role="group" aria-label="${escHtml(name)}">
       ${options.map(o => `
-        <button class="seg-btn${o.id === on ? ' on' : ''}" data-${kind}="${escHtml(o.id)}" aria-pressed="${o.id === on}"
+        <button class="seg-btn${o.id === on ? ' on' : ''}" ${mark(escHtml(o.id))} aria-pressed="${o.id === on}"
                 ${o.tip ? `data-tip="${escHtml(o.tip)}"` : ''}>${escHtml(o.label)}</button>
       `).join('')}
     </span>
@@ -199,20 +219,27 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   // A sort keeps the order it was given wherever `compare` has nothing to say, so what an
   // order does not rank stays as the roster has it.
   const dealt = order?.compare ? [...items].sort(order.compare) : items;
+  const switches = roster.switches ?? [];
   container.innerHTML = `
-    ${looks || orders ? `
+    ${looks || orders || switches.length ? `
       <div class="roster-bar">
-        ${orders ? switchHtml('Order', 'order', orders.options, order!.id) : ''}
-        ${looks ? switchHtml('Card art', 'look', looks.options, look) : ''}
+        ${switches.map((s, i) => switchHtml(s.name, s.options, s.on, id => `data-switch="${i}" data-id="${id}"`)).join('')}
+        ${orders ? switchHtml('Order', orders.options, order!.id, id => `data-order="${id}"`) : ''}
+        ${looks ? switchHtml('Card art', looks.options, look, id => `data-look="${id}"`) : ''}
       </div>
     ` : ''}
     ${roster.draw ? '<div class="roster-page"></div>' : '<div id="grid"></div><div id="grid-end"></div>'}
   `;
   // Either switch redraws the same cards its other way, and takes the focus with it.
   container.querySelector<HTMLElement>('.roster-bar')?.addEventListener('click', (ev) => {
-    const pressed = (ev.target as Element).closest<HTMLElement>('[data-look], [data-order]');
+    const pressed = (ev.target as Element).closest<HTMLElement>('[data-look], [data-order], [data-switch]');
     if (!pressed || pressed.getAttribute('aria-pressed') === 'true') return;
     const { look: pickedLook, order: pickedOrder } = pressed.dataset;
+    // A switch of the page's own is the page's to answer, redraw and all.
+    if (pressed.dataset.switch) {
+      switches[Number(pressed.dataset.switch)].pick(pressed.dataset.id!);
+      return;
+    }
     if (pickedLook) looks!.state.look = pickedLook;
     else orders!.state.order = pickedOrder!;
     deal(container, roster, items);
@@ -281,17 +308,31 @@ function groupHtml<T>(f: RosterFilter<T>, state: RosterState): string {
   const button = (value: string): string => {
     const on = picked.has(value);
     const attrs = `data-group="${escHtml(f.key)}" data-value="${escHtml(value)}" aria-pressed="${on}"`;
-    if (f.look === 'tiles') return `<button class="class-btn${on ? ' on' : ''}" ${attrs}><span>${escHtml(value)}</span></button>`;
-    if (f.look === 'ranks') return `<button class="rarity-btn r${f.tier?.(value) ?? 1}${on ? ' on' : ''}" ${attrs}>${escHtml(value)}</button>`;
-    return `<button class="chip${on ? ' active' : ''}" ${attrs}>${escHtml(value)}</button>`;
+    const said = escHtml(f.text?.(value) ?? value);
+    if (f.look === 'tiles') return `<button class="class-btn${on ? ' on' : ''}" ${attrs}><span>${said}</span></button>`;
+    if (f.look === 'ranks') return `<button class="rarity-btn r${f.tier?.(value) ?? 1}${on ? ' on' : ''}" ${attrs}>${said}</button>`;
+    if (f.look === 'badges') {
+      const icon = f.icon?.(value);
+      return `<button class="badge-btn${on ? ' on' : ''}" ${attrs}>${icon ? `<img src="${escHtml(icon)}" alt="">` : ''}<span>${said}</span></button>`;
+    }
+    return `<button class="chip${on ? ' active' : ''}" ${attrs}>${said}</button>`;
   };
   const buttons = f.values.map(button).join('');
-  const row = f.look === 'chips'
-    ? `<div class="collab-row">${buttons}</div>`
-    : `<div class="${f.look === 'ranks' ? 'rarity-row' : 'class-row'}"
-            style="grid-template-columns: repeat(${f.across ?? f.values.length}, 1fr)">${buttons}</div>`;
+  let row = `<div class="collab-row">${buttons}</div>`;
+  if (f.sets) {
+    // A row to a kind, its name before it.
+    row = `<div class="filter-sets">${f.sets.map(set => `
+      <div class="filter-set">
+        <span class="filter-set-label">${escHtml(set.label)}</span>
+        <div class="collab-row">${set.values.map(button).join('')}</div>
+      </div>`).join('')}</div>`;
+  } else if (f.look === 'tiles' || f.look === 'ranks') {
+    row = `<div class="${f.look === 'ranks' ? 'rarity-row' : 'class-row'}"
+                style="grid-template-columns: repeat(${f.across ?? f.values.length}, 1fr)">${buttons}</div>`;
+  }
   if (!f.folded) {
-    return `<div class="filter-group"><div class="filter-label">${escHtml(f.label)}</div>${row}</div>`;
+    // A group of badges is a row of a table: its name in a cell before its choices.
+    return `<div class="filter-group${f.look === 'badges' ? ' filter-row' : ''}"><div class="filter-label">${escHtml(f.label)}</div>${row}</div>`;
   }
   // Shut, the label still says how many are picked inside.
   const open = state.unfolded.has(f.key);
@@ -315,7 +356,7 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
   wrap.style.display = '';
   actions.style.display = '';
   watchFilterTab(actions, wrap);
-  search.placeholder = `Search ${roster.noun}…`;
+  search.placeholder = roster.prompt ?? `Search ${roster.noun}…`;
   search.value = state.query;
   clear.disabled = !state.query;
 

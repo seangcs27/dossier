@@ -25,14 +25,19 @@ import { artUrl } from '../../shared/api/hella-api';
 import { openArtViewer } from '../art-viewer';
 import { crumbsHtml, descriptionToHtml, escHtml } from '../format';
 import { fetchPtnSinner, getPtnSinners, type PtnArt, type PtnFigure, type PtnSinner, type PtnSinnerDetail } from '../ptn-index';
+import {
+  codeOf, dayOf, libramName, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf, tendencyName,
+  type PtnLang,
+} from '../ptn-lang';
 import { ptnRoster } from './ptn';
 
+// Each tab and the word for it (ptn-lang.ts has it in both languages).
 const TABS = [
-  { id: 'profile', label: 'Profile' },
-  { id: 'skills', label: 'Skills' },
-  { id: 'brand', label: 'Crimebrand' },
-  { id: 'shackles', label: 'Shackles' },
-  { id: 'file', label: 'File' },
+  { id: 'profile', label: 'tabProfile' },
+  { id: 'skills', label: 'tabSkills' },
+  { id: 'brand', label: 'tabBrand' },
+  { id: 'shackles', label: 'tabShackles' },
+  { id: 'file', label: 'tabFile' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
@@ -47,10 +52,10 @@ const rich = (text: string): string => descriptionToHtml(text);
 function headerHtml(s: PtnSinner): string {
   return `
     <header class="file-head">
-      <span class="file-no">MBCC-S-${escHtml(s.number)}</span>
-      <h1 class="file-name">${escHtml(s.name)}</h1>
+      <span class="file-no">${escHtml(codeOf(s))}</span>
+      <h1 class="file-name">${escHtml(nameOf(s))}</h1>
       <span class="file-rank" aria-hidden="true">${s.rank}</span>
-      <span class="file-kind">${escHtml(s.tendency)} · ${escHtml(s.libram)}<span class="visually-hidden">, rank ${s.rank}</span></span>
+      <span class="file-kind">${escHtml(tendencyName(s.tendency))} · ${escHtml(libramName(s.libram))}<span class="visually-hidden">, ${escHtml(rankName(s.rank))}</span></span>
     </header>
   `;
 }
@@ -78,6 +83,15 @@ interface Shown {
   print?: { src: string; raw: string };
 }
 
+// A picture's name in the language that is on: this site's word for the three every Sinner
+// has, and the wiki's own for an attire or an interrogation, which it gives in English only.
+function labelOf(art: PtnArt): string {
+  if (art.kind === 'original') return t('artOriginal');
+  if (art.kind === 'phase') return t('artPhase');
+  if (art.kind === 'mugshot') return t('artMugshot');
+  return art.label;
+}
+
 // The roster's own two pictures of a Sinner, which the build has baked whole.
 function bakedOf(s: PtnSinner, kind: PtnArt['kind']): PtnFigure | undefined {
   if (kind === 'mugshot') return s.figure;
@@ -90,7 +104,8 @@ function bakedOf(s: PtnSinner, kind: PtnArt['kind']): PtnFigure | undefined {
 // are tall, the Sinner among effects and scenery with no floor to put their feet on. The
 // proxy is asked to cut away any empty margin, so that the frame holds the picture.
 function shownOf(s: PtnSinner, art: PtnArt): Shown {
-  const { label, collection, rarity } = art;
+  const { collection, rarity } = art;
+  const label = labelOf(art);
   const stand = bakedOf(s, art.kind);
   return stand
     ? { label, stand }
@@ -98,11 +113,10 @@ function shownOf(s: PtnSinner, art: PtnArt): Shown {
 }
 
 // Before the payload is here there is no list of pictures: the wall stands the one the
-// roster was showing, from the roster's own entry.
+// roster was showing, from the roster's own entry, or the other where a Sinner has only one.
 function firstShown(s: PtnSinner): Shown | undefined {
-  const original = ptnRoster.look === 'original' && s.figureOriginal;
-  const stand = original || s.figure;
-  return stand && { label: original ? 'Original' : 'Mugshot', stand };
+  const original = ptnRoster.look === 'original' ? s.figureOriginal ?? s.figure : s.figure ?? s.figureOriginal;
+  return original && { label: t(original === s.figure ? 'artMugshot' : 'artOriginal'), stand: original };
 }
 
 // A rule every 10 cm from the floor to the top of the wall, each with its numeral, the
@@ -129,19 +143,19 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
   const top = Math.round(cm * HEADROOM);
   const shown = arts.length ? shownOf(s, arts[picked]) : firstShown(s);
   // The viewer wants the list, so a picture is not pressed until the list is here.
-  const press = arts.length ? `data-art-open aria-label="Open ${escHtml(shown?.label ?? '')} at full size"` : 'disabled';
-  let picture = `<span class="cell-stand none"><span class="cell-fig">No photograph on file</span></span>`;
+  const press = arts.length ? `data-art-open aria-label="${escHtml(`${t('open')} ${shown?.label ?? ''} ${t('openFull')}`)}"` : 'disabled';
+  let picture = `<span class="cell-stand none"><span class="cell-fig">${t('noPhoto')}</span></span>`;
   if (shown?.stand) {
     picture = `
       <button class="cell-stand" ${press}>
-        <img class="cell-fig" src="${escHtml(shown.stand.art)}" alt="${escHtml(`${s.name}, ${shown.label}`)}"
+        <img class="cell-fig" src="${escHtml(shown.stand.art)}" alt="${escHtml(`${nameOf(s)}, ${shown.label}`)}"
              style="aspect-ratio: ${shown.stand.ratio}" fetchpriority="high" decoding="async">
       </button>
     `;
   } else if (shown?.print) {
     picture = `
       <button class="cell-print" ${press}>
-        <img src="${escHtml(shown.print.src)}" alt="${escHtml(`${s.name}, ${shown.label}`)}" fetchpriority="high" decoding="async"
+        <img src="${escHtml(shown.print.src)}" alt="${escHtml(`${nameOf(s)}, ${shown.label}`)}" fetchpriority="high" decoding="async"
              onerror="this.onerror=null;this.src='${shown.print.raw.replace(/'/g, '%27')}'">
       </button>
     `;
@@ -154,15 +168,15 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
       <div class="cell-floor">
         <p class="cell-caption">
           ${shown?.collection ? `<span class="cell-collection">${escHtml(shown.collection)}</span>` : ''}
-          <span class="cell-title">${escHtml(shown?.label ?? 'No pictures')}</span>
+          <span class="cell-title">${escHtml(shown?.label ?? t('noPictures'))}</span>
           ${shown?.rarity ? `<span class="cell-stars" aria-label="${shown.rarity} stars">${'★'.repeat(shown.rarity)}</span>` : ''}
         </p>
         ${arts.length > 1 ? `
-          <div class="exhibits" role="tablist" aria-label="Pictures">
+          <div class="exhibits" role="tablist" aria-label="${t('pictures')}">
             ${arts.map((a, i) => `
               <button class="exhibit${i === picked ? ' on' : ''}" data-art="${i}"
-                      role="tab" aria-selected="${i === picked}" data-tip="${escHtml(a.label)}">
-                <img src="${escHtml(thumbOf(s, a))}" alt="${escHtml(a.label)}" loading="lazy" decoding="async">
+                      role="tab" aria-selected="${i === picked}" data-tip="${escHtml(labelOf(a))}">
+                <img src="${escHtml(thumbOf(s, a))}" alt="${escHtml(labelOf(a))}" loading="lazy" decoding="async">
               </button>
             `).join('')}
           </div>
@@ -170,12 +184,6 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
       </div>
     </div>
   `;
-}
-
-// '2026-10-08' as a file prints a day: '8 October 2026'. In UTC, which is how the record's
-// days are written, so that no reader's clock moves one.
-function dayOf(day: string): string {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
 function factsHtml(facts: [string, string][]): string {
@@ -206,36 +214,37 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
     first ? `${first[key]} / ${last[key]}` : '—';
   const rows: [string, string][] = [
     ['HP', stat('hp')], ['ATK', stat('atk')], ['DEF', stat('def')], ['RES', stat('res')],
-    ['Block', d.block || '—'], ['ATK Speed', d.attackSpeed || '—'],
+    [t('block'), d.block || '—'], [t('atkSpeed'), d.attackSpeed || '—'],
   ];
-  const tags = s.tags.map(t => `<span class="op-tag">${escHtml(t)}</span>`).join('');
+  const tags = tagsOf(s).map(tag => `<span class="op-tag">${escHtml(tag)}</span>`).join('');
   return `
     ${d.bio ? `<p class="rich file-text">${escHtml(d.bio)}</p>` : ''}
     ${factsHtml([
-      ['Number', `MBCC-S-${s.number}`],
-      ['Rank', s.rank],
-      ['Tendency', s.tendency],
-      ['Libram', s.libram],
-      ['Birthplace', s.birthplace],
-      ['Ability', d.ability],
-      ['Released', s.released ? dayOf(s.released) : ''],
+      [t('number'), codeOf(s)],
+      [t('rank'), rankName(s.rank)],
+      [t('tendency'), tendencyName(s.tendency)],
+      [t('libram'), libramName(s.libram)],
+      [t('birthplace'), s.birthplace],
+      [t('ability'), d.ability],
+      [t('released'), s.released ? dayOf(s.released) : ''],
+      [t('releasedCn'), s.cnOnly && s.releasedCn ? dayOf(s.releasedCn) : ''],
     ])}
     ${tags ? `<div class="detail-tags">${tags}</div>` : ''}
     <section class="entry">
       <div class="entry-head">
-        <h2 class="entry-name">Attributes</h2>
+        <h2 class="entry-name">${t('attributes')}</h2>
         ${first ? `<span class="unlock-badge">Lv ${first.level} / Lv ${last.level}</span>` : ''}
       </div>
       <dl class="stat-list">
         ${rows.map(([label, value]) => `<div class="stat-row"><dt><span>${label}</span></dt><dd>${escHtml(value)}</dd></div>`).join('')}
       </dl>
     </section>
-    ${d.trait ? `<section class="entry"><h2 class="entry-name">Trait</h2><p class="rich">${rich(d.trait)}</p></section>` : ''}
+    ${d.trait ? `<section class="entry"><h2 class="entry-name">${t('trait')}</h2><p class="rich">${rich(d.trait)}</p></section>` : ''}
     ${d.mania.text ? `
       <section class="entry">
         <div class="entry-head">
-          <h2 class="entry-name">${escHtml(d.mania.name || 'Mania Intensify')}</h2>
-          ${d.mania.name ? '<span class="unlock-badge">Mania Intensify</span>' : ''}
+          <h2 class="entry-name">${escHtml(d.mania.name || t('mania'))}</h2>
+          ${d.mania.name ? `<span class="unlock-badge">${t('mania')}</span>` : ''}
         </div>
         <p class="rich">${rich(d.mania.text)}</p>
       </section>
@@ -244,7 +253,7 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
 }
 
 function skillsPanel(d: PtnSinnerDetail): string {
-  if (!d.skills.length) return `<p class="empty-msg">The wiki has not written up this Sinner's skills yet.</p>`;
+  if (!d.skills.length) return `<p class="empty-msg">${t('noSkills')}</p>`;
   return d.skills.map(skill => `
     <section class="entry">
       <div class="entry-head">
@@ -259,19 +268,19 @@ function skillsPanel(d: PtnSinnerDetail): string {
 
 // The exclusive crimebrand: its name, and the skill it grants with that skill's levels.
 function brandPanel(d: PtnSinnerDetail): string {
-  if (!d.brand.name) return `<p class="empty-msg">The wiki names no exclusive crimebrand for this Sinner.</p>`;
+  if (!d.brand.name) return `<p class="empty-msg">${t('noBrand')}</p>`;
   const skill = d.brand.skill;
   return `
     <section class="entry">
       <div class="entry-head">
         <h2 class="entry-name">${escHtml(d.brand.name)}</h2>
-        <span class="unlock-badge">Exclusive crimebrand</span>
+        <span class="unlock-badge">${t('exclusiveBrand')}</span>
       </div>
       ${skill ? `
         <span class="section-label">${escHtml(skill.name)}</span>
         <p class="rich">${rich(skill.levels[0] ?? '')}</p>
         ${levelsHtml(skill.levels)}
-      ` : `<p class="empty-msg">The wiki has not written up what this crimebrand grants.</p>`}
+      ` : `<p class="empty-msg">${t('noBrandSkill')}</p>`}
     </section>
   `;
 }
@@ -279,8 +288,8 @@ function brandPanel(d: PtnSinnerDetail): string {
 // Shackles, then what the reference keeps beside them: compliance and materials.
 function shacklesPanel(d: PtnSinnerDetail): string {
   const materials: [string, string][] = [
-    ['Phase-up', d.materials.phase.join(', ')],
-    ['Skill upgrades', d.materials.skill],
+    [t('phaseUp'), d.materials.phase.join(', ')],
+    [t('skillUpgrades'), d.materials.skill],
     ['DisSea', d.materials.disSea],
   ];
   return `
@@ -288,20 +297,20 @@ function shacklesPanel(d: PtnSinnerDetail): string {
       <section class="entry">
         <div class="entry-head">
           <h2 class="entry-name">${escHtml(shackle.name)}</h2>
-          <span class="unlock-badge">Shackle ${i + 1}</span>
+          <span class="unlock-badge">${t('shackle')} ${i + 1}</span>
         </div>
         <p class="rich">${rich(shackle.text)}</p>
       </section>
     `).join('')}
     <section class="entry">
-      <h2 class="entry-name">Compliance</h2>
+      <h2 class="entry-name">${t('compliance')}</h2>
       ${factsHtml([
         ...d.compliance.map((text, i): [string, string] => [`${(i + 1) * 10}%`, text]),
-        ['100%', d.sticker && `Sticker: ${d.sticker}`],
+        ['100%', d.sticker && `${t('sticker')}: ${d.sticker}`],
       ])}
     </section>
     <section class="entry">
-      <h2 class="entry-name">Materials</h2>
+      <h2 class="entry-name">${t('materials')}</h2>
       ${factsHtml(materials)}
     </section>
   `;
@@ -313,14 +322,14 @@ function filePanel(s: PtnSinner, d: PtnSinnerDetail): string {
   const names = [d.names.cn, d.names.jp, d.names.kr].filter(Boolean).join(' · ');
   return `
     ${factsHtml([
-      ['Gender', d.gender],
-      ['Birthday', d.birthday],
-      ['Height', d.height],
-      ['Birthplace', s.birthplace],
-      ['Ability', d.ability],
-      ['Case', d.case],
-      ['Other names', names],
-      ['Voice', d.voice.join(', ')],
+      [t('gender'), d.gender],
+      [t('birthday'), d.birthday],
+      [t('height'), d.height],
+      [t('birthplace'), s.birthplace],
+      [t('ability'), d.ability],
+      [t('case'), d.case],
+      [t('otherNames'), names],
+      [t('voice'), d.voice.join(', ')],
     ])}
     ${d.file.map(entry => `
       <details class="file-entry">
@@ -346,21 +355,29 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
 function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, picked: number): string {
   const panel = detail
     ? panelHtml(s, detail)
-    : `<p class="empty-msg">${detail === null ? 'This Sinner\'s file could not be loaded.' : 'Loading…'}</p>`;
+    : `<p class="empty-msg">${t(detail === null ? 'loadFailed' : 'loading')}</p>`;
   return `
-    <div class="detail ptn-detail">
+    <div class="detail ptn-detail" lang="${ptnLang() === 'zh' ? 'zh-Hans' : 'en'}">
       <div class="detail-body">
         <div class="detail-art-col">
-          ${crumbsHtml(s.name, '#/ptn', 'Sinners')}
+          <div class="ptn-trail">
+            ${crumbsHtml(nameOf(s), '#/ptn', t('Sinners'))}
+            <span class="seg" role="group" aria-label="Language">
+              ${PTN_LANGS.map(l => `
+                <button class="seg-btn${l.id === ptnLang() ? ' on' : ''}" data-lang="${l.id}"
+                        aria-pressed="${l.id === ptnLang()}">${l.label}</button>
+              `).join('')}
+            </span>
+          </div>
           ${wallHtml(s, detail?.arts ?? [], picked)}
         </div>
         <div class="detail-data-col">
           <section class="op-panel">
             ${headerHtml(s)}
             <div class="op-tabs" role="tablist">
-              ${TABS.map(t => `
-                <button class="op-tab${t.id === tab ? ' on' : ''}" role="tab"
-                        aria-selected="${t.id === tab}" data-tab="${t.id}">${t.label}</button>
+              ${TABS.map(entry => `
+                <button class="op-tab${entry.id === tab ? ' on' : ''}" role="tab"
+                        aria-selected="${entry.id === tab}" data-tab="${entry.id}">${t(entry.label)}</button>
               `).join('')}
             </div>
             <div class="op-tabpanel">${panel}</div>
@@ -384,8 +401,8 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
     container.innerHTML = `
       <div class="detail">
         <div class="detail-body detail-body-error">
-          ${crumbsHtml(undefined, '#/ptn', 'Sinners')}
-          <div class="state-msg"><div class="label">Unknown Sinner</div>No file found for <code>${escHtml(id)}</code>.</div>
+          ${crumbsHtml(undefined, '#/ptn', t('Sinners'))}
+          <div class="state-msg"><div class="label">${t('unknownSinner')}</div>${t('noFile')} <code>${escHtml(id)}</code></div>
         </div>
       </div>
     `;
@@ -416,6 +433,13 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
         container.querySelector<HTMLElement>(`[data-art="${picked}"]`)?.focus();
         return;
       }
+      const langButton = target.closest<HTMLElement>('[data-lang]');
+      if (langButton) {
+        setPtnLang(langButton.dataset.lang as PtnLang);
+        render();
+        container.querySelector<HTMLElement>(`[data-lang="${ptnLang()}"]`)?.focus();
+        return;
+      }
       if (target.closest('[data-art-open]')) openViewer();
     });
   };
@@ -427,7 +451,7 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
     const arts = detail?.arts ?? [];
     if (!arts.length) return;
     openArtViewer(
-      sinner.id, arts.map(a => ({ suffix: a.kind, label: a.label, artist: null, url: a.url })), picked,
+      sinner.id, arts.map(a => ({ suffix: a.kind, label: labelOf(a), artist: null, url: a.url })), picked,
       (index) => { picked = index; render(); },
       art => artUrl(art.url, 128),
     );

@@ -867,6 +867,84 @@ body {
   gap: var(--sp-6);
 }
 
+// A group as a row of a table (card.ts's badges, after the filter on Path to Nowhere's
+// Chinese wiki): its name in a cell at the left, its choices beside it, and a rule between
+// one row and the next. The name wraps before it takes room from the choices.
+.filter-row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-12);
+
+  & + & {
+    padding-top: var(--sp-12);
+    border-top: 1px solid var(--border);
+  }
+
+  // Level with the first line of badges, which are taller than the label's own line.
+  > .filter-label {
+    min-height: 28px;
+    line-height: 1.3;
+  }
+}
+
+// A choice with the game's own badge before its name.
+.badge-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 3px var(--sp-8);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+
+  // The badges are drawn light, for the game's dark screens, as the panel is.
+  img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    opacity: 0.75;
+  }
+
+  &:hover { border-color: var(--accent); color: var(--text); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  &.on {
+    background: var(--chip);
+    border-color: var(--text);
+    color: var(--text);
+
+    img { opacity: 1; }
+  }
+}
+
+// A group sorted into kinds: a second column of names inside the row, as wide as the
+// longest of them, with each kind's badges beside its own.
+.filter-sets {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-8) var(--sp-8);
+}
+
+.filter-set { display: contents; }
+
+.filter-set-label {
+  color: var(--muted);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  // A badge's height, so the name is level with the first line of them.
+  line-height: 28px;
+  text-transform: uppercase;
+}
+
 // With no class picked there's nothing sensible to offer — all 72 at once is unusable — so
 // the group says what unlocks it rather than disappearing, which keeps the section findable.
 // It doesn't stop the panel reflowing when the chips arrive; the prompt and a row of chips

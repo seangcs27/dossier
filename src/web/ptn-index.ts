@@ -14,6 +14,20 @@ export interface PtnFigure {
 export interface PtnSinner {
   id: string;           // the wiki page's title as a slug: 'hecate', 'mr-fox', 'necresta-hella'
   name: string;         // the page's title: 'Hecate', 'Mr. Fox', '000'
+  // From the game's Chinese wiki (scripts/lib/ptn-bili.mjs), all absent when the build
+  // could not reach it: the Sinner's Chinese name and that wiki's tags for them; whether
+  // they are limited or a collab's (neither is a field: they are an ordinary Sinner);
+  // whether they deal core damage.
+  nameCn?: string;
+  tagsCn?: string[];
+  limited?: 'limited' | 'collab';
+  core?: boolean;
+  // On the CN server alone: still to come to Global, or a collab's that will not. Their
+  // file is the Chinese wiki's head of it, and `releasedCn` the day they came there.
+  cnOnly?: boolean;
+  releasedCn?: string;
+  // A collab's own code for its Sinner ('FE40536'), where they have no MBCC number.
+  code?: string;
   // What the Sinner's file prints after 'MBCC-S-': '019'. It does not tell two Sinners
   // apart: Hella and Necresta·Hella are both 098, and the three Cat's Eye sisters 'Unknown'.
   number: string;

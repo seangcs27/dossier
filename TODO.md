@@ -42,11 +42,15 @@ yet:
   the day of the Sinner's first Global banner, from the Archive tab of `s1n.gg/banners`,
   and their names as the wiki titles their pages. The build says so when the roster has a
   Sinner the record lacks. Its last line is 8 October 2026 (Phanuel, Evie); S1N lists five
-  more as unreleased (Famorene Eirene, Requiem, Helix, Daffodil, Arancia).
+  more as unreleased (Famorene Eirene, Requiem, Helix, Daffodil, Arancia), which the roster
+  has as CN-only from the Chinese wiki. When one comes to Global it wants its line here,
+  under the name the English wiki titles its page (the Chinese wiki's English name for it
+  may differ, and then the roster would show the Sinner twice until the join is taught it).
 - **Five Sinners are on the roster with no file**, since the wiki has no page for them:
   Norma, Isomer, Pixel, Phanuel, Evie. The head of each is in the same record; skills,
   shackles and documents come when the wiki writes the page, with nothing to do here then.
-  Pixel has no pictures on the wiki either.
+  Pixel has no pictures on the English wiki either, and stands as the Chinese wiki's
+  illustration, as Pine does.
 
   What the look into a release order found on the wiki, before S1N's was read:
   - The English wiki's `Arrests` page is its banner history, 115 banners in four tabs, each
@@ -70,7 +74,30 @@ yet:
     lands up to a year late, and against the banner dates it puts 81 to 84% of pairs in
     the same order.
   - The game's Chinese wiki prints a release date on every Sinner's page (上线日期), the
-    CN server's, and blocks scripts.
+    CN server's. It was thought to block scripts, and does not: its Semantic MediaWiki API
+    answers a build's own user agent, and the build reads it now (`scripts/lib/ptn-bili.mjs`).
+- **Path to Nowhere in Chinese is its names and labels only.** What is under a Sinner's
+  tabs (bio, skills, crimebrand, shackles, documents), a birthplace, an ability and an
+  attire's name are the English wiki's and stay English; the Chinese wiki has all of them
+  on each Sinner's page, as templates the build does not read yet. The shell stays English
+  too: the Filters and Clear buttons, the section link, "No results". The 11 CN-only
+  Sinners have a head and a picture and nothing under their tabs, for the same reason.
+- **Whether GitHub's runners can reach `wiki.biligame.com` is not known.** If they cannot,
+  the build warns and ships the English half: no Chinese names, no CN-only Sinners, and
+  Pine, Pixel and Kisugi Ai lose the illustration that wiki gives them. Read the first
+  deploy's log for `ptn: nothing from the Chinese wiki`; the mend, if it says so, is to keep
+  the last build's Chinese fields as the Arknights index keeps its last data.
+- **The one wall's drag, wheel, arrows and rail were checked by script, not by hand**
+  (13 October 2026): the browser pane the checks ran in stopped painting part way, so a
+  real mouse's drag, the feel of the wheel on a notched mouse (it moves 100px a notch, with
+  no easing), and the 1px edge down the scale's right side want the owner's eye. A
+  pressed-and-held arrow does not repeat, and the rail's window cannot be grabbed on its
+  own: a drag anywhere on the rail centres the wall on the pointer.
+- **"Arrested 2026" is this site's wording** for a year's line-up, after the game's word
+  for its gacha (Arrest, 逮捕). One word in `ptn-lang.ts` (`arrivals`, `arrived`,
+  `newArrivals`) changes it in each language.
+- **The English names of the four kinds of libram** (Sin, Apocalypse, Immortal, Infinite)
+  are this site's translation of 原罪, 天启, 不朽, 无界: neither wiki gives them in English.
 - **What a Sinner's dossier lacks beside its reference** (the game's Chinese wiki's page):
   - An attire's description and how it is got, which the `Attires` subpage the build
     already reads has, and the attack and skill animations it lists as GIFs.
@@ -81,9 +108,7 @@ yet:
     for every Sinner of it, so the numbers are in `Template:SinnerPage`, not on the pages.
   - Voice lines, the interrogation records' own pages, a reforged Sinner's reforge nodes
     (ten Sinners), Mirage and trivia sections.
-  - A title ("西区教母"), a release date, and whether a Sinner is limited or a collab: that
-    wiki has all three and the English one has no field for any. No release date means no
-    release order either, which is why the roster is rank, then name.
+  - A title ("西区教母"), which that wiki has and the English one has no field for.
 - **PtN's emblem is the X of the game's logo**, mended from the wordmark, since the wiki's
   logo file is the name across that X. It is the weakest of the five at tile size. No file
   on the wiki is named for the MBCC's crest, which would be the counterpart of Rhodes

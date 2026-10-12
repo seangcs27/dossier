@@ -91,6 +91,8 @@ scripts/
   lib/ptn-page.mjs           ← reads a pathtonowhere.wiki.gg Sinner page into its payload
   lib/ptn-record.mjs         ← when each Sinner was released, and the files of five the wiki has
                                no page for: recorded by hand from S1N, one line a release
+  lib/ptn-bili.mjs           ← reads the game's Chinese wiki: every Sinner's Chinese name, tags and
+                               flags, the CN-only Sinners, and an illustration's address
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -102,6 +104,7 @@ icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size (
                      logo's rotation), and the plain avatar with no suffix, which the
                      extension and the fallback markup use
   games/<game>.webp  ← the sidebar's five game emblems, white on transparency (tracked)
+  ptn/<kind>-<name>.webp  ← Path to Nowhere's 25 rank, tendency and libram badges, 72px (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
 
@@ -133,10 +136,10 @@ src/
       endfield/splash/<id>.webp     ← each operator's full illustration at 1024px, copied as static files
       endfield/icons/<kind>-<name>.webp  ← 16 class, element and weapon glyphs, 64px
       endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
-      ptn/sinners.json           ← Path to Nowhere's roster (149), bundled into the web target
-      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the wall stands them (147), up to 1100 tall
-      ptn/figures/original/<id>.webp  ← the same of their original illustration (146); both copied as static files
-      ptn/sinner-details/<id>.json  ← 149 dossier payloads parsed from the wiki's pages, copied as static files
+      ptn/sinners.json           ← Path to Nowhere's roster (160, 11 of them CN only), bundled into the web target
+      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the wall stands them (150), up to 1100 tall
+      ptn/figures/original/<id>.webp  ← the same of their original illustration (160); both copied as static files
+      ptn/sinner-details/<id>.json  ← 160 dossier payloads parsed from the wiki's pages, copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
@@ -187,6 +190,8 @@ src/
                          the roster entry's and the payload's types
     ptn-index.ts / holodori-index.ts / fgo-index.ts  ← each of those games' data store and entry
                       type; PtN's also has the dossier payload's types and fetchPtnSinner
+    ptn-lang.ts     ← Path to Nowhere's two languages: which is on (kept in localStorage), this
+                      site's own words in each (t), and a Sinner's name, tags and code in it
     styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events; loads
                       the games' own partials last
     _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
@@ -201,7 +206,8 @@ src/
       ptn.ts / holodori.ts / fgo.ts  ← those games' roster pages: each fills card.ts's slots
       ptn-detail.ts  ← a Sinner's dossier, after the game's Chinese wiki (see below)
     index.html      ← markup shell; links styles.css
-    fonts/barlow-condensed/  ← Path to Nowhere's placard face, two TTFs and their licence (tracked)
+    fonts/barlow-condensed/  ← Path to Nowhere's placard face: two weights, each a WOFF2 and the
+                      TTF behind it, and their licence (tracked)
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
 ```
@@ -958,17 +964,23 @@ roster)` shows a `Roster`: its items, the function that makes a card of one, the
 count uses, and what to say when the build baked nothing. The count goes in the topbar's
 pill, and the cards are built 48 at a time as the Arknights grid builds its own. With
 `find`, the page also has the topbar's search box and filter panel: the text the search
-looks in, and a list of `RosterFilter` groups, each its values and one of three looks
-(tiles as the Arknights classes are, a joined row as its rarities are, loose chips), with
-`folded` for a list too long to stand open. Any pick within a group, every group across
-them. The search and the picks live in a `RosterState` the game's own view keeps, so they
+looks in, and a list of `RosterFilter` groups, each its values and one of four looks
+(tiles as the Arknights classes are, a joined row as its rarities are, loose chips, or
+badges), with `folded` for a list too long to stand open. A group of badges is laid out as
+a row of a table, its name in a cell at the left and its choices beside it (`.filter-row`);
+a badge can carry a picture before its name (`icon`), say something other than the value
+it filters by (`text`), and a group can be sorted into named kinds, a line to each (`sets`).
+Any pick within a group, every group across them. The search and the picks live in a `RosterState` the game's own view keeps, so they
 survive a visit elsewhere and never show on another game's roster. With `looks`, a switch
 over the grid (`.roster-bar`, the Any / All switch's construction) chooses between two or
 more ways of drawing the same cards, and `toCard` is told which; with `orders`, a second
 switch beside it chooses the order they are dealt in (the first is the one a page opens in;
 one with no `compare` is the roster's own, any
 other a `compare`, and the sort is stable, so what an order does not rank stays as the
-roster has it). **A roster that is not a grid of cards gives `draw` in place of `toCard`**:
+roster has it). With `switches`, the page has switches of its own before those two, each
+answered by its own `pick` (Path to Nowhere's language, which mounts the page again), and
+`prompt` words the search box where "Search <noun>…" would be the wrong language.
+**A roster that is not a grid of cards gives `draw` in place of `toCard`**:
 it is handed the element to fill and the items in the order to show them, with the look
 and the order that are on, and draws its own page; the count, the search, the filters and
 the two switches are still `card.ts`'s. The handling of the box
@@ -1003,10 +1015,12 @@ the bake could not get, which is why FGO's partial keeps its rule: on a baked pi
 changes nothing. The owner approved those downloads on 11 October 2026 (143 PNGs and about
 44 MB from the PtN wiki, 470 PNGs and 42.5 MB from Atlas Academy, which baked to 6.1 MB and
 5.3 MB), and on 12 October the same PtN files a second time, with the 142 originals, to be
-baked whole for the wall (285 files, about 125 MB, baked to 20.5 MB).
+baked whole for the wall (285 files, about 125 MB, baked to 20.5 MB). On 12 October too:
+11 illustrations from the game's Chinese wiki, for the Sinners the English wiki has no
+original of (1200x1500 PNGs), and its 25 badges for `icons/ptn/`.
 
-**Path to Nowhere** (`#/ptn`, 149 Sinners: the wiki's 144 and five it has no page for yet,
-below). `scripts/build-ptn-index.mjs` reads
+**Path to Nowhere** (`#/ptn`, 160 Sinners: the English wiki's 144, five it has no page for
+yet, and 11 only the CN server has, all below). `scripts/build-ptn-index.mjs` reads
 `pathtonowhere.wiki.gg`, which has no Cargo tables. A playable Sinner's page is one call of
 `{{SinnerPage}}` (or `{{ReforgePage}}`, ten of them), and both templates file the page
 under `Category:Playable Sinners`, so that category is the roster and the head of the call
@@ -1016,18 +1030,50 @@ and the mugshots' addresses are asked for the same way: six requests a build. An
 id (the page title as a slug), name, number (what follows `MBCC-S-`, which is not unique),
 rank, height in centimetres (every file has one, 115 to 191), tendency, libram, birthplace,
 tags, and the pictures: `figure` and `figureOriginal`, the mugshot (the standing figure the
-wiki's own infobox shows, `File:<page> Prisonphoto.png`, 147 of 149) and the original
-illustration (146), each baked whole, cut back to the figure's own edges and no taller
+wiki's own infobox shows, `File:<page> Prisonphoto.png`, 150 of 160) and the original
+illustration (all 160, 11 of them the Chinese wiki's), each baked whole, cut back to the figure's own edges and no taller
 than 1100px, with its width over its height; and `released`, the day they came to the
 Global server, which is not the wiki's (below). The order is rank S, A, B and then name.
 
-Its two references are the owner's: the game's Chinese wiki (`wiki.biligame.com/wqmt`,
-which a browser can read and a script cannot, so it is a model for the pages and never a
-source for the build) and `s1n.gg`. **The roster's search and filters** are that wiki's
-own, as far as the English one has the data: a Sinner is found by name or by number
-("019"), and the panel's groups are Rank (S / A / B, in their tiers' colours), Tendency (six
-tiles), Libram (16 chips) and, folded, Tags (47). That wiki's Limited and Core-damage
-groups have no field on the English one.
+Its two references are the owner's: the game's Chinese wiki (`wiki.biligame.com/wqmt`) and
+`s1n.gg`. **The Chinese wiki is a source for the build as well as the model for the
+pages** (`scripts/lib/ptn-bili.mjs`). It was taken for one a script cannot read, and it
+is not: it runs Semantic MediaWiki, its `api.php` answers the build's own user agent and
+its `robots.txt` does not close it, and one `action=ask` over `[[分类:禁闭者]]` returns
+every Sinner with the properties its own roster filters by. The build takes from it each
+Sinner's Chinese name (`nameCn`), its tags for them (`tagsCn`: 体系 and 角色TAG, 59 in
+all, which are not the English wiki's 47 translated), whether they are limited or a
+collab's (`limited`), whether they deal core damage (`core`), and the day they came to the
+CN server. A row is joined to the English roster by the Chinese name the English page
+gives, then the English name the Chinese page gives, then the number where only one Sinner
+has it; that matched all 149, and **the 11 left over are on the CN server alone**
+(`cnOnly`): five still to come to Global (Arancia, Daffodil, Famorene Eirene, Requiem,
+Helix) and the six of a JoJo collab (the owner's choice of 12 October 2026 to carry both).
+They have the head of a file and a picture, a `releasedCn`, and a collab's own `code`
+where they have no MBCC number; nothing is under their tabs. The same wiki's
+`<name>立绘.png` is the illustration of any Sinner the English wiki has no original of
+(those, and Pine, Pixel and Kisugi Ai), baked as the others are. None of it is
+load-bearing: with that wiki unreachable the build warns and the roster is its English
+half.
+
+**The roster's search and filters** are that wiki's own, laid out as it lays its own
+filter table out (the owner's screenshot of it): a Sinner is found by either name or by
+number ("019"), and the panel's rows are Rank (狂厄 / 高危 / 普管), Tendency (6), Libram
+(16, sorted into its four kinds: 原罪, 天启, 不朽, 无界), Limited (standard, limited,
+collab), Core damage (none, yes) and, folded, Tags. Every rank, tendency and libram has
+the game's own badge before its name: 25 files from that wiki, baked once to 72px WebP
+and tracked in `icons/ptn/` (the owner approved the downloads; the bake was a one-off
+script, not part of the build). **A rank's badge has its Chinese character drawn in it,
+so it is the Chinese side's alone**: in English a rank is its letter.
+
+**The game's pages are in two languages**, English and Chinese (`ptn-lang.ts`), by a
+switch on the roster (first of its three) and beside a Sinner's trail; the choice is kept
+in `localStorage`, and the first visit goes by the browser's language. The owner's scope
+for it, of three offered: **names and labels**. A Sinner's name, the placards, the
+line-ups' titles, the tabs, the fact lists' labels, the filter and its badges, and the
+search box's prompt change; what is under a Sinner's tabs is the English wiki's text and
+stays English, as do the shell's own words (Filters, Clear, the section link). The tags
+are each wiki's own, so a pick among them does not carry over a change of language.
 
 **Path to Nowhere is the first game to get a design of its own, and the owner's brief for
 it is the game's**: its roster turns between its Sinners' mugshots and their original
@@ -1044,12 +1090,42 @@ left edge, **scaled to the height their file gives**: the wall shows 0 to 210 cm
 top 86% of a row and the floor is the rest, so a figure's picture is its centimetres tall
 and everything on a row is placed in centimetres. Under each, on the floor, is a black
 placard with what a card printed: `MBCC-S-019`, the name, the rank's letter, tendency and
-libram. The wall wraps, six or seven to a row on a desktop and two or three on a phone, and
-its rules, floor and numerals are backgrounds a row tall, so they fall under however many
-rows there are. **Rank is no longer a colour but a place**: by rank there is a line-up to
+libram. **The roster is one wall, a window tall, that runs on sideways** (the owner's asks
+of 12 and 13 October 2026; it wrapped at first, six or seven to a row, and was then a wall
+to a line-up down the page): the line-ups stand one after another along it, a rule down
+the wall between two. The wall is the scroller, and its rules and floor are its
+background, so they stay where they are while the figures pass along them. The scale is a
+strip of the same wall that sticks to the left edge (`.wall-scale`, a real element, since
+a pseudo-element of the scroller would scroll away with it), so a figure leaving goes
+behind the numerals. A line-up's name and head count are in a band over the wall
+(`--ptn-head`) and stick beside the scale for as long as any of the line-up shows, pushed
+out by the next one's; on a desktop the switches sit at that band's far end, a name going
+out under them. The row's height is what the window has left: `--ptn-row` is `100vh` less
+the topbar (`--ptn-over`, a number per breakpoint, measured: 77, 182 and 152px), the band
+and the rail, so the page itself does not scroll on a window 620px tall or more.
+
+**The ways along it** are `wireWall` in `views/ptn.ts`, beside the wall's own scrolling by
+touch and trackpad. A mouse drags it (`onDrag`: a press that moves 5px is a drag, and the
+click that ends one is swallowed, since every figure is a link). A wheel turned over it
+moves it sideways, and at either end the turn is the page's again. An arrow at each end
+(`.wall-nav`) moves it 80% of a window, and is gone at the end it would lead past. And
+**the rail under the floor is its scrollbar** (`.wall-rail`; the browser's own is hidden):
+a part to a line-up, as wide as that line-up's share of the wall and named in short
+("CN", "2026", "S"), a red-topped window over what is showing, a press on a part to go to
+its line-up, a drag along it to take the wall with the pointer. The arrows and the rail
+move the wall by hand over 420 ms (`glide`), not by the browser's smooth scroll, which
+Firefox turns off with the system's motion setting. **The wall comes back to where it was
+left** from a Sinner's page, a change of picture or of language: the Sinner at its left
+edge and how far into their place the edge was are kept (`left`), for the same order and
+the same number standing; a search or a pick starts it from its head. Pictures wait for
+the wall to reach them (`loading="lazy"`), each place held by its outline until then.
+
+**Rank is no longer a colour but a place**: by rank there is a line-up to
 each of S, A and B, with its name and head count; newest first there is one to a year of
-arrivals ("Arrivals 2026" down to "Arrivals 2022", which is the launch and the four that
-year then added), whose placards give the month each arrived. Under the
+arrests ("Arrested 2026" down to "Arrested 2022", which is the launch and the four that
+year then added; "arrest" is the game's own word for getting a Sinner, and was picked
+over the owner's "detained" for that), whose placards give the month, and before them one
+of the Sinners only the CN server has ("CN server only"), who go by the day they came to it. Under the
 pointer or the keyboard's focus a figure steps forward, the rest of its wall falls back,
 its placard takes the world's one red and its height is read off over its head. A press
 opens its page. **Only the figure and the placard answer the pointer**: a Sinner's box is a
@@ -1064,8 +1140,9 @@ Three things about it that are not what they seem:
   the picture the wall opens on: in it every Sinner stands for a line-up already, name
   board in hand.
 - **A figure's place is held before its picture comes**, by the picture's shape (an entry's
-  `ratio`): an outline at the right height, which is also all Pine and Pixel have, with "No
-  photograph on file". Kisugi Ai, with no original, stands as her mugshot under either.
+  `ratio`): an outline at the right height, which is also all a Sinner with no picture
+  would have, with "No photograph on file" (nobody today). The ten with no mugshot (Pine,
+  Pixel and eight of the CN-only) stand as their original under either.
 - **The numerals are a picture the wall's edge is masked by**, so that they take the
   wall's ink, and a picture cannot load a font: they are set in the reader's own narrow
   face whatever the placards come to be set in.
@@ -1077,10 +1154,12 @@ variables restated, since the shell takes every colour from them; the page under
 restates them again for the wall. **The placard face is Barlow Condensed**, the owner's
 pick of three on 12 October 2026 (the others were League Gothic and Big Shoulders): its
 Medium and Bold, as the Google Fonts repository has them, in `src/web/fonts/barlow-
-condensed/` with their Open Font License beside them. They are TTFs, 213 KB the pair,
-since nothing on this machine makes a WOFF2 of them; a stylesheet's `url()` to a file is
-all webpack needs to emit one, and a browser asks for them only on a page that sets
-something in them. After it in `--ptn-placard` is the reader's own nearest (Bahnschrift,
+condensed/` with their Open Font License beside them. Each weight is a WOFF2 first, Google
+Fonts' own Latin cut (44 KB the pair, from `fonts.gstatic.com`, the owner's ask), with the
+TTF behind it (213 KB the pair) for a browser that cannot read one; a stylesheet's `url()`
+to a file is all webpack needs to emit one, and a browser asks for them only on a page that
+sets something in them. Neither has Chinese, so that side's names and titles are in the
+reader's own face. After it in `--ptn-placard` is the reader's own nearest (Bahnschrift,
 where Windows has it), which is what the wall was designed in.
 
 **Beside that switch is the order's: Newest, which the page opens in by the owner's choice,
@@ -1114,7 +1193,7 @@ and their `Attires` and `Gallery` subpages before it has the page, so those are 
 anyone's; the head of their file (number, rank, tendency, libram, birthplace, height and
 tags) is in the same record (`UNFILED`), as S1N's own page for each has it, and their page
 here says so in its first paragraph and has nothing under the other tabs. Pixel has no
-pictures either. Once the wiki writes a Sinner's page, that page is read and the record's
+pictures there either, and stands as the Chinese wiki's illustration. Once the wiki writes a Sinner's page, that page is read and the record's
 entry is passed over.
 
 **A Sinner's dossier** (`#/ptn/sinner/<id>`, `views/ptn-detail.ts`) is in the same world:
@@ -1139,15 +1218,16 @@ framed print**: the attires and the phase-up art were to stand too and turned ou
 scenes as wide as they are tall, the Sinner among effects and scenery with no floor under
 them (Hecate's are 1178 by 1100 once their empty margin is cut). A press on either opens
 the Arknights art viewer (`openArtViewer`, which takes a `thumbOf` for callers whose pieces
-have no outfit avatars). The list is the payload's `arts`: 684 pieces across the roster
-(142 originals, 140 phase-up, 143 mugshots, 68 interrogation pictures, 191 attires), which
+have no outfit avatars). The list is the payload's `arts`: 716 pieces across the roster
+(160 originals, 147 phase-up, 150 mugshots, 68 interrogation pictures, 191 attires), which
 `parseSinnerArt` reads out of each Sinner's `Attires` and `Gallery` subpages (six requests,
 50 titles each) before the build asks the wiki for every file's address (another dozen); a
 file a page names and the wiki never got is left out. **None of the prints is downloaded**:
 the files are 1 to 9 MB each and about 1.4 GB in all, so the page asks the resizing proxy
 for each at the size shown (`artUrl`: 128px for a frame, 1024 on the wall with `trim` to
 cut an empty margin away, 2048 in the viewer), as the Arknights illustrations are and for
-the same reason. Pine and Pixel, with no picture, are an outline at their height. Under 1200px the
+the same reason; the Chinese wiki's illustrations go through the same proxy. A Sinner with
+only one of the two baked figures opens on that one. Under 1200px the
 wall is on top, at about 70% of the screen's height, and the file under it.
 
 The file's long page of tables becomes five
