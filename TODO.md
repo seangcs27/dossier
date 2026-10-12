@@ -82,11 +82,12 @@ yet:
   on each Sinner's page, as templates the build does not read yet. The shell stays English
   too: the Filters and Clear buttons, the section link, "No results". The 11 CN-only
   Sinners have a head and a picture and nothing under their tabs, for the same reason.
-- **Whether GitHub's runners can reach `wiki.biligame.com` is not known.** If they cannot,
-  the build warns and ships the English half: no Chinese names, no CN-only Sinners, and
-  Pine, Pixel and Kisugi Ai lose the illustration that wiki gives them. Read the first
-  deploy's log for `ptn: nothing from the Chinese wiki`; the mend, if it says so, is to keep
-  the last build's Chinese fields as the Arknights index keeps its last data.
+- **GitHub's runners reach `wiki.biligame.com`**: the first deploy with it (13 October
+  2026) logged 160 Sinners, 160 with a Chinese name, 11 on CN only. Should that stop, the
+  build warns (`ptn: nothing from the Chinese wiki`) and ships the English half: no Chinese
+  names, no CN-only Sinners, and Pine, Pixel and Kisugi Ai lose the illustration that wiki
+  gives them. The mend then is to keep the last build's Chinese fields as the Arknights
+  index keeps its last data.
 - **The one wall's drag, wheel, arrows and rail were checked by script, not by hand**
   (13 October 2026): the browser pane the checks ran in stopped painting part way, so a
   real mouse's drag, the feel of the wheel on a notched mouse (it moves 100px a notch, with
