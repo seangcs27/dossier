@@ -94,6 +94,8 @@ scripts/
   lib/ptn-bili.mjs           ← reads the game's Chinese wiki: every Sinner's Chinese name, tags and
                                flags, the CN-only Sinners and their pages, a picture's address
   lib/ptn-bili-page.mjs      ← that wiki's {{禁闭者图鉴}} page into the same payload as ptn-page.mjs
+  lib/ptn-bili-snapshot.json ← what that wiki last gave whole: its roster and 160 pages' text, for a
+                               build it will not answer (tracked; a local build rewrites it)
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -1074,12 +1076,17 @@ Pixel (no mugshot on the English wiki), Kisugi Ai (no original), and the three K
 (no phase-up art). **That wiki is load-bearing once a build has used it**, which it was not
 meant to be: it answers a client that asks too fast with HTTP 567 (14 October 2026, after a
 day of probing it from one machine, and for hours after), and a build that took that for
-"unreachable" came back with the CN-only Sinners and every Chinese name gone. So
-`ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks again after a 567
-(waiting 5, 20 and 60 s), and a request that still fails is an error that makes the script
-**keep the last build's files whole** (`fromChinese` in `build-ptn-index.mjs`; CI restores
-them from its cache), with a warning, until the wiki answers. Only a first build with
-nothing to keep ships the English half.
+"unreachable" came back with the CN-only Sinners and every Chinese name gone, and GitHub's
+runners were refused the same way on the first deploy that read the pages, for the whole
+run. So `ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks again after
+a 567 (waiting 5, 20 and 60 s), and a request that still fails falls to **the snapshot**:
+`scripts/lib/ptn-bili-snapshot.json`, tracked (1.8 MB, 0.5 compressed), which has that
+wiki's roster rows, the text of each of its 160 pages (notes to editors dropped) and the
+addresses of the pictures asked of it, as the last build that read it whole left them. Any
+such build writes it again, so **a local build refreshes it and its diff is committed with
+the rest**; a build that fell back to it never writes it. With no snapshot a later build
+keeps the last build's files whole (`fromChinese` in `build-ptn-index.mjs`) with a warning,
+and a first build with nothing to keep ships the English half.
 
 **Every Sinner's page on that wiki is read, not only the CN-only ones**, and its text is
 kept beside the English wiki's in each payload as `zh` (`scripts/lib/ptn-bili-page.mjs`,

@@ -84,12 +84,16 @@ yet:
   too: the Filters and Clear buttons, the section link, "No results". **The CN-only
   Sinners' files are in Chinese in either language**, since that is the only text there is
   for them; their exclusive crimebrand is empty (the Chinese template has no field for it).
-- **The Chinese wiki rate-limits (HTTP 567).** It did so on 14 October 2026 from the owner's
-  machine after a day of probing it, for hours. The build waits and asks again, and keeps
-  the last build's files if it still cannot get an answer (CLAUDE.md has it); the first
-  sign of trouble on the deploy is `ptn/sinners.json kept from the last build` in the log.
-  The mend if GitHub's runners are ever blocked for good is a cache of the Chinese
-  wiki's pages kept in the repo (they change when the game does, so a few a month).
+- **The Chinese wiki rate-limits (HTTP 567).** It did so on 14 October 2026 to the owner's
+  machine after a day of probing it (for about 10 minutes at first, hours in all), and to
+  GitHub's runner for a whole deploy. The build waits and asks again, and then reads
+  `scripts/lib/ptn-bili-snapshot.json`, a tracked copy of what that wiki last gave whole
+  (CLAUDE.md has it). **Its upkeep is yours**: a new Sinner or an edited page reaches the
+  site only once a build that read the wiki live has rewritten the snapshot and it is
+  committed, so after the game's patch days run `npm run build:index:ptn` locally and commit
+  the file. The deploy log says `from the snapshot of the Chinese wiki` when it was used.
+  It is 1.8 MB and a one-line JSON, so its diff is the whole file; each commit adds about
+  that many compressed bytes to the history that changed (a few a month, at most).
 - **GitHub's runners reach `wiki.biligame.com`**: the first deploy with it (13 October
   2026) logged 160 Sinners, 160 with a Chinese name, 11 on CN only. Should that stop, the
   build warns (`ptn: nothing from the Chinese wiki`) and ships the English half: no Chinese
