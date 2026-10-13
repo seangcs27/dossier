@@ -1,7 +1,7 @@
 // Reads the game's Chinese wiki (wiki.biligame.com/wqmt) for what the English one has not:
 // a Sinner's Chinese name and tags, whether they are limited or a collab's, whether they
-// deal core damage, the Sinners only the CN server has, and a picture where the English
-// wiki has none.
+// deal core damage, the Sinners only the CN server has with their pages (read by
+// ptn-bili-page.mjs), and a picture where the English wiki has none.
 //
 // It is the way that wiki builds its own Sinner list. Each Sinner's page files its facts
 // as Semantic MediaWiki properties, and the list page is one {{#ask}} over
@@ -15,7 +15,28 @@
 // three, six and sixteen of them.
 import { wikiApi } from './fetch.mjs';
 
-const wiki = wikiApi('https://wiki.biligame.com/wqmt/api.php');
+const api = wikiApi('https://wiki.biligame.com/wqmt/api.php');
+
+const PAUSE_MS = 400;
+// 567 is the wiki's answer to a client that asks too fast. A wait and then again is the
+// polite reply, three times at most, the last after the wiki has had a minute; anything
+// else is the caller's to deal with.
+const BACKOFF_MS = [5_000, 20_000, 60_000];
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Every request this file makes goes through here: one at a time, a pause before each.
+async function wiki(params) {
+  await sleep(PAUSE_MS);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await api(params);
+    } catch (err) {
+      if (!/^567 /.test(err.message) || attempt === BACKOFF_MS.length) throw err;
+      await sleep(BACKOFF_MS[attempt]);
+    }
+  }
+}
 
 const RANK_OF = { 狂: 'S', 危: 'A', 普: 'B' };
 
@@ -64,19 +85,38 @@ export async function fetchBiliSinners() {
   }).filter(s => s.nameCn);
 }
 
-// Where the wiki keeps each Sinner's illustration (<name>立绘.png, a standing figure on
-// transparency), by their Chinese name, for the ones it has. Only the address is asked.
-export async function fetchBiliIllustrations(namesCn) {
+// Where the wiki keeps one kind of picture of each Sinner, by their Chinese name, for the
+// ones it has: <name>立绘.png (the illustration, a standing figure on transparency),
+// <name>升阶.png (the phase-up art) and <name>证件照.png (the mugshot). Only the address is
+// asked.
+export async function fetchBiliFiles(namesCn, suffix) {
   const urlOf = new Map();
   for (let i = 0; i < namesCn.length; i += 50) {
     const json = await wiki({
-      action: 'query', titles: namesCn.slice(i, i + 50).map(name => `文件:${name}立绘.png`).join('|'),
+      action: 'query', titles: namesCn.slice(i, i + 50).map(name => `文件:${name}${suffix}.png`).join('|'),
       prop: 'imageinfo', iiprop: 'url',
     });
     for (const page of json.query?.pages ?? []) {
       const url = page.imageinfo?.[0]?.url;
-      if (url) urlOf.set(page.title.replace(/^文件:|立绘\.png$/g, ''), url);
+      if (url) urlOf.set(page.title.replace(/^文件:/, '').replace(new RegExp(`${suffix}\\.png$`), ''), url);
     }
   }
   return urlOf;
+}
+
+// The text of each Sinner's page (the wiki files them as 禁闭者:<name>), by their Chinese
+// name, for the ones it has.
+export async function fetchBiliPages(namesCn) {
+  const textOf = new Map();
+  for (let i = 0; i < namesCn.length; i += 50) {
+    const json = await wiki({
+      action: 'query', titles: namesCn.slice(i, i + 50).map(name => `禁闭者:${name}`).join('|'),
+      prop: 'revisions', rvprop: 'content', rvslots: 'main',
+    });
+    for (const page of json.query?.pages ?? []) {
+      const text = page.revisions?.[0]?.slots?.main?.content;
+      if (text) textOf.set(page.title.replace(/^禁闭者:/, ''), text);
+    }
+  }
+  return textOf;
 }

@@ -44,7 +44,8 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
-import { fetchBiliIllustrations, fetchBiliSinners } from './lib/ptn-bili.mjs';
+import { fetchBiliFiles, fetchBiliPages, fetchBiliSinners } from './lib/ptn-bili.mjs';
+import { parseBiliDetail } from './lib/ptn-bili-page.mjs';
 import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
 import { LAUNCH, LAUNCH_DAY, RELEASES, UNFILED } from './lib/ptn-record.mjs';
 import { templateBodies, templateParams } from './lib/wiki-text.mjs';
@@ -61,6 +62,23 @@ const FIGURE_PATH = 'ptn/figures';
 
 const WIKI_API = 'https://pathtonowhere.wiki.gg/api.php';
 const wiki = wikiApi(WIKI_API);
+
+// Whether an earlier build left a roster to keep.
+const haveLast = await readFile(SINNERS_FILE, 'utf8').then(text => text.length > 2, () => false);
+
+// What the game's Chinese wiki gives, which a first build can do without: it ships the
+// English half. A later one cannot, since the CN-only Sinners and the Chinese text are
+// that wiki's alone and a build without them takes them off the site: an error there, so
+// that the last build's files are kept whole (the catch at the foot) until the wiki answers.
+async function fromChinese(what, ask, fallback) {
+  try {
+    return await ask();
+  } catch (err) {
+    if (haveLast) throw new Error(`${what} could not be had from the Chinese wiki: ${err.message}`);
+    console.warn(`ptn: no ${what} from the Chinese wiki, so the roster is its English half: ${err.message}`);
+    return fallback;
+  }
+}
 
 // As many pages as the wiki gives the text of in one answer, and as many titles as it takes
 // in one question. It answers a page-by-page crawl with a 429.
@@ -220,12 +238,7 @@ async function buildRoster() {
   // tags, whether they are limited or a collab's and whether they deal core damage; and
   // the Sinners only the CN server has. Not worth the roster: without it the page has its
   // English half only.
-  let bili = [];
-  try {
-    bili = await fetchBiliSinners();
-  } catch (err) {
-    console.warn(`ptn: nothing from the Chinese wiki, so no Chinese names and no CN-only Sinners: ${err.message}`);
-  }
+  const bili = await fromChinese('the roster', fetchBiliSinners, []);
   // The two wikis name a Sinner alike in one of three ways, tried in turn: the Chinese
   // name the English page gives (missing from a few, and garbled on one), the English name
   // the Chinese page gives, and the number, where only one Sinner has it.
@@ -244,29 +257,55 @@ async function buildRoster() {
     if (row.core) s.core = true;
   }
   // The rest are on the CN server alone: Sinners still to come to Global, and a collab's
-  // that will not. Their file is the head the Chinese wiki gives, under the English name
-  // it also gives; the birthplace and tags it has only in Chinese are left to that side.
-  for (const row of bili) {
-    if (matched.has(row) || !(row.rank && row.tendency && row.libram && row.name)) continue;
+  // that will not. The head of their file is the Chinese wiki's row, under the English name
+  // it also gives, and the rest is that wiki's page for them, in Chinese.
+  const cnOnly = bili.filter(row => !matched.has(row) && row.rank && row.tendency && row.libram && row.name);
+  const pageOf = await fromChinese('the CN-only Sinners\' pages', () => fetchBiliPages(cnOnly.map(row => row.nameCn)), new Map());
+  for (const row of cnOnly) {
     const id = slugOf(row.name);
     // A collab's Sinner is filed under a code of its own world, not an MBCC number.
     const code = /^\d+$/.test(row.number) || row.number === '数据未知' ? {} : { code: row.number };
+    // The page's birthplace is the roster entry's, as the English wiki's is; the rest is the
+    // payload. Where the page is not to be had the file is the head alone.
+    const { birthplace = '', ...page } = pageOf.has(row.nameCn)
+      ? parseBiliDetail(pageOf.get(row.nameCn), row.nameCn) ?? {}
+      : {};
     sinners.push({
       id, name: row.name, nameCn: row.nameCn,
       number: row.number === '数据未知' ? 'Unknown' : row.number, ...code,
       rank: row.rank, ...(row.height ? { height: row.height } : {}),
-      tendency: row.tendency, libram: row.libram, birthplace: '', tags: [], tagsCn: row.tagsCn,
+      tendency: row.tendency, libram: row.libram, birthplace, tags: [], tagsCn: row.tagsCn,
       ...(row.limited ? { limited: row.limited } : {}), ...(row.core ? { core: true } : {}),
       cnOnly: true, releasedCn: row.releasedCn,
     });
     details.push({
       id,
-      ...parseSinnerDetail({
+      ...(page.names ? page : parseSinnerDetail({
         Name_CN: row.nameCn,
         ...(row.height ? { Height: `${row.height}cm` } : {}),
-        Bio: 'This Sinner is on the CN server only, and the English wiki has no page for them. What is here of their file is as the game\'s Chinese wiki has it.',
-      }, row.name),
+        Bio: 'This Sinner is on the CN server only, and the English wiki has no page for them.',
+      }, row.name)),
     });
+  }
+
+  // The Chinese wiki's page for every other Sinner too, which is the same file in Chinese:
+  // kept beside the English one as `zh`, for the page to lay over it when the reader is on
+  // the Chinese side. Only what that page has text for is kept, so what it lacks (an
+  // exclusive crimebrand) stays the English wiki's. Left out are the numbers, which the
+  // English page has at more levels, and the voice actors, which it has in three languages.
+  const ZH_SKIP = new Set(['names', 'stats', 'block', 'attackSpeed', 'voice']);
+  const hasText = value => (typeof value === 'string' ? value !== ''
+    : Array.isArray(value) ? value.length > 0
+      : value !== null && typeof value === 'object' && Object.values(value).some(hasText));
+  const others = sinners.filter(s => !s.cnOnly && s.nameCn);
+  const zhPageOf = await fromChinese('the Sinners\' pages', () => fetchBiliPages(others.map(s => s.nameCn)), new Map());
+  for (const s of others) {
+    const parsed = zhPageOf.has(s.nameCn) ? parseBiliDetail(zhPageOf.get(s.nameCn), s.nameCn) : undefined;
+    if (!parsed) continue;
+    const zh = Object.fromEntries(Object.entries(parsed).filter(([key, value]) => !ZH_SKIP.has(key) && hasText(value)));
+    // The English page's sticker is the 100% stage, which the Chinese stages have as their last.
+    if (zh.compliance) zh.sticker = '';
+    details.find(d => d.id === s.id).zh = zh;
   }
 
   // Every Sinner's art, as the files their two subpages name, and then the address of each
@@ -276,30 +315,43 @@ async function buildRoster() {
   const galleries = await fetchSubpages(titles, 'Gallery');
   const artFiles = new Map(sinners.map(s => [s.id, parseSinnerArt(s.name, attires.get(s.name), galleries.get(s.name))]));
   const urlOf = await fetchFileUrls([...new Set([...artFiles.values()].flat().map(art => art.file))]);
-  // Where each Sinner's mugshot and original are on the wiki, for the bakes below.
-  const mugshotOf = new Map();
-  const originalOf = new Map();
   for (const detail of details) {
     detail.arts = artFiles.get(detail.id).filter(art => urlOf.has(art.file))
       .map(({ file, ...art }) => ({ ...art, url: urlOf.get(file) }));
+  }
+
+  // A Sinner the English wiki lacks one of the three pictures every Sinner has of (Pine,
+  // Pixel, Kisugi Ai, everyone on the CN server alone) has the Chinese wiki's where it has
+  // one: the same artwork under that wiki's own names for it. The first and the last are
+  // baked below; the phase-up art is a scene, hung and resized by the proxy as the English
+  // wiki's is, so it is only listed.
+  const detailOf = new Map(details.map(d => [d.id, d]));
+  const KINDS = [
+    { kind: 'original', suffix: '立绘', label: 'Original' },
+    { kind: 'phase', suffix: '升阶', label: 'Phase-up' },
+    { kind: 'mugshot', suffix: '证件照', label: 'Mugshot' },
+  ];
+  for (const { kind, suffix, label } of KINDS) {
+    const short = sinners.filter(s => s.nameCn && !detailOf.get(s.id).arts.some(art => art.kind === kind));
+    if (!short.length) continue;
+    const biliUrlOf = await fromChinese(label.toLowerCase(), () => fetchBiliFiles(short.map(s => s.nameCn), suffix), new Map());
+    for (const s of short) {
+      const url = biliUrlOf.get(s.nameCn);
+      if (!url) continue;
+      // In the game's own order: the original, the phase-up art, the mugshot, then the rest.
+      const arts = detailOf.get(s.id).arts;
+      const before = KINDS.slice(0, KINDS.findIndex(k => k.kind === kind)).map(k => k.kind);
+      arts.splice(arts.filter(art => before.includes(art.kind)).length, 0, { kind, label, url });
+    }
+  }
+
+  // Where each Sinner's mugshot and original are, for the bakes below.
+  const mugshotOf = new Map();
+  const originalOf = new Map();
+  for (const detail of details) {
     const addressOf = kind => detail.arts.find(art => art.kind === kind)?.url;
     if (addressOf('mugshot')) mugshotOf.set(detail.id, addressOf('mugshot'));
     if (addressOf('original')) originalOf.set(detail.id, addressOf('original'));
-  }
-
-  // A Sinner the English wiki has no original of (Pine, Pixel, Kisugi Ai, everyone on the
-  // CN server alone) has the Chinese wiki's, where it has one: the same illustration.
-  const bare = sinners.filter(s => s.nameCn && !originalOf.has(s.id));
-  try {
-    const biliUrlOf = bare.length ? await fetchBiliIllustrations(bare.map(s => s.nameCn)) : new Map();
-    for (const s of bare) {
-      const url = biliUrlOf.get(s.nameCn);
-      if (!url) continue;
-      originalOf.set(s.id, url);
-      details.find(d => d.id === s.id).arts.unshift({ kind: 'original', label: 'Original', url });
-    }
-  } catch (err) {
-    console.warn(`ptn: no illustrations from the Chinese wiki for ${bare.map(s => s.name).join(', ')}: ${err.message}`);
   }
 
   // One set after another, not side by side: two at once is eight fetches at a time from
@@ -327,7 +379,7 @@ try {
   await writeFile(SINNERS_FILE, JSON.stringify(sinners));
   // Written again every build, since a page changes with the game.
   await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));
-  console.log(`ptn details: ${details.length} -> ${path.relative(process.cwd(), detailDir)}`);
+  console.log(`ptn details: ${details.length}, ${details.filter(d => d.zh).length} with the Chinese wiki's text beside the English -> ${path.relative(process.cwd(), detailDir)}`);
   const artless = sinners.filter(s => !s.figure).map(s => s.name);
   const undated = sinners.filter(s => !s.released && !s.cnOnly).map(s => s.name);
   console.log(

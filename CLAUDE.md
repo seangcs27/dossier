@@ -92,7 +92,8 @@ scripts/
   lib/ptn-record.mjs         ← when each Sinner was released, and the files of five the wiki has
                                no page for: recorded by hand from S1N, one line a release
   lib/ptn-bili.mjs           ← reads the game's Chinese wiki: every Sinner's Chinese name, tags and
-                               flags, the CN-only Sinners, and an illustration's address
+                               flags, the CN-only Sinners and their pages, a picture's address
+  lib/ptn-bili-page.mjs      ← that wiki's {{禁闭者图鉴}} page into the same payload as ptn-page.mjs
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -137,9 +138,9 @@ src/
       endfield/icons/<kind>-<name>.webp  ← 16 class, element and weapon glyphs, 64px
       endfield/operator-details/<id>.json  ← 33 payloads parsed from the wiki's pages; nothing reads them yet
       ptn/sinners.json           ← Path to Nowhere's roster (160, 11 of them CN only), bundled into the web target
-      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the wall stands them (150), up to 1100 tall
+      ptn/figures/mugshot/<id>.webp   ← each Sinner whole, as the wall stands them (160), up to 1100 tall
       ptn/figures/original/<id>.webp  ← the same of their original illustration (160); both copied as static files
-      ptn/sinner-details/<id>.json  ← 160 dossier payloads parsed from the wiki's pages, copied as static files
+      ptn/sinner-details/<id>.json  ← 160 dossier payloads parsed from the wiki's pages, with the Chinese wiki's text beside the English (`zh`), copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
@@ -1017,7 +1018,9 @@ changes nothing. The owner approved those downloads on 11 October 2026 (143 PNGs
 5.3 MB), and on 12 October the same PtN files a second time, with the 142 originals, to be
 baked whole for the wall (285 files, about 125 MB, baked to 20.5 MB). On 12 October too:
 11 illustrations from the game's Chinese wiki, for the Sinners the English wiki has no
-original of (1200x1500 PNGs), and its 25 badges for `icons/ptn/`.
+original of (1200x1500 PNGs), and its 25 badges for `icons/ptn/`. And on 13 October 10
+mugshots (`证件照`, 600x1200 PNGs, 274 to 616 KB, 4 MB in all, baked to 39 to 86 KB) for
+the Sinners the English wiki has none of.
 
 **Path to Nowhere** (`#/ptn`, 160 Sinners: the English wiki's 144, five it has no page for
 yet, and 11 only the CN server has, all below). `scripts/build-ptn-index.mjs` reads
@@ -1030,8 +1033,9 @@ and the mugshots' addresses are asked for the same way: six requests a build. An
 id (the page title as a slug), name, number (what follows `MBCC-S-`, which is not unique),
 rank, height in centimetres (every file has one, 115 to 191), tendency, libram, birthplace,
 tags, and the pictures: `figure` and `figureOriginal`, the mugshot (the standing figure the
-wiki's own infobox shows, `File:<page> Prisonphoto.png`, 150 of 160) and the original
-illustration (all 160, 11 of them the Chinese wiki's), each baked whole, cut back to the figure's own edges and no taller
+wiki's own infobox shows, `File:<page> Prisonphoto.png`, 150 of 160; the other 10 the
+Chinese wiki's) and the original illustration (all 160, 11 of them the Chinese wiki's),
+each baked whole, cut back to the figure's own edges and no taller
 than 1100px, with its width over its height; and `released`, the day they came to the
 Global server, which is not the wiki's (below). The order is rank S, A, B and then name.
 
@@ -1049,12 +1053,44 @@ gives, then the English name the Chinese page gives, then the number where only 
 has it; that matched all 149, and **the 11 left over are on the CN server alone**
 (`cnOnly`): five still to come to Global (Arancia, Daffodil, Famorene Eirene, Requiem,
 Helix) and the six of a JoJo collab (the owner's choice of 12 October 2026 to carry both).
-They have the head of a file and a picture, a `releasedCn`, and a collab's own `code`
-where they have no MBCC number; nothing is under their tabs. The same wiki's
-`<name>立绘.png` is the illustration of any Sinner the English wiki has no original of
-(those, and Pine, Pixel and Kisugi Ai), baked as the others are. None of it is
-load-bearing: with that wiki unreachable the build warns and the roster is its English
-half.
+They have a `releasedCn` and a collab's own `code` where they have no MBCC number, and
+**their whole file is that wiki's page for them, in Chinese**
+(`scripts/lib/ptn-bili-page.mjs`, 13 October 2026; the first pass left them a head and
+nothing under their tabs, which the owner found). The page is one `{{禁闭者图鉴}}` call
+whose parameters are the same things the English wiki's call has: attributes (level 1, the
+top of each promotion, level 90), the basic attack, ultimate and two passives with ten
+levels each, five shackles, ten compliance stages, six materials, and the files. Its
+four templates become game markup (`{{禁闭者数值}}` a raised value, `{{伤害文本}}` a
+reminder, `{{术语查看}}` its text, `{{展开折叠}}` its text under the condition that
+unlocks it). What it has that the English payload has no field for rides in two optional
+payload fields, `title` (头衔, shown as a fact) and `extras` (梦魇天赋, 破碎防线, shown
+after Mania Intensify); the compliance stages past 100% a Sinner has are one more file
+entry. It has no exclusive crimebrand, so that tab says so. **Their pictures** are that
+wiki's three files under its own names, `<name>立绘.png` (the original),
+`<name>升阶.png` (the phase-up art, 2040x1632, never downloaded: listed, and resized by
+the proxy as every print is) and `<name>证件照.png` (the mugshot, 600x1200, baked). The
+build asks for each kind a Sinner is short of, whoever they are: the 11 CN-only, Pine and
+Pixel (no mugshot on the English wiki), Kisugi Ai (no original), and the three Kisugi
+(no phase-up art). **That wiki is load-bearing once a build has used it**, which it was not
+meant to be: it answers a client that asks too fast with HTTP 567 (14 October 2026, after a
+day of probing it from one machine, and for hours after), and a build that took that for
+"unreachable" came back with the CN-only Sinners and every Chinese name gone. So
+`ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks again after a 567
+(waiting 5, 20 and 60 s), and a request that still fails is an error that makes the script
+**keep the last build's files whole** (`fromChinese` in `build-ptn-index.mjs`; CI restores
+them from its cache), with a warning, until the wiki answers. Only a first build with
+nothing to keep ships the English half.
+
+**Every Sinner's page on that wiki is read, not only the CN-only ones**, and its text is
+kept beside the English wiki's in each payload as `zh` (`scripts/lib/ptn-bili-page.mjs`,
+one request to 50 pages). On the Chinese side the Sinner's page lays `zh` over the payload
+(`localised` in `ptn-detail.ts`): bio, trait, Mania Intensify, skills, shackles,
+compliance, materials, the files, their birthplace, ability, case, gender and birthday, and
+the title and extras that wiki has. Only what it has text for is kept, so its lack of an
+exclusive crimebrand leaves the English wiki's, and the numbers (it has five levels where
+the English page has ten) and the voice actors (one language where the English has three)
+are not taken from it. The Chinese page's ten compliance stages replace the English five and
+its sticker. An attire's name, which that page does not list, stays the English wiki's.
 
 **The roster's search and filters** are that wiki's own, laid out as it lays its own
 filter table out (the owner's screenshot of it): a Sinner is found by either name or by
@@ -1071,8 +1107,11 @@ switch on the roster (first of its three) and beside a Sinner's trail; the choic
 in `localStorage`, and the first visit goes by the browser's language. The owner's scope
 for it, of three offered: **names and labels**. A Sinner's name, the placards, the
 line-ups' titles, the tabs, the fact lists' labels, the filter and its badges, and the
-search box's prompt change; what is under a Sinner's tabs is the English wiki's text and
-stays English, as do the shell's own words (Filters, Clear, the section link). The tags
+search box's prompt change; and under a Sinner's tabs, the English side is the English
+wiki's text and the Chinese side the Chinese wiki's (the owner's "fill zh", 14 October
+2026, which widened the scope from the first pass: the CN-only Sinners' files are in
+Chinese in either language, since that is the only text there is for them). The shell's own
+words (Filters, Clear, the section link) stay English. The tags
 are each wiki's own, so a pick among them does not carry over a change of language.
 
 **Path to Nowhere is the first game to get a design of its own, and the owner's brief for
@@ -1141,8 +1180,9 @@ Three things about it that are not what they seem:
   board in hand.
 - **A figure's place is held before its picture comes**, by the picture's shape (an entry's
   `ratio`): an outline at the right height, which is also all a Sinner with no picture
-  would have, with "No photograph on file" (nobody today). The ten with no mugshot (Pine,
-  Pixel and eight of the CN-only) stand as their original under either.
+  would have, with "No photograph on file" (nobody today, now that the Chinese wiki's
+  mugshots are baked). A Sinner missing one of the two stands as the other under either
+  look, which nobody needs now but a build that could not reach that wiki.
 - **The numerals are a picture the wall's edge is masked by**, so that they take the
   wall's ink, and a picture cannot load a font: they are set in the reader's own narrow
   face whatever the placards come to be set in.
@@ -1252,7 +1292,7 @@ numbers at all yet, and 20 have only level 1 of each skill.
 Not on the dossier, though that wiki has them: skill range diagrams (the English wiki names
 a range, `MultiRow_3`, and draws it from an image), what anything costs, voice lines and
 the interrogation records' own pages, an attire's description and how it is got (its
-`Attires` subpage has both), a title.
+`Attires` subpage has both), a title (the CN-only Sinners have theirs, from the Chinese wiki).
 
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's

@@ -224,7 +224,8 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       [t('rank'), rankName(s.rank)],
       [t('tendency'), tendencyName(s.tendency)],
       [t('libram'), libramName(s.libram)],
-      [t('birthplace'), s.birthplace],
+      [t('birthplace'), d.birthplace || s.birthplace],
+      [t('title'), d.title ?? ''],
       [t('ability'), d.ability],
       [t('released'), s.released ? dayOf(s.released) : ''],
       [t('releasedCn'), s.cnOnly && s.releasedCn ? dayOf(s.releasedCn) : ''],
@@ -249,8 +250,13 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
         <p class="rich">${rich(d.mania.text)}</p>
       </section>
     ` : ''}
+    ${(d.extras ?? []).map(extra => `
+      <section class="entry"><h2 class="entry-name">${escHtml(extra.name)}</h2><p class="rich">${rich(extra.text)}</p></section>
+    `).join('')}
   `;
 }
+
+const KIND_KEY = { 'Basic Attack': 'kindBasic', Ultimate: 'kindUltimate', Passive: 'kindPassive' } as const;
 
 function skillsPanel(d: PtnSinnerDetail): string {
   if (!d.skills.length) return `<p class="empty-msg">${t('noSkills')}</p>`;
@@ -258,7 +264,7 @@ function skillsPanel(d: PtnSinnerDetail): string {
     <section class="entry">
       <div class="entry-head">
         <h2 class="entry-name">${escHtml(skill.name)}</h2>
-        <span class="unlock-badge">${skill.kind}</span>
+        <span class="unlock-badge">${t(KIND_KEY[skill.kind])}</span>
       </div>
       <p class="rich">${rich(skill.levels[0] ?? '')}</p>
       ${levelsHtml(skill.levels)}
@@ -290,7 +296,7 @@ function shacklesPanel(d: PtnSinnerDetail): string {
   const materials: [string, string][] = [
     [t('phaseUp'), d.materials.phase.join(', ')],
     [t('skillUpgrades'), d.materials.skill],
-    ['DisSea', d.materials.disSea],
+    [t('disSea'), d.materials.disSea],
   ];
   return `
     ${d.shackles.map((shackle, i) => `
@@ -325,7 +331,7 @@ function filePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       [t('gender'), d.gender],
       [t('birthday'), d.birthday],
       [t('height'), d.height],
-      [t('birthplace'), s.birthplace],
+      [t('birthplace'), d.birthplace || s.birthplace],
       [t('ability'), d.ability],
       [t('case'), d.case],
       [t('otherNames'), names],
@@ -338,6 +344,12 @@ function filePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       </details>
     `).join('')}
   `;
+}
+
+// The payload as the language that is on has it: on the Chinese side the Chinese wiki's text
+// over the English wiki's, where the build had a page for the Sinner.
+function localised(d: PtnSinnerDetail): PtnSinnerDetail {
+  return ptnLang() === 'zh' && d.zh ? { ...d, ...d.zh } : d;
 }
 
 function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
@@ -354,7 +366,7 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
 // `picked` is the picture on show, among the payload's.
 function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, picked: number): string {
   const panel = detail
-    ? panelHtml(s, detail)
+    ? panelHtml(s, localised(detail))
     : `<p class="empty-msg">${t(detail === null ? 'loadFailed' : 'loading')}</p>`;
   return `
     <div class="detail ptn-detail" lang="${ptnLang() === 'zh' ? 'zh-Hans' : 'en'}">

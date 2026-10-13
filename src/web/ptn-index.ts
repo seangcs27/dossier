@@ -112,6 +112,15 @@ export interface PtnSinnerDetail {
   trait: string;
   // What Mania Intensify does. A few have no name of their own.
   mania: PtnEntry;
+  // Only from the Chinese wiki's page for the Sinner: their title ('西区教母'), the other
+  // effects that wiki gives them beside the trait, and their birthplace as it has it.
+  title?: string;
+  extras?: PtnEntry[];
+  birthplace?: string;
+  // That page's own text laid beside the English wiki's, for the Chinese side to read, on
+  // every Sinner it has a page for but the CN-only ones (whose text it is already). Only the
+  // fields it has text for: what it lacks is the English wiki's in either language.
+  zh?: Partial<Omit<PtnSinnerDetail, 'id' | 'arts' | 'zh'>>;
   // The exclusive crimebrand, and the skill it grants where the wiki has it written up.
   brand: { name: string; skill: { name: string; levels: string[] } | null };
   stats: PtnStats[];
