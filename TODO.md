@@ -78,20 +78,23 @@ site, approved 15 October 2026). Not built yet:
   - The game's Chinese wiki prints a release date on every Sinner's page (上线日期), the
     CN server's. It was thought to block scripts, and does not: its Semantic MediaWiki API
     answers a build's own user agent, and the build reads it now (`scripts/lib/ptn-bili.mjs`).
-- **Path to Nowhere in Chinese is its names and labels only.** What is under a Sinner's
-  tabs (bio, skills, crimebrand, shackles, documents), a birthplace, an ability and an
-  attire's name are the English wiki's and stay English on the Chinese side; the Chinese
-  wiki's page for each Sinner is read and kept beside the English text (`zh`, 14 October
-  2026), and everything it has text for is laid over on that side. The shell stays English
-  too: the Filters and Clear buttons, the section link, "No results". **The CN-only
-  Sinners' files are in Chinese in either language**, since that is the only text there is
-  for them; their exclusive crimebrand is empty (the Chinese template has no field for it).
-- **The Chinese wiki rate-limits (HTTP 567).** It did so on 14 October 2026 from the owner's
-  machine after a day of probing it, for hours. The build waits and asks again, and keeps
-  the last build's files if it still cannot get an answer (CLAUDE.md has it); the first
-  sign of trouble on the deploy is `ptn/sinners.json kept from the last build` in the log.
-  The mend if GitHub's runners are ever blocked for good is a cache of the Chinese
-  wiki's pages kept in the repo (they change when the game does, so a few a month).
+- **What stays English on Path to Nowhere's Chinese side.** The Chinese wiki's page for
+  each Sinner and each exclusive crimebrand's page are read and laid over the English text
+  on that side (14 October 2026), and the shell's Filters, Clear, section link and "No
+  results" follow the language. Still English: an attire's name (that wiki lists none), the
+  Japanese and Korean voice actors' names (it names the CN one only), "Lv", the sidebar and
+  the phone's games drawer, and screen-reader names. **The CN-only Sinners' files are in
+  Chinese in either language**, since that is the only text there is for them.
+- **The Chinese wiki rate-limits (HTTP 567).** It did so on 14 October 2026 to the owner's
+  machine after a day of probing it (for about 10 minutes at first, hours in all), and to
+  GitHub's runner for a whole deploy. The build waits and asks again, and then reads
+  `scripts/lib/ptn-bili-snapshot.json`, a tracked copy of what that wiki last gave whole
+  (CLAUDE.md has it). **Its upkeep is yours**: a new Sinner or an edited page reaches the
+  site only once a build that read the wiki live has rewritten the snapshot and it is
+  committed, so after the game's patch days run `npm run build:index:ptn` locally and commit
+  the file. The deploy log says `from the snapshot of the Chinese wiki` when it was used.
+  It is 2.0 MB and a one-line JSON, so its diff is the whole file; each commit adds about
+  that many compressed bytes to the history that changed (a few a month, at most).
 - **GitHub's runners reach `wiki.biligame.com`**: the first deploy with it (13 October
   2026) logged 160 Sinners, 160 with a Chinese name, 11 on CN only. Should that stop, the
   build warns (`ptn: nothing from the Chinese wiki`) and ships the English half: no Chinese

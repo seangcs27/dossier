@@ -2,9 +2,9 @@ import type { PtnSinner } from './ptn-index';
 
 /**
  * Path to Nowhere's pages in two languages, English and Chinese: which one is on, and the
- * words that are this site's to say in each. A Sinner's names and tags are data (the
- * build has both wikis'); what is under a Sinner's tabs is the English wiki's text and
- * stays English in either.
+ * words that are this site's to say in each, the shell's on these pages among them (the
+ * Filters button, Clear, the section link). A Sinner's names, tags and file are data: the
+ * build has both wikis'.
  */
 export type PtnLang = 'en' | 'zh';
 
@@ -68,7 +68,8 @@ const TEXT = {
     loading: 'Loading…', loadFailed: 'This Sinner\'s file could not be loaded.',
     unknownSinner: 'Unknown Sinner', noFile: 'No file found for',
     artOriginal: 'Original', artPhase: 'Phase-up', artMugshot: 'Mugshot', openFull: 'at full size', open: 'Open',
-    pictures: 'Pictures',
+    pictures: 'Pictures', hp: 'HP', atk: 'ATK', def: 'DEF', res: 'RES',
+    filters: 'Filters', clear: 'Clear', noResults: 'No results', tryOther: 'Try a different name or filter.',
   },
   zh: {
     sinners: '禁闭者', Sinners: '禁闭者', prompt: '搜索禁闭者…',
@@ -95,7 +96,8 @@ const TEXT = {
     loading: '加载中…', loadFailed: '该禁闭者的档案未能加载。',
     unknownSinner: '未知禁闭者', noFile: '未找到档案：',
     artOriginal: '立绘', artPhase: '升阶立绘', artMugshot: '档案照', openFull: '（查看大图）', open: '打开',
-    pictures: '图片',
+    pictures: '图片', hp: '生命', atk: '攻击', def: '防御', res: '法抗',
+    filters: '筛选', clear: '清除', noResults: '没有结果', tryOther: '换个名字或筛选条件试试。',
   },
 } as const;
 

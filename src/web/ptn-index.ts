@@ -121,8 +121,9 @@ export interface PtnSinnerDetail {
   // every Sinner it has a page for but the CN-only ones (whose text it is already). Only the
   // fields it has text for: what it lacks is the English wiki's in either language.
   zh?: Partial<Omit<PtnSinnerDetail, 'id' | 'arts' | 'zh'>>;
-  // The exclusive crimebrand, and the skill it grants where the wiki has it written up.
-  brand: { name: string; skill: { name: string; levels: string[] } | null };
+  // The exclusive crimebrand, and the skill it grants where the wiki has it written up. The
+  // Chinese wiki's names that skill, and what it makes, as terms explained apart (`terms`).
+  brand: { name: string; skill: { name: string; levels: string[] } | null; terms?: PtnEntry[] };
   stats: PtnStats[];
   block: string;
   attackSpeed: string;

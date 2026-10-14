@@ -136,6 +136,14 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   .sections-drop { background: $bone; }
   .section-link.active { color: $ink; }
 
+  // A rank's name in its badge's colour, the game's one colour code (sampled from the
+  // badges in icons/ptn/): in English, where a rank is its letter and has no badge, too.
+  .badge-btn[data-group='rank'] {
+    &[data-value='S'] { color: #fcc17b; }
+    &[data-value='A'] { color: #c574fc; }
+    &[data-value='B'] { color: #8695fc; }
+  }
+
   // The roster has the search box, and on a phone the count is inside it, as on the
   // Arknights grid: row 1 has no room for the pill beside the section link.
   @media (max-width: 640px) {

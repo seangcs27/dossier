@@ -93,6 +93,8 @@ scripts/
   lib/ptn-bili.mjs           ← reads the game's Chinese wiki: every Sinner's Chinese name, tags and
                                flags, the CN-only Sinners and their pages, a picture's address
   lib/ptn-bili-page.mjs      ← that wiki's {{禁闭者图鉴}} page into the same payload as ptn-page.mjs
+  lib/ptn-bili-snapshot.json ← what that wiki last gave whole: its roster, 160 pages' text, the crimebrands' and their terms', for a
+                               build it will not answer (tracked; a local build rewrites it)
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -1069,7 +1071,19 @@ reminder, `{{术语查看}}` its text, `{{展开折叠}}` its text under the con
 unlocks it). What it has that the English payload has no field for rides in two optional
 payload fields, `title` (头衔, shown as a fact) and `extras` (梦魇天赋, 破碎防线, shown
 after Mania Intensify); the compliance stages past 100% a Sinner has are one more file
-entry. It has no exclusive crimebrand, so that tab says so. **Their pictures** are that
+entry. A Sinner's page there names no exclusive crimebrand; **the crimebrand's own page
+does** (`专属烙印:<name>`, filed under `分类:专属烙印`, a `{{专属烙印图鉴}}` call whose
+`专属角色` is the Sinner's Chinese name), and the build reads them all in one category
+request (`fetchBiliBrands`, `parseBiliBrand`). Its effect is one text with each number as
+its three levels have it ("20%/25%/30%", the wiki's `{{烙印数值}}`), and a skill it grants
+is named inside that text, so the payload's brand has an unnamed skill of one level there,
+and the tab shows no skill name. What that skill does is on the page of the term the text
+names (`术语解释:【禁忌魇魔】-必杀`, the page the wiki's `{{术语查看}}` hover shows), and the
+numbers often a term further down (the summon `【梦魇】` it makes, with the 120%/135%/150%
+the English page has). So the build reads the terms the crimebrands name and the terms
+those name, three deep (`fetchBiliTerms`, about 280 pages in 8 requests), and a brand
+carries every term reachable from its effect as `terms`, listed under it in the order met
+(140 of the 160 name one). **Their pictures** are that
 wiki's three files under its own names, `<name>立绘.png` (the original),
 `<name>升阶.png` (the phase-up art, 2040x1632, never downloaded: listed, and resized by
 the proxy as every print is) and `<name>证件照.png` (the mugshot, 600x1200, baked). The
@@ -1078,23 +1092,31 @@ Pixel (no mugshot on the English wiki), Kisugi Ai (no original), and the three K
 (no phase-up art). **That wiki is load-bearing once a build has used it**, which it was not
 meant to be: it answers a client that asks too fast with HTTP 567 (14 October 2026, after a
 day of probing it from one machine, and for hours after), and a build that took that for
-"unreachable" came back with the CN-only Sinners and every Chinese name gone. So
-`ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks again after a 567
-(waiting 5, 20 and 60 s), and a request that still fails is an error that makes the script
-**keep the last build's files whole** (`fromChinese` in `build-ptn-index.mjs`; CI restores
-them from its cache), with a warning, until the wiki answers. Only a first build with
-nothing to keep ships the English half.
+"unreachable" came back with the CN-only Sinners and every Chinese name gone, and GitHub's
+runners were refused the same way on the first deploy that read the pages, for the whole
+run. So `ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks again after
+a 567 (waiting 5, 20 and 60 s), and a request that still fails falls to **the snapshot**:
+`scripts/lib/ptn-bili-snapshot.json`, tracked (2.0 MB, 0.5 compressed), which has that
+wiki's roster rows, the text of each of its 160 pages (notes to editors dropped), every
+exclusive crimebrand's page (`brands`) and the terms they name (`terms`), and the addresses of the pictures asked of it, as the last build that read it whole left them. Any
+such build writes it again, so **a local build refreshes it and its diff is committed with
+the rest**; a build that fell back to it never writes it. With no snapshot a later build
+keeps the last build's files whole (`fromChinese` in `build-ptn-index.mjs`) with a warning,
+and a first build with nothing to keep ships the English half.
 
 **Every Sinner's page on that wiki is read, not only the CN-only ones**, and its text is
 kept beside the English wiki's in each payload as `zh` (`scripts/lib/ptn-bili-page.mjs`,
 one request to 50 pages). On the Chinese side the Sinner's page lays `zh` over the payload
 (`localised` in `ptn-detail.ts`): bio, trait, Mania Intensify, skills, shackles,
 compliance, materials, the files, their birthplace, ability, case, gender and birthday, and
-the title and extras that wiki has. Only what it has text for is kept, so its lack of an
-exclusive crimebrand leaves the English wiki's, and the numbers (it has five levels where
-the English page has ten) and the voice actors (one language where the English has three)
-are not taken from it. The Chinese page's ten compliance stages replace the English five and
-its sticker. An attire's name, which that page does not list, stays the English wiki's.
+the title and extras that wiki has, and the exclusive crimebrand from its own page. Only
+what it has text for is kept, so what it lacks stays the English wiki's, and the numbers
+(it has five levels where the English page has ten) are not taken from it. It names the CN
+voice actor alone, so on the Chinese side that name, in Chinese, takes the "(CN)" one's
+place in the English list of three, and every one's language is said in Chinese
+("唐雅菁（中）, Hanamori Yumiri（日）"). The Chinese page's ten compliance stages replace the
+English five and its sticker. An attire's name, which that page does not list, stays the
+English wiki's.
 
 **The roster's search and filters** are that wiki's own, laid out as it lays its own
 filter table out (the owner's screenshot of it): a Sinner is found by either name or by
@@ -1104,7 +1126,13 @@ collab), Core damage (none, yes) and, folded, Tags. Every rank, tendency and lib
 the game's own badge before its name: 25 files from that wiki, baked once to 72px WebP
 and tracked in `icons/ptn/` (the owner approved the downloads; the bake was a one-off
 script, not part of the build). **A rank's badge has its Chinese character drawn in it,
-so it is the Chinese side's alone**: in English a rank is its letter.
+so it is the Chinese side's alone**: in English a rank is its letter. The badges are in the
+game's colours, as that wiki's filter shows them (the owner's ask, 14 October 2026): the
+tendency and libram badges white at full strength, a rank's badge and name in its colour
+(S amber, A violet, B periwinkle, sampled from the badges; `_ptn.scss`), names in the text
+colour. Each group's badges stand in columns of one width (`.filter-row .collab-row`, as
+many 5.25rem columns as fit, which is "PESTILENCE"'s width), so they line up as that
+wiki's table does: three across in Chinese, two for the librams in English.
 
 **The game's pages are in two languages**, English and Chinese (`ptn-lang.ts`), by a
 switch on the roster (first of its three) and beside a Sinner's trail; the choice is kept
@@ -1115,7 +1143,12 @@ search box's prompt change; and under a Sinner's tabs, the English side is the E
 wiki's text and the Chinese side the Chinese wiki's (the owner's "fill zh", 14 October
 2026, which widened the scope from the first pass: the CN-only Sinners' files are in
 Chinese in either language, since that is the only text there is for them). The shell's own
-words (Filters, Clear, the section link) stay English. The tags
+words on these pages change too (the owner's ask, 14 October 2026): the Filters button,
+Clear and an empty search's message through the roster's `words` (`card.ts`), and the
+section link from each PtN view, since a change of language mounts the view again and not
+the route. `dispatch` in `index.ts` puts Clear back to English on every change of page,
+since the Arknights and Endfield grids never word it. The sidebar, the drawer and the
+search box's clear and close buttons' screen-reader names stay English. The tags
 are each wiki's own, so a pick among them does not carry over a change of language.
 
 **Path to Nowhere is the first game to get a design of its own, and the owner's brief for

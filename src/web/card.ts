@@ -88,6 +88,18 @@ export interface RosterOrder<T> extends RosterOption {
   compare?: (a: T, b: T) => number;
 }
 
+/** The words of the shell a roster works: the Filters button, Clear, and an empty search. */
+export interface RosterWords {
+  filters: string;
+  clear: string;
+  noResults: string;
+  tryOther: string;
+}
+
+const ENGLISH: RosterWords = {
+  filters: 'Filters', clear: 'Clear', noResults: 'No results', tryOther: 'Try a different name or filter.',
+};
+
 export interface Roster<T> {
   items: T[];
   // `look` is the one of `looks` that is on, or '' on a roster that has none.
@@ -106,6 +118,7 @@ export interface Roster<T> {
   switches?: RosterSwitch[];
   noun: string;         // what the game calls its cast, in the plural: 'sinners'
   prompt?: string;      // the search box's placeholder, where 'Search <noun>…' is not it
+  words?: RosterWords;  // the shell's own words, where the page is not in English
   emptyNote: string;    // what the page says when the build had nothing to bake
   cta?: string;         // what a card that opens a page says under the pointer: 'View sinner'
   // With this the page has the topbar's search box and filter panel; without it, neither.
@@ -208,8 +221,9 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   document.getElementById('search-count')!.textContent = String(items.length);
   if (items.length === 0) {
     // With no roster at all it is the build that came back empty, not the filters.
+    const words = roster.words ?? ENGLISH;
     container.innerHTML = roster.items.length
-      ? `<div class="state-msg"><div class="label">No results</div>Try a different name or filter.</div>`
+      ? `<div class="state-msg"><div class="label">${escHtml(words.noResults)}</div>${escHtml(words.tryOther)}</div>`
       : `<div class="state-msg"><div class="label">No ${escHtml(roster.noun)}</div>${escHtml(roster.emptyNote)}</div>`;
     return;
   }
@@ -360,6 +374,8 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
   search.placeholder = roster.prompt ?? `Search ${roster.noun}…`;
   search.value = state.query;
   clear.disabled = !state.query;
+  const words = roster.words ?? ENGLISH;
+  document.getElementById('clear-filters')!.textContent = words.clear;
 
   const render = (): void => deal(container, roster, matching(roster));
 
@@ -367,7 +383,7 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
   // whether Clear has anything to clear, and the panel itself, rebuilt.
   const refreshChrome = (): void => {
     const n = filters.reduce((sum, f) => sum + picksOf(state, f.key).size, 0);
-    document.getElementById('more-label')!.textContent = n ? `Filters · ${n}` : 'Filters';
+    document.getElementById('more-label')!.textContent = n ? `${words.filters} · ${n}` : words.filters;
     toggle.classList.toggle('active', state.open || n > 0);
     toggle.setAttribute('aria-expanded', String(state.open));
     actions.classList.toggle('filters-open', state.open);

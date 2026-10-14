@@ -38,10 +38,13 @@ function pipes(body) {
 
 const TEMPLATES = {
   禁闭者数值: args => `<@ba.vup>${args[0] ?? ''}</>`,
+  // A crimebrand's page writes its numbers with this one.
+  烙印数值: args => `<@ba.vup>${args[0] ?? ''}</>`,
   伤害文本: args => `<@ba.rem>${args[0] ?? ''}</>`,
   // The second argument is the page the term links to.
   术语查看: args => args[0] ?? '',
   技能范围: () => '',
+  术语技能范围: () => '',
   展开折叠: ([condition = '', ...rest]) => `【${condition.replace(/[：:]$/, '')}】${rest.join('|')}`,
 };
 
@@ -148,7 +151,8 @@ export function parseBiliDetail(wikitext, nameCn) {
       { name: '梦魇天赋', text: field('梦魇天赋') },
       { name: '破碎防线', text: field('破碎防线buff') },
     ].filter(entry => entry.text),
-    // This wiki's template has no field for an exclusive crimebrand.
+    // The Sinner's page has no field for their exclusive crimebrand: the crimebrand's own
+    // page names them, and the caller puts it here (parseBiliBrand).
     brand: { name: '', skill: null },
     stats: STATS.map(({ level, keys }) => {
       const [hp, atk, def, res] = keys.map(number);
@@ -181,5 +185,45 @@ export function parseBiliDetail(wikitext, nameCn) {
       ['服从度（超过100%）', beyond.map(([n, text]) => `${n}%：${text.replace(/\n/g, '，')}`)],
     ].map(([title, parts]) => ({ title, text: parts.filter(Boolean).join('\n\n') }))
       .filter(entry => entry.text),
+  };
+}
+
+// The terms a text names with {{术语查看|term}} or {{术语查看|term|page}}, as the page each
+// is explained on: "【惑心陷阱】-必杀", a skill, beside "【惑心陷阱】", the field it makes.
+export function termsIn(wikitext) {
+  return [...(wikitext ?? '').matchAll(/\{\{术语查看\|([^{}]*)\}\}/g)]
+    .map(([, args]) => { const [term, page] = args.split('|').map(arg => arg.trim()); return page || term; })
+    .filter(Boolean);
+}
+
+// An exclusive crimebrand's page ({{专属烙印图鉴}}): the Sinner it belongs to, by their
+// Chinese name, and the crimebrand as the payload's `brand`. The page gives its effect once,
+// with each number as its three levels have it ("20%/25%/30%"), so that is its one level; a
+// skill it grants is named in that text, not apart from it. What that skill does, and what
+// it summons or lays down, are on the pages of the terms the text names (`termOf`, each
+// term's page text): every one reachable from the effect is kept, in the order met, as
+// `terms`.
+export function parseBiliBrand(wikitext, termOf = new Map()) {
+  const body = templateBodies(wikitext.replace(/<!--[\s\S]*?-->/g, ''), '专属烙印图鉴')[0];
+  if (!body) return undefined;
+  const named = templateParams(body).named;
+  const field = key => cleaned(toGameText(named[key]));
+  const effect = field('专属效果');
+  const terms = [];
+  const seen = new Set();
+  const queue = termsIn(named['专属效果']);
+  while (queue.length) {
+    const term = queue.shift();
+    if (seen.has(term)) continue;
+    seen.add(term);
+    const termBody = templateBodies(termOf.get(term) ?? '', '术语解释')[0];
+    const explained = termBody && templateParams(termBody).named['解释'];
+    if (!explained) continue;
+    terms.push({ name: term.replace(/-必杀$/, ' · 必杀'), text: toGameText(explained) });
+    queue.push(...termsIn(explained));
+  }
+  return {
+    holder: field('专属角色'),
+    brand: { name: field('名称'), skill: effect ? { name: '', levels: [effect] } : null, ...(terms.length ? { terms } : {}) },
   };
 }

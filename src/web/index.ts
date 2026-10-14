@@ -59,6 +59,9 @@ function dispatch(): void {
   // Arknights'; the other games have none to link to.
   operatorsLink.href = GAMES[game].roster;
   operatorsLabel.textContent = GAMES[game].cast;
+  // A page in another language words the filter panel's Clear its own way (card.ts); the
+  // Arknights and Endfield grids, which never word it, find it in English again.
+  document.getElementById('clear-filters')!.textContent = 'Clear';
   setCurrent(operatorsLink, route.view !== 'events');
   setCurrent(eventsLink, route.view === 'events');
   eventsLink.hidden = game !== 'arknights';

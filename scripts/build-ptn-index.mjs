@@ -44,8 +44,8 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
-import { fetchBiliFiles, fetchBiliPages, fetchBiliSinners } from './lib/ptn-bili.mjs';
-import { parseBiliDetail } from './lib/ptn-bili-page.mjs';
+import { fetchBiliBrands, fetchBiliFiles, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
+import { parseBiliBrand, parseBiliDetail, termsIn } from './lib/ptn-bili-page.mjs';
 import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
 import { LAUNCH, LAUNCH_DAY, RELEASES, UNFILED } from './lib/ptn-record.mjs';
 import { templateBodies, templateParams } from './lib/wiki-text.mjs';
@@ -66,18 +66,44 @@ const wiki = wikiApi(WIKI_API);
 // Whether an earlier build left a roster to keep.
 const haveLast = await readFile(SINNERS_FILE, 'utf8').then(text => text.length > 2, () => false);
 
-// What the game's Chinese wiki gives, which a first build can do without: it ships the
-// English half. A later one cannot, since the CN-only Sinners and the Chinese text are
-// that wiki's alone and a build without them takes them off the site: an error there, so
-// that the last build's files are kept whole (the catch at the foot) until the wiki answers.
-async function fromChinese(what, ask, fallback) {
+// What the game's Chinese wiki gave the last time it was read whole, kept in the repo
+// (lib/ptn-bili-snapshot.json): its roster, each Sinner's and each exclusive crimebrand's
+// page text with the terms those crimebrands name, and the addresses of the pictures asked
+// of it. That wiki answers a client that asks too fast with HTTP 567, GitHub's
+// runners among them for a run at a time, and without it a build would lose the CN-only
+// Sinners and the Chinese text, or (keeping the last build) freeze the roster behind it.
+// Written again by any build that reads it whole, so a local build keeps it fresh and its
+// diff is committed with the rest.
+const SNAPSHOT_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'lib', 'ptn-bili-snapshot.json');
+const snapshot = await readFile(SNAPSHOT_FILE, 'utf8').then(JSON.parse, () => ({ rows: [], pages: {}, files: {} }));
+const fresh = { rows: [], pages: {}, files: {}, brands: {}, terms: {} };
+// What a run had of the snapshot, so that it is not written back from a run that was not whole.
+let fellBack = false;
+
+// What the Chinese wiki gives: live, or failing that the snapshot, or failing that (a first
+// build, with nothing to keep) nothing, which ships the English half. Where there is an
+// earlier build and no snapshot of it, an error, so that the last build's files are kept
+// whole (the catch at the foot) until the wiki answers.
+async function fromChinese(what, ask, fromSnapshot, empty) {
   try {
     return await ask();
   } catch (err) {
+    const kept = fromSnapshot();
+    fellBack = true;
+    if (kept) {
+      console.warn(`ptn: ${what} from the snapshot of the Chinese wiki, which would not answer: ${err.message}`);
+      return kept;
+    }
     if (haveLast) throw new Error(`${what} could not be had from the Chinese wiki: ${err.message}`);
     console.warn(`ptn: no ${what} from the Chinese wiki, so the roster is its English half: ${err.message}`);
-    return fallback;
+    return empty;
   }
+}
+
+// The snapshot's pages for these names, as a Map, or nothing where it has none of them.
+function snapshotPages(names) {
+  const entries = names.filter(name => snapshot.pages[name]).map(name => [name, snapshot.pages[name]]);
+  return entries.length ? new Map(entries) : undefined;
 }
 
 // As many pages as the wiki gives the text of in one answer, and as many titles as it takes
@@ -238,7 +264,8 @@ async function buildRoster() {
   // tags, whether they are limited or a collab's and whether they deal core damage; and
   // the Sinners only the CN server has. Not worth the roster: without it the page has its
   // English half only.
-  const bili = await fromChinese('the roster', fetchBiliSinners, []);
+  const bili = await fromChinese('the roster', fetchBiliSinners, () => snapshot.rows.length ? snapshot.rows : undefined, []);
+  fresh.rows = bili;
   // The two wikis name a Sinner alike in one of three ways, tried in turn: the Chinese
   // name the English page gives (missing from a few, and garbled on one), the English name
   // the Chinese page gives, and the number, where only one Sinner has it.
@@ -260,7 +287,31 @@ async function buildRoster() {
   // that will not. The head of their file is the Chinese wiki's row, under the English name
   // it also gives, and the rest is that wiki's page for them, in Chinese.
   const cnOnly = bili.filter(row => !matched.has(row) && row.rank && row.tendency && row.libram && row.name);
-  const pageOf = await fromChinese('the CN-only Sinners\' pages', () => fetchBiliPages(cnOnly.map(row => row.nameCn)), new Map());
+  const cnOnlyNames = cnOnly.map(row => row.nameCn);
+  // Every exclusive crimebrand that wiki has, by the Chinese name of the Sinner it is theirs.
+  const brandPages = await fromChinese(
+    'the crimebrands', fetchBiliBrands,
+    () => (snapshot.brands ? new Map(Object.entries(snapshot.brands)) : undefined), new Map(),
+  );
+  fresh.brands = Object.fromEntries(brandPages);
+  // The terms their effects name, and the terms those name, three deep: the skill a
+  // crimebrand grants is one, and what that skill summons or lays down, with its numbers,
+  // is the next. A term with no page is kept as '' so that it is not asked for twice.
+  const termOf = await fromChinese('the crimebrands\' terms', async () => {
+    const textOf = new Map();
+    let wanted = [...new Set([...brandPages.values()].flatMap(termsIn))];
+    for (let depth = 0; depth < 3 && wanted.length; depth++) {
+      const got = await fetchBiliTerms(wanted);
+      for (const term of wanted) textOf.set(term, got.get(term) ?? '');
+      wanted = [...new Set([...got.values()].flatMap(termsIn))].filter(term => !textOf.has(term));
+    }
+    return textOf;
+  }, () => (snapshot.terms ? new Map(Object.entries(snapshot.terms)) : undefined), new Map());
+  fresh.terms = Object.fromEntries(termOf);
+  const brandOf = new Map([...brandPages.values()].map(text => parseBiliBrand(text, termOf))
+    .filter(parsed => parsed?.brand.name).map(({ holder, brand }) => [holder, brand]));
+  const pageOf = await fromChinese('the CN-only Sinners\' pages', () => fetchBiliPages(cnOnlyNames), () => snapshotPages(cnOnlyNames), new Map());
+  for (const [name, text] of pageOf) fresh.pages[name] = text;
   for (const row of cnOnly) {
     const id = slugOf(row.name);
     // A collab's Sinner is filed under a code of its own world, not an MBCC number.
@@ -270,6 +321,7 @@ async function buildRoster() {
     const { birthplace = '', ...page } = pageOf.has(row.nameCn)
       ? parseBiliDetail(pageOf.get(row.nameCn), row.nameCn) ?? {}
       : {};
+    if (page.names && brandOf.has(row.nameCn)) page.brand = brandOf.get(row.nameCn);
     sinners.push({
       id, name: row.name, nameCn: row.nameCn,
       number: row.number === '数据未知' ? 'Unknown' : row.number, ...code,
@@ -290,22 +342,33 @@ async function buildRoster() {
 
   // The Chinese wiki's page for every other Sinner too, which is the same file in Chinese:
   // kept beside the English one as `zh`, for the page to lay over it when the reader is on
-  // the Chinese side. Only what that page has text for is kept, so what it lacks (an
-  // exclusive crimebrand) stays the English wiki's. Left out are the numbers, which the
-  // English page has at more levels, and the voice actors, which it has in three languages.
-  const ZH_SKIP = new Set(['names', 'stats', 'block', 'attackSpeed', 'voice']);
+  // the Chinese side, with the exclusive crimebrand from that crimebrand's own page. Only
+  // what the pages have text for is kept, so what they lack stays the English wiki's. Left
+  // out are the numbers, which the English page has at more levels.
+  const ZH_SKIP = new Set(['names', 'stats', 'block', 'attackSpeed']);
+  const VOICE_ZH = { CN: '中', JP: '日', KR: '韩' };
   const hasText = value => (typeof value === 'string' ? value !== ''
     : Array.isArray(value) ? value.length > 0
       : value !== null && typeof value === 'object' && Object.values(value).some(hasText));
   const others = sinners.filter(s => !s.cnOnly && s.nameCn);
-  const zhPageOf = await fromChinese('the Sinners\' pages', () => fetchBiliPages(others.map(s => s.nameCn)), new Map());
+  const otherNames = others.map(s => s.nameCn);
+  const zhPageOf = await fromChinese('the Sinners\' pages', () => fetchBiliPages(otherNames), () => snapshotPages(otherNames), new Map());
+  for (const [name, text] of zhPageOf) fresh.pages[name] = text;
   for (const s of others) {
     const parsed = zhPageOf.has(s.nameCn) ? parseBiliDetail(zhPageOf.get(s.nameCn), s.nameCn) : undefined;
     if (!parsed) continue;
+    if (brandOf.has(s.nameCn)) parsed.brand = brandOf.get(s.nameCn);
     const zh = Object.fromEntries(Object.entries(parsed).filter(([key, value]) => !ZH_SKIP.has(key) && hasText(value)));
     // The English page's sticker is the 100% stage, which the Chinese stages have as their last.
     if (zh.compliance) zh.sticker = '';
-    details.find(d => d.id === s.id).zh = zh;
+    const detail = details.find(d => d.id === s.id);
+    // The Chinese page names the CN voice actor alone, in Chinese: in that one's place in the
+    // English list of three, whose languages are said in Chinese too.
+    if (zh.voice) {
+      zh.voice = [`${zh.voice[0]}（中）`, ...detail.voice.filter(v => !/\(CN\)$/.test(v))]
+        .map(v => v.replace(/ \((CN|JP|KR)\)$/, (_, l) => `（${VOICE_ZH[l]}）`));
+    }
+    detail.zh = zh;
   }
 
   // Every Sinner's art, as the files their two subpages name, and then the address of each
@@ -334,7 +397,13 @@ async function buildRoster() {
   for (const { kind, suffix, label } of KINDS) {
     const short = sinners.filter(s => s.nameCn && !detailOf.get(s.id).arts.some(art => art.kind === kind));
     if (!short.length) continue;
-    const biliUrlOf = await fromChinese(label.toLowerCase(), () => fetchBiliFiles(short.map(s => s.nameCn), suffix), new Map());
+    const biliUrlOf = await fromChinese(
+      label.toLowerCase(),
+      () => fetchBiliFiles(short.map(s => s.nameCn), suffix),
+      () => (snapshot.files[suffix] ? new Map(Object.entries(snapshot.files[suffix])) : undefined),
+      new Map(),
+    );
+    fresh.files[suffix] = Object.fromEntries(biliUrlOf);
     for (const s of short) {
       const url = biliUrlOf.get(s.nameCn);
       if (!url) continue;
@@ -370,6 +439,18 @@ async function buildRoster() {
   // A name in the record that is nobody's is a slip of the hand, or a page the wiki has
   // renamed: either way a Sinner has lost their day, and it is said.
   const strays = [...RELEASED.keys()].filter(name => !sinners.some(s => s.name === name));
+
+  // The snapshot, from a run that read the Chinese wiki whole. A page's own notes to its
+  // editors are left out of it, and so is a page of a Sinner the wiki no longer lists.
+  if (!fellBack && fresh.rows.length) {
+    const listed = new Set(fresh.rows.map(row => row.nameCn));
+    const pages = Object.fromEntries(Object.entries({ ...snapshot.pages, ...fresh.pages })
+      .filter(([name]) => listed.has(name))
+      .map(([name, text]) => [name, text.replace(/<!--[\s\S]*?-->/g, '')]));
+    const files = Object.fromEntries([...new Set([...Object.keys(snapshot.files), ...Object.keys(fresh.files)])]
+      .map(suffix => [suffix, { ...snapshot.files[suffix], ...fresh.files[suffix] }]));
+    await writeFile(SNAPSHOT_FILE, JSON.stringify({ rows: fresh.rows, pages, files, brands: fresh.brands, terms: fresh.terms }));
+  }
   return { sinners, details, unfinished, strays };
 }
 

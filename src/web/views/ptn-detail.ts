@@ -213,7 +213,7 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
   const stat = (key: 'hp' | 'atk' | 'def' | 'res'): string =>
     first ? `${first[key]} / ${last[key]}` : '—';
   const rows: [string, string][] = [
-    ['HP', stat('hp')], ['ATK', stat('atk')], ['DEF', stat('def')], ['RES', stat('res')],
+    [t('hp'), stat('hp')], [t('atk'), stat('atk')], [t('def'), stat('def')], [t('res'), stat('res')],
     [t('block'), d.block || '—'], [t('atkSpeed'), d.attackSpeed || '—'],
   ];
   const tags = tagsOf(s).map(tag => `<span class="op-tag">${escHtml(tag)}</span>`).join('');
@@ -272,7 +272,9 @@ function skillsPanel(d: PtnSinnerDetail): string {
   `).join('');
 }
 
-// The exclusive crimebrand: its name, and the skill it grants with that skill's levels.
+// The exclusive crimebrand: its name, and the skill it grants with that skill's levels. The
+// Chinese wiki's is its effect alone, unnamed, a grant named inside the text, and then each
+// term that text names, explained: the skill, and what it summons or lays down.
 function brandPanel(d: PtnSinnerDetail): string {
   if (!d.brand.name) return `<p class="empty-msg">${t('noBrand')}</p>`;
   const skill = d.brand.skill;
@@ -283,10 +285,14 @@ function brandPanel(d: PtnSinnerDetail): string {
         <span class="unlock-badge">${t('exclusiveBrand')}</span>
       </div>
       ${skill ? `
-        <span class="section-label">${escHtml(skill.name)}</span>
+        ${skill.name ? `<span class="section-label">${escHtml(skill.name)}</span>` : ''}
         <p class="rich">${rich(skill.levels[0] ?? '')}</p>
         ${levelsHtml(skill.levels)}
       ` : `<p class="empty-msg">${t('noBrandSkill')}</p>`}
+      ${(d.brand.terms ?? []).map(term => `
+        <span class="section-label">${escHtml(term.name)}</span>
+        <p class="rich">${rich(term.text)}</p>
+      `).join('')}
     </section>
   `;
 }
@@ -425,6 +431,8 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   let picked = 0;
   let root: Element | null = null;
   const render = (): void => {
+    // The section link is this game's roster, named in the language that is on.
+    document.getElementById('nav-operators-label')!.textContent = t('Sinners');
     container.innerHTML = shellHtml(sinner, detail, picked);
     root = container.firstElementChild;
     // Bound to this render's own page, not to the container every view shares: a handler
