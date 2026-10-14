@@ -1,7 +1,8 @@
 // Reads the game's Chinese wiki (wiki.biligame.com/wqmt) for what the English one has not:
 // a Sinner's Chinese name and tags, whether they are limited or a collab's, whether they
 // deal core damage, the Sinners only the CN server has with their pages (read by
-// ptn-bili-page.mjs), and a picture where the English wiki has none.
+// ptn-bili-page.mjs), every Sinner's page and exclusive crimebrand in Chinese, and a picture
+// where the English wiki has none.
 //
 // It is the way that wiki builds its own Sinner list. Each Sinner's page files its facts
 // as Semantic MediaWiki properties, and the list page is one {{#ask}} over
@@ -118,5 +119,42 @@ export async function fetchBiliPages(namesCn) {
       if (text) textOf.set(page.title.replace(/^禁闭者:/, ''), text);
     }
   }
+  return textOf;
+}
+
+// The text of each term's page (术语解释:<term>, what the wiki's {{术语查看}} shows on
+// hover), by the term, for the ones it has.
+export async function fetchBiliTerms(terms) {
+  const textOf = new Map();
+  for (let i = 0; i < terms.length; i += 50) {
+    const json = await wiki({
+      action: 'query', titles: terms.slice(i, i + 50).map(term => `术语解释:${term}`).join('|'),
+      prop: 'revisions', rvprop: 'content', rvslots: 'main',
+    });
+    for (const page of json.query?.pages ?? []) {
+      const text = page.revisions?.[0]?.slots?.main?.content;
+      if (text) textOf.set(page.title.replace(/^术语解释:/, ''), text);
+    }
+  }
+  return textOf;
+}
+
+// The text of every exclusive crimebrand's page (专属烙印:<name>, filed under
+// 分类:专属烙印), by its title. A Sinner's own page does not name theirs: the brand's page
+// names the Sinner, which ptn-bili-page.mjs reads.
+export async function fetchBiliBrands() {
+  const textOf = new Map();
+  let more = {};
+  do {
+    const json = await wiki({
+      action: 'query', generator: 'categorymembers', gcmtitle: '分类:专属烙印', gcmlimit: 50,
+      prop: 'revisions', rvprop: 'content', rvslots: 'main', ...more,
+    });
+    for (const page of json.query?.pages ?? []) {
+      const text = page.revisions?.[0]?.slots?.main?.content;
+      if (text) textOf.set(page.title, text);
+    }
+    more = json.continue;
+  } while (more);
   return textOf;
 }

@@ -310,6 +310,8 @@ function distinct(values: string[]): string[] {
 
 export function mountPtn(container: HTMLElement): void {
   const sinners = getPtnSinners();
+  // The section link is this roster, named in the language that is on.
+  document.getElementById('nav-operators-label')!.textContent = t('Sinners');
   // Newest first, which is the order the page opens in by the owner's choice, and the
   // roster's own, rank and then name. Sinners released on one day keep the roster's order
   // among themselves; those only the CN server has go by the day they came to it.
@@ -328,6 +330,7 @@ export function mountPtn(container: HTMLElement): void {
     draw: drawWall,
     noun: t('sinners'),
     prompt: t('prompt'),
+    words: { filters: t('filters'), clear: t('clear'), noResults: t('noResults'), tryOther: t('tryOther') },
     emptyNote: t('emptyNote'),
     // The game's own roster turns between its Sinners' mugshots and their original
     // illustrations, and so does this one. Mugshots first: in them every Sinner already
