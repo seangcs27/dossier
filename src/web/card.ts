@@ -98,8 +98,9 @@ export interface Roster<T> {
   // switches stay this file's. A roster has this or `toCard`.
   draw?: (page: HTMLElement, items: T[], look: string, order: string) => void;
   // Two or more ways to draw the same cards, with a switch over the grid to choose between
-  // them: a game whose own roster shows its cast in more than one kind of picture.
-  looks?: { state: RosterState; options: RosterOption[] };
+  // them: a game whose own roster shows its cast in more than one kind of picture. `name` is
+  // what the switch chooses, for a screen reader, where that is not the cards' art.
+  looks?: { state: RosterState; options: RosterOption[]; name?: string };
   // Two or more orders to deal the cards in, with a switch of their own beside that one.
   orders?: { state: RosterState; options: RosterOrder<T>[] };
   switches?: RosterSwitch[];
@@ -225,7 +226,7 @@ function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
       <div class="roster-bar">
         ${switches.map((s, i) => switchHtml(s.name, s.options, s.on, id => `data-switch="${i}" data-id="${id}"`)).join('')}
         ${orders ? switchHtml('Order', orders.options, order!.id, id => `data-order="${id}"`) : ''}
-        ${looks ? switchHtml('Card art', looks.options, look, id => `data-look="${id}"`) : ''}
+        ${looks ? switchHtml(looks.name ?? 'Card art', looks.options, look, id => `data-look="${id}"`) : ''}
       </div>
     ` : ''}
     ${roster.draw ? '<div class="roster-page"></div>' : '<div id="grid"></div><div id="grid-end"></div>'}

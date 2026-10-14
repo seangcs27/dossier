@@ -1,0 +1,969 @@
+// hololive Dreams' roster (views/holodori.ts): a sticker album in the game's own Dream Park
+// colours, with a grid and a calendar of the same stickers. The owner's pick of 15 October
+// 2026. Its shell goes white and ink with it, as Path to Nowhere's goes ink and bone.
+// Everything is under the page's own selector: the album's names (.row, .book, .slot) are
+// plain words other pages could use.
+
+// ── The world ──
+// The game's sky, an ink a shade darker than the sketch's so that text on the sky holds
+// 4.5:1, and its sun for what is coming up. The album is a blue cover around pale pages.
+$sky: #18c9f0;
+$ink: #3d4180;        // 4.7:1 on the sky, 9:1 on a page
+$ink-soft: #6b6fa3;   // secondary text on a page, 4.7:1
+$sun: #ffc93c;        // the date tabs, and today; ink on it is 5:1
+$cover: #2e7be6;
+$cover-deep: #2a72db; // the cover's blue where white is set on it: 4.6:1
+$paper: #fbfeff;
+$panel: #e3f8fe;
+$slot: #b6dae9;       // an empty slot's dashed outline
+$print: #ddeff6;      // the number printed big in a slot, under its sticker
+$line: #cdeffa;
+$lift: rgb(16 60 110 / 22%);
+
+// Poppins, the game's own round face, in the four weights the album is set in: Google
+// Fonts' Latin cut of each (fonts/poppins/, with its licence). Asked for only on this page.
+@each $weight, $name in (600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black') {
+  @font-face {
+    font-family: 'Poppins';
+    font-weight: $weight;
+    font-display: swap;
+    src: url('./fonts/poppins/Poppins-#{$name}.woff2') format('woff2');
+  }
+}
+
+// The words "Dream Park" outlined in white, tiled at a tilt over the sky as the game's
+// screens have them. A picture cannot load a font, so this is the reader's own round face.
+$dream-park: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='190'%3E%3Cg font-family='Arial Rounded MT Bold,Segoe UI Black,sans-serif' font-weight='900' font-size='58' fill='none' stroke='white' stroke-width='5' stroke-linejoin='round'%3E%3Ctext x='10' y='70'%3EDream%3C/text%3E%3Ctext x='170' y='160'%3EPark%3C/text%3E%3C/g%3E%3C/svg%3E";
+
+$world: "body[data-view='holodori']";
+
+// The shell takes every colour from the site's surface variables, so these turn the
+// sidebar, the topbar and the filter panel white and ink.
+#{$world} {
+  --bg: #fff;
+  --surface: #fff;
+  --surface2: #eefaff;
+  --border: #{$line};
+  --chip: #dff5fc;
+  --edge: #{$slot};
+  --text: #{$ink};
+  --muted: #{$ink-soft};
+  --dim: #{$ink-soft};
+  --accent: #{$cover-deep};
+  --link: #{$cover-deep};
+  --hd-face: 'Poppins', 'Arial Rounded MT Bold', 'Segoe UI', sans-serif;
+
+  background: $sky;
+
+  // The page's scrollbar is on the sky: ink at rest, the cover's blue while it moves.
+  --thumb: #{$ink};
+  &.is-scrolling { --thumb: #{$cover-deep}; }
+  *:not(.is-scrolling) { --thumb: var(--muted); }
+
+  ::selection { background: $sun; color: $ink; }
+
+  &::before {
+    content: '';
+    position: fixed;
+    inset: -40%;
+    z-index: -1;
+    background: url($dream-park) 0 0 / 360px 190px;
+    opacity: 0.16;
+    transform: rotate(-10deg);
+    pointer-events: none;
+  }
+
+  .side-game.active .side-mark { background: rgb(42 114 219 / 8%); }
+
+  #view {
+    position: relative;
+    color: $ink;
+    font-family: var(--hd-face);
+    font-weight: 600;
+  }
+
+  .roster-page {
+    position: relative;
+    padding: var(--sp-12) var(--sp-24) 40px;
+  }
+
+  // Album, Grid and Calendar: the game's pills, white with the one that is on in ink, on
+  // the header's line at the right.
+  .roster-bar {
+    position: absolute;
+    top: 22px;
+    right: var(--sp-24);
+    z-index: 2;
+    padding: 0;
+
+    .seg {
+      gap: var(--sp-6);
+      border: 0;
+      border-radius: var(--radius-pill);
+      overflow: visible;
+    }
+
+    .seg-btn {
+      padding: var(--sp-8) var(--sp-16);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: #fff;
+      color: $ink;
+      font-family: var(--hd-face);
+      font-size: var(--fs-md);
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: 0 3px 6px rgb(16 92 140 / 22%);
+
+      & + .seg-btn { border-left: 0; }
+      &:hover { background: $panel; color: $ink; }
+      &.on { background: $ink; color: #fff; }
+      &:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    }
+  }
+
+  // ── The header and the foot ──
+
+  .hd-head {
+    // Clear of the pills on its right.
+    padding: var(--sp-4) 330px var(--sp-16) 0;
+  }
+
+  .hd-title {
+    margin: 0;
+    color: $ink;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    // White lettering's outline, as the game's titles are drawn, and its drop.
+    text-shadow:
+      0 3px #fff, 3px 0 #fff, 0 -3px #fff, -3px 0 #fff,
+      2px 2px #fff, -2px 2px #fff, 2px -2px #fff, -2px -2px #fff,
+      0 5px 8px rgb(16 92 140 / 30%);
+  }
+
+  .hd-sub {
+    margin: var(--sp-6) 0 0;
+    font-size: var(--fs-md);
+    font-weight: 700;
+  }
+
+  .hd-credit {
+    margin: var(--sp-16) 0 0;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+
+    a {
+      color: inherit;
+      text-underline-offset: 2px;
+    }
+
+    a:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 2px; }
+  }
+
+  // A page's title, lettered in the sky with an ink outline.
+  .lettered {
+    margin: 0;
+    color: $sky;
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.1;
+    text-shadow:
+      0 2.5px $ink, 2.5px 0 $ink, 0 -2.5px $ink, -2.5px 0 $ink,
+      1.8px 1.8px $ink, -1.8px 1.8px $ink, 1.8px -1.8px $ink, -1.8px -1.8px $ink,
+      0 4px 6px rgb(16 92 140 / 24%);
+  }
+
+  // ── The book ──
+  // The album and the calendar: a cover holding two pages side by side, or one on a narrow
+  // window, with the turns along the foot and, for the album, a tab to a branch standing
+  // out of the cover's right edge.
+
+  .book {
+    container-type: inline-size;
+    // Room for the tabs.
+    margin-right: 30px;
+    outline: none;
+  }
+
+  .cover {
+    // A sticker's width: whatever two pages of five leave, between the smallest that still
+    // takes a name and its picture at not much over its own pixels.
+    --s: clamp(72px, (100cqw - 290px) / 10, 104px);
+    --sh: calc(var(--s) * 1.29);
+
+    position: relative;
+    padding: 14px;
+    border-radius: 26px;
+    background: $cover;
+    box-shadow: inset 0 0 0 4px rgb(255 255 255 / 35%), 0 10px 22px rgb(16 60 110 / 28%);
+  }
+
+  .book.one-page .cover {
+    --s: clamp(76px, (100cqw - 160px) / 5, 104px);
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  .spread {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .book.one-page .spread { grid-template-columns: minmax(0, 1fr); }
+
+  // A left page, shaded toward the gutter, and a right one shaded away from it.
+  .leaf {
+    min-width: 0;
+    padding: var(--sp-16) 22px 64px;
+    border-radius: 16px 3px 3px 16px;
+    background: linear-gradient(90deg, $paper 86%, #dce8ef);
+
+    &[hidden] { display: none; }
+  }
+
+  .leaf:not([hidden]) ~ .leaf:not([hidden]) {
+    border-radius: 3px 16px 16px 3px;
+    background: linear-gradient(90deg, #d5e3eb, $paper 13%);
+  }
+
+  .book.one-page .leaf {
+    border-radius: 16px;
+    background: $paper;
+  }
+
+  // A branch that runs on to the facing page is titled once, on the left.
+  .leaf:not([hidden]) ~ .leaf.cont:not([hidden]) .lettered { visibility: hidden; }
+
+  .leaf-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-12);
+    margin-bottom: var(--sp-16);
+  }
+
+  .leaf-no {
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+  }
+
+  .book-foot {
+    position: absolute;
+    inset: auto 14px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-12);
+    padding: var(--sp-8) var(--sp-12);
+  }
+
+  .legend {
+    margin: 0;
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  // The calendar's two kinds of face, small.
+  .legend-face {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: var(--sp-6);
+    border-radius: 50%;
+    background: $panel;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px $slot;
+    vertical-align: -1px;
+  }
+
+  .legend-anniversary {
+    margin-left: var(--sp-12);
+    box-shadow: 0 0 0 2.5px $sun;
+  }
+
+  .turn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-6);
+    padding: var(--sp-8) var(--sp-12);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: none;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    cursor: pointer;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    &:hover { background: $panel; }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 1px; }
+    // Kept in the row at the first and last spread, so the legend does not move.
+    &[hidden] { display: inline-flex; visibility: hidden; }
+  }
+
+  .album-tabs {
+    position: absolute;
+    top: 58px;
+    left: 100%;
+    margin-left: -14px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-8);
+  }
+
+  .album-tab {
+    position: relative;
+    width: 44px;
+    height: 96px;
+    padding: 0;
+    border: 0;
+    border-radius: 0 12px 12px 0;
+    background: $cover-deep;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgb(16 60 110 / 22%);
+
+    span {
+      position: absolute;
+      left: 58%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(90deg);
+      font-family: var(--hd-face);
+      font-size: var(--fs-sm);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    &:hover { background: #2367c6; }
+    // The branch on the open spread, in the page's own paper.
+    &.on { background: $paper; color: $ink; }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+  }
+
+  // ── A row of the album ──
+
+  .row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-12);
+
+    & + .row { margin-top: 18px; }
+  }
+
+  .row-strip {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 26px;
+    height: var(--sh);
+    margin: 0;
+    border-radius: var(--radius-lg);
+    background: $cover-deep;
+
+    span {
+      color: #fff;
+      font-size: var(--fs-xs);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+  }
+
+  .slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .slot {
+    position: relative;
+    width: var(--s);
+  }
+
+  // The slot as printed: a dashed outline with her number big and pale in it.
+  .slot-print {
+    display: grid;
+    place-items: center;
+    height: var(--sh);
+    border: 2px dashed $slot;
+    border-radius: 11px;
+    color: $print;
+    font-size: calc(var(--s) * 0.31);
+    font-weight: 900;
+  }
+
+  .ref-print {
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  .slot-label {
+    margin: var(--sp-8) 0 0;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    line-height: 1.25;
+    text-align: center;
+
+    small {
+      display: block;
+      color: $ink-soft;
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    b {
+      display: block;
+      overflow: hidden;
+      font-size: var(--fs-base);
+      font-weight: 900;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // One the search or a filter leaves out: the empty slot, its words faded with it.
+  .slot.ghost .slot-label { opacity: 0.4; }
+  .slot.ghost .slot-print { border-color: #d3e7ef; }
+
+  .row-info {
+    display: flex;
+    flex: 1 1 160px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    height: var(--sh);
+    padding: var(--sp-12) var(--sp-16);
+    border-radius: 14px;
+    background: $panel;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    line-height: 1.35;
+
+    b {
+      margin-bottom: 2px;
+      font-size: var(--fs-2xl);
+      font-weight: 900;
+    }
+
+    strong { font-weight: 900; }
+  }
+
+  // ── A sticker ──
+  // A die-cut white border round her bust, a gloss across it, and a shadow under it.
+  // Pressed, it turns over (views/holodori.ts animates that).
+
+  .sticker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--sh);
+    padding: 0;
+    border: 4px solid #fff;
+    border-radius: 11px;
+    background: #fff;
+    font: inherit;
+    cursor: pointer;
+    box-shadow: 0 1px 1px rgb(16 60 110 / 12%), 0 3px 5px $lift;
+    transform: rotate(var(--r));
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      border-radius: 7px;
+      background: linear-gradient(125deg, rgb(255 255 255 / 62%) 0 13%, rgb(255 255 255 / 0%) 32%);
+      pointer-events: none;
+    }
+
+    &:hover {
+      transform: rotate(var(--r)) translateY(-3px);
+      box-shadow: 0 8px 10px rgb(16 60 110 / 26%);
+    }
+
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  .sticker-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--a) 28%, #fff);
+
+    img {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // What shows where her picture failed: her initial in her colour.
+  .sticker-initial {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: color-mix(in srgb, var(--a) 70%, $ink);
+    font-size: calc(var(--s) * 0.44);
+    font-weight: 900;
+  }
+
+  // A birthday within the next 60 days: peeled half off its slot, its corner curled, the
+  // date on a tab over it.
+  .sticker.up {
+    transform: rotate(var(--r)) translate(-3px, -9px);
+    box-shadow: 0 14px 14px rgb(16 60 110 / 30%);
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      z-index: 3;
+      width: 30%;
+      aspect-ratio: 1;
+      border-radius: 100% 0 0;
+      background: linear-gradient(315deg, $paper 0 46%, #c9d6df 50%, #fff 78%);
+      box-shadow: -2px -2px 3px rgb(16 60 110 / 18%);
+    }
+
+    &:hover { transform: rotate(var(--r)) translate(-3px, -13px); }
+  }
+
+  // Her birthday: stuck down flat, ringed in the sun.
+  .sticker.today { box-shadow: 0 0 0 3px $sun, 0 6px 10px rgb(16 60 110 / 25%); }
+
+  .date-tab {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    z-index: 4;
+    padding: 2px var(--sp-8);
+    border-radius: var(--radius-pill);
+    background: $sun;
+    color: $ink;
+    font-size: var(--fs-xs);
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1.4;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgb(16 60 110 / 24%);
+    // Level, whatever the sticker's tilt.
+    transform: translateX(-50%) rotate(calc(var(--r) * -1));
+  }
+
+  .sticker.next .date-tab {
+    top: -20px;
+    padding: 3px 10px;
+    font-size: var(--fs-sm);
+    box-shadow: 0 0 0 3px #fff, 0 4px 8px rgb(16 60 110 / 24%);
+  }
+
+  // ── Its back ──
+
+  .sticker-back {
+    position: absolute;
+    z-index: 20;
+    width: 280px;
+    padding: 0 18px var(--sp-16);
+    border: 4px solid #fff;
+    border-radius: var(--sp-16);
+    background: $paper radial-gradient(#d9eef6 1px, transparent 1.4px) 0 0 / 14px 14px;
+    box-shadow: 0 0 0 1.5px rgb(61 65 128 / 15%), 0 18px 30px rgb(16 60 110 / 30%);
+    color: $ink;
+    font-family: var(--hd-face);
+    backface-visibility: hidden;
+  }
+
+  .back-stripes {
+    display: flex;
+    height: 10px;
+    margin: 0 -18px var(--sp-12);
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+
+    i { flex: 1; }
+  }
+
+  .back-close {
+    position: absolute;
+    top: 18px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: $panel;
+    color: $ink;
+    cursor: pointer;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+    }
+
+    &:hover { background: $line; }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 1px; }
+  }
+
+  .back-no {
+    margin: 0 36px 2px 0;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .back-name {
+    margin: 0;
+    padding-right: 30px;
+    font-size: var(--fs-3xl);
+    font-weight: 900;
+    line-height: 1.15;
+  }
+
+  .back-branch {
+    margin: 2px 0 0;
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .back-hello {
+    margin: var(--sp-12) 0;
+    padding: 10px var(--sp-12);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--a) 16%, #fff);
+    font-size: var(--fs-md);
+    font-weight: 700;
+    line-height: 1.45;
+  }
+
+  .back-facts {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--sp-4) var(--sp-12);
+    margin: 0;
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+
+    dt { color: $ink-soft; font-weight: 800; }
+    dd { margin: 0; font-weight: 700; }
+  }
+
+  .back-colours {
+    display: flex;
+    gap: var(--sp-6);
+
+    i {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgb(61 65 128 / 25%);
+    }
+  }
+
+  // ── The calendar ──
+
+  .month-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 2px var(--sp-6);
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .month-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .month-day {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    min-height: calc(var(--sh) * 0.72);
+    padding: var(--sp-4);
+    border-radius: var(--radius-lg);
+    background: $panel;
+
+    // Two on one day stand side by side.
+    ul {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--sp-4) 2px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li { min-width: 0; max-width: 100%; }
+
+    &.past { background: none; box-shadow: inset 0 0 0 1px $line; }
+    &.past .month-no { color: $ink-soft; }
+    &.today { background: #fff4cc; box-shadow: inset 0 0 0 2px $sun; }
+  }
+
+  .month-no {
+    font-size: var(--fs-sm);
+    font-weight: 800;
+  }
+
+  // A face over her name: a birthday ringed in white, a debut anniversary in the sun with
+  // its years on a badge.
+  .month-birthday,
+  .month-anniversary {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    max-width: 100%;
+    padding: 3px 2px 2px;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: none;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    line-height: 1.2;
+    cursor: pointer;
+
+    &:hover { background: #fff; }
+    &:focus-visible { outline: 2px solid $cover-deep; outline-offset: 1px; }
+  }
+
+  .month-face {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--a) 28%, #fff);
+    box-shadow: 0 0 0 2px #fff, 0 1px 3px rgb(16 60 110 / 30%);
+
+    img { display: block; width: 100%; height: auto; }
+  }
+
+  .month-anniversary .month-face { box-shadow: 0 0 0 2.5px $sun, 0 1px 3px rgb(16 60 110 / 30%); }
+
+  .month-years {
+    position: absolute;
+    top: 27px;
+    left: 50%;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: $sun;
+    color: $ink;
+    font-size: var(--fs-2xs);
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1.4;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  .month-anniversary .month-name { margin-top: var(--sp-6); }
+
+  .month-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // ── The grid ──
+  // The category's own page: every sticker at one size, a shelf to a branch.
+
+  .shelves {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .shelf {
+    padding: var(--sp-16) 22px 26px;
+    border-radius: 22px;
+    background: $paper;
+    box-shadow: 0 8px 18px rgb(16 60 110 / 20%);
+  }
+
+  .shelf-grid {
+    --s: 120px;
+    --sh: calc(var(--s) * 1.29);
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--s), 1fr));
+    gap: 30px 18px;
+    margin: var(--sp-16) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .shelf-item {
+    min-width: 0;
+
+    .sticker {
+      position: relative;
+      display: block;
+      height: auto;
+      aspect-ratio: 96 / 124;
+    }
+  }
+
+  .shelf-label {
+    margin: 10px 0 0;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    line-height: 1.3;
+
+    small {
+      display: block;
+      color: $ink-soft;
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    b {
+      display: block;
+      font-size: var(--fs-base);
+      font-weight: 900;
+    }
+  }
+
+  // ── Narrower windows ──
+
+  // The pills get a line of their own over the header.
+  @media (max-width: 900px) {
+    .roster-bar {
+      position: static;
+      justify-content: flex-start;
+      padding: var(--sp-16) var(--sp-24) 0;
+    }
+
+    .hd-head { padding-right: 0; }
+  }
+
+  @media (max-width: 640px) {
+    .roster-page { padding: var(--sp-8) var(--sp-12) var(--sp-24); }
+    .roster-bar { padding: var(--sp-12) var(--sp-12) 0; }
+
+    .hd-title { font-size: var(--fs-4xl); }
+
+    .book { margin-right: 0; }
+
+    // The tabs stand along the cover's top, over the page, and the turns and the legend
+    // take two lines.
+    .cover,
+    .book.one-page .cover {
+      --s: 84px;
+
+      display: flex;
+      flex-direction: column;
+      width: auto;
+      padding: var(--sp-8);
+    }
+
+    .album-tabs {
+      position: static;
+      order: -1;
+      flex-direction: row;
+      gap: var(--sp-4);
+      margin: 0 0 var(--sp-8);
+      overflow-x: auto;
+    }
+
+    .album-tab {
+      flex: none;
+      width: auto;
+      height: 34px;
+      padding: 0 var(--sp-12);
+      border-radius: 10px;
+
+      span { position: static; transform: none; }
+    }
+
+    .leaf { padding: var(--sp-12) var(--sp-12) 92px; }
+
+    .book-foot {
+      inset: auto var(--sp-8) var(--sp-8);
+      flex-wrap: wrap;
+      padding: var(--sp-8);
+    }
+
+    .legend {
+      flex-basis: 100%;
+      order: -1;
+    }
+
+    // Beside the strip, wrapping in the room left: the row itself wraps only for its panel.
+    .slots {
+      flex: 1 1 0;
+      min-width: 0;
+      gap: var(--sp-16) var(--sp-8);
+    }
+
+    .row { flex-wrap: wrap; gap: var(--sp-8); }
+
+    .row-info {
+      flex-basis: 100%;
+      height: auto;
+      margin-left: 34px;
+    }
+
+    .month-day { min-height: 64px; }
+    .month-name { display: none; }
+
+    .shelf { padding: var(--sp-12) var(--sp-12) var(--sp-20); }
+    .shelf-grid { --s: 96px; gap: var(--sp-20) var(--sp-12); }
+  }
+}

@@ -3972,4 +3972,5 @@ a.pool-op:hover { text-decoration: underline; }
 // ── The roster-only games ──
 // What each one's cards need beyond card.ts's plate, loaded the same way.
 @include meta.load-css('ptn');
+@include meta.load-css('holodori');
 @include meta.load-css('fgo');

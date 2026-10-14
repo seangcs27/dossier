@@ -12,12 +12,14 @@ holomems, `#/fgo` 470 Servants); CLAUDE.md, "The other games' rosters", has how.
 the rest of the owner's plan of 20 September 2026 (a Hololive section beside the game is the
 one part of it not started). PtN's and FGO's card art is baked (143 mugshots, 6.1 MB; 470
 figures, 5.3 MB), and the three emblems are in; the owner approved those downloads on 11
-October 2026. Path to Nowhere also has search, filters and a dossier per Sinner. Not built
-yet:
+October 2026. Path to Nowhere also has search, filters and a dossier per Sinner, and
+hololive Dreams a sticker album with search and filters (54 busts from the game's official
+site, approved 15 October 2026). Not built yet:
 
 - **A design of its own for each game.** The owner means them to differ. Path to Nowhere
   is the first: its roster is a line-up wall (CLAUDE.md), built on 12 October 2026 to a
-  brief the owner confirmed. The others are on the Arknights card and dossier still.
+  brief the owner confirmed. hololive Dreams is the second: a sticker album, with Grid and
+  Calendar views, built on 15 October 2026. FGO is on the Arknights card still.
   A Sinner's page is in the same world, and the wall is set in Barlow Condensed.
 - **What the line-up wall still wants:**
   - **The placard face as WOFF2.** The two TTFs are 213 KB; a Latin-only WOFF2 of each
@@ -126,20 +128,14 @@ yet:
   Island's; `File:Site-logo.png` (137x137, 31 KB) and `File:MP Icon.png` (58x50, 1.7 KB)
   were found and not looked at. hololive Dreams' tile is hololive's triangle, not the
   game's own mark.
-- **Search, filters, a dossier page** for hololive Dreams and FGO. `card.ts` has the search
-  box and the filter panel for any roster that asks (`find`), so each is a list of groups
-  away. What their indexes already carry: hololive Dreams' branch (4), group (15) and debut
-  year; FGO's rarity, class (17), attribute (5), alignment and JP only.
+- **A dossier page** for hololive Dreams; **search, filters, a dossier page** for FGO.
+  `card.ts` has the search box and the filter panel for any roster that asks (`find`), so
+  FGO's is a list of groups away: its index already carries rarity, class (17), attribute
+  (5), alignment and JP only.
 - **PtN's birthplace is not a filter**: it would need folding first (`WhiteSands Region`
   beside `WhiteSands`, and four ways of saying unknown).
 - **Credit on the site itself.** Atlas Academy's data is ODC-BY 1.0, which asks for credit
   where the data is used. The README credits every source; the site has no page that does.
-- **hololive Dreams has no art.** The game's assets are encrypted and its terms forbid
-  extracted ones. HolodoriDB's dump is unofficial and unlicensed, though what is baked from
-  it (names, groups, birthdays, debuts) the official site also publishes; the owner was
-  told so on 11 October 2026 and kept the roster. Fan art by the artist's permission is the one clearly allowed
-  source of pictures. Short of pictures: the `Character` table has five image colours per
-  talent, which could tint the plate (that needs a colour slot in `card.ts`).
 - **What else the sources have**, for later passes.
   - hololive Dreams: 216 songs with four charts each, 192 cards (where the game's rarity
     is, ★3 to ★5), 200 costumes, 23 gacha pools, stories. The dump includes rows not yet

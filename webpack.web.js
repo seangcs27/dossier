@@ -38,6 +38,7 @@ module.exports = {
         { from: 'src/shared/generated/endfield/operator-details', to: 'endfield/operator-details', noErrorOnMissing: true },
         { from: 'src/shared/generated/ptn/figures', to: 'ptn/figures', noErrorOnMissing: true },
         { from: 'src/shared/generated/ptn/sinner-details', to: 'ptn/sinner-details', noErrorOnMissing: true },
+        { from: 'src/shared/generated/holodori/figures', to: 'holodori/figures', noErrorOnMissing: true },
         { from: 'src/shared/generated/fgo/figures', to: 'fgo/figures', noErrorOnMissing: true },
       ],
     }),

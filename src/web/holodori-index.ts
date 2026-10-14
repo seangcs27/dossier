@@ -15,6 +15,11 @@ export interface HolodoriCharacter {
   fanName: string;    // what the talent calls their fans, 'Sukonbu'; '' if the game has none yet
   birthday: string;   // 'MM-DD'
   debut: string;      // 'YYYY-MM-DD'
+  greeting: string;   // the line her profile in the game opens with; '' if it has none
+  colors: string[];   // her five colours as '#RRGGBB', the first her own
+  // Her bust, cut from the game site's key art, beside the page: 'holodori/figures/<id>.webp'.
+  // Absent when the build could not get it.
+  art?: string;
 }
 
 // Baked in at build time, in the game's own order — no runtime fetch. Empty when the build
