@@ -10,9 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **Web SPA** — operator search and detail view, plus the Global event schedule,
    deployable to GitHub Pages. It also carries four more games: **Arknights: Endfield**, as
    a roster and a first dossier page (see "Endfield" below), **Path to Nowhere**, as a
-   roster with search and filters and a dossier per Sinner, and **hololive Dreams** and
-   **Fate/Grand Order**, each as a roster and nothing else yet (see "The other games'
-   rosters"); the extension is Arknights alone.
+   roster with search and filters and a dossier per Sinner, **hololive Dreams**, as a
+   sticker album of its cast with search and filters, and **Fate/Grand Order**, as a roster
+   and nothing else yet (see "The other games' rosters"); the extension is Arknights alone.
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
@@ -46,8 +46,7 @@ npm run clean        # Remove ./dist/
 payloads, the branch icons), `build:index:ranges` (`ranges.json`), `build:index:events`
 (`events.json` and the event banners), `build:index:endfield` (the Endfield roster, its
 portraits, splash art and glyphs, and a payload per operator), and `build:index:ptn`,
-`build:index:holodori` and `build:index:fgo` (a roster each, and for the first and the last
-its card art). All run under `node --no-network-family-autoselection`.
+`build:index:holodori` and `build:index:fgo` (a roster each, and its card art). All run under `node --no-network-family-autoselection`.
 
 **Building behind an HTTP proxy** (sandboxes, some corporate networks): the build scripts
 fetch with Node's built-in `fetch`, which — unlike `curl` and `git` — **ignores
@@ -83,7 +82,7 @@ scripts/
   build-event-index.mjs      ← events.json + event-banners/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
   build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/sinner-details/
-  build-holodori-index.mjs   ← holodori/characters.json
+  build-holodori-index.mjs   ← holodori/characters.json + holodori/figures/
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
@@ -144,6 +143,7 @@ src/
       ptn/figures/original/<id>.webp  ← the same of their original illustration (160); both copied as static files
       ptn/sinner-details/<id>.json  ← 160 dossier payloads parsed from the wiki's pages, with the Chinese wiki's text beside the English (`zh`), copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
+      holodori/figures/<id>.webp ← each holomem's key art as a bust, 176x232 on transparency (54), copied as static files
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
     types/
@@ -200,6 +200,7 @@ src/
     _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
     _ptn.scss / _fgo.scss  ← PtN's roster, a world of its own (the line-up wall), and its dossier's
                       own rules; how FGO's art sits on the plate
+    _holodori.scss  ← hololive Dreams' world: the sticker album, its grid and its calendar
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
@@ -211,6 +212,7 @@ src/
     index.html      ← markup shell; links styles.css
     fonts/barlow-condensed/  ← Path to Nowhere's placard face: two weights, each a WOFF2 and the
                       TTF behind it, and their licence (tracked)
+    fonts/poppins/  ← hololive Dreams' face: four weights (600 to 900) as WOFF2, and the licence (tracked)
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
 ```
@@ -220,7 +222,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `holodori/figures/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -537,8 +539,8 @@ variables and does not persist across popup close/reopen.
 Vanilla TS, no framework. Hash-routed: `#/` shows the operator grid; `#/op/<id>` shows the
 operator dossier; `#/events` shows the Global event schedule; `#/endfield` and
 `#/endfield/op/<id>` are the second game's roster and dossier; `#/ptn` and
-`#/ptn/sinner/<id>` are Path to Nowhere's; `#/holodori` and `#/fgo` are the rosters of the
-two games that have nothing else yet. Every link to `#/`
+`#/ptn/sinner/<id>` are Path to Nowhere's; `#/holodori` is hololive Dreams' sticker album;
+`#/fgo` is the roster of the one game that has nothing else yet. Every link to `#/`
 (the wordmark, the Arknights tile, Operators, a breadcrumb) is taken over on a plain click
 to land on the bare URL instead (`index.ts`).
 
@@ -951,12 +953,13 @@ Not built: the dossier's sections from the payload, what anything costs, a relea
 Path to Nowhere, hololive Dreams and Fate/Grand Order (PtN, Holodori and FGO on the sidebar,
 the owner's names for them) are the rest of the owner's plan of 20 September 2026 for the
 site to carry the games they play. The sources were researched then, and each was checked
-again on 11 October. hololive Dreams and FGO are each a roster and nothing else: one page,
-no search, no filters, no dossier, cards that turn and open nothing. Path to Nowhere has
-search, filters and a dossier per Sinner as well (below).
+again on 11 October. FGO is a roster and nothing else: one page, no search, no filters, no
+dossier, cards that turn and open nothing. Path to Nowhere has search, filters and a
+dossier per Sinner as well, and hololive Dreams search and filters (both below).
 
 **The owner means each game to have a design of its own in time.** Path to Nowhere's roster
-is the first to have one (the line-up wall, below). Until a game's turn comes it is on the
+is the first to have one (the line-up wall, below), hololive Dreams' the second (the
+sticker album, below). Until a game's turn comes it is on the
 Arknights card and the Arknights dossier's parts, and its pages copy what its own reference
 site shows, in this site's elements.
 
@@ -976,7 +979,8 @@ it filters by (`text`), and a group can be sorted into named kinds, a line to ea
 Any pick within a group, every group across them. The search and the picks live in a `RosterState` the game's own view keeps, so they
 survive a visit elsewhere and never show on another game's roster. With `looks`, a switch
 over the grid (`.roster-bar`, the Any / All switch's construction) chooses between two or
-more ways of drawing the same cards, and `toCard` is told which; with `orders`, a second
+more ways of drawing the same cards, and `toCard` is told which (`name` is what a screen
+reader calls the switch, "Card art" if not given); with `orders`, a second
 switch beside it chooses the order they are dealt in (the first is the one a page opens in;
 one with no `compare` is the roster's own, any
 other a `compare`, and the sort is stable, so what an order does not rank stays as the
@@ -997,8 +1001,8 @@ to know:
   picks the rarity colour; `marks` is what stands on the tab, a character to a line. The
   stylesheet cuts a tab's edges under each rarity class for a tab of that many lines, so
   `card.ts` gives the tab the class of its line count and sets the colour by hand. A view is
-  then free to put five stars in the top colour (FGO) or a year in the plainest (hololive
-  Dreams). `marksLabel` is the tab as a screen reader is to say it, since it is not a rarity
+  then free to put five stars in the top colour (FGO) or a year in the plainest.
+  `marksLabel` is the tab as a screen reader is to say it, since it is not a rarity
   on every roster.
 - **`art` is optional.** Without it the plate shows the name's first letter.
 - **The plate is 1:2 and `.op-avatar` contains its picture**, which suits the Arknights
@@ -1009,8 +1013,8 @@ to know:
 On a phone the pill drops the noun and keeps the number (`.count-noun`): the section link
 beside it is the same word, and "54 holomems" beside "Holomems" did not fit the row.
 
-**PtN's and FGO's art is baked**, by `scripts/lib/bake-images.mjs`, which both scripts
-call: each picture is fetched from its source once, four at a time, cut to what a card shows
+**PtN's, hololive Dreams' and FGO's art is baked**, by `scripts/lib/bake-images.mjs`, which
+the three scripts call: each picture is fetched from its source once, four at a time, cut to what a card shows
 of it and written as WebP beside the roster, and kept from then on (CI restores it with the
 rest of the generated data; delete the directory to refresh). An entry's `art` is the baked
 file's address beside the page, or the original's on the source's own host for a picture
@@ -1334,14 +1338,54 @@ six per-language repositories that are each the whole database; a bot refreshes 
 three hours). The roster is the `Character` table's playable rows, 54 of 62, which are
 exactly the talents the game's own site lists; the other eight, talents who have graduated,
 have a name and a costume and no profile. An entry is id, name, short name, branch, groups,
-fan name, birthday and debut, in the game's own order. On the card: the generation or unit
-on the class line, the debut on the micro line, the branch up the edge, the birthday on the
-back, and the debut year on the tab in the plainest colour, since the game ranks no talent
-above another (its rarity is its cards'). **There is no art, and none will come from the
-game**: its assets are encrypted, and its terms and posting guidelines forbid extracted
-assets. The dump itself is unofficial and carries no licence; what is baked from it are
+fan name, birthday, debut, greeting and colours (the table's five), in the game's own order,
+and `art`. The dump itself is unofficial and carries no licence; what is baked from it are
 facts the official site also publishes. The owner was told so on 11 October 2026 and kept
 the roster.
+
+**The pictures are the official site's, not the game's.** The game's assets are encrypted
+and its terms forbid extracted ones; its site's holomem page
+(`www.hololive-dreams.com/en/holomem`) publishes each talent's key art, the whole figure on
+transparency, through its image host (`images.microcms-assets.io`). The build reads that
+page, matches each picture to a holomem by her English name, fetches it once at 560px and
+bakes a bust (`holodori/figures/<id>.webp`, 176x232 on transparency; the page paints her
+colour behind it): a crop 0.72 of the figure's height, its top 4% down, centred on the
+head, which is where the opaque pixels of the figure's top quarter centre, or a place
+recorded by hand (`FACE_X`) for the seven whose hair, ears or a prop pull that off. The
+owner chose these pictures after being told that the game's guidelines bar reproducing its
+promotional material without permission, and approved the download on 15 October 2026 (54
+pictures, about 1.6 MB, baked to 750 KB). The page credits both sources under the roster.
+
+**The roster is a sticker album** (`draw` in `views/holodori.ts`, `_holodori.scss`), the
+owner's pick on 15 October 2026 from the fifth hand of directions, with the category's
+grid and a calendar beside it as two more looks: Album (the one it opens in), Grid and
+Calendar. The album is a book in the game's blue, two pages to a spread (one under 1190px),
+a page to three generations of a branch: hololive's three, then ID, EN and DEV_IS. A
+generation is a strip down the page's left and a row of numbered slots (No. 001 to 054, the
+game's order), each holding her bust as a sticker; a row of three or fewer has a panel
+beside it (since when, how many, whose birthday is next). A holomem in two groups has her
+sticker in the first and "see No. 008" printed in the other's slot (Fubuki, in Gen 1 and
+GAMERS). Tabs to each branch stand out of the cover's right edge (a row over it on a
+phone), and the turns along the foot and the arrow keys go a spread at a time. **A
+birthday in the next 60 days lifts her sticker**: tilted, a corner peeled, a sun-yellow tab
+with the date and the days left ("Next" on the nearest); on the day it lies flat in a ring
+of the same yellow. Hakos Baelz's 29 February is the 28th in a year without one. All of it
+goes by the reader's clock. **A search or a filter greys the other slots** to their printed
+outline in place and turns to the first spread with a match, so nobody's place moves. The
+filters are Branch and Generation, the generations sorted by branch. **Pressing a sticker
+turns it over** (the Web Animations API, a turn to its edge and the back turning on from
+it) to her back: her colours as stripes, number and groups, name, branch, greeting, fan
+name, debut, birthday and colour swatches; Escape, the close button or a press elsewhere
+turn it back. Grid is every sticker on a shelf per branch, with the full name, number and
+groups. Calendar is the book again, a month to a page for the next twelve, with each
+birthday and each debut anniversary (and its count: "5th") on its day.
+
+The world is scoped under `body[data-view='holodori']`: the shell's surface variables
+restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
+as a pattern, and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
+site it animates whatever `prefers-reduced-motion` says. The view is mounted twice a
+navigation, as every view is, and its handlers are assigned to its own page element,
+since `card.ts`'s finder takes `document`'s.
 
 **Fate/Grand Order** (`#/fgo`, 470 Servants, 52 of them JP only).
 `scripts/build-fgo-index.mjs` reads Atlas Academy's two "basic" exports, NA's and JP's with
@@ -1361,8 +1405,8 @@ which puts the two cut corners at its top out of sight; the bake cuts at the sam
 and asks for credit, which the README gives and the site itself does not yet.
 
 Not built for any of the three: glyphs; a release order for hololive Dreams or FGO (Path
-to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams or FGO: search, filters, a
-dossier.
+to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: a
+dossier. Not built for FGO: search, filters, a dossier.
 
 ## Testing
 

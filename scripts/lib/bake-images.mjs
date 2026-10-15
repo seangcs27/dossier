@@ -15,9 +15,9 @@ const NAMED = 6;
 
 // Bakes the images of one set that are not already on disk. An image is { name, url,
 // label }: the file it is baked as, where its original is, and what the summary line calls
-// it. `encode` is handed the download and gives back the WebP to write. Gives back the
-// names that are on disk afterwards; an image that could not be had is not among them,
-// and whatever shows it has to fall back.
+// it. `encode` is handed the download and the image it is of, and gives back the WebP to
+// write. Gives back the names that are on disk afterwards; an image that could not be had
+// is not among them, and whatever shows it has to fall back.
 //
 // Files already there are kept, not fetched again, so a picture redrawn at the source
 // never reaches the site: delete the directory to refresh it.
@@ -31,7 +31,7 @@ export async function bakeImages(set, dir, images, encode) {
       try {
         const res = await timedFetch(img.url);
         if (!res.ok) throw new Error(String(res.status));
-        const webp = await encode(Buffer.from(await res.arrayBuffer()));
+        const webp = await encode(Buffer.from(await res.arrayBuffer()), img);
         await writeFile(path.join(dir, `${img.name}.webp`), webp);
         onDisk.add(`${img.name}.webp`);
       } catch (err) {
