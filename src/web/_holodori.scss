@@ -178,9 +178,8 @@ $world: "body[data-view='holodori']";
   }
 
   // ── The book ──
-  // The album and the calendar: a cover holding two pages side by side, or one on a narrow
-  // window, with the turns along the foot and, for the album, a tab to a branch standing
-  // out of the cover's right edge.
+  // The album: a cover holding two pages side by side, or one on a narrow window, with the
+  // turns along the foot and a tab to a branch standing out of the cover's right edge.
 
   .book {
     container-type: inline-size;
@@ -453,29 +452,6 @@ $world: "body[data-view='holodori']";
   .slot.ghost .slot-label { opacity: 0.4; }
   .slot.ghost .slot-print { border-color: #d3e7ef; }
 
-  .row-info {
-    display: flex;
-    flex: 1 1 160px;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    height: var(--sh);
-    padding: var(--sp-12) var(--sp-16);
-    border-radius: 14px;
-    background: $panel;
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    line-height: 1.35;
-
-    b {
-      margin-bottom: 2px;
-      font-size: var(--fs-2xl);
-      font-weight: 900;
-    }
-
-    strong { font-weight: 900; }
-  }
-
   // ── A sticker ──
   // A die-cut white border round her bust, a gloss across it, and a shadow under it.
   // Pressed, it turns over (views/holodori.ts animates that).
@@ -566,9 +542,10 @@ $world: "body[data-view='holodori']";
   // Her birthday: stuck down flat, ringed in the sun.
   .sticker.today { box-shadow: 0 0 0 3px $sun, 0 6px 10px rgb(16 60 110 / 25%); }
 
+  // Stuck across the sticker's top, not over it, where it covered the name of the slot above.
   .date-tab {
     position: absolute;
-    top: -15px;
+    top: 4px;
     left: 50%;
     z-index: 4;
     padding: 2px var(--sp-8);
@@ -586,7 +563,7 @@ $world: "body[data-view='holodori']";
   }
 
   .sticker.next .date-tab {
-    top: -20px;
+    top: 2px;
     padding: 3px 10px;
     font-size: var(--fs-sm);
     box-shadow: 0 0 0 3px #fff, 0 4px 8px rgb(16 60 110 / 24%);
@@ -701,123 +678,215 @@ $world: "body[data-view='holodori']";
     }
   }
 
-  // ── The calendar ──
+  // ── The sheet ──
+  // Every sticker on the one sheet they come on: a block to a branch, flowing on beside the
+  // last where there is room, so that all 54 stand on a desktop's screen at once.
 
-  .month-week {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    padding: 0 2px var(--sp-6);
-    color: $ink-soft;
-    font-size: var(--fs-xs);
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+  .sheet-wrap { container-type: inline-size; }
+
+  .sheet {
+    // A sticker's width: as many as a full sheet needs to stand on one screen, at most the
+    // album's own size and at least what still shows a face.
+    --s: clamp(56px, (100cqw - 120px) / 19, 84px);
+    --sh: calc(var(--s) * 1.29);
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-16) 28px;
+    padding: var(--sp-16) 22px var(--sp-20);
+    border: 4px solid #fff;
+    border-radius: 22px;
+    background: $paper radial-gradient(#d9eef6 1px, transparent 1.4px) 0 0 / 14px 14px;
+    box-shadow: 0 8px 18px rgb(16 60 110 / 20%);
   }
 
-  .month-days {
+  .sheet-branch {
+    flex: 0 1 auto;
+    min-width: 0;
+
+    .lettered { font-size: var(--fs-4xl); }
+  }
+
+  .sheet-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-12) var(--sp-20);
+    margin-top: var(--sp-8);
+  }
+
+  .sheet-group {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-6);
+
+    .row-strip { width: 20px; }
+    .row-strip span { font-size: var(--fs-2xs); }
+  }
+
+  .sheet-row {
+    display: flex;
+    gap: var(--sp-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    .sticker { border-width: 3px; }
+    .sticker-face, .sticker::before { border-radius: 8px; }
+    .date-tab { font-size: var(--fs-2xs); }
+    .sticker.next .date-tab { padding: 2px var(--sp-6); font-size: var(--fs-2xs); }
+  }
+
+  .sheet-name {
+    margin: var(--sp-4) 0 0;
+    overflow: hidden;
+    font-size: var(--fs-xs);
+    font-weight: 900;
+    line-height: 1.25;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .slot.ghost .sheet-name { opacity: 0.4; }
+
+  // ── The calendar ──
+  // The year at a glance: a card to each of the next twelve months, its birthdays and debut
+  // anniversaries by the day, each a face beside a name.
+
+  // On the sky, not a page, so in the full ink.
+  .year-legend {
+    margin: 0 0 var(--sp-12);
+    color: $ink;
+    text-align: left;
+  }
+
+  .year {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: var(--sp-4);
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--sp-16);
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .month-day {
+  .month {
+    padding: var(--sp-12) var(--sp-16) var(--sp-16);
+    border: 4px solid #fff;
+    border-radius: 20px;
+    background: $paper;
+    box-shadow: 0 6px 14px rgb(16 60 110 / 18%);
+
+    // This month, ringed in the sun.
+    &.now { box-shadow: 0 0 0 3px $sun, 0 6px 14px rgb(16 60 110 / 18%); }
+  }
+
+  .month-head {
     display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-    min-height: calc(var(--sh) * 0.72);
-    padding: var(--sp-4);
-    border-radius: var(--radius-lg);
-    background: $panel;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--sp-4) var(--sp-8);
+    margin: 0 0 var(--sp-8);
 
-    // Two on one day stand side by side.
-    ul {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: var(--sp-4) 2px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
+    .lettered { font-size: var(--fs-4xl); }
+
+    small {
+      color: $ink-soft;
+      font-size: var(--fs-sm);
+      font-weight: 800;
     }
-
-    li { min-width: 0; max-width: 100%; }
-
-    &.past { background: none; box-shadow: inset 0 0 0 1px $line; }
-    &.past .month-no { color: $ink-soft; }
-    &.today { background: #fff4cc; box-shadow: inset 0 0 0 2px $sun; }
   }
 
-  .month-no {
+  .month-today {
+    margin-left: auto;
+    padding: 2px var(--sp-8);
+    border-radius: var(--radius-pill);
+    background: $sun;
+    color: $ink;
+    font-size: var(--fs-xs);
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  .month-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px var(--sp-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // What has passed this month, faded; what is today, on the sun.
+    .past { opacity: 0.45; }
+    .on .month-birthday, .on .month-anniversary { background: #fff4cc; box-shadow: inset 0 0 0 2px $sun; }
+  }
+
+  .month-none {
+    margin: 0;
+    color: $ink-soft;
     font-size: var(--fs-sm);
-    font-weight: 800;
+    font-weight: 700;
   }
 
-  // A face over her name: a birthday ringed in white, a debut anniversary in the sun with
-  // its years on a badge.
+  // The day, her face, and her name over the anniversary it is, if it is one: a birthday
+  // ringed in white, a debut anniversary in the sun.
   .month-birthday,
   .month-anniversary {
-    position: relative;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 20px 40px minmax(0, 1fr);
     align-items: center;
-    gap: 3px;
-    max-width: 100%;
-    padding: 3px 2px 2px;
+    column-gap: var(--sp-6);
+    width: 100%;
+    padding: var(--sp-4);
     border: 0;
     border-radius: var(--radius-lg);
     background: none;
     color: $ink;
     font: inherit;
-    font-size: var(--fs-xs);
+    font-size: var(--fs-sm);
     font-weight: 800;
     line-height: 1.2;
+    text-align: left;
     cursor: pointer;
 
-    &:hover { background: #fff; }
+    &:hover { background: $panel; }
     &:focus-visible { outline: 2px solid $cover-deep; outline-offset: 1px; }
   }
 
+  .month-date {
+    grid-row: span 2;
+    font-size: var(--fs-md);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
   .month-face {
-    flex: none;
-    width: 32px;
-    height: 32px;
+    grid-row: span 2;
+    width: 40px;
+    height: 40px;
     overflow: hidden;
     border-radius: 50%;
     background: color-mix(in srgb, var(--a) 28%, #fff);
-    box-shadow: 0 0 0 2px #fff, 0 1px 3px rgb(16 60 110 / 30%);
+    box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
 
     img { display: block; width: 100%; height: auto; }
   }
 
   .month-anniversary .month-face { box-shadow: 0 0 0 2.5px $sun, 0 1px 3px rgb(16 60 110 / 30%); }
 
-  .month-years {
-    position: absolute;
-    top: 27px;
-    left: 50%;
-    padding: 0 5px;
-    border-radius: var(--radius-pill);
-    background: $sun;
-    color: $ink;
-    font-size: var(--fs-2xs);
-    font-style: normal;
-    font-weight: 900;
-    line-height: 1.4;
-    white-space: nowrap;
-    transform: translateX(-50%);
-  }
-
-  .month-anniversary .month-name { margin-top: var(--sp-6); }
-
   .month-name {
-    max-width: 100%;
+    grid-column: 3;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .month-years {
+    grid-column: 3;
+    color: $ink-soft;
+    font-size: var(--fs-2xs);
+    font-style: normal;
+    font-weight: 800;
   }
 
   // ── The grid ──
@@ -945,23 +1014,18 @@ $world: "body[data-view='holodori']";
       order: -1;
     }
 
-    // Beside the strip, wrapping in the room left: the row itself wraps only for its panel.
+    // Beside the strip, wrapping in the room left.
     .slots {
       flex: 1 1 0;
       min-width: 0;
       gap: var(--sp-16) var(--sp-8);
     }
 
-    .row { flex-wrap: wrap; gap: var(--sp-8); }
+    .row { gap: var(--sp-8); }
 
-    .row-info {
-      flex-basis: 100%;
-      height: auto;
-      margin-left: 34px;
-    }
-
-    .month-day { min-height: 64px; }
-    .month-name { display: none; }
+    .sheet { padding: var(--sp-12) var(--sp-12) var(--sp-16); }
+    // A generation of five still on one line beside its strip.
+    .sheet-row { flex-wrap: wrap; }
 
     .shelf { padding: var(--sp-12) var(--sp-12) var(--sp-20); }
     .shelf-grid { --s: 96px; gap: var(--sp-20) var(--sp-12); }
