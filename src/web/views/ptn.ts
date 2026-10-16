@@ -312,6 +312,8 @@ export function mountPtn(container: HTMLElement): void {
   const sinners = getPtnSinners();
   // The section link is this roster, named in the language that is on.
   document.getElementById('nav-operators-label')!.textContent = t('Sinners');
+  // For the browser to pick Chinese glyphs, and for the stylesheet's :lang(zh).
+  document.documentElement.lang = ptnLang() === 'zh' ? 'zh-CN' : 'en';
   // Newest first, which is the order the page opens in by the owner's choice, and the
   // roster's own, rank and then name. Sinners released on one day keep the roster's order
   // among themselves; those only the CN server has go by the day they came to it.

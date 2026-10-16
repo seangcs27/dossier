@@ -70,6 +70,9 @@ const TEXT = {
     artOriginal: 'Original', artPhase: 'Phase-up', artMugshot: 'Mugshot', openFull: 'at full size', open: 'Open',
     pictures: 'Pictures', hp: 'HP', atk: 'ATK', def: 'DEF', res: 'RES',
     filters: 'Filters', clear: 'Clear', noResults: 'No results', tryOther: 'Try a different name or filter.',
+    damageType: 'Damage type', dmgPhysical: 'Physical', dmgMagic: 'Magic', dmgTrue: 'True',
+    reworked: 'Reworked on CN', yes: 'Yes', contained: 'Contained', energy: 'Energy', coreDmg: 'Core damage',
+    terms: 'Terms', dream: 'Dream', video: 'Capture video (Bilibili)',
   },
   zh: {
     sinners: '禁闭者', Sinners: '禁闭者', prompt: '搜索禁闭者…',
@@ -98,6 +101,9 @@ const TEXT = {
     artOriginal: '立绘', artPhase: '升阶立绘', artMugshot: '档案照', openFull: '（查看大图）', open: '打开',
     pictures: '图片', hp: '生命', atk: '攻击', def: '防御', res: '法抗',
     filters: '筛选', clear: '清除', noResults: '没有结果', tryOther: '换个名字或筛选条件试试。',
+    damageType: '伤害类型', dmgPhysical: '物理伤害', dmgMagic: '法术伤害', dmgTrue: '真实伤害',
+    reworked: '国服重构', yes: '是', contained: '收容日期', energy: '能量消耗', coreDmg: '核心伤害',
+    terms: '术语', dream: '梦境', video: '捕获影像（哔哩哔哩）',
   },
 } as const;
 

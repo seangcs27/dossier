@@ -200,6 +200,7 @@ Nowhere's, hololive's and Chaldea's) are likewise their owners', shown only to n
 game a tile opens.
 
 Path to Nowhere's pages are set in **Barlow Condensed**, © The Barlow Project Authors,
-under the SIL Open Font License 1.1 (`src/web/fonts/barlow-condensed/OFL.txt`).
+under the SIL Open Font License 1.1 (`src/web/fonts/barlow-condensed/OFL.txt`), and their
+Chinese in **Noto Sans SC**, © Adobe, under the same licence (`src/web/fonts/noto-sans-sc/OFL.txt`).
 
 *Scaffolded from [hololive-helper](https://github.com/seangcs27/hololive-helper); Phase 2+ replaced the original feature set entirely.*

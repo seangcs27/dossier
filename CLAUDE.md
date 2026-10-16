@@ -95,6 +95,7 @@ scripts/
   lib/ptn-bili-page.mjs      ← that wiki's {{禁闭者图鉴}} page into the same payload as ptn-page.mjs
   lib/ptn-bili-snapshot.json ← what that wiki last gave whole: its roster, 160 pages' text, the crimebrands' and their terms', for a
                                build it will not answer (tracked; a local build rewrites it)
+  lib/ptn-font.mjs           ← cuts Noto Sans SC to the characters PtN's placards set, into src/web/fonts/noto-sans-sc/
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
@@ -212,6 +213,8 @@ src/
     index.html      ← markup shell; links styles.css
     fonts/barlow-condensed/  ← Path to Nowhere's placard face: two weights, each a WOFF2 and the
                       TTF behind it, and their licence (tracked)
+    fonts/noto-sans-sc/  ← that face's Chinese: two weights cut by the build to what the placard
+                      sets (scripts/lib/ptn-font.mjs), and the licence (tracked)
     fonts/poppins/  ← hololive Dreams' face: four weights (600 to 900) as WOFF2, and the licence (tracked)
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
@@ -1080,10 +1083,24 @@ is named inside that text, so the payload's brand has an unnamed skill of one le
 and the tab shows no skill name. What that skill does is on the page of the term the text
 names (`术语解释:【禁忌魇魔】-必杀`, the page the wiki's `{{术语查看}}` hover shows), and the
 numbers often a term further down (the summon `【梦魇】` it makes, with the 120%/135%/150%
-the English page has). So the build reads the terms the crimebrands name and the terms
-those name, three deep (`fetchBiliTerms`, about 280 pages in 8 requests), and a brand
-carries every term reachable from its effect as `terms`, listed under it in the order met
-(140 of the 160 name one). **Their pictures** are that
+the English page has). So the build reads the terms the crimebrands and the Sinners' own
+pages name, and the terms those name, three deep (`fetchBiliTerms`, about 460 pages in 10
+requests), and a brand carries every term reachable from its effect as `terms`, listed
+under it in the order met (140 of the 160 name one). A Sinner's page does the same for the
+terms its skills, trait and shackles name ("【残锋】"), listed under the Skills tab
+(`terms`; 149 Sinners). A term is shown by the name its page gives it, so a Sinner's own
+version of a shared one keeps the suffix the wiki gives it ("【残锋-阿兰恰】" beside
+"【残锋】"). **The rest of that page is kept as well** (17 October 2026, the owner's "I just
+want the data"), in either language since the English wiki has none of it: the damage type
+(a fact), the day they came to the CN server (now for every Sinner, not only the CN-only),
+whether they have been reworked there (33), the day of their containment (2), their
+capture video's Bilibili id (145, a link on the File tab), their dream (15, after Mania
+Intensify), and the ultimate's energy cost and core damage (badges beside its name, on
+the English ultimate too). Not taken: the danger assessment, which is the rank on every
+page that has one; the stats just after each promotion, since the page shows only level 1
+and 90; and the skill ranges, which are shape codes (`{{技能范围|3*3}}`) with no drawing
+yet. The voice lines, level caps and material counts that page shows are not in its text.
+**Their pictures** are that
 wiki's three files under its own names, `<name>立绘.png` (the original),
 `<name>升阶.png` (the phase-up art, 2040x1632, never downloaded: listed, and resized by
 the proxy as every print is) and `<name>证件照.png` (the mugshot, 600x1200, baked). The
@@ -1098,7 +1115,7 @@ run. So `ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks a
 a 567 (waiting 5, 20 and 60 s), and a request that still fails falls to **the snapshot**:
 `scripts/lib/ptn-bili-snapshot.json`, tracked (2.0 MB, 0.5 compressed), which has that
 wiki's roster rows, the text of each of its 160 pages (notes to editors dropped), every
-exclusive crimebrand's page (`brands`) and the terms they name (`terms`), and the addresses of the pictures asked of it, as the last build that read it whole left them. Any
+exclusive crimebrand's page (`brands`) and the terms they and the pages name (`terms`), and the addresses of the pictures asked of it, as the last build that read it whole left them. Any
 such build writes it again, so **a local build refreshes it and its diff is committed with
 the rest**; a build that fell back to it never writes it. With no snapshot a later build
 keeps the last build's files whole (`fromChinese` in `build-ptn-index.mjs`) with a warning,
@@ -1235,9 +1252,24 @@ condensed/` with their Open Font License beside them. Each weight is a WOFF2 fir
 Fonts' own Latin cut (44 KB the pair, from `fonts.gstatic.com`, the owner's ask), with the
 TTF behind it (213 KB the pair) for a browser that cannot read one; a stylesheet's `url()`
 to a file is all webpack needs to emit one, and a browser asks for them only on a page that
-sets something in them. Neither has Chinese, so that side's names and titles are in the
-reader's own face. After it in `--ptn-placard` is the reader's own nearest (Bahnschrift,
-where Windows has it), which is what the wall was designed in.
+sets something in them. Neither has Chinese, so **the Chinese is Noto Sans SC** (17 October
+2026, the owner's pick of three from a specimen against Noto Serif SC and ZCOOL QingKe
+HuangYou): Source Han Sans under Google's name, the face the game's own CN site sets its
+interface in, its Black standing for the placard's 700. The whole font is a 17.8 MB
+variable TTF (the owner approved the download), so `scripts/lib/ptn-font.mjs` cuts it at
+build time with `subset-font` to the characters the placard sets (the roster's names and
+tags, a file's headings, `ptn-lang.ts`; 1,742 today), at 500 and 900, about 250 KB each,
+into `src/web/fonts/noto-sans-sc/`. The cut is tracked, as the snapshot is, and written
+only when it changes; the TTF is kept with the generated data, which CI caches, and a
+build that cannot fetch or cut keeps the last cut. A character the cut lacks, and all the
+running text, is in the reader's own face. After them in `--ptn-placard` is the reader's
+own nearest (Bahnschrift, where Windows has it), which is what the wall was designed in. **Every rule in that face
+asks for 500 or 700**, the two it ships (17 October 2026): one that asked for the shell's
+400 or 600 got the nearest anyway, so nothing moved but the rule. The small labels went
+into it too (a line-up's head count, the trail, a fact's label, a badge, the Filters
+button), the placard's number and kind lines went from 10.5px to 12, and on the Chinese
+side the page is `lang="zh-CN"` (set by both views, put back to English by `dispatch`),
+which picks the Chinese glyphs and sets the names, titles and tabs without tracking.
 
 **Beside that switch is the order's: Newest, which the page opens in by the owner's choice,
 or Rank, the roster's own.** Newest goes by an entry's `released`, the day the Sinner came

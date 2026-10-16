@@ -62,6 +62,8 @@ function dispatch(): void {
   // A page in another language words the filter panel's Clear its own way (card.ts); the
   // Arknights and Endfield grids, which never word it, find it in English again.
   document.getElementById('clear-filters')!.textContent = 'Clear';
+  // Path to Nowhere's Chinese side marks the page Chinese (views/ptn.ts); everything else is English.
+  document.documentElement.lang = 'en';
   setCurrent(operatorsLink, route.view !== 'events');
   setCurrent(eventsLink, route.view === 'events');
   eventsLink.hidden = game !== 'arknights';
