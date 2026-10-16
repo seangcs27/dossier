@@ -200,7 +200,7 @@ src/
     _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
     _ptn.scss / _fgo.scss  ← PtN's roster, a world of its own (the line-up wall), and its dossier's
                       own rules; how FGO's art sits on the plate
-    _holodori.scss  ← hololive Dreams' world: the sticker album, its grid and its calendar
+    _holodori.scss  ← hololive Dreams' world: the sticker sheet, the album, its grid and its calendar
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
@@ -1358,27 +1358,34 @@ pictures, about 1.6 MB, baked to 750 KB). The page credits both sources under th
 
 **The roster is a sticker album** (`draw` in `views/holodori.ts`, `_holodori.scss`), the
 owner's pick on 15 October 2026 from the fifth hand of directions, with the category's
-grid and a calendar beside it as two more looks: Album (the one it opens in), Grid and
-Calendar. The album is a book in the game's blue, two pages to a spread (one under 1190px),
+grid and a calendar beside it as two more looks, and since 16 October a sheet before them
+all: Sheet (the one it opens in), Album, Grid and Calendar. **The sheet** is every sticker
+at once, the owner's ask for the whole cast on one page: a block to a branch, flowing on
+beside the last where there is room, a strip to a generation and her short name under each
+sticker, each holomem once. The sticker's width is set from the sheet's (`--s`, 56 to
+84px) so that all 54 stand on a 1280x800 or 1440x900 screen; on a phone it scrolls. The
+album is a book in the game's blue, two pages to a spread (one under 1190px),
 a page to three generations of a branch: hololive's three, then ID, EN and DEV_IS. A
 generation is a strip down the page's left and a row of numbered slots (No. 001 to 054, the
-game's order), each holding her bust as a sticker; a row of three or fewer has a panel
-beside it (since when, how many, whose birthday is next). A holomem in two groups has her
+game's order), each holding her bust as a sticker. A holomem in two groups has her
 sticker in the first and "see No. 008" printed in the other's slot (Fubuki, in Gen 1 and
 GAMERS). Tabs to each branch stand out of the cover's right edge (a row over it on a
 phone), and the turns along the foot and the arrow keys go a spread at a time. **A
 birthday in the next 60 days lifts her sticker**: tilted, a corner peeled, a sun-yellow tab
-with the date and the days left ("Next" on the nearest); on the day it lies flat in a ring
+with the date and the days left (the date alone on the sheet; "Next" on the nearest of all
+54, whatever a search leaves on show); on the day it lies flat in a ring
 of the same yellow. Hakos Baelz's 29 February is the 28th in a year without one. All of it
 goes by the reader's clock. **A search or a filter greys the other slots** to their printed
-outline in place and turns to the first spread with a match, so nobody's place moves. The
+outline in place (and in the album turns to the first spread with a match), so nobody's place moves. The
 filters are Branch and Generation, the generations sorted by branch. **Pressing a sticker
 turns it over** (the Web Animations API, a turn to its edge and the back turning on from
 it) to her back: her colours as stripes, number and groups, name, branch, greeting, fan
 name, debut, birthday and colour swatches; Escape, the close button or a press elsewhere
 turn it back. Grid is every sticker on a shelf per branch, with the full name, number and
-groups. Calendar is the book again, a month to a page for the next twelve, with each
-birthday and each debut anniversary (and its count: "5th") on its day.
+groups. Calendar is the next twelve months at a glance, a card to each: its birthdays and
+debut anniversaries (with the count: "5th anniversary") by the day, as a face beside a
+name; in this month what has passed fades, today's are on the sun, and the card is ringed
+in it with "Today" on its head.
 
 The world is scoped under `body[data-view='holodori']`: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering

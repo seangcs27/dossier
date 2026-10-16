@@ -2,16 +2,16 @@ import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { escHtml } from '../format';
 import { getHolodoriCharacters, type HolodoriCharacter } from '../holodori-index';
 
-// hololive Dreams' roster as the album the game would hand you, the owner's pick of 15
-// October 2026: a page to a branch, a row to a generation, a numbered slot to each holomem
-// with her bust stuck in it as a sticker. A sticker whose birthday is coming stands lifted
-// off its slot with the date on a tab; one pressed turns over to show its back. The same
-// holomems can be had as a plain grid of stickers (the owner's "category standard") and as
-// a calendar of their birthdays and debut anniversaries, a month to a page.
+// hololive Dreams' roster as the stickers the game would hand you. It opens on the sheet
+// they come on, all 54 at once (the owner's ask of 16 October 2026); the album, the owner's
+// pick of 15 October, puts them a page to a branch, a row to a generation, a numbered slot
+// to each holomem. A sticker whose birthday is coming stands lifted with the date on a tab;
+// one pressed turns over to show its back. The same holomems can be had as a plain grid of
+// stickers (the owner's "category standard") and as a year of their birthdays and debut
+// anniversaries.
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
   'September', 'October', 'November', 'December'];
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_MS = 86_400_000;
 // A sticker stands lifted when her birthday is this many days off or nearer.
 const LIFT_DAYS = 60;
@@ -28,8 +28,8 @@ const place = new Map(cast.map((c, i) => [c.id, i + 1]));
 const no = (c: HolodoriCharacter): string => String(place.get(c.id)).padStart(3, '0');
 
 const state = newRosterState();
-// The first page showing in each book, kept across visits as the filters are.
-const at = { album: 0, calendar: 0 };
+// The first page of the album showing, kept across visits as the filters are.
+const at = { album: 0 };
 // Puts the open book's pages up again when the window crosses the width for two.
 let refit: (() => void) | undefined;
 WIDE.addEventListener('change', () => refit?.());
@@ -120,7 +120,7 @@ function ordinal(n: number): string {
   return `${n}${suffix}`;
 }
 
-/** Whose birthdays are near, among the holomems on show: days to each, and the next one's id. */
+/** Whose birthdays are near: days to each, and the next one's id. */
 interface Soon {
   now: Date;
   days: Map<string, number>;   // only those LIFT_DAYS off or nearer; 0 is today
@@ -142,7 +142,8 @@ function soonOf(items: HolodoriCharacter[]): Soon {
 
 // ── A sticker ──
 
-function stickerHtml(c: HolodoriCharacter, soon: Soon): string {
+// `short` puts only the date on its tab, for the sheet's smaller stickers.
+function stickerHtml(c: HolodoriCharacter, soon: Soon, short = false): string {
   const days = soon.days.get(c.id);
   const up = days !== undefined && days > 0;
   const on = days === 0;
@@ -155,7 +156,7 @@ function stickerHtml(c: HolodoriCharacter, soon: Soon): string {
     tab = `Today · ${shortDate(soon.now)}`;
     said = ', her birthday is today';
   } else if (up) {
-    tab = `${next ? 'Next · ' : ''}${shortDate(nextBirthday(c, soon.now))} · ${days === 1 ? 'tomorrow' : `${days} days`}`;
+    tab = `${next ? 'Next · ' : ''}${shortDate(nextBirthday(c, soon.now))}${short ? '' : ` · ${days === 1 ? 'tomorrow' : `${days} days`}`}`;
     said = `, birthday ${birthdayText(c, true)}, ${days === 1 ? 'tomorrow' : `in ${days} days`}`;
   }
   return `
@@ -215,24 +216,10 @@ function slotHtml(c: HolodoriCharacter, s: Section, shown: Set<string>, soon: So
 }
 
 function rowHtml(s: Section, shown: Set<string>, soon: Soon): string {
-  const own = s.members.filter(c => groupsOf(c)[0] === s.name);
-  // A row of three or fewer has room for a word about it, as the album's panels have.
-  let info = '';
-  if (s.members.length <= 3) {
-    const first = [...s.members].sort((a, b) => daysToBirthday(a, soon.now) - daysToBirthday(b, soon.now))[0];
-    info = `
-      <div class="row-info">
-        <b>${escHtml(s.name)}</b>
-        <span>since ${Math.min(...own.map(c => Number(c.debut.slice(0, 4))))}</span>
-        <span>${s.members.length} holomem${s.members.length === 1 ? '' : 's'}</span>
-        <span>next birthday: <strong>${escHtml(first.shortName)}, ${birthdayText(first)}</strong></span>
-      </div>`;
-  }
   return `
     <div class="row">
       <h4 class="row-strip"><span>${escHtml(s.name)}</span></h4>
       <ul class="slots">${s.members.map(c => slotHtml(c, s, shown, soon)).join('')}</ul>
-      ${info}
     </div>
   `;
 }
@@ -266,59 +253,72 @@ function months(): { y: number; m: number }[] {
   });
 }
 
-function monthLeafHtml(y: number, m: number, i: number, items: HolodoriCharacter[], soon: Soon): string {
-  const births = new Map<number, HolodoriCharacter[]>();
-  const anniversaries = new Map<number, HolodoriCharacter[]>();
-  const add = (on: Map<number, HolodoriCharacter[]>, day: number, c: HolodoriCharacter): void => {
-    on.set(day, [...(on.get(day) ?? []), c]);
-  };
+// A month of the year: each birthday and each debut anniversary in it, by the day, as her
+// face beside her name. In this month what has passed fades and today is marked.
+function monthHtml(y: number, m: number, items: HolodoriCharacter[], soon: Soon): string {
+  const entries: { day: number; c: HolodoriCharacter; years?: number }[] = [];
   for (const c of items) {
     const b = birthdayIn(c, y);
-    if (b.getMonth() === m) add(births, b.getDate(), c);
+    if (b.getMonth() === m) entries.push({ day: b.getDate(), c });
     const [dy, dm, dd] = c.debut.split('-').map(Number);
-    if (dm - 1 === m && y > dy) add(anniversaries, dd, c);
+    if (dm - 1 === m && y > dy) entries.push({ day: dd, c, years: y - dy });
   }
-  const lead = new Date(y, m, 1).getDay();
-  const length = new Date(y, m + 1, 0).getDate();
+  // By the day, a birthday before an anniversary on the same one.
+  entries.sort((a, b) => a.day - b.day || Number(a.years !== undefined) - Number(b.years !== undefined));
   const thisMonth = soon.now.getFullYear() === y && soon.now.getMonth() === m;
-  const days = Array.from({ length }, (_, k) => {
-    const d = k + 1;
-    const when = thisMonth && d < soon.now.getDate() ? ' past' : thisMonth && d === soon.now.getDate() ? ' today' : '';
-    const entries = [
-      ...(births.get(d) ?? []).map(c => `
-        <li><button class="month-birthday" type="button" data-holomem="${escHtml(c.id)}" aria-haspopup="dialog" aria-expanded="false"
-                    aria-label="${escHtml(`${c.name}, birthday ${d} ${MONTHS[m]}`)}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-          <span class="month-face">${c.art ? `<img src="${escHtml(c.art)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>
-          <span class="month-name">${escHtml(c.shortName)}</span>
-        </button></li>`),
-      ...(anniversaries.get(d) ?? []).map((c) => {
-        const years = y - Number(c.debut.slice(0, 4));
-        return `
-        <li><button class="month-anniversary" type="button" data-holomem="${escHtml(c.id)}" aria-haspopup="dialog" aria-expanded="false"
-                    aria-label="${escHtml(`${c.name}, ${years} year${years === 1 ? '' : 's'} since her debut`)}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-          <span class="month-face">${c.art ? `<img src="${escHtml(c.art)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>
-          <em class="month-years">${ordinal(years)}</em>
-          <span class="month-name">${escHtml(c.shortName)}</span>
-        </button></li>`;
-      }),
-    ];
-    return `<li class="month-day${when}"><span class="month-no">${d}</span>${entries.length ? `<ul>${entries.join('')}</ul>` : ''}</li>`;
+  const list = entries.map(({ day, c, years }) => {
+    const when = thisMonth && day < soon.now.getDate() ? 'past' : thisMonth && day === soon.now.getDate() ? 'on' : '';
+    const said = years === undefined ? `birthday ${day} ${MONTHS[m]}` : `${years} year${years === 1 ? '' : 's'} since her debut, ${day} ${MONTHS[m]}`;
+    return `
+      <li${when ? ` class="${when}"` : ''}><button class="${years === undefined ? 'month-birthday' : 'month-anniversary'}" type="button" data-holomem="${escHtml(c.id)}"
+              aria-haspopup="dialog" aria-expanded="false" aria-label="${escHtml(`${c.name}, ${said}`)}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
+        <b class="month-date">${day}</b>
+        <span class="month-face">${c.art ? `<img src="${escHtml(c.art)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>
+        <span class="month-name">${escHtml(c.shortName)}</span>
+        ${years === undefined ? '' : `<em class="month-years">${ordinal(years)} anniversary</em>`}
+      </button></li>`;
   });
   return `
-    <section class="leaf month" data-leaf="${i}" aria-label="${MONTHS[m]} ${y}" hidden>
-      <header class="leaf-head"><h3 class="lettered">${MONTHS[m]}</h3><span class="leaf-no">${y}</span></header>
-      <div class="month-week" aria-hidden="true">${WEEKDAYS.map(w => `<span>${w}</span>`).join('')}</div>
-      <ol class="month-days">${'<li class="month-blank" aria-hidden="true"></li>'.repeat(lead)}${days.join('')}</ol>
-    </section>
+    <li class="month${thisMonth ? ' now' : ''}">
+      <h3 class="month-head"><span class="lettered">${MONTHS[m]}</span><small>${y}</small>${thisMonth ? `<em class="month-today">Today · ${shortDate(soon.now)}</em>` : ''}</h3>
+      ${list.length ? `<ul class="month-list">${list.join('')}</ul>` : '<p class="month-none">Nobody this month</p>'}
+    </li>
   `;
 }
 
-function calendarSpan(from: number, to: number): string {
+function yearSpan(): string {
   const all = months();
-  const a = all[from];
-  const b = all[to];
-  if (from === to) return `${MONTHS[a.m]} ${a.y}`;
-  return a.y === b.y ? `${MONTHS[a.m]} – ${MONTHS[b.m]} ${b.y}` : `${MONTHS[a.m]} ${a.y} – ${MONTHS[b.m]} ${b.y}`;
+  const a = all[0];
+  const b = all[all.length - 1];
+  return `${MONTHS[a.m]} ${a.y} – ${MONTHS[b.m]} ${b.y}`;
+}
+
+// ── The sheet ──
+// Every holomem once, on the sheet the stickers come on: a block to a branch, a strip to a
+// generation beside its stickers, her name under each.
+
+function sheetHtml(shown: Set<string>, soon: Soon): string {
+  return branches.map(b => `
+    <section class="sheet-branch" aria-label="${escHtml(b)}">
+      <h3 class="lettered">${escHtml(b)}</h3>
+      <div class="sheet-groups">${sections.filter(s => s.branch === b).map((s) => {
+        const own = s.members.filter(c => groupsOf(c)[0] === s.name);
+        if (!own.length) return '';
+        return `
+        <div class="sheet-group">
+          <h4 class="row-strip"><span>${escHtml(s.name)}</span></h4>
+          <ul class="sheet-row">${own.map(c => `
+            <li class="slot${shown.has(c.id) ? '' : ' ghost'}"${shown.has(c.id) ? '' : ' aria-hidden="true"'}>
+              <span class="slot-print" aria-hidden="true">${no(c)}</span>
+              ${shown.has(c.id) ? stickerHtml(c, soon, true) : ''}
+              <p class="sheet-name">${escHtml(c.shortName)}</p>
+            </li>`).join('')}
+          </ul>
+        </div>`;
+      }).join('')}
+      </div>
+    </section>
+  `).join('');
 }
 
 // ── The grid ──
@@ -393,12 +393,20 @@ function turnBack(refocus: boolean): void {
 
 // ── The page ──
 
-const HEADS: Record<string, string> = { album: 'Holomem Album', grid: 'All Holomems', calendar: 'Birthday Calendar' };
+const HEADS: Record<string, string> = {
+  sheet: 'Holomem Stickers', album: 'Holomem Album', grid: 'All Holomems', calendar: 'Birthday Calendar',
+};
+const SUBS: Record<string, string> = {
+  sheet: `Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days`,
+  album: 'A sticker to every holomem',
+  grid: 'A sticker to every holomem, branch by branch',
+  calendar: 'Birthdays and debut anniversaries',
+};
 
-// Puts up a book's spread from `at[kind]`: two pages or one by the window's width, the turns
-// at its foot named for the spreads they go to, and the tabs of what is showing lit. Gives
-// back the turn: to the spread a given page is on.
-function wireBook(page: HTMLElement, kind: 'album' | 'calendar', span: (from: number, to: number) => string): (to: number) => void {
+// Puts up the album's spread from `at[kind]`: two pages or one by the window's width, the
+// turns at its foot named for the spreads they go to, and the tabs of what is showing lit.
+// Gives back the turn: to the spread a given page is on.
+function wireBook(page: HTMLElement, kind: 'album', span: (from: number, to: number) => string): (to: number) => void {
   const book = page.querySelector<HTMLElement>('.book')!;
   const pages = Array.from(book.querySelectorAll<HTMLElement>('.leaf'));
   const sub = page.querySelector<HTMLElement>('.hd-sub-spread')!;
@@ -464,17 +472,18 @@ function bookHtml(leafHtml: string[], legend: string, tabs: string): string {
 function draw(page: HTMLElement, items: HolodoriCharacter[], look: string): void {
   turned = undefined;
   refit = undefined;
-  const soon = soonOf(items);
+  // Who is next is the next of all 54, whoever a search leaves on show.
+  const soon = soonOf(cast);
   const shown = new Set(items.map(c => c.id));
   let body = '';
-  if (look === 'grid') {
+  if (look === 'sheet') {
+    body = `<div class="sheet-wrap"><div class="sheet">${sheetHtml(shown, soon)}</div></div>`;
+  } else if (look === 'grid') {
     body = `<div class="shelves">${gridHtml(items, soon)}</div>`;
   } else if (look === 'calendar') {
-    body = bookHtml(
-      months().map(({ y, m }, i) => monthLeafHtml(y, m, i, items, soon)),
-      '<i class="legend-face"></i>Birthday <i class="legend-face legend-anniversary"></i>Debut anniversary, with the years since',
-      '',
-    );
+    body = `
+      <p class="legend year-legend"><i class="legend-face"></i>Birthday <i class="legend-face legend-anniversary"></i>Debut anniversary, with the years since</p>
+      <ol class="year">${months().map(({ y, m }) => monthHtml(y, m, items, soon)).join('')}</ol>`;
   } else {
     // A search or a filter that leaves nobody on the open spread turns to the first page
     // that has someone.
@@ -494,14 +503,14 @@ function draw(page: HTMLElement, items: HolodoriCharacter[], look: string): void
   }
   page.innerHTML = `
     <header class="hd-head">
-      <h2 class="hd-title">${HEADS[look] ?? HEADS.album}</h2>
-      <p class="hd-sub">${look === 'grid' ? 'A sticker to every holomem, branch by branch' : look === 'calendar' ? 'Birthdays and debut anniversaries' : 'A sticker to every holomem'}${look === 'grid' ? '' : ' · <span class="hd-sub-spread" aria-live="polite"></span>'}</p>
+      <h2 class="hd-title">${HEADS[look] ?? HEADS.sheet}</h2>
+      <p class="hd-sub">${SUBS[look] ?? SUBS.sheet}${look === 'album' ? ' · <span class="hd-sub-spread" aria-live="polite"></span>' : look === 'calendar' ? ` · ${yearSpan()}` : ''}</p>
     </header>
     ${body}
     <p class="hd-credit">Pictures: <a href="https://www.hololive-dreams.com/en/" target="_blank" rel="noopener">hololive Dreams official site</a> · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
   `;
-  const go = look === 'grid' ? undefined : wireBook(page, look === 'calendar' ? 'calendar' : 'album', look === 'calendar' ? calendarSpan : albumSpan);
-  const kind = look === 'calendar' ? 'calendar' : 'album';
+  const go = look === 'album' ? wireBook(page, 'album', albumSpan) : undefined;
+  const kind = 'album';
   const per = (): number => (WIDE.matches ? 2 : 1);
 
   page.onclick = (ev) => {
@@ -546,7 +555,10 @@ export function mountHolodori(container: HTMLElement): void {
     looks: {
       state,
       name: 'View',
-      options: [{ id: 'album', label: 'Album' }, { id: 'grid', label: 'Grid' }, { id: 'calendar', label: 'Calendar' }],
+      options: [
+        { id: 'sheet', label: 'Sheet' }, { id: 'album', label: 'Album' },
+        { id: 'grid', label: 'Grid' }, { id: 'calendar', label: 'Calendar' },
+      ],
     },
     noun: 'holomems',
     emptyNote: 'The last build could not reach the game data on GitHub.',

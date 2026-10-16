@@ -19,7 +19,10 @@ site, approved 15 October 2026). Not built yet:
 - **A design of its own for each game.** The owner means them to differ. Path to Nowhere
   is the first: its roster is a line-up wall (CLAUDE.md), built on 12 October 2026 to a
   brief the owner confirmed. hololive Dreams is the second: a sticker album, with Grid and
-  Calendar views, built on 15 October 2026. FGO is on the Arknights card still.
+  Calendar views, built on 15 October 2026, and a sheet of all 54 it opens on since 16
+  October. Its game itself is next: a Songs page (the 211 song jackets from its official
+  site, approved 16 October 2026) and a Cards page (no card art anywhere; HolodoriDB's
+  `Card.json` has the 192 cards' data). FGO is on the Arknights card still.
   A Sinner's page is in the same world, and the wall is set in Barlow Condensed.
 - **What the line-up wall still wants:**
   - **The placard face as WOFF2.** The two TTFs are 213 KB; a Latin-only WOFF2 of each
