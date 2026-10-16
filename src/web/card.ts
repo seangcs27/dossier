@@ -215,9 +215,11 @@ let more: IntersectionObserver | undefined;
 // left of the roster, or all of it.
 function deal<T>(container: HTMLElement, roster: Roster<T>, items: T[]): void {
   more?.disconnect();
-  // The word is in a span of its own for a phone to drop (styles.scss, .count-noun).
+  // The word is in a span of its own for a phone to drop (styles.scss, .count-noun). Every
+  // noun in English is a plural in -s, and the Chinese ones have no plural to drop.
+  const noun = items.length === 1 ? roster.noun.replace(/s$/, '') : roster.noun;
   document.getElementById('count')!.innerHTML =
-    `${items.length} <span class="count-noun">${escHtml(roster.noun)}</span>`;
+    `${items.length} <span class="count-noun">${escHtml(noun)}</span>`;
   document.getElementById('search-count')!.textContent = String(items.length);
   if (items.length === 0) {
     // With no roster at all it is the build that came back empty, not the filters.
