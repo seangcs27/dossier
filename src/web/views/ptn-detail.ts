@@ -227,8 +227,10 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       [t('birthplace'), d.birthplace || s.birthplace],
       [t('title'), d.title ?? ''],
       [t('ability'), d.ability],
+      [t('damageType'), d.damageType ? t(`dmg${d.damageType}`) : ''],
       [t('released'), s.released ? dayOf(s.released) : ''],
-      [t('releasedCn'), s.cnOnly && s.releasedCn ? dayOf(s.releasedCn) : ''],
+      [t('releasedCn'), s.cnOnly && s.releasedCn ? dayOf(s.releasedCn) : d.releasedCn ? dayOf(d.releasedCn) : ''],
+      [t('reworked'), d.reworked ? t('yes') : ''],
     ])}
     ${tags ? `<div class="detail-tags">${tags}</div>` : ''}
     <section class="entry">
@@ -253,7 +255,24 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
     ${(d.extras ?? []).map(extra => `
       <section class="entry"><h2 class="entry-name">${escHtml(extra.name)}</h2><p class="rich">${rich(extra.text)}</p></section>
     `).join('')}
+    ${d.dream ? `
+      <section class="entry">
+        <div class="entry-head">
+          <h2 class="entry-name">${escHtml(d.dream.name)}</h2>
+          <span class="unlock-badge">${t('dream')}${d.dream.kind ? ` · ${escHtml(d.dream.kind)}` : ''}</span>
+        </div>
+        <p class="rich">${rich(d.dream.text)}</p>
+      </section>
+    ` : ''}
   `;
+}
+
+// Each term a text names, explained, under a heading of its own name.
+function termsHtml(terms: PtnSinnerDetail['terms']): string {
+  return (terms ?? []).map(term => `
+    <span class="section-label">${escHtml(term.name)}</span>
+    <p class="rich">${rich(term.text)}</p>
+  `).join('');
 }
 
 const KIND_KEY = { 'Basic Attack': 'kindBasic', Ultimate: 'kindUltimate', Passive: 'kindPassive' } as const;
@@ -265,11 +284,13 @@ function skillsPanel(d: PtnSinnerDetail): string {
       <div class="entry-head">
         <h2 class="entry-name">${escHtml(skill.name)}</h2>
         <span class="unlock-badge">${t(KIND_KEY[skill.kind])}</span>
+        ${skill.energy !== undefined ? `<span class="unlock-badge">${t('energy')} ${skill.energy}</span>` : ''}
+        ${skill.core ? `<span class="unlock-badge">${t('coreDmg')} ${skill.core}</span>` : ''}
       </div>
       <p class="rich">${rich(skill.levels[0] ?? '')}</p>
       ${levelsHtml(skill.levels)}
     </section>
-  `).join('');
+  `).join('') + (d.terms?.length ? `<section class="entry"><h2 class="entry-name">${t('terms')}</h2>${termsHtml(d.terms)}</section>` : '');
 }
 
 // The exclusive crimebrand: its name, and the skill it grants with that skill's levels. The
@@ -289,10 +310,7 @@ function brandPanel(d: PtnSinnerDetail): string {
         <p class="rich">${rich(skill.levels[0] ?? '')}</p>
         ${levelsHtml(skill.levels)}
       ` : `<p class="empty-msg">${t('noBrandSkill')}</p>`}
-      ${(d.brand.terms ?? []).map(term => `
-        <span class="section-label">${escHtml(term.name)}</span>
-        <p class="rich">${rich(term.text)}</p>
-      `).join('')}
+      ${termsHtml(d.brand.terms)}
     </section>
   `;
 }
@@ -340,9 +358,11 @@ function filePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       [t('birthplace'), d.birthplace || s.birthplace],
       [t('ability'), d.ability],
       [t('case'), d.case],
+      [t('contained'), d.contained ?? ''],
       [t('otherNames'), names],
       [t('voice'), d.voice.join(', ')],
     ])}
+    ${d.video ? `<p><a class="file-link" href="https://www.bilibili.com/video/${encodeURIComponent(d.video)}" target="_blank" rel="noopener">${t('video')} ↗</a></p>` : ''}
     ${d.file.map(entry => `
       <details class="file-entry">
         <summary>${escHtml(entry.title)}</summary>
@@ -433,6 +453,7 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   const render = (): void => {
     // The section link is this game's roster, named in the language that is on.
     document.getElementById('nav-operators-label')!.textContent = t('Sinners');
+    document.documentElement.lang = ptnLang() === 'zh' ? 'zh-CN' : 'en';
     container.innerHTML = shellHtml(sinner, detail, picked);
     root = container.firstElementChild;
     // Bound to this render's own page, not to the container every view shares: a handler

@@ -10,8 +10,8 @@
 // reminder, a keyword ({{术语查看}}) its text, and a spoiler fold ({{展开折叠}}) its text
 // under the condition that unlocks it.
 //
-// Left on the page: a skill's range diagram, the video, the voice files, and the fields
-// the English payload has no place for (the danger assessment, the dream).
+// Left on the page: a skill's range diagram, the voice files, the danger assessment (on
+// every page that has one it is the rank), and the stats just after each promotion.
 //
 // Pure text in, plain objects out: no fetching here, so it can be run against a saved page.
 import { templateBodies, templateParams } from './wiki-text.mjs';
@@ -75,6 +75,9 @@ function toGameText(source) {
     .trim();
 }
 
+// The kind of damage a Sinner deals, in English. "无" (none) is left out.
+const DAMAGE = { 物理伤害: 'Physical', 法术伤害: 'Magic', 真实伤害: 'True' };
+
 // A parameter's text, where the page writes "无" (none) for nothing.
 const cleaned = text => (text === '无' ? '' : text);
 
@@ -91,8 +94,9 @@ const STATS = [
 // The compliance stages past 100% a few Sinners have.
 const BEYOND = [125, 150, 175, 200];
 
-// A page's text, or undefined where it has no {{禁闭者图鉴}} call.
-export function parseBiliDetail(wikitext, nameCn) {
+// A page's text, or undefined where it has no {{禁闭者图鉴}} call. `termOf` is each term's
+// page text, for the terms the page names (explainTerms).
+export function parseBiliDetail(wikitext, nameCn, termOf = new Map()) {
   const body = templateBodies(wikitext.replace(/<!--[\s\S]*?-->/g, ''), TEMPLATE)[0];
   if (!body) return undefined;
   const named = templateParams(body).named;
@@ -123,6 +127,17 @@ export function parseBiliDetail(wikitext, nameCn) {
   });
   const passives = [];
   for (let n = 1; field(`被动${n}`); n++) passives.push(skill('Passive', `被动${n}`));
+  // What the ultimate costs in energy, and how much core damage it deals.
+  const energy = number('必杀能量消耗');
+  const core = number('必杀核心伤害');
+  const ultimate = {
+    ...skill('Ultimate', '必杀'),
+    ...(Number.isFinite(energy) ? { energy } : {}),
+    ...(Number.isFinite(core) ? { core } : {}),
+  };
+  const dream = { name: field('梦境名称'), kind: field('梦境类型'), text: field('梦境描述') };
+  const day = field('实装日期');
+  const video = field('捕获影像');
 
   // The first monitoring record sums the Sinner up, as the English wiki's lead does; where
   // it is blank the past they were brought in with does.
@@ -146,6 +161,15 @@ export function parseBiliDetail(wikitext, nameCn) {
     bio: record || past,
     trait: field('特性'),
     mania: { name: field('狂厄深化'), text: field('狂厄深化效果') },
+    ...(DAMAGE[field('伤害类型')] ? { damageType: DAMAGE[field('伤害类型')] } : {}),
+    // The day the Sinner came to the CN server, whether they have been reworked there, the
+    // day of their containment (two pages), and their capture video's Bilibili id.
+    ...(/^\d{4}-\d\d-\d\d$/.test(day) ? { releasedCn: day } : {}),
+    ...(field('重构实装') === '是' ? { reworked: true } : {}),
+    ...(field('收容日期') ? { contained: field('收容日期') } : {}),
+    ...(/^BV\w+$/.test(video) ? { video } : {}),
+    // The dream a few Sinners have (15).
+    ...(dream.name ? { dream } : {}),
     // The two effects this wiki gives a Sinner beyond the trait.
     extras: [
       { name: '梦魇天赋', text: field('梦魇天赋') },
@@ -160,7 +184,7 @@ export function parseBiliDetail(wikitext, nameCn) {
     }).filter(row => [row.hp, row.atk, row.def, row.res].every(Number.isFinite)),
     block: field('阻挡'),
     attackSpeed: field('攻击速度'),
-    skills: [skill('Basic Attack', '普攻'), skill('Ultimate', '必杀'), ...passives].filter(s => s.name),
+    skills: [skill('Basic Attack', '普攻'), ultimate, ...passives].filter(s => s.name),
     shackles: [1, 2, 3, 4, 5].filter(n => field(`同步率${n}段`))
       .map(n => ({ name: field(`同步率${n}段`), text: field(`同步率${n}段效果`) })),
     // Ten stages here, the last at 100%, where the English page has five and a sticker.
@@ -183,8 +207,12 @@ export function parseBiliDetail(wikitext, nameCn) {
       ['思维修缮', run('思维修缮')],
       ['审讯阶段', run('审讯阶段')],
       ['服从度（超过100%）', beyond.map(([n, text]) => `${n}%：${text.replace(/\n/g, '，')}`)],
+      // What the Sinner says on being got (three pages).
+      ['获得禁闭者', [field('获得禁闭者')]],
     ].map(([title, parts]) => ({ title, text: parts.filter(Boolean).join('\n\n') }))
       .filter(entry => entry.text),
+    // Every term the page names, explained: what a skill's 【残锋】 is, and so on.
+    ...explainTerms(termsIn(body), termOf),
   };
 }
 
@@ -209,21 +237,30 @@ export function parseBiliBrand(wikitext, termOf = new Map()) {
   const named = templateParams(body).named;
   const field = key => cleaned(toGameText(named[key]));
   const effect = field('专属效果');
+  return {
+    holder: field('专属角色'),
+    brand: { name: field('名称'), skill: effect ? { name: '', levels: [effect] } : null, ...explainTerms(termsIn(named['专属效果']), termOf) },
+  };
+}
+
+// Each term in `start` and every term their explanations name, in the order met, as
+// { terms }, or nothing where none has a page. A term is shown by its own name in brackets,
+// with " · 必杀" where its page is the ultimate's version ("【惑心陷阱】-必杀").
+function explainTerms(start, termOf) {
   const terms = [];
   const seen = new Set();
-  const queue = termsIn(named['专属效果']);
+  const queue = [...start];
   while (queue.length) {
     const term = queue.shift();
     if (seen.has(term)) continue;
     seen.add(term);
     const termBody = templateBodies(termOf.get(term) ?? '', '术语解释')[0];
-    const explained = termBody && templateParams(termBody).named['解释'];
+    if (!termBody) continue;
+    const { 术语: name, 解释: explained } = templateParams(termBody).named;
     if (!explained) continue;
-    terms.push({ name: term.replace(/-必杀$/, ' · 必杀'), text: toGameText(explained) });
+    const ult = /-必杀$/.test(term) ? ' · 必杀' : '';
+    terms.push({ name: name ? `【${name}】${ult}` : term.replace(/-必杀$/, ' · 必杀'), text: toGameText(explained) });
     queue.push(...termsIn(explained));
   }
-  return {
-    holder: field('专属角色'),
-    brand: { name: field('名称'), skill: effect ? { name: '', levels: [effect] } : null, ...(terms.length ? { terms } : {}) },
-  };
+  return terms.length ? { terms } : {};
 }

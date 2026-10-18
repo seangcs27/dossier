@@ -22,8 +22,8 @@ $red: #b8141c;
 // the files as the Google Fonts repository has them, with their licence). They are asked
 // for only where something is set in them, which is on this game's pages. The WOFF2 is
 // Google Fonts' own Latin cut of each, a tenth the size; the TTF is behind it for a
-// browser that cannot read one. Neither has Chinese: that side falls through to the
-// reader's own face.
+// browser that cannot read one. Neither has Chinese: that falls through to Noto Sans SC
+// (below).
 @font-face {
   font-family: 'Barlow Condensed';
   font-weight: 500;
@@ -40,6 +40,24 @@ $red: #b8141c;
   src:
     url('./fonts/barlow-condensed/BarlowCondensed-Bold.woff2') format('woff2'),
     url('./fonts/barlow-condensed/BarlowCondensed-Bold.ttf') format('truetype');
+}
+
+// The placard's Chinese: Noto Sans SC, the face the game's own CN site sets its interface
+// in, cut by the build to the characters the placard sets (scripts/lib/ptn-font.mjs). Its
+// Black stands for the placard's 700, which is how heavy Barlow's Bold reads beside it. A
+// character the cut lacks falls to the reader's own face.
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/noto-sans-sc/NotoSansSC-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Noto Sans SC';
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/noto-sans-sc/NotoSansSC-900.woff2') format('woff2');
 }
 
 // The wall shows 0 to 210 cm over the top 86% of a row, and the floor, where the placards
@@ -115,7 +133,7 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   // What stands on the wall is set in the placard's face: narrow capitals. After it, the
   // reader's own nearest, which the widths asked for below are for (Bahnschrift is as wide
   // as it is told to be; Barlow Condensed has the one width).
-  --ptn-placard: 'Barlow Condensed', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  --ptn-placard: 'Barlow Condensed', 'Noto Sans SC', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
 
   background: $wall;
 
@@ -135,6 +153,19 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   .sections-blob,
   .sections-drop { background: $bone; }
   .section-link.active { color: $ink; }
+
+  // The Filters button's word, in the placard's face rather than the system's.
+  #more-label {
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  // Tracking is for the Latin capitals; Chinese is set solid.
+  :lang(zh) :is(h1, h2, .plate-name, .plate-kind, .file-kind, .cell-title, .cell-collection, .seg-btn, .op-tab, .rail-seg) {
+    letter-spacing: 0;
+  }
 
   // A rank's name in its badge's colour, the game's one colour code (sampled from the
   // badges in icons/ptn/): in English, where a rank is its letter and has no badge, too.
@@ -204,6 +235,7 @@ body[data-view='ptn'] #view {
     color: $ink;
     font-family: var(--ptn-placard);
     font-stretch: 85%;
+    font-weight: 700; // the shell's 600, which the face does not ship
     font-size: var(--fs-md);
     letter-spacing: 0.08em;
     transition: background-color 0.15s var(--ptn-ease), color 0.15s var(--ptn-ease);
@@ -351,6 +383,9 @@ body[data-view='ptn'] #view {
 
 .lineup-count {
   color: $ink-soft;
+  font-family: var(--ptn-placard);
+  font-stretch: 85%;
+  font-weight: 500;
   font-size: var(--fs-base);
   font-variant-numeric: tabular-nums;
 }
@@ -424,6 +459,7 @@ body[data-view='ptn'] #view {
   color: $bone-dim;
   font-family: var(--ptn-placard);
   font-stretch: 85%;
+  font-weight: 500;
   font-size: var(--fs-md);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -494,6 +530,7 @@ body[data-view='ptn'] #view {
     color: $bone;
     font-family: var(--ptn-placard);
     font-stretch: 85%;
+    font-weight: 500;
     font-size: var(--fs-sm);
     letter-spacing: 0.06em;
     white-space: nowrap;
@@ -578,6 +615,7 @@ body[data-view='ptn'] #view {
   background: $ink;
   color: $bone;
   font-family: var(--ptn-placard);
+  font-weight: 500;
   transition: background-color 0.18s var(--ptn-ease);
   pointer-events: auto;
 
@@ -590,7 +628,7 @@ body[data-view='ptn'] #view {
 .plate-no,
 .plate-kind {
   font-stretch: 85%;
-  font-size: 10.5px;
+  font-size: var(--fs-sm);
   color: $bone-dim;
   white-space: nowrap;
   overflow: hidden;
@@ -851,6 +889,7 @@ body[data-view='ptn'] #view {
   min-width: 0;
   font-family: var(--ptn-placard);
   font-stretch: 85%;
+  font-weight: 500;
   line-height: 1.1;
   text-transform: uppercase;
   white-space: nowrap;
@@ -916,6 +955,9 @@ body[data-view='ptn'] #view {
   .crumbs {
     flex: 1;
     margin-bottom: 0;
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-weight: 500;
   }
 
   .seg { flex: none; }
@@ -950,7 +992,26 @@ body[data-view='ptn'] #view {
     letter-spacing: 0.04em;
   }
 
-  .op-tab { font-size: var(--fs-2xl); }
+  .op-tab { font-size: var(--fs-2xl); font-weight: 700; } // the shell's 600, which the face does not ship
+
+  // The small labels, in the placard's face rather than the reader's own beside it.
+  .unlock-badge,
+  .fact-list dt,
+  .file-link {
+    font-family: var(--ptn-placard);
+    font-stretch: 85%;
+    font-weight: 500;
+  }
+
+  // The capture video, on Bilibili.
+  .file-link {
+    color: $bone;
+    font-size: var(--fs-lg);
+    letter-spacing: 0.04em;
+    text-underline-offset: 3px;
+
+    &:hover { color: #{$red}; }
+  }
 
   // The dossier sets these in a serif, which is the Arknights page's one flourish and
   // nobody's handwriting here.
@@ -969,6 +1030,7 @@ body[data-view='ptn'] #view {
   column-gap: var(--sp-20);
   padding: var(--sp-20) var(--sp-24) var(--sp-16);
   font-family: var(--ptn-placard);
+  font-weight: 500;
   text-transform: uppercase;
 }
 

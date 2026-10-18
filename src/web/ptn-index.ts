@@ -70,6 +70,9 @@ export interface PtnSkill {
   kind: 'Basic Attack' | 'Ultimate' | 'Passive';
   name: string;
   levels: string[];     // ten for most; one for a Sinner the wiki has only begun
+  // An ultimate's, from the Chinese wiki: the energy it costs, the core damage it deals.
+  energy?: number;
+  core?: number;
 }
 
 /** The attributes at one level. */
@@ -117,6 +120,17 @@ export interface PtnSinnerDetail {
   title?: string;
   extras?: PtnEntry[];
   birthplace?: string;
+  // Also only that page's, in either language: the kind of damage the Sinner deals, the day
+  // they came to the CN server, whether they have been reworked there, the day of their
+  // containment, their capture video's Bilibili id ('BV17CaN6cErN'), their dream (15 have
+  // one), and every term the page names, explained ('【残锋】').
+  damageType?: 'Physical' | 'Magic' | 'True';
+  releasedCn?: string;
+  reworked?: boolean;
+  contained?: string;
+  video?: string;
+  dream?: { name: string; kind: string; text: string };
+  terms?: PtnEntry[];
   // That page's own text laid beside the English wiki's, for the Chinese side to read, on
   // every Sinner it has a page for but the CN-only ones (whose text it is already). Only the
   // fields it has text for: what it lacks is the English wiki's in either language.

@@ -46,6 +46,7 @@ import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
 import { fetchBiliBrands, fetchBiliFiles, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
 import { parseBiliBrand, parseBiliDetail, termsIn } from './lib/ptn-bili-page.mjs';
+import { bakePtnFont, placardText } from './lib/ptn-font.mjs';
 import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
 import { LAUNCH, LAUNCH_DAY, RELEASES, UNFILED } from './lib/ptn-record.mjs';
 import { templateBodies, templateParams } from './lib/wiki-text.mjs';
@@ -294,12 +295,20 @@ async function buildRoster() {
     () => (snapshot.brands ? new Map(Object.entries(snapshot.brands)) : undefined), new Map(),
   );
   fresh.brands = Object.fromEntries(brandPages);
-  // The terms their effects name, and the terms those name, three deep: the skill a
-  // crimebrand grants is one, and what that skill summons or lays down, with its numbers,
-  // is the next. A term with no page is kept as '' so that it is not asked for twice.
-  const termOf = await fromChinese('the crimebrands\' terms', async () => {
+  const pageOf = await fromChinese('the CN-only Sinners\' pages', () => fetchBiliPages(cnOnlyNames), () => snapshotPages(cnOnlyNames), new Map());
+  for (const [name, text] of pageOf) fresh.pages[name] = text;
+  // Every other Sinner's page there too, which is their file in Chinese (below).
+  const others = sinners.filter(s => !s.cnOnly && s.nameCn);
+  const otherNames = others.map(s => s.nameCn);
+  const zhPageOf = await fromChinese('the Sinners\' pages', () => fetchBiliPages(otherNames), () => snapshotPages(otherNames), new Map());
+  for (const [name, text] of zhPageOf) fresh.pages[name] = text;
+  // The terms the crimebrands' effects and the Sinners' pages name, and the terms those
+  // name, three deep: the skill a crimebrand grants is one, and what that skill summons or
+  // lays down, with its numbers, is the next. A term with no page is kept as '' so that it
+  // is not asked for twice.
+  const termOf = await fromChinese('the terms', async () => {
     const textOf = new Map();
-    let wanted = [...new Set([...brandPages.values()].flatMap(termsIn))];
+    let wanted = [...new Set([...brandPages.values(), ...pageOf.values(), ...zhPageOf.values()].flatMap(termsIn))];
     for (let depth = 0; depth < 3 && wanted.length; depth++) {
       const got = await fetchBiliTerms(wanted);
       for (const term of wanted) textOf.set(term, got.get(term) ?? '');
@@ -310,8 +319,6 @@ async function buildRoster() {
   fresh.terms = Object.fromEntries(termOf);
   const brandOf = new Map([...brandPages.values()].map(text => parseBiliBrand(text, termOf))
     .filter(parsed => parsed?.brand.name).map(({ holder, brand }) => [holder, brand]));
-  const pageOf = await fromChinese('the CN-only Sinners\' pages', () => fetchBiliPages(cnOnlyNames), () => snapshotPages(cnOnlyNames), new Map());
-  for (const [name, text] of pageOf) fresh.pages[name] = text;
   for (const row of cnOnly) {
     const id = slugOf(row.name);
     // A collab's Sinner is filed under a code of its own world, not an MBCC number.
@@ -319,7 +326,7 @@ async function buildRoster() {
     // The page's birthplace is the roster entry's, as the English wiki's is; the rest is the
     // payload. Where the page is not to be had the file is the head alone.
     const { birthplace = '', ...page } = pageOf.has(row.nameCn)
-      ? parseBiliDetail(pageOf.get(row.nameCn), row.nameCn) ?? {}
+      ? parseBiliDetail(pageOf.get(row.nameCn), row.nameCn, termOf) ?? {}
       : {};
     if (page.names && brandOf.has(row.nameCn)) page.brand = brandOf.get(row.nameCn);
     sinners.push({
@@ -344,24 +351,30 @@ async function buildRoster() {
   // kept beside the English one as `zh`, for the page to lay over it when the reader is on
   // the Chinese side, with the exclusive crimebrand from that crimebrand's own page. Only
   // what the pages have text for is kept, so what they lack stays the English wiki's. Left
-  // out are the numbers, which the English page has at more levels.
+  // out are the numbers, which the English page has at more levels. What the English page
+  // has nothing of (LIFT) is the payload's own, in either language.
   const ZH_SKIP = new Set(['names', 'stats', 'block', 'attackSpeed']);
+  const LIFT = ['damageType', 'releasedCn', 'reworked', 'contained', 'video', 'dream'];
   const VOICE_ZH = { CN: '中', JP: '日', KR: '韩' };
   const hasText = value => (typeof value === 'string' ? value !== ''
     : Array.isArray(value) ? value.length > 0
       : value !== null && typeof value === 'object' && Object.values(value).some(hasText));
-  const others = sinners.filter(s => !s.cnOnly && s.nameCn);
-  const otherNames = others.map(s => s.nameCn);
-  const zhPageOf = await fromChinese('the Sinners\' pages', () => fetchBiliPages(otherNames), () => snapshotPages(otherNames), new Map());
-  for (const [name, text] of zhPageOf) fresh.pages[name] = text;
   for (const s of others) {
-    const parsed = zhPageOf.has(s.nameCn) ? parseBiliDetail(zhPageOf.get(s.nameCn), s.nameCn) : undefined;
+    const parsed = zhPageOf.has(s.nameCn) ? parseBiliDetail(zhPageOf.get(s.nameCn), s.nameCn, termOf) : undefined;
     if (!parsed) continue;
     if (brandOf.has(s.nameCn)) parsed.brand = brandOf.get(s.nameCn);
+    const detail = details.find(d => d.id === s.id);
+    for (const key of LIFT) {
+      if (key in parsed) detail[key] = parsed[key];
+      delete parsed[key];
+    }
+    // The ultimate's energy and core damage, on the English one as well.
+    const { energy, core } = parsed.skills.find(k => k.kind === 'Ultimate') ?? {};
+    const ultimate = detail.skills.find(k => k.kind === 'Ultimate');
+    if (ultimate) Object.assign(ultimate, energy === undefined ? {} : { energy }, core === undefined ? {} : { core });
     const zh = Object.fromEntries(Object.entries(parsed).filter(([key, value]) => !ZH_SKIP.has(key) && hasText(value)));
     // The English page's sticker is the 100% stage, which the Chinese stages have as their last.
     if (zh.compliance) zh.sticker = '';
-    const detail = details.find(d => d.id === s.id);
     // The Chinese page names the CN voice actor alone, in Chinese: in that one's place in the
     // English list of three, whose languages are said in Chinese too.
     if (zh.voice) {
@@ -471,6 +484,7 @@ try {
   );
   if (undated.length) console.warn(`ptn: no release recorded for ${undated.join(', ')} — add them to scripts/lib/ptn-record.mjs`);
   if (strays.length) console.warn(`ptn: the release record names ${strays.join(', ')}, whom the roster does not have`);
+  await bakePtnFont(await placardText(sinners, details));
 } catch (err) {
   // The page imports this file, so one has to exist for the bundle to build at all.
   const kept = await readFile(SINNERS_FILE, 'utf8').then(() => true, () => false);
