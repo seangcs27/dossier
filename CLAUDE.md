@@ -86,7 +86,7 @@ scripts/
                                jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
-  backup-holodori-media.mjs  ← hololive Dreams' audio and video onto the media-backup release, run by hand
+  backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
@@ -1513,8 +1513,8 @@ file is the same squeezed to 2048 wide) baked at 1024 wide: 384 files, about 74 
 lines and the full-size illustration are asked of the CDN by the page and never downloaded
 by the build. **The audio and video are backed up by hand** (the owner's ask, 18 October
 2026): `node scripts/backup-holodori-media.mjs` after a build fetches every voice line,
-live dialogue, animation and signature the payloads name that `backup/holodori-media/`
-(gitignored) lacks, about 400 MB the first time, and uploads the folder as
+live dialogue, animation, signature and full-size illustration the payloads name that
+`backup/holodori-media/` (gitignored) lacks, about 440 MB the first time, and uploads the folder as
 `holodori-media.tar` on the `media-backup` release. With the folder empty it starts from
 that tar, so a run with the CDN gone never uploads less than the release had.
 holodori.best's own API sits behind a Cloudflare check and is not read.
