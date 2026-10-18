@@ -1,5 +1,7 @@
 // Generates src/shared/generated/holodori/characters.json — the roster of hololive Dreams
-// (ホロドリ), Cover's rhythm game, which the web target carries as a sticker album of its cast.
+// (ホロドリ), Cover's rhythm game, which the web target carries as a sticker sheet of its cast
+// — and beside it songs.json, cards.json and gachas.json, the game's songs, cards and gachas
+// (below).
 //
 // One source: HolodoriDB's dump of the game's master database, which a bot on GitHub
 // refreshes every three hours. It keeps a repository for each of the game's six languages,
@@ -11,8 +13,7 @@
 // game's own site lists as its holomem. The other rows have a name, a group and a costume
 // and no profile, cards or songs. The game's Talent Guidelines say a talent who has
 // graduated may appear in part or not at all, and those rows are left out here as the
-// game's site leaves them out. The game's rarity belongs to its cards, a table of their
-// own that is not read.
+// game's site leaves them out.
 //
 // The pictures are the game's own site's (https://www.hololive-dreams.com/en/holomem), the
 // owner's choice: its holomem page has each talent's key art, the whole figure on
@@ -32,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { fetchJson, timedFetch } from './lib/fetch.mjs';
+import { GACHAS } from './lib/holodori-gachas.mjs';
 
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated', 'holodori',
@@ -41,8 +43,17 @@ const FIGURE_DIR = path.join(outDir, 'figures');
 // Where the page finds a bust, beside it (webpack.web.js copies the directory).
 const FIGURE_PATH = 'holodori/figures';
 
+const SONGS_FILE = path.join(outDir, 'songs.json');
+const CARDS_FILE = path.join(outDir, 'cards.json');
+const GACHAS_FILE = path.join(outDir, 'gachas.json');
+const JACKET_DIR = path.join(outDir, 'jackets');
+const JACKET_PATH = 'holodori/jackets';
+// A song's jacket, as the Songs page shows it at up to 120px, at twice that.
+const JACKET_W = 240;
+
 const DB = 'https://raw.githubusercontent.com/HolodoriDB/holodori-db-eng-diff/main';
 const SITE = 'https://www.hololive-dreams.com/en/holomem';
+const MUSIC_PAGE = 'https://www.hololive-dreams.com/en/music';
 
 // A sticker's picture is 88x116 inside its border, baked at twice that.
 const BUST_W = 176;
@@ -172,19 +183,335 @@ async function addBusts(roster) {
   })), toBust);
   const onDisk = new Set(await readdir(FIGURE_DIR));
   for (const c of roster) if (onDisk.has(`${c.id}.webp`)) c.art = `${FIGURE_PATH}/${c.id}.webp`;
+  // Her whole figure is not baked: her page asks the site's image host for it at its size.
+  for (const c of roster) if (art.has(c.name)) c.figure = art.get(c.name);
   const bare = roster.filter(c => !c.art);
   if (bare.length && art.size) console.warn(`holodori: no key art on the game's site for ${bare.map(c => c.name).join(', ')}`);
 }
 
+// ── Stickers and icons ──
+// Each holomem's membership stickers (two sign-up stickers and four more, from the Stamp
+// table) and the game's round icon of her, both from HolodoriDB's CDN, the game's own files:
+// approved by the owner on 17 October 2026 (318 stickers at 512px, baked at 256; 54 icons at
+// 256px, baked at 128). A sticker's file names her by the number in her id; FUWAMOCO's
+// (80001) are both twins'. The 11 common stickers ('Good', 'Thanks') are no one's and are
+// left out.
+
+const STICKER_DIR = path.join(outDir, 'stickers');
+const ICON_DIR = path.join(outDir, 'icons');
+const STICKER_W = 256;
+const ICON_W = 128;
+const TWINS = { '80001': ['04016', '04017'] };
+
+async function addStickers(roster) {
+  const [stamps, langs] = await Promise.all(['Stamp', 'LangStamp_Eng'].map(table));
+  const text = new Map(langs.map(t => [t.id, t.text]));
+  const mine = new Map();
+  for (const s of stamps.filter(s => s.assetId.startsWith('chr-membership-')).sort((a, b) => a.order - b.order)) {
+    const num = /(\d{5})-\d+$/.exec(s.assetId)?.[1];
+    for (const n of TWINS[num] ?? [num]) mine.set(n, [...(mine.get(n) ?? []), s]);
+  }
+  const all = [...new Map([...mine.values()].flat().map(s => [s.assetId, s])).values()];
+  const stickers = await bakeImages('holodori stickers', STICKER_DIR, all.map(s => ({
+    name: s.assetId, url: `${CDN}/img_stamp_${s.assetId}_lang-eng/img_stamp_${s.assetId}_lang-eng.webp`, label: s.assetId,
+  })), original => sharp(original).resize(STICKER_W, STICKER_W).webp({ quality: 80 }).toBuffer());
+  const icons = await bakeImages('holodori icons', ICON_DIR, roster.map(c => ({
+    name: c.id, url: `${CDN}/img_chr_icon_normal_${c.id.slice(4)}/img_chr_icon_normal_${c.id.slice(4)}.webp`, label: c.shortName,
+  })), original => sharp(original).resize(ICON_W, ICON_W).webp({ quality: 82 }).toBuffer());
+  for (const c of roster) {
+    if (icons.has(c.id)) c.icon = `holodori/icons/${c.id}.webp`;
+    // 'Tokino Sora Membership Sign-Up Sticker No.1' is her 'Sign-Up Sticker No.1'.
+    c.stickers = (mine.get(c.id.slice(4)) ?? []).filter(s => stickers.has(s.assetId)).map(s => ({
+      name: (text.get(s.nameLangId) ?? '').replace(/^.* Membership /, ''), art: `holodori/stickers/${s.assetId}.webp`,
+    }));
+  }
+}
+
+// ── Songs ──
+// The Music table's every row (216 today, all of them released), with its four charts'
+// levels from MusicDifficulty. The jackets are the game's site's music page, which lists
+// fewer songs than the game has (157 of 216 on 16 October 2026); a song it lacks has none,
+// and the page paints one in its singers' colours. The owner approved the download on 16
+// October 2026: each jacket asked of the site's image host as a 240px WebP.
+
+const KINDS = { ORIGINAL: 'Original', COVER: 'Cover' };
+const CHARTS = ['EASY', 'NORMAL', 'HARD', 'EXPERT'];
+const tail = s => s.split('_').pop();
+const day = ms => new Date(Number(ms)).toISOString().slice(0, 10);
+
+async function buildSongs() {
+  const [music, charts, langs] = await Promise.all(['Music', 'MusicDifficulty', 'LangMusic_Eng'].map(table));
+  const text = new Map(langs.map(t => [t.id, t.text]));
+  const levels = new Map();
+  for (const c of charts) {
+    const at = CHARTS.indexOf(tail(c.difficultyType));
+    if (at < 0) continue;
+    if (!levels.has(c.musicId)) levels.set(c.musicId, [0, 0, 0, 0]);
+    levels.get(c.musicId)[at] = c.difficultyLevel;
+  }
+  const songs = music.filter(m => !m.isTutorial).sort((a, b) => a.order - b.order).map(m => ({
+    id: m.id,
+    title: text.get(m.titleLangId) ?? m.id,
+    // As the game credits them: a unit's name, or the singers' names with commas.
+    singers: (text.get(m.characterGroupDisplayNameLangId) ?? '').replace(/,/g, ', '),
+    cast: m.characterIds ?? [],
+    kind: KINDS[tail(m.categoryType)] ?? 'Original',
+    levels: levels.get(m.id) ?? [0, 0, 0, 0],
+    seconds: m.playingSeconds ?? 0,
+    lyricist: text.get(m.lyricistLangId) ?? '',
+    composer: text.get(m.composerLangId) ?? '',
+    arranger: text.get(m.arrangerLangId) ?? '',
+    added: day(m.startTime),
+    // PRESET is had from the start, SHOP is bought, REWARD is a quest's, and says which.
+    release: tail(m.releaseType).toLowerCase(),
+    unlock: text.get(m.lockDescriptionLangId) ?? '',
+    mv: m.mvUrl ?? '',
+    copyright: m.copyright ?? '',
+    // Its jacket's name on the CDN, for addJackets; not written to the file.
+    jacketAsset: m.jacketAssetId || m.id,
+  }));
+  if (!songs.length) throw new Error('the Music table has no rows');
+  return songs;
+}
+
+// The music page's jackets by title: each song is a jacket <img> and then its title in an
+// <h3>. The image's file is named for the Japanese title, so the English one is what joins.
+async function jacketsByTitle() {
+  const res = await timedFetch(MUSIC_PAGE);
+  if (!res.ok) throw new Error(`${res.status} from ${MUSIC_PAGE}`);
+  const html = await res.text();
+  const art = new Map();
+  for (const m of html.matchAll(/<img src="(https:\/\/images\.microcms-assets\.io\/[^"?]+)[^>]*class="Music__item__thumb"[\s\S]*?<h3 class="Music__item__title"[^>]*>([\s\S]*?)<\/h3>/g)) {
+    const title = squash(m[2].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'"));
+    if (!art.has(title)) art.set(title, m[1]);
+  }
+  return art;
+}
+
+// A title blind to case, spaces, quotes and the game's ornaments, which the site and the
+// database spell differently ('Dream☆Story', 'Dream Story').
+const squash = t => t.normalize('NFKC').toLowerCase().replace(/[\s'"’“”・☆★♪!?.,~〜\-–—:()]/g, '');
+
+async function addJackets(songs) {
+  let art = new Map();
+  try {
+    art = await jacketsByTitle();
+  } catch (err) {
+    console.warn(`holodori: the game's music page could not be read, so no jacket is new: ${err.message}`);
+  }
+  // A song the official site does not list (the newer ones, 58 on 17 October 2026) has its
+  // jacket from HolodoriDB's CDN instead, the game's own file: approved by the owner that day.
+  await bakeImages('holodori jackets', JACKET_DIR, songs.map(s => ({
+    name: s.id,
+    url: art.has(squash(s.title))
+      ? `${art.get(squash(s.title))}?fm=webp&w=${JACKET_W}`
+      : `${CDN}/img_music_jacket_${s.jacketAsset}/img_music_jacket_${s.jacketAsset}.webp`,
+    label: s.title,
+  })), original => sharp(original).resize(JACKET_W, JACKET_W).webp({ quality: 80 }).toBuffer());
+  for (const s of songs) delete s.jacketAsset;
+  const onDisk = new Set(await readdir(JACKET_DIR));
+  for (const s of songs) if (onDisk.has(`${s.id}.webp`)) s.jacket = `${JACKET_PATH}/${s.id}.webp`;
+}
+
+// ── Cards ──
+// The Card table's every row (192 today): cards.json, the list the Cards page shows, and a
+// payload per card (card-details/<id>.json), which its own page fetches: its base stat at
+// every level, the level cap at each limit break, what each of its five blooms does, its
+// four skills at both their levels, the outfit it gives and that outfit's skill, its voice
+// lines and its live dialogues. The numbers were checked against holodori.best's card page:
+// a stat is the level's base times the card's share of it, rounded up, then raised by the
+// blooms' stat boosts (which add up) and rounded up again.
+//
+// The art is HolodoriDB's CDN's (cdn.holodori.dev), which serves the game's own files
+// unpacked: each card's portrait and its full illustration (1820x1024), baked once, the
+// second at 1024 wide. Both are the `_unsquished` files: the plain ones are the same pictures
+// stretched to the texture's shape (the portrait to 256x512, which drew every card's art
+// tall and narrow; its true shape is 256x363). The owner approved the download on 17
+// October 2026: 192 of each, about 74 MB. The 5-star cards' animations and signatures and
+// every voice line are played from the CDN, not downloaded.
+
+const CDN = 'https://cdn.holodori.dev/assets/assetbundles';
+const CARD_THUMB_DIR = path.join(outDir, 'card-art');
+const CARD_FULL_DIR = path.join(outDir, 'card-full');
+const CARD_DETAIL_DIR = path.join(outDir, 'card-details');
+// The full illustration as the card's page shows it, at most this wide.
+const CARD_FULL_W = 1024;
+// A card's voice lines, in the order holodori.best lists them, and what each is called.
+const VOICES = [
+  ['gachaAnimationCharacterVoiceId', 'Card get'],
+  ['cardDetailCharacterVoiceId', 'Conversation'],
+  ['liveSkillCharacterVoiceId', 'Live skill'],
+  ...[1, 2, 3, 4, 5].map(n => [`potentialUpgrade${n}CharacterVoiceId`, `Bloom ${n}`]),
+];
+// What a bloom does, by the tail of its effect type.
+const BLOOMS = {
+  ACTIVE_SKILL_LEVEL_UP: 'active', SPECIAL_SKILL_LEVEL_UP: 'special', PASSIVE_SKILL_LEVEL_UP: 'passive',
+  SKILL_TREE_CONNECT_EFFECT_LEVEL_UP: 'connect', ALL_PARAMETER_UP_PERMIL_UP: 'stats',
+};
+// A dialogue's name opens with the card's in lenticular brackets.
+const unbracket = t => t.replace(/^【[^】]*】\s*/, '');
+
+// Rows of a table grouped by one of their fields, each group sorted by another.
+function groupBy(rows, key, order) {
+  const groups = new Map();
+  for (const r of rows) groups.set(r[key], [...(groups.get(r[key]) ?? []), r]);
+  for (const g of groups.values()) g.sort((a, b) => a[order] - b[order]);
+  return groups;
+}
+
+async function buildCards() {
+  const [
+    cards, levels, limits, potentials, passives, actives, specials, connects, costumes, leaders, targets,
+    voices, dialogues, ...texts
+  ] = await Promise.all([
+    'Card', 'CardLevel', 'CardLevelLimit', 'CardPotential', 'LivePassiveSkillLevel', 'LiveActiveSkillLevel',
+    'LiveSpecialSkillLevel', 'SkillTreeConnectEffect', 'Costume', 'LiveLeaderSkill', 'LiveSkillEffectTarget',
+    'CharacterVoice', 'LiveDialogueVoice',
+    'LangCard_Eng', 'LangGeneratedLivePassiveSkillLevel_Eng', 'LangGeneratedLiveActiveSkillLevel_Eng',
+    'LangGeneratedLiveSpecialSkillLevel_Eng', 'LangGeneratedSkillTreeConnectEffect_Eng', 'LangCostume_Eng',
+    'LangGeneratedLiveLeaderSkill_Eng', 'LangGeneratedLiveSkillEffectTarget_Eng', 'LangCharacterVoice_Eng',
+    'LangLiveDialogueVoice_Eng',
+  ].map(table));
+  // A voice table's row can have no text at all.
+  const text = new Map(texts.flat().map(t => [t.id, (t.text ?? '').trim()]));
+  // A card's type ('Cute', 'Pure', 'Happy') is named nowhere but in the skills that aim at
+  // it: a target's text is '1 [attribute=cute]Cute Type[/attribute] Members'.
+  const typeOf = new Map();
+  for (const t of targets) {
+    const name = /\[attribute=[^\]]+\](\S+) Type/.exec(text.get(t.descriptionLangId) ?? '')?.[1];
+    if (t.cardAttributeType && name) typeOf.set(t.cardAttributeType, name);
+  }
+  const costumeOf = new Map(costumes.map(c => [c.id, c]));
+  const leaderOf = new Map(leaders.map(l => [l.id, l]));
+  const voiceOf = new Map(voices.map(v => [v.id, v]));
+  const levelsOf = groupBy(levels, 'groupId', 'level');
+  // A limit break's row carries no count of its own: each raises the cap, so they sort by it.
+  const limitsOf = groupBy(limits, 'groupId', 'levelLimit');
+  const bloomsOf = groupBy(potentials, 'groupId', 'upgradeCount');
+  // A skill's text at each of its levels, by its id.
+  const skillTexts = (rows, key) => {
+    const byId = groupBy(rows, key, 'level');
+    return id => (byId.get(id) ?? []).map(r => text.get(r.descriptionLangId) ?? '');
+  };
+  const passive = skillTexts(passives, 'livePassiveSkillId');
+  const active = skillTexts(actives, 'liveActiveSkillId');
+  const special = skillTexts(specials, 'liveSpecialSkillId');
+  const connect = skillTexts(connects, 'id');
+
+  const list = [];
+  const details = [];
+  for (const c of cards.sort((a, b) => a.order - b.order)) {
+    const costume = costumeOf.get(c.rewardCostumeId);
+    const leader = costume && leaderOf.get(costume.liveLeaderSkillId);
+    const outfit = costume ? text.get(costume.nameLangId) ?? '' : '';
+    list.push({
+      id: c.id,
+      holomem: c.characterId,
+      name: text.get(c.nameLangId) ?? c.id,
+      rarity: Number(tail(c.rarity)),
+      type: typeOf.get(c.attributeType) ?? '',
+      outfit,
+      // What the card's page shows before its payload comes: its files' name on the CDN, and
+      // whether it has an animation and a signature (the 5-star cards).
+      asset: c.assetId,
+      movie: c.assetType.endsWith('MOVIE'),
+    });
+    // Her live dialogues on this card, each her line and another holomem's answer. The one
+    // that ends '_myself' is her card-get line again.
+    const prefix = `live_dial_voice_card_${c.assetId}_`;
+    details.push({
+      id: c.id,
+      // The share of her three stats the card weights each by, in thousandths.
+      permil: [c.performancePermilMultiply, c.techniquePermilMultiply, c.sensePermilMultiply],
+      levels: (levelsOf.get(c.cardLevelGroupId) ?? []).map(l => Number(l.parameterBaseValue)),
+      limits: (limitsOf.get(c.cardLevelLimitGroupId) ?? []).map(l => l.levelLimit),
+      blooms: (bloomsOf.get(c.cardPotentialGroupId) ?? []).map(p => {
+        const kind = BLOOMS[p.effectType.replace(/.*_EFFECT_TYPE_/, '')] ?? 'other';
+        return kind === 'stats' ? { kind, up: Number(p.value) } : { kind };
+      }),
+      passive: passive(c.livePassiveSkillId),
+      active: active(c.liveActiveSkillId),
+      special: special(c.liveSpecialSkillId),
+      connect: connect(c.skillTreeConnectEffectId),
+      outfit,
+      outfitSkill: leader ? text.get(leader.descriptionLangId) ?? '' : '',
+      voices: VOICES.flatMap(([key, label]) => {
+        const v = voiceOf.get(c[key]);
+        return v ? [{ label, text: text.get(v.textLangId) ?? '', audio: v.voiceAssetId }] : [];
+      }),
+      dialogues: dialogues.filter(d => d.id.startsWith(prefix) && !d.id.endsWith('_myself'))
+        .sort((a, b) => a.order - b.order)
+        .map(d => ({
+          title: unbracket(text.get(d.nameLangId) ?? ''),
+          lines: d.characterVoiceIds.flatMap(id => {
+            const v = voiceOf.get(id);
+            return v ? [{ holomem: v.characterId, text: text.get(v.textLangId) ?? '', audio: v.voiceAssetId }] : [];
+          }),
+        })),
+    });
+  }
+  if (!list.length) throw new Error('the Card table has no rows');
+  await addCardArt(list);
+  await mkdir(CARD_DETAIL_DIR, { recursive: true });
+  for (const d of details) await writeFile(path.join(CARD_DETAIL_DIR, `${d.id}.json`), JSON.stringify(d));
+  console.log(`holodori: ${details.length} card payloads -> ${path.relative(process.cwd(), CARD_DETAIL_DIR)}`);
+  return list;
+}
+
+// Bakes each card's portrait and full illustration not on disk yet, and gives the card the
+// address of each that is on disk.
+async function addCardArt(list) {
+  const of = (kind, suffix) => list.map(c => ({
+    name: c.id, url: `${CDN}/img_card_${kind}_${c.asset}/img_card_${kind}_${c.asset}${suffix}.webp`, label: c.name,
+  }));
+  const thumbs = await bakeImages('holodori card art', CARD_THUMB_DIR, of('vert', '_unsquished'),
+    original => sharp(original).webp({ quality: 80 }).toBuffer());
+  const fulls = await bakeImages('holodori card illustrations', CARD_FULL_DIR, of('full', '_unsquished'),
+    original => sharp(original).resize({ width: CARD_FULL_W, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer());
+  for (const c of list) if (thumbs.has(c.id)) c.art = `holodori/card-art/${c.id}.webp`;
+  for (const c of list) if (fulls.has(c.id)) c.full = `holodori/card-full/${c.id}.webp`;
+}
+
+// ── Gachas ──
+// The record kept by hand (lib/holodori-gachas.mjs), checked against the dump's Gacha table
+// (which has ids alone) and its cards. Its logos are asked of the CDN by the page.
+async function buildGachas() {
+  const [rows, cards] = await Promise.all([table('Gacha'), readFile(CARDS_FILE, 'utf8').then(JSON.parse)]);
+  const recorded = new Set(GACHAS.flatMap(g => g.gachas));
+  const missing = rows.map(r => r.id.replace(/^gacha-/, '')).filter(id => !recorded.has(id));
+  if (missing.length) console.warn(`holodori: gachas not in lib/holodori-gachas.mjs: ${missing.join(', ')}`);
+  const known = new Set(cards.map(c => c.id));
+  const unknown = GACHAS.flatMap(g => g.pickup).filter(id => !known.has(id));
+  if (unknown.length) console.warn(`holodori: gacha cards the Card table lacks: ${unknown.join(', ')}`);
+  return GACHAS;
+}
+
+// Writes what `build` gives back to `file`, or on a failure keeps the last build's file, or
+// writes an empty list: the page imports each file, so one has to exist for the bundle to
+// build at all.
+async function writeOrKeep(file, what, build) {
+  try {
+    const list = await build();
+    await writeFile(file, JSON.stringify(list));
+    console.log(`holodori: ${list.length} ${what} -> ${path.relative(process.cwd(), file)}`);
+  } catch (err) {
+    const kept = await readFile(file, 'utf8').then(() => true, () => false);
+    if (!kept) await writeFile(file, '[]');
+    console.warn(`holodori/${path.basename(file)} ${kept ? 'kept from the last build' : 'written empty'}: ${err.message}`);
+  }
+}
+
 await mkdir(outDir, { recursive: true });
-try {
+await writeOrKeep(CHARACTERS_FILE, 'characters', async () => {
   const roster = await buildRoster();
   await addBusts(roster);
-  await writeFile(CHARACTERS_FILE, JSON.stringify(roster));
-  console.log(`holodori: ${roster.length} characters -> ${path.relative(process.cwd(), CHARACTERS_FILE)}`);
-} catch (err) {
-  // The page imports this file, so one has to exist for the bundle to build at all.
-  const kept = await readFile(CHARACTERS_FILE, 'utf8').then(() => true, () => false);
-  if (!kept) await writeFile(CHARACTERS_FILE, '[]');
-  console.warn(`holodori/characters.json ${kept ? 'kept from the last build' : 'written empty'}: ${err.message}`);
-}
+  await addStickers(roster);
+  return roster;
+});
+await writeOrKeep(SONGS_FILE, 'songs', async () => {
+  const songs = await buildSongs();
+  await addJackets(songs);
+  return songs;
+});
+await writeOrKeep(CARDS_FILE, 'cards', buildCards);
+await writeOrKeep(GACHAS_FILE, 'gachas', buildGachas);

@@ -103,7 +103,7 @@
       <span id="count"></span>
       <!-- The game's own pages. The first goes to the roster of whichever game is showing,
            under that game's word for its cast; Events is Arknights' alone and hides on the
-           others. -->
+           others, as Songs and Cards are hololive Dreams'. -->
       <nav class="sections" aria-label="Sections">
         <!-- The fill behind whichever link is showing: a blob that travels from one link to
              the other, and the tail it trails on the way (sections.ts). -->
@@ -119,6 +119,25 @@
             <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3"></path>
           </svg>
           Events
+        </a>
+        <!-- hololive Dreams' game itself, beside its cast; hidden on every other game. -->
+        <a class="section-link" id="nav-songs" href="#/holodori/songs" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M6 12V3l7-1.5v9M6 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM13 10.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0z"></path>
+          </svg>
+          Songs
+        </a>
+        <a class="section-link" id="nav-cards" href="#/holodori/cards" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3.5 2.5h9v11h-9zM6 6.5h4M6 9h4"></path>
+          </svg>
+          Cards
+        </a>
+        <a class="section-link" id="nav-gachas" href="#/holodori/gachas" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1.5l1.9 4.1 4.5.5-3.3 3 .9 4.4L8 11.3l-4 2.2.9-4.4-3.3-3 4.5-.5z"></path>
+          </svg>
+          Gachas
         </a>
       </nav>
     </header>

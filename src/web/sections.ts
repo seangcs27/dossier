@@ -87,8 +87,15 @@ function travel(from: Box, to: Box): void {
 /**
  * Marks `link` as the section being shown: the fill goes under it, travelling there if it
  * was under the other link. A press made mid-move sets off from wherever the blob has got to.
+ * With no link (a game's front page, which is none of its sections) there is no fill, and
+ * the next link marked has it arrive with no move.
  */
-export function markSection(link: HTMLElement): void {
+export function markSection(link?: HTMLElement): void {
+  layer.style.visibility = link ? '' : 'hidden';
+  if (!link) {
+    shown = undefined;
+    return;
+  }
   // Called again for the link already marked, it must leave a move in progress alone: one
   // change of page reaches the router twice, as a popstate and then as a hashchange. The
   // link's box may still have changed, with the game and so its label.

@@ -1,18 +1,17 @@
-// hololive Dreams' roster (views/holodori.ts): a sticker album in the game's own Dream Park
-// colours, with a grid and a calendar of the same stickers. The owner's pick of 15 October
-// 2026. Its shell goes white and ink with it, as Path to Nowhere's goes ink and bone.
-// Everything is under the page's own selector: the album's names (.row, .book, .slot) are
+// hololive Dreams' pages: its roster (views/holodori.ts), a sheet of stickers in the game's
+// own Dream Park colours with a calendar of the same stickers, its songs, its cards and a
+// holomem's page. Its shell goes white and ink with it, as Path to Nowhere's goes ink and
+// bone. Everything is under the pages' own selector: names such as .slot and .sheet are
 // plain words other pages could use.
 
 // ── The world ──
 // The game's sky, an ink a shade darker than the sketch's so that text on the sky holds
-// 4.5:1, and its sun for what is coming up. The album is a blue cover around pale pages.
+// 4.5:1, and its sun for what is coming up.
 $sky: #18c9f0;
 $ink: #3d4180;        // 4.7:1 on the sky, 9:1 on a page
 $ink-soft: #6b6fa3;   // secondary text on a page, 4.7:1
 $sun: #ffc93c;        // the date tabs, and today; ink on it is 5:1
-$cover: #2e7be6;
-$cover-deep: #2a72db; // the cover's blue where white is set on it: 4.6:1
+$cover-deep: #2a72db; // the game's blue where white is set on it: 4.6:1
 $paper: #fbfeff;
 $panel: #e3f8fe;
 $slot: #b6dae9;       // an empty slot's dashed outline
@@ -35,7 +34,18 @@ $lift: rgb(16 60 110 / 22%);
 // screens have them. A picture cannot load a font, so this is the reader's own round face.
 $dream-park: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='190'%3E%3Cg font-family='Arial Rounded MT Bold,Segoe UI Black,sans-serif' font-weight='900' font-size='58' fill='none' stroke='white' stroke-width='5' stroke-linejoin='round'%3E%3Ctext x='10' y='70'%3EDream%3C/text%3E%3Ctext x='170' y='160'%3EPark%3C/text%3E%3C/g%3E%3C/svg%3E";
 
-$world: "body[data-view='holodori']";
+// The roster, the game's two pages of its own, its songs and its cards, and a holomem's page.
+$world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view='holodori-gachas'], [data-view='holodori-songs'], [data-view='holodori-cards'], [data-view='holodori-holomem'], [data-view='holodori-card'])";
+
+// A sheet of the album's paper, dotted as a sticker's back is, that a page's stickers,
+// jackets or cards are laid out on.
+@mixin paper {
+  padding: var(--sp-16) 22px var(--sp-20);
+  border: 4px solid #fff;
+  border-radius: 22px;
+  background: $paper radial-gradient(#d9eef6 1px, transparent 1.4px) 0 0 / 14px 14px;
+  box-shadow: 0 8px 18px rgb(16 60 110 / 20%);
+}
 
 // The shell takes every colour from the site's surface variables, so these turn the
 // sidebar, the topbar and the filter panel white and ink.
@@ -177,91 +187,6 @@ $world: "body[data-view='holodori']";
       0 4px 6px rgb(16 92 140 / 24%);
   }
 
-  // ── The book ──
-  // The album: a cover holding two pages side by side, or one on a narrow window, with the
-  // turns along the foot and a tab to a branch standing out of the cover's right edge.
-
-  .book {
-    container-type: inline-size;
-    // Room for the tabs.
-    margin-right: 30px;
-    outline: none;
-  }
-
-  .cover {
-    // A sticker's width: whatever two pages of five leave, between the smallest that still
-    // takes a name and its picture at not much over its own pixels.
-    --s: clamp(72px, (100cqw - 290px) / 10, 104px);
-    --sh: calc(var(--s) * 1.29);
-
-    position: relative;
-    padding: 14px;
-    border-radius: 26px;
-    background: $cover;
-    box-shadow: inset 0 0 0 4px rgb(255 255 255 / 35%), 0 10px 22px rgb(16 60 110 / 28%);
-  }
-
-  .book.one-page .cover {
-    --s: clamp(76px, (100cqw - 160px) / 5, 104px);
-    width: fit-content;
-    max-width: 100%;
-    margin-inline: auto;
-  }
-
-  .spread {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .book.one-page .spread { grid-template-columns: minmax(0, 1fr); }
-
-  // A left page, shaded toward the gutter, and a right one shaded away from it.
-  .leaf {
-    min-width: 0;
-    padding: var(--sp-16) 22px 64px;
-    border-radius: 16px 3px 3px 16px;
-    background: linear-gradient(90deg, $paper 86%, #dce8ef);
-
-    &[hidden] { display: none; }
-  }
-
-  .leaf:not([hidden]) ~ .leaf:not([hidden]) {
-    border-radius: 3px 16px 16px 3px;
-    background: linear-gradient(90deg, #d5e3eb, $paper 13%);
-  }
-
-  .book.one-page .leaf {
-    border-radius: 16px;
-    background: $paper;
-  }
-
-  // A branch that runs on to the facing page is titled once, on the left.
-  .leaf:not([hidden]) ~ .leaf.cont:not([hidden]) .lettered { visibility: hidden; }
-
-  .leaf-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--sp-12);
-    margin-bottom: var(--sp-16);
-  }
-
-  .leaf-no {
-    color: $ink-soft;
-    font-size: var(--fs-sm);
-    font-weight: 800;
-  }
-
-  .book-foot {
-    position: absolute;
-    inset: auto 14px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-12);
-    padding: var(--sp-8) var(--sp-12);
-  }
-
   .legend {
     margin: 0;
     color: $ink-soft;
@@ -287,85 +212,7 @@ $world: "body[data-view='holodori']";
     box-shadow: 0 0 0 2.5px $sun;
   }
 
-  .turn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--sp-6);
-    padding: var(--sp-8) var(--sp-12);
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: none;
-    color: $ink;
-    font: inherit;
-    font-size: var(--fs-sm);
-    font-weight: 800;
-    cursor: pointer;
-
-    svg {
-      width: 14px;
-      height: 14px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2.4;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    &:hover { background: $panel; }
-    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 1px; }
-    // Kept in the row at the first and last spread, so the legend does not move.
-    &[hidden] { display: inline-flex; visibility: hidden; }
-  }
-
-  .album-tabs {
-    position: absolute;
-    top: 58px;
-    left: 100%;
-    margin-left: -14px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-8);
-  }
-
-  .album-tab {
-    position: relative;
-    width: 44px;
-    height: 96px;
-    padding: 0;
-    border: 0;
-    border-radius: 0 12px 12px 0;
-    background: $cover-deep;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: 0 3px 6px rgb(16 60 110 / 22%);
-
-    span {
-      position: absolute;
-      left: 58%;
-      top: 50%;
-      transform: translate(-50%, -50%) rotate(90deg);
-      font-family: var(--hd-face);
-      font-size: var(--fs-sm);
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-    }
-
-    &:hover { background: #2367c6; }
-    // The branch on the open spread, in the page's own paper.
-    &.on { background: $paper; color: $ink; }
-    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
-  }
-
-  // ── A row of the album ──
-
-  .row {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--sp-12);
-
-    & + .row { margin-top: 18px; }
-  }
+  // ── A generation's strip and its slots ──
 
   .row-strip {
     display: grid;
@@ -389,15 +236,6 @@ $world: "body[data-view='holodori']";
     }
   }
 
-  .slots {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
   .slot {
     position: relative;
     width: var(--s);
@@ -415,41 +253,7 @@ $world: "body[data-view='holodori']";
     font-weight: 900;
   }
 
-  .ref-print {
-    color: $ink-soft;
-    font-size: var(--fs-sm);
-    font-weight: 800;
-    line-height: 1.3;
-    text-align: center;
-  }
-
-  .slot-label {
-    margin: var(--sp-8) 0 0;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    line-height: 1.25;
-    text-align: center;
-
-    small {
-      display: block;
-      color: $ink-soft;
-      font-size: var(--fs-2xs);
-      font-weight: 800;
-      letter-spacing: 0.08em;
-    }
-
-    b {
-      display: block;
-      overflow: hidden;
-      font-size: var(--fs-base);
-      font-weight: 900;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  }
-
-  // One the search or a filter leaves out: the empty slot, its words faded with it.
-  .slot.ghost .slot-label { opacity: 0.4; }
+  // One the search or a filter leaves out: the empty slot.
   .slot.ghost .slot-print { border-color: #d3e7ef; }
 
   // ── A sticker ──
@@ -467,6 +271,7 @@ $world: "body[data-view='holodori']";
     border-radius: 11px;
     background: #fff;
     font: inherit;
+    text-decoration: none;
     cursor: pointer;
     box-shadow: 0 1px 1px rgb(16 60 110 / 12%), 0 3px 5px $lift;
     transform: rotate(var(--r));
@@ -565,8 +370,140 @@ $world: "body[data-view='holodori']";
   .sticker.next .date-tab {
     top: 2px;
     padding: 3px 10px;
+    background: $ink;
+    color: $sun;
     font-size: var(--fs-sm);
     box-shadow: 0 0 0 3px #fff, 0 4px 8px rgb(16 60 110 / 24%);
+  }
+
+  // The next birthday (each, when two share the day): ringed in the sun, bobbing, with the
+  // sun's rays turning behind it. The rays are under every sticker on the sheet (the sheet
+  // isolates them), so they never cover a neighbour.
+  .sticker.next {
+    box-shadow: 0 0 0 3px $sun, 0 14px 14px rgb(16 60 110 / 30%);
+    animation: hd-bob 2.6s ease-in-out infinite;
+  }
+
+  .next-rays {
+    position: absolute;
+    top: calc(var(--sh) / 2);
+    left: 50%;
+    z-index: -1;
+    width: calc(var(--s) * 2.4);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-conic-gradient($sun 0 9deg, transparent 9deg 20deg);
+    mask: radial-gradient(closest-side, #000 30%, transparent);
+    translate: -50% -50%;
+    animation: hd-rays 24s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes hd-rays { to { rotate: 1turn; } }
+  @keyframes hd-bob { 50% { translate: 0 -4px; } }
+
+  // ── The birthday spotlight ──
+  // Over the sheet and the calendar: today's birthdays on pink, the next on the sun, each
+  // holomem's icon and name, and the days to go at the right.
+
+  .spotlight {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-12);
+    margin: 0 0 var(--sp-16);
+  }
+
+  .spot {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-12) var(--sp-20);
+    padding: var(--sp-10) var(--sp-20) var(--sp-10) var(--sp-16);
+    overflow: hidden;
+    isolation: isolate;
+    border: 4px solid #fff;
+    border-radius: 22px;
+    background: $sun;
+    box-shadow: 0 8px 18px rgb(16 60 110 / 22%);
+
+    // The sun's rays, turning slowly behind her.
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 220px;
+      z-index: -1;
+      width: 900px;
+      aspect-ratio: 1;
+      background: repeating-conic-gradient(rgb(255 255 255 / 38%) 0 7deg, transparent 7deg 18deg);
+      translate: -50% -50%;
+      animation: hd-rays 60s linear infinite;
+    }
+
+    &.on { background: #ff9fc8; }
+  }
+
+  .spot-label {
+    margin: 0;
+    color: $ink;
+    font-size: var(--fs-xl);
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    text-shadow:
+      0 2px #fff, 2px 0 #fff, 0 -2px #fff, -2px 0 #fff,
+      1.5px 1.5px #fff, -1.5px 1.5px #fff, 1.5px -1.5px #fff, -1.5px -1.5px #fff;
+  }
+
+  .spot-people {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-12) var(--sp-20);
+  }
+
+  .spot-who {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-10);
+    color: $ink;
+    text-decoration: none;
+
+    &:hover .spot-icon { transform: rotate(-6deg) scale(1.05); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; border-radius: 40px; }
+  }
+
+  .spot-icon {
+    flex: none;
+    width: 64px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--a);
+    box-shadow: 0 0 0 4px #fff, 0 4px 10px $lift;
+    transition: transform 0.15s;
+
+    img { display: block; width: 100%; height: auto; }
+    &.icon img { width: 130%; max-width: none; margin: -15%; }
+  }
+
+  .spot-name {
+    display: grid;
+    font-size: var(--fs-2xl);
+    font-weight: 900;
+    line-height: 1.1;
+
+    small { font-size: var(--fs-sm); font-weight: 800; }
+  }
+
+  .spot-count {
+    margin: 0 0 0 auto;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    text-align: center;
+    white-space: nowrap;
+
+    b { display: block; font-size: 30px; font-weight: 900; line-height: 1; }
   }
 
   // ── Its back ──
@@ -644,16 +581,6 @@ $world: "body[data-view='holodori']";
     font-weight: 700;
   }
 
-  .back-hello {
-    margin: var(--sp-12) 0;
-    padding: 10px var(--sp-12);
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--a) 16%, #fff);
-    font-size: var(--fs-md);
-    font-weight: 700;
-    line-height: 1.45;
-  }
-
   .back-facts {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -664,18 +591,6 @@ $world: "body[data-view='holodori']";
 
     dt { color: $ink-soft; font-weight: 800; }
     dd { margin: 0; font-weight: 700; }
-  }
-
-  .back-colours {
-    display: flex;
-    gap: var(--sp-6);
-
-    i {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      box-shadow: 0 0 0 1px rgb(61 65 128 / 25%);
-    }
   }
 
   // ── The sheet ──
@@ -691,6 +606,7 @@ $world: "body[data-view='holodori']";
     --sh: calc(var(--s) * 1.29);
 
     display: flex;
+    isolation: isolate;
     flex-wrap: wrap;
     gap: var(--sp-16) 28px;
     padding: var(--sp-16) 22px var(--sp-20);
@@ -841,6 +757,7 @@ $world: "body[data-view='holodori']";
     border-radius: var(--radius-lg);
     background: none;
     color: $ink;
+    text-decoration: none;
     font: inherit;
     font-size: var(--fs-sm);
     font-weight: 800;
@@ -870,6 +787,10 @@ $world: "body[data-view='holodori']";
     box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
 
     img { display: block; width: 100%; height: auto; }
+
+    // The game's round icon, her face at its centre: drawn larger than the circle so that
+    // the ring with her name round its edge falls outside it.
+    &.icon img { width: 130%; max-width: none; margin: -15%; }
   }
 
   .month-anniversary .month-face { box-shadow: 0 0 0 2.5px $sun, 0 1px 3px rgb(16 60 110 / 30%); }
@@ -889,64 +810,1034 @@ $world: "body[data-view='holodori']";
     font-weight: 800;
   }
 
-  // ── The grid ──
-  // The category's own page: every sticker at one size, a shelf to a branch.
+  // ── Songs ──
+  // A jacket to each song with its title, its singers' faces and its charts' levels under
+  // it, on the album's paper.
 
-  .shelves {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .shelf {
-    padding: var(--sp-16) 22px 26px;
-    border-radius: 22px;
-    background: $paper;
-    box-shadow: 0 8px 18px rgb(16 60 110 / 20%);
-  }
-
-  .shelf-grid {
-    --s: 120px;
-    --sh: calc(var(--s) * 1.29);
+  .song-grid {
+    @include paper;
 
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(var(--s), 1fr));
-    gap: 30px 18px;
-    margin: var(--sp-16) 0 0;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 26px 18px;
+    margin: 0;
+    list-style: none;
+  }
+
+  .song { min-width: 0; }
+
+  .jacket {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    padding: 0;
+    overflow: hidden;
+    border: 4px solid #fff;
+    border-radius: 14px;
+    background: var(--paint);
+    cursor: pointer;
+    box-shadow: 0 1px 1px rgb(16 60 110 / 12%), 0 4px 8px $lift;
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 12px rgb(16 60 110 / 26%);
+    }
+
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  // A song the game's site has no jacket for: its first letter on its singers' colours.
+  .jacket-none {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: #fff;
+    font-size: 52px;
+    font-weight: 900;
+    text-shadow: 0 2px 4px rgb(16 60 110 / 35%);
+  }
+
+  // Her bust standing on the jacket's foot, or two or three of them side by side.
+  .jacket-busts {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+
+    img {
+      flex: 1;
+      min-width: 0;
+      max-width: 82%;
+      height: 92%;
+      object-fit: cover;
+      object-position: top;
+    }
+  }
+
+  .jacket-kind {
+    position: absolute;
+    top: var(--sp-6);
+    left: var(--sp-6);
+    padding: 1px var(--sp-8);
+    border-radius: var(--radius-pill);
+    background: $ink;
+    color: #fff;
+    font-size: var(--fs-2xs);
+    font-style: normal;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+  }
+
+  .song-title {
+    display: -webkit-box;
+    margin: var(--sp-8) 0 0;
+    overflow: hidden;
+    font-size: var(--fs-base);
+    font-weight: 900;
+    line-height: 1.25;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .song-by {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin: var(--sp-6) 0 0;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+
+    span {
+      min-width: 0;
+      margin-left: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // Her face, overlapping the next as a row of stickers would.
+  .song-face {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-right: -6px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--a) 40%, #fff);
+    box-shadow: 0 0 0 2px #fff;
+
+    img { display: block; width: 100%; height: auto; }
+
+    // The game's round icon, drawn past the circle so the ring with her name falls outside.
+    &.icon img { width: 130%; max-width: none; margin: -15%; }
+  }
+
+  .song-more {
+    flex: none;
+    margin-left: 10px;
+    color: $ink;
+    font-weight: 900;
+  }
+
+  // The four charts' levels, each in its chart's colour, as the game's song select shows them.
+  .levels {
+    display: flex;
+    gap: var(--sp-4);
+    margin: var(--sp-8) 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      flex: 1;
+      padding: 1px 0;
+      border-radius: var(--radius-md);
+      font-size: var(--fs-xs);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      text-align: center;
+    }
+  }
+
+  .lv-easy { background: #a3ecbf; }
+  .lv-normal { background: #addfff; }
+  .lv-hard { background: #ffd595; }
+  .lv-expert { background: #ffb6d3; }
+
+  .back-levels {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+    margin: var(--sp-12) 0;
+
+    div {
+      padding: var(--sp-4) 0;
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+
+    dt { font-size: var(--fs-2xs); font-weight: 800; }
+    dd { margin: 0; font-size: var(--fs-2xl); font-weight: 900; line-height: 1.1; }
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-top: var(--sp-12);
+    padding: var(--sp-6) var(--sp-12);
+    border-radius: var(--radius-pill);
+    background: $ink;
+    color: #fff;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    text-decoration: none;
+
+    &:hover { background: $cover-deep; }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 2px; }
+  }
+
+  .back-small {
+    margin: var(--sp-8) 0 0;
+    color: $ink-soft;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+  }
+
+  // ── Cards ──
+  // Her sticker in a frame of the card's rarity: sky for 3 stars, lilac for 4, and for 5 a
+  // foil from the sun to pink.
+
+  .hcard-grid {
+    @include paper;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+    gap: 24px 16px;
+    margin: 0;
+    list-style: none;
+  }
+
+  // A card's page frames its illustration in its rarity's colours too.
+  .hcard,
+  .hc-page {
+    --frame: linear-gradient(150deg, #e2f7fe, #8fd8f2 60%);
+
+    min-width: 0;
+
+    &.r4 { --frame: linear-gradient(150deg, #efe9ff, #b49ffc 60%); }
+    &.r5 { --frame: linear-gradient(150deg, #fff6cf, #{$sun} 45%, #ff9fc8); }
+  }
+
+  // The portrait is the game's own, at its own shape (256x363, near a trading card's 5:7).
+  .hcard-face {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 256 / 363;
+    padding: 0;
+    border: 0;
+    border-radius: 14px;
+    background: var(--frame);
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: 0 1px 1px rgb(16 60 110 / 12%), 0 4px 8px $lift;
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 12px rgb(16 60 110 / 26%);
+    }
+
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  .hcard-art {
+    position: absolute;
+    inset: 5px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--a) 30%, #fff);
+
+    img {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .hcard-initial {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: color-mix(in srgb, var(--a) 70%, $ink);
+    font-size: 48px;
+    font-weight: 900;
+  }
+
+  .hcard-stars {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    gap: 1px;
+  }
+
+  .hcard-stars svg,
+  .back-stars svg {
+    width: 13px;
+    height: 13px;
+    fill: $sun;
+    stroke: $ink;
+    stroke-width: 1.2;
+    stroke-linejoin: round;
+  }
+
+  .back-stars svg { width: 12px; height: 12px; vertical-align: -1px; }
+
+  .hcard-type {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 1px var(--sp-8);
+    border-radius: var(--radius-pill);
+    color: $ink;
+    font-size: var(--fs-2xs);
+    font-style: normal;
+    font-weight: 900;
+    box-shadow: 0 0 0 2px #fff;
+  }
+
+  // The three types, in the colours a type's word takes in a skill too.
+  .type-cute { background: #ffbdd8; }
+  .type-pure { background: #b3e1ff; }
+  .type-happy { background: #ffdc8f; }
+
+  .hcard-name {
+    display: -webkit-box;
+    margin: var(--sp-8) 0 0;
+    overflow: hidden;
+    font-size: var(--fs-sm);
+    font-weight: 900;
+    line-height: 1.25;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .hcard-who {
+    margin: 2px 0 0;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+  }
+
+  // ── A card's page ──
+  // Its illustration in its rarity's frame beside its name, then its stats and skills on
+  // two sheets of the album's paper, then its voice lines and live dialogues.
+
+  .hc-top {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    gap: var(--sp-20);
+    align-items: stretch;
+  }
+
+  .hc-stage {
+    position: relative;
+    margin: 0;
+    padding: 5px;
+    border-radius: 22px;
+    background: var(--frame);
+    box-shadow: 0 8px 18px rgb(16 60 110 / 20%);
+
+    // The illustration's own shape, 1820 by 1024, so the page does not jump as it comes.
+    > img,
+    > video,
+    .hc-art {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1820 / 1024;
+      border-radius: 17px;
+      background: color-mix(in srgb, var(--a) 30%, #fff);
+      object-fit: cover;
+    }
+  }
+
+  .hc-art {
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    cursor: zoom-in;
+
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  // Illustration, animation and signature, a 5-star card's three, over the stage's foot.
+  .hc-shows {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    background: #fff;
+    box-shadow: 0 3px 6px rgb(16 60 110 / 25%);
+  }
+
+  .hc-shows button,
+  .hc-blooms button {
+    padding: var(--sp-4) var(--sp-12);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 900;
+    cursor: pointer;
+
+    &:hover { background: $panel; }
+    &[aria-pressed='true'] { background: $cover-deep; color: #fff; }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 1px; }
+  }
+
+  .hc-head {
+    @include paper;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--sp-8);
+
+    .hcard-stars,
+    .hcard-type { position: static; }
+  }
+
+  .hc-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-12);
+    margin: 0;
+  }
+
+  .hc-name { margin: 0; }
+
+  .hc-who {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: var(--sp-12);
+    padding: var(--sp-4) var(--sp-12) var(--sp-4) var(--sp-4);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--a) 22%, #fff);
+    color: $ink;
+    font-weight: 900;
+    text-decoration: none;
+
+    .song-face { width: 32px; height: 32px; margin: 0; }
+
+    &:hover { background: color-mix(in srgb, var(--a) 36%, #fff); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+  }
+
+  .hc-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: var(--sp-20);
+    align-items: start;
+    margin-top: 28px;
+  }
+
+  .hc-panel { @include paper; }
+
+  .hc-control {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-12);
+    margin-bottom: var(--sp-12);
+    font-size: var(--fs-sm);
+    font-weight: 900;
+
+    input { width: 100%; accent-color: $cover-deep; }
+  }
+
+  .hc-blooms {
+    display: flex;
+    justify-self: start;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    background: $panel;
+
+    button { min-width: 34px; padding-inline: var(--sp-8); }
+  }
+
+  .hc-note {
+    margin: 0 0 var(--sp-12);
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+
+    b { color: $ink; font-size: var(--fs-xl); font-weight: 900; }
+  }
+
+  // Each stat beside a bar against the card's highest, then their total.
+  .hc-values {
+    display: grid;
+    gap: var(--sp-8);
+    margin: 0;
+
+    div {
+      display: grid;
+      grid-template-columns: 112px 1fr 56px;
+      align-items: center;
+      gap: var(--sp-12);
+    }
+
+    dt {
+      font-size: var(--fs-sm);
+      font-weight: 800;
+
+      small {
+        padding: 0 5px;
+        border-radius: var(--radius-pill);
+        background: $sun;
+        font-size: var(--fs-2xs);
+        font-weight: 900;
+      }
+    }
+
+    dd {
+      display: contents;
+
+      i {
+        height: 10px;
+        border-radius: var(--radius-pill);
+        background: linear-gradient(90deg, $cover-deep var(--v), $line var(--v));
+      }
+
+      span {
+        grid-column: 3;
+        font-size: var(--fs-lg);
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+    }
+  }
+
+  .hc-total {
+    padding-top: var(--sp-8);
+    border-top: 2px solid $line;
+  }
+
+  .hc-skill {
+    padding: var(--sp-12) 0;
+    border-top: 2px solid $line;
+
+    &:first-of-type { padding-top: 0; border-top: 0; }
+
+    h4 {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: var(--sp-8);
+      margin: 0 0 var(--sp-4);
+      font-size: var(--fs-xs);
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    small {
+      color: $ink-soft;
+      font-size: var(--fs-2xs);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    p {
+      margin: 0;
+      font-size: var(--fs-base);
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    .hl { color: $cover-deep; font-weight: 900; }
+  }
+
+  // A voice line on a card of paper: who or what, the words, and the line itself.
+  .hc-lines {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--sp-12);
+    margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .shelf-item {
-    min-width: 0;
+  .hc-line {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-8);
+    padding: var(--sp-12) var(--sp-16);
+    border-radius: 16px;
+    background: $paper;
+    box-shadow: 0 3px 8px $lift;
 
-    .sticker {
-      position: relative;
-      display: block;
-      height: auto;
-      aspect-ratio: 96 / 124;
-    }
+    audio { width: 100%; height: 32px; margin-top: auto; }
   }
 
-  .shelf-label {
-    margin: 10px 0 0;
+  .hc-line-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-8);
+    margin: 0;
+    font-size: var(--fs-xs);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    .song-face { width: 26px; height: 26px; margin: 0; }
+  }
+
+  .hc-line-text {
+    margin: 0;
     font-size: var(--fs-sm);
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.5;
+  }
+
+  .hc-dialogues {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--sp-16);
+  }
+
+  .hc-dialogue {
+    @include paper;
+
+    h4 { margin: 0 0 var(--sp-12); font-size: var(--fs-lg); font-weight: 900; }
+
+    .hc-lines { grid-template-columns: minmax(0, 1fr); }
+    .hc-line { background: #fff; box-shadow: 0 1px 4px $lift; }
+  }
+
+  .type-word {
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    font-weight: 900;
+  }
+
+  // ── A holomem's page ──
+  // Her whole figure on a stage of her colours, her profile on the album's paper beside it,
+  // then her cards and songs.
+
+  .hm-trail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-12);
+    margin-bottom: var(--sp-16);
+
+    .crumbs { min-width: 0; }
+  }
+
+  .hm-steps { display: flex; flex: none; gap: var(--sp-8); }
+
+  .hm-step {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-6);
+    padding: var(--sp-6) var(--sp-12);
+    border-radius: var(--radius-pill);
+    background: #fff;
+    color: $ink;
+    font-size: var(--fs-sm);
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 0 3px 6px rgb(16 92 140 / 22%);
+
+    &.next { flex-direction: row-reverse; }
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
 
     small {
       display: block;
       color: $ink-soft;
       font-size: var(--fs-2xs);
-      font-weight: 800;
-      letter-spacing: 0.04em;
+      line-height: 1;
     }
 
-    b {
-      display: block;
-      font-size: var(--fs-base);
-      font-weight: 900;
+    &:hover { background: $panel; }
+    &:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  }
+
+  // The stage and her profile share one cell: the key art is wide, with her on its right
+  // and running off its foot, so the profile stands on its empty left.
+  .hm-top {
+    display: grid;
+    grid-template: minmax(520px, auto) / minmax(0, 1fr);
+
+    > * { grid-area: 1 / 1; }
+  }
+
+  .hm-stage {
+    position: relative;
+    overflow: hidden;
+    border: 4px solid #fff;
+    border-radius: 22px;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--a) 55%, #fff), color-mix(in srgb, var(--b) 45%, #fff));
+    box-shadow: 0 8px 18px rgb(16 60 110 / 22%);
+
+    // The picture is the stage's height and stands at its right end.
+    img {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      height: 100%;
+      filter: drop-shadow(0 6px 10px rgb(16 60 110 / 25%));
     }
+
+    // Only her bust, where the build could not read the game's site.
+    &.bust img { right: 8%; height: 92%; }
+  }
+
+  // Her five colours as bands across the stage's foot.
+  .hm-rays {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    height: 12%;
+    opacity: 0.5;
+
+    i { flex: 1; }
+  }
+
+  .hm-profile {
+    @include paper;
+
+    position: relative;
+    align-self: center;
+    width: min(420px, 44%);
+    margin: 28px;
+    padding: 22px 26px;
+  }
+
+  .hm-no {
+    margin: 0;
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .hm-name { margin: var(--sp-6) 0 0; font-size: var(--fs-4xl); }
+
+  .hm-branch {
+    margin: var(--sp-6) 0 0;
+    font-size: var(--fs-md);
+    font-weight: 800;
+  }
+
+  .hm-hello {
+    margin: var(--sp-16) 0 0;
+    padding: var(--sp-12) var(--sp-16);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--a) 22%, #fff);
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    line-height: 1.4;
+  }
+
+  .hm-facts {
+    display: grid;
+    gap: var(--sp-10);
+    margin: var(--sp-20) 0 0;
+
+    div {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: var(--sp-12);
+      align-items: baseline;
+    }
+
+    dt { color: $ink-soft; font-size: var(--fs-sm); font-weight: 800; }
+    dd { margin: 0; font-size: var(--fs-md); font-weight: 800; }
+  }
+
+  .hm-colours {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-6) var(--sp-12);
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-6);
+      font-size: var(--fs-sm);
+      font-variant-numeric: tabular-nums;
+    }
+
+    i {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 3px $line;
+    }
+  }
+
+  .hm-section { margin-top: 28px; }
+
+  .hm-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-8);
+    margin: 0 0 var(--sp-12);
+    color: $ink;
+    font-size: var(--fs-2xl);
+    font-weight: 900;
+
+    small {
+      padding: 0 var(--sp-8);
+      border-radius: var(--radius-pill);
+      background: #fff;
+      font-size: var(--fs-sm);
+    }
+  }
+
+  .hm-none,
+  .hm-note {
+    margin: var(--sp-12) 0 0;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+
+    a { color: inherit; text-underline-offset: 2px; }
+  }
+
+  // Her stickers die-cut, as the game hands them out: a white edge round each picture.
+  .hm-stickers {
+    @include paper;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--sp-20) var(--sp-16);
+    margin: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      justify-items: center;
+      gap: var(--sp-6);
+      color: $ink-soft;
+      font-size: var(--fs-sm);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    img {
+      width: 100%;
+      max-width: 170px;
+      height: auto;
+      filter: drop-shadow(2px 0 #fff) drop-shadow(-2px 0 #fff) drop-shadow(0 2px #fff) drop-shadow(0 -2px #fff)
+        drop-shadow(0 4px 6px $lift);
+    }
+  }
+
+  // ── The front page ──
+  // A tile into each of the game's four pages, then the gachas running, the birthdays
+  // coming and the newest songs.
+
+  .hh-links {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-16);
+  }
+
+  .hh-link {
+    @include paper;
+
+    display: grid;
+    grid-template: 'pics pics' auto 'count name' auto / auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: var(--sp-12) var(--sp-8);
+    padding: var(--sp-16) 18px;
+    color: $ink;
+    text-decoration: none;
+    transition: transform 0.15s;
+
+    &:hover { transform: translateY(-3px) rotate(-0.6deg); }
+    &:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  }
+
+  .hh-pics {
+    grid-area: pics;
+    display: flex;
+    align-items: flex-end;
+    height: 96px;
+
+    img {
+      height: 100%;
+      min-width: 0;
+      border: 3px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px $lift;
+
+      & + img { margin-left: -16px; }
+    }
+
+    &.icons img { height: 64px; border-radius: 50%; }
+    &.logos img { height: 72px; border: 0; box-shadow: none; filter: drop-shadow(0 3px 4px $lift); }
+    &.logos img + img { margin-left: -24px; }
+  }
+
+  .hh-count {
+    color: $cover-deep;
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hh-name { font-size: var(--fs-xl); font-weight: 900; }
+
+  .hh-bdays {
+    @include paper;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--sp-16);
+    margin: 0;
+    list-style: none;
+  }
+
+  .hh-bday {
+    display: grid;
+    justify-items: center;
+    gap: var(--sp-4);
+    color: $ink;
+    text-align: center;
+    text-decoration: none;
+
+    &:hover .hh-icon { transform: rotate(-6deg) scale(1.04); }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 3px; border-radius: 12px; }
+  }
+
+  .hh-icon {
+    width: 88px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--a);
+    box-shadow: 0 0 0 4px #fff, 0 4px 10px $lift;
+    transition: transform 0.15s;
+
+    img { display: block; width: 100%; height: 100%; }
+  }
+
+  .hh-bday.today .hh-icon { box-shadow: 0 0 0 4px $sun, 0 4px 10px $lift; }
+  .hh-bday-name { margin-top: var(--sp-6); font-size: var(--fs-lg); font-weight: 900; }
+  .hh-bday-when { color: $ink-soft; font-size: var(--fs-sm); font-weight: 700; }
+
+  // ── Gachas ──
+  // A banner to a sheet of paper: its logo on the sky, its name and dates, and the cards it
+  // features on the same sheet. One running now is edged in the sun.
+
+  .gacha-list { display: grid; gap: var(--sp-16); }
+  // Banners with no cards of their own (the standing gachas) two or three to a line.
+  .gacha-list.compact { grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); }
+
+  .gacha {
+    @include paper;
+
+    padding: var(--sp-16) 22px;
+
+    &.live { border-color: $sun; }
+  }
+
+  .gacha-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-20);
+  }
+
+  .gacha-logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 164px;
+    aspect-ratio: 205 / 128;
+    border-radius: 14px;
+    background: linear-gradient(160deg, #e2f7fe, #9fe3f7);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 3px 4px $lift);
+    }
+  }
+
+  .gacha-info { min-width: 0; }
+
+  .gacha-status {
+    display: inline-block;
+    margin: 0;
+    padding: 2px var(--sp-10);
+    border-radius: var(--radius-pill);
+    background: $panel;
+    font-size: var(--fs-sm);
+    font-weight: 900;
+  }
+
+  .gacha.live .gacha-status { background: $sun; }
+
+  .gacha-name {
+    margin: var(--sp-6) 0 0;
+    font-size: var(--fs-2xl);
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .gacha-dates,
+  .gacha-note {
+    margin: var(--sp-4) 0 0;
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // The cards it features, on the banner's own sheet rather than a sheet of their own.
+  .gacha-cards {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 140px));
+    margin-top: var(--sp-16);
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
   }
 
   // ── Narrower windows ──
@@ -960,6 +1851,19 @@ $world: "body[data-view='holodori']";
     }
 
     .hd-head { padding-right: 0; }
+
+    // The stage over her profile, at the picture's own shape.
+    .hm-top { grid-template: auto auto / minmax(0, 1fr); }
+    .hm-stage { grid-area: 1 / 1; aspect-ratio: 1.64; }
+    .hm-stage img { width: 100%; height: auto; }
+    .hm-profile { grid-area: 2 / 1; width: auto; margin: var(--sp-16) 0 0; }
+    .hm-step span { display: none; }
+
+    // The illustration over the card's name, and its stats over its skills.
+    .hc-top,
+    .hc-body { grid-template-columns: minmax(0, 1fr); }
+
+    .hh-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   @media (max-width: 640px) {
@@ -968,66 +1872,29 @@ $world: "body[data-view='holodori']";
 
     .hd-title { font-size: var(--fs-4xl); }
 
-    .book { margin-right: 0; }
-
-    // The tabs stand along the cover's top, over the page, and the turns and the legend
-    // take two lines.
-    .cover,
-    .book.one-page .cover {
-      --s: 84px;
-
-      display: flex;
-      flex-direction: column;
-      width: auto;
-      padding: var(--sp-8);
-    }
-
-    .album-tabs {
-      position: static;
-      order: -1;
-      flex-direction: row;
-      gap: var(--sp-4);
-      margin: 0 0 var(--sp-8);
-      overflow-x: auto;
-    }
-
-    .album-tab {
-      flex: none;
-      width: auto;
-      height: 34px;
-      padding: 0 var(--sp-12);
-      border-radius: 10px;
-
-      span { position: static; transform: none; }
-    }
-
-    .leaf { padding: var(--sp-12) var(--sp-12) 92px; }
-
-    .book-foot {
-      inset: auto var(--sp-8) var(--sp-8);
-      flex-wrap: wrap;
-      padding: var(--sp-8);
-    }
-
-    .legend {
-      flex-basis: 100%;
-      order: -1;
-    }
-
-    // Beside the strip, wrapping in the room left.
-    .slots {
-      flex: 1 1 0;
-      min-width: 0;
-      gap: var(--sp-16) var(--sp-8);
-    }
-
-    .row { gap: var(--sp-8); }
-
     .sheet { padding: var(--sp-12) var(--sp-12) var(--sp-16); }
     // A generation of five still on one line beside its strip.
     .sheet-row { flex-wrap: wrap; }
 
-    .shelf { padding: var(--sp-12) var(--sp-12) var(--sp-20); }
-    .shelf-grid { --s: 96px; gap: var(--sp-20) var(--sp-12); }
+    .song-grid,
+    .hcard-grid {
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      gap: var(--sp-20) var(--sp-12);
+      padding: var(--sp-12) var(--sp-12) var(--sp-16);
+    }
+
+    .gacha { padding: var(--sp-12); }
+    .gacha-head { flex-direction: column; align-items: flex-start; gap: var(--sp-12); }
+    .gacha-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0; }
+    .hh-link { padding: var(--sp-12); }
+    .hh-pics { height: 72px; }
+    .hh-pics.icons img { height: 48px; }
+    .hh-pics.logos img { height: 52px; }
+    .hh-icon { width: 72px; }
+    .hh-bdays,
+    .hm-stickers {
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      padding: var(--sp-12) var(--sp-12) var(--sp-16);
+    }
   }
 }

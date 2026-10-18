@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    deployable to GitHub Pages. It also carries four more games: **Arknights: Endfield**, as
    a roster and a first dossier page (see "Endfield" below), **Path to Nowhere**, as a
    roster with search and filters and a dossier per Sinner, **hololive Dreams**, as a
-   sticker album of its cast with search and filters, and **Fate/Grand Order**, as a roster
+   front page, a sticker sheet of its cast with search and filters, its songs, its cards, its gachas and a page per holomem, and **Fate/Grand Order**, as a roster
    and nothing else yet (see "The other games' rosters"); the extension is Arknights alone.
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
@@ -82,7 +82,10 @@ scripts/
   build-event-index.mjs      ← events.json + event-banners/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
   build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/sinner-details/
-  build-holodori-index.mjs   ← holodori/characters.json + holodori/figures/
+  build-holodori-index.mjs   ← holodori/characters.json + figures/ + stickers/ + icons/ + songs.json +
+                               jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json
+  lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
+                               recorded by hand from holodori.best, one entry a banner
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
@@ -145,6 +148,15 @@ src/
       ptn/sinner-details/<id>.json  ← 160 dossier payloads parsed from the wiki's pages, with the Chinese wiki's text beside the English (`zh`), copied as static files
       holodori/characters.json   ← hololive Dreams' roster (54), bundled into the web target
       holodori/figures/<id>.webp ← each holomem's key art as a bust, 176x232 on transparency (54), copied as static files
+      holodori/icons/<id>.webp   ← the game's round icon of each holomem, 128px (54), copied as static files
+      holodori/stickers/<asset>.webp  ← each holomem's six membership stickers, 256px (318), copied as static files
+      holodori/songs.json        ← its songs (215) with their four charts' levels and credits, bundled into the web target
+      holodori/jackets/<id>.webp ← every song's jacket (215: 157 from the game's site, 58 from HolodoriDB's CDN), 240px
+      holodori/cards.json        ← its cards (192): name, holomem, rarity, type, outfit, bundled into the web target
+      holodori/card-art/<id>.webp   ← each card's portrait, 256x512 (192), copied as static files
+      holodori/card-full/<id>.webp  ← each card's illustration at 1024 wide (192), copied as static files
+      holodori/card-details/<id>.json  ← 192 card payloads: stats by level, blooms, skills, voice lines, dialogues
+      holodori/gachas.json       ← the gacha record (14 entries), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
     types/
@@ -173,7 +185,10 @@ src/
                       page the section links mark, and the phone's games drawer
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
-                      #/ptn/sinner/<id> , #/holodori , #/fgo)
+                      #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
+                      #/holodori/gachas , #/holodori/songs ,
+                      #/holodori/cards , #/holodori/card/<id> ,
+                      #/holodori/holomem/<id> , #/fgo)
     card.ts         ← the card and the roster page the games after Endfield share: RosterCard,
                       mountRoster, and its search box and filter panel for a game that asks
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, again on hover, and
@@ -182,6 +197,7 @@ src/
                       given one, rebuilt from the other six
     sections.ts     ← the fill behind the section link being shown, and its move from one
                       link to the other as a drop with a tail (markSection)
+    holodori-flip.ts  ← turning a hololive Dreams song's jacket over to its back
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
@@ -201,7 +217,8 @@ src/
     _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
     _ptn.scss / _fgo.scss  ← PtN's roster, a world of its own (the line-up wall), and its dossier's
                       own rules; how FGO's art sits on the plate
-    _holodori.scss  ← hololive Dreams' world: the sticker sheet, the album, its grid and its calendar
+    _holodori.scss  ← hololive Dreams' world: its front page, the sticker sheet, its calendar, songs, cards,
+                      gachas and a holomem's page
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
@@ -209,6 +226,11 @@ src/
       endfield.ts   ← the Endfield roster, on the Arknights card, with its search and filters (see below)
       endfield-detail.ts  ← the Endfield dossier (see below)
       ptn.ts / holodori.ts / fgo.ts  ← those games' roster pages: each fills card.ts's slots
+      holodori-songs.ts / holodori-cards.ts  ← hololive Dreams' Songs and Cards pages, on the same roster
+      holodori-holomem.ts  ← a holomem's own page: her key art, profile, cards, songs and stickers
+      holodori-home.ts  ← hololive Dreams' front page: a tile to each page, gachas running, birthdays, newest songs
+      holodori-gachas.ts  ← hololive Dreams' gachas: every banner recorded, with its logo, dates and cards
+      holodori-card.ts  ← a card's own page: its art and videos, stats, skills, voice lines
       ptn-detail.ts  ← a Sinner's dossier, after the game's Chinese wiki (see below)
     index.html      ← markup shell; links styles.css
     fonts/barlow-condensed/  ← Path to Nowhere's placard face: two weights, each a WOFF2 and the
@@ -225,7 +247,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `holodori/figures/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `holodori/figures/`, `holodori/jackets/`, `holodori/card-art/`, `holodori/card-full/`, `holodori/card-details/`, `holodori/stickers/`, `holodori/icons/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -542,7 +564,9 @@ variables and does not persist across popup close/reopen.
 Vanilla TS, no framework. Hash-routed: `#/` shows the operator grid; `#/op/<id>` shows the
 operator dossier; `#/events` shows the Global event schedule; `#/endfield` and
 `#/endfield/op/<id>` are the second game's roster and dossier; `#/ptn` and
-`#/ptn/sinner/<id>` are Path to Nowhere's; `#/holodori` is hololive Dreams' sticker album;
+`#/ptn/sinner/<id>` are Path to Nowhere's; `#/holodori` is hololive Dreams' front page, `#/holodori/holomems` its
+sticker sheet, `#/holodori/songs`, `#/holodori/cards` and `#/holodori/gachas` its game's songs, cards and gachas, `#/holodori/card/<id>` a card's page and
+`#/holodori/holomem/<id>` a holomem's page;
 `#/fgo` is the roster of the one game that has nothing else yet. Every link to `#/`
 (the wordmark, the Arknights tile, Operators, a breadcrumb) is taken over on a plain click
 to land on the bare URL instead (`index.ts`).
@@ -582,7 +606,11 @@ own pages as a segmented pair: Operators and Events, the one showing filled in �
 replaced a lone Events link, from which the only way back was the wordmark. The first goes
 to the roster of whichever game is showing and is named for that game's cast (Operators,
 Sinners, Holomems, Servants: `GAMES` in `index.ts`); it stays lit on a dossier. Events is
-Arknights' alone and hides on the other games. On a phone they drop their glyphs.
+Arknights' alone and hides on the other games. hololive Dreams has three of its own, Songs,
+Cards and Gachas, which show on its pages alone; its front page (`#/holodori`, where its
+tile lands) is none of the four and lights none, so the fill is hidden there
+(`markSection()` with no link). On a phone they drop their glyphs, and hololive Dreams' four
+take a row of their own under the wordmark, with the search box under them on its rosters.
 
 **The fill travels between the two as a drop of water** (`sections.ts`; the owner's ask:
 "a water drop or blob moving to another"). It is not the link's own background: a blob
@@ -962,7 +990,7 @@ dossier per Sinner as well, and hololive Dreams search and filters (both below).
 
 **The owner means each game to have a design of its own in time.** Path to Nowhere's roster
 is the first to have one (the line-up wall, below), hololive Dreams' the second (the
-sticker album, below). Until a game's turn comes it is on the
+sticker sheet, below). Until a game's turn comes it is on the
 Arknights card and the Arknights dossier's parts, and its pages copy what its own reference
 site shows, in this site's elements.
 
@@ -1363,7 +1391,11 @@ a range, `MultiRow_3`, and draws it from an image), what anything costs, voice l
 the interrogation records' own pages, an attire's description and how it is got (its
 `Attires` subpage has both), a title (the CN-only Sinners have theirs, from the Chinese wiki).
 
-**hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
+**hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast). Its
+tile opens a **front page** (`views/holodori-home.ts`, 18 October 2026, the owner's "home
+page"): a tile into each of Holomems, Songs, Cards and Gachas with its count and a few of
+its pictures, the gachas running now, the next six birthdays as the game's round icons,
+and the six newest songs. The sticker sheet is `#/holodori/holomems`.
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's
 master database from `raw.githubusercontent.com` (`HolodoriDB/holodori-db-eng-diff`, one of
 six per-language repositories that are each the whole database; a bot refreshes them every
@@ -1388,38 +1420,128 @@ owner chose these pictures after being told that the game's guidelines bar repro
 promotional material without permission, and approved the download on 15 October 2026 (54
 pictures, about 1.6 MB, baked to 750 KB). The page credits both sources under the roster.
 
-**The roster is a sticker album** (`draw` in `views/holodori.ts`, `_holodori.scss`), the
-owner's pick on 15 October 2026 from the fifth hand of directions, with the category's
-grid and a calendar beside it as two more looks, and since 16 October a sheet before them
-all: Sheet (the one it opens in), Album, Grid and Calendar. **The sheet** is every sticker
-at once, the owner's ask for the whole cast on one page: a block to a branch, flowing on
-beside the last where there is room, a strip to a generation and her short name under each
-sticker, each holomem once. The sticker's width is set from the sheet's (`--s`, 56 to
-84px) so that all 54 stand on a 1280x800 or 1440x900 screen; on a phone it scrolls. The
-album is a book in the game's blue, two pages to a spread (one under 1190px),
-a page to three generations of a branch: hololive's three, then ID, EN and DEV_IS. A
-generation is a strip down the page's left and a row of numbered slots (No. 001 to 054, the
-game's order), each holding her bust as a sticker. A holomem in two groups has her
-sticker in the first and "see No. 008" printed in the other's slot (Fubuki, in Gen 1 and
-GAMERS). Tabs to each branch stand out of the cover's right edge (a row over it on a
-phone), and the turns along the foot and the arrow keys go a spread at a time. **A
-birthday in the next 60 days lifts her sticker**: tilted, a corner peeled, a sun-yellow tab
-with the date and the days left (the date alone on the sheet; "Next" on the nearest of all
-54, whatever a search leaves on show); on the day it lies flat in a ring
-of the same yellow. Hakos Baelz's 29 February is the 28th in a year without one. All of it
-goes by the reader's clock. **A search or a filter greys the other slots** to their printed
-outline in place (and in the album turns to the first spread with a match), so nobody's place moves. The
-filters are Branch and Generation, the generations sorted by branch. **Pressing a sticker
-turns it over** (the Web Animations API, a turn to its edge and the back turning on from
-it) to her back: her colours as stripes, number and groups, name, branch, greeting, fan
-name, debut, birthday and colour swatches; Escape, the close button or a press elsewhere
-turn it back. Grid is every sticker on a shelf per branch, with the full name, number and
-groups. Calendar is the next twelve months at a glance, a card to each: its birthdays and
-debut anniversaries (with the count: "5th anniversary") by the day, as a face beside a
-name; in this month what has passed fades, today's are on the sun, and the card is ringed
-in it with "Today" on its head.
+**The roster is a sheet of stickers** (`draw` in `views/holodori.ts`, `_holodori.scss`), with
+a calendar beside it: Sheet (the one it opens in) and Calendar. It began on 15 October 2026
+as a sticker album, the owner's pick from the fifth hand of directions, with the category's
+grid beside it; the sheet came before both on 16 October, and on 17 October the owner had
+the album and the grid taken out. **The sheet** is every sticker at once, the owner's ask
+for the whole cast on one page: a block to a branch, flowing on beside the last where
+there is room, a strip to a generation and her short name under each sticker, each holomem
+once (Fubuki in her first group, Gen 1). The sticker's width is set from the sheet's (`--s`,
+56 to 84px) so that all 54 stand on a 1280x800 or 1440x900 screen; on a phone it scrolls.
+The branches are the game's own: DEV_IS is a Japanese branch, and the game has only ReGLOSS
+of it (four; Hiodoshi Ao's row is not playable), and no FLOW GLOW at all, in its data or on
+its site (checked 17 October 2026). **A birthday in the next 60 days lifts her sticker**:
+tilted, a corner peeled, a sun-yellow tab with the date ("Next" on the nearest of all 54,
+whatever a search leaves on show); on the day it lies flat in a ring of the same yellow.
+**The next birthday is spotlit** (18 October 2026, the owner's ask): a sun banner over the
+sheet and the calendar names whoever is next, with her icon, the date and the days to go
+(and today's on pink), and on the sheet her sticker bobs in a sun ring with rays turning
+behind it and an ink "Next" tab. A still, fainter version was tried and the owner kept
+this one. "Next" is everyone on the nearest day, so two who share a
+birthday are both lit (none of the 54 do today).
+Hakos Baelz's 29 February is the 28th in a year without one. All of it goes by the reader's
+clock. **A search or a filter greys the other slots** to their printed outline in place, so
+nobody's place moves. The filters are Branch and Generation, the generations sorted by
+branch. **Pressing a sticker turns it over** (the Web Animations API, a turn to its edge and
+the back turning on from it) to her back: her colours as stripes, number and groups, name,
+branch, greeting, fan name, debut, birthday, colour swatches and a link to her page; Escape,
+the close button or a press elsewhere turn it back. Calendar is the next twelve months at a
+glance, a card to each: its birthdays and debut anniversaries (with the count: "5th
+anniversary") by the day, as a face beside a name; in this month what has passed fades,
+today's are on the sun, and the card is ringed in it with "Today" on its head.
 
-The world is scoped under `body[data-view='holodori']`: the shell's surface variables
+**The game itself has two pages, Songs and Cards** (`views/holodori-songs.ts`,
+`views/holodori-cards.ts`), built on 17 October 2026 after the owner asked where the game's
+details were. Both are `mountRoster` pages with search, filters and orders, on the sheet's
+dotted paper. **Songs**: a press turns a jacket over to its back (`holodori-flip.ts`). a jacket over the title, the
+singers' faces and the four charts' levels in their colours (Easy, Normal, Hard, Expert);
+the back has the length, the day it was added, the credits, how it is unlocked, the music
+video and the copyright line. Filters: Original / Cover, branch, singer; orders: Newest,
+Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
+of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy),
+opening the card's page. Filters: rarity, type, branch, holomem; orders: Newest, Holomem,
+Rarity.
+
+The build reads them from the same dump: `Music`, `MusicDifficulty` and `LangMusic_Eng`
+for the songs (tutorial rows dropped), and for the cards `Card`, `CardLevel`,
+`CardLevelLimit`, `CardPotential`, the three skill level tables, `SkillTreeConnectEffect`,
+`Costume`, `LiveLeaderSkill`, `CharacterVoice`, `LiveDialogueVoice` and their language
+tables. A card's type is not named in `Card`; it is read from the skill-target text its
+`attributeType` points at ("[attribute=cute]Cute Type[/attribute]"). 54 cards have no
+outfit and so no outfit skill. **The jackets are the
+official site's** (`/en/music`, the owner's approval of 16 October 2026): matched to a song
+by its title, folded to letters and digits, and baked to 240px WebP (157 files, 2.6 MB).
+The 58 songs the site does not list (the newer ones) have the game's own jacket from
+HolodoriDB's CDN instead (`img_music_jacket_<jacketAssetId>`, approved 17 October 2026;
+215 files, 3.6 MB in all); a song with neither would stand its singers' busts on their
+colours in its place (the first letter, for a song the whole cast sings).
+Each of the three files is kept from the last build, or written empty, when its tables
+cannot be had.
+
+**A card has a page of its own** (`#/holodori/card/<id>`, `views/holodori-card.ts`, 17
+October 2026, the owner's "card pages first"), after holodori.best's card page: its
+illustration in its rarity's frame (opening the art viewer on the CDN's full-size file),
+with an Animation and a Signature beside it on a 5-star card (84 of 192), played from the
+CDN; the name, the holomem (a link to her page) and a fact list; then **Stats**, a level
+slider and blooms 0 to 5 over the three stats and their total, with the limit breaks the
+level needs; **Skills**, passive, active, special, connect effect (none on a 3-star) and
+outfit skill, each at the level the bloom gives it; **Voice lines** (card get, conversation,
+live skill, bloom 1 to 5: 5-star cards only) and **Live dialogues** (her line and another
+holomem's answer, 390 across the cards), each with its audio from the CDN. The level and
+bloom are kept from one card to the next; the level opens at the card's top. Previous and
+next card in the game's order are at the trail's right.
+
+Everything under the head is the payload, `card-details/<id>.json`. **A stat is
+`ceil(ceil(base × share / 1000) × (1000 + boost) / 1000)`**: the level's base from
+`CardLevel`, the card's per-mille share of it, and the blooms' stat boosts added up (a
+5-star's bloom 2 gives 100; a 3-star's bloom 2 gives 50 and bloom 5 100 more). Rounding
+twice is holodori.best's: seven of its numbers across a 5-star and a 3-star card were
+matched only that way. A skill has two levels, and the bloom whose `CardPotential` row
+names it raises it to the second; the payload keeps both texts. A level past a cap needs
+a limit break: `CardLevelLimit` rows carry no count, so they are sorted by cap.
+
+**The card art is HolodoriDB's CDN's** (`cdn.holodori.dev`, which serves the game's own
+files unpacked; public, no bot check). Each card's portrait (`img_card_vert`, 256x512) is
+re-encoded to WebP, its illustration (`img_card_full_…_unsquished`, 1820x1024; the plain
+file is the same squeezed to 2048 wide) baked at 1024 wide: 384 files, about 74 MB fetched,
+22 MB baked, approved by the owner on 17 October 2026. The animations, signatures, voice
+lines and the full-size illustration are asked of the CDN by the page and never downloaded.
+holodori.best's own API sits behind a Cloudflare check and is not read.
+
+**A holomem has a page of her own** (`#/holodori/holomem/<id>`, `views/holodori-holomem.ts`,
+17 October 2026), opened from her sticker's back. The game site's key art is wide (about
+1.64:1) with her on its right and running off its foot, so it fills a stage of her colours as
+tall as the stage, at its right end, and her profile (number, groups, greeting, birthday with
+the days to it, debut, fans, colours) stands on the stage's empty left; on a phone the stage
+is the picture's shape, over the profile. Under them are her cards and the songs she sings
+(not the whole cast's, which are counted), the Cards and Songs pages' own tiles: a card
+opens its page, a jacket turns over as on the Songs page; then her six **membership
+stickers** (two sign-up stickers and four more, the Stamp table's `chr-membership-*` rows;
+FUWAMOCO's, filed under 80001, are both twins'), die-cut with a white edge. The stickers
+and the 54 round icons are the CDN's (`img_stamp_<asset>_lang-eng`, 512px, baked at 256;
+`img_chr_icon_normal_<5 digits>`, 256px, baked at 128), approved by the owner on 17
+October 2026: 6.9 MB and 0.45 MB baked. The game's 11 common stickers are no one's and are
+left out. The picture is not baked: the entry's `figure` is its address on the site's
+image host, which the page asks for at 720px; without it the bust stands in. Previous and
+next holomem in the game's order are at the trail's right.
+
+**Gachas** (`#/holodori/gachas`, `views/holodori-gachas.ts`, 18 October 2026): every
+banner, running now first (edged in the sun, with "Ends in 22h 36m"), then the standing and
+beginner's gachas two or three to a line, then the past banners; each is its logo, name,
+dates in the reader's own clock and the cards it features, opening their pages. **The
+dump names a gacha by its id alone** (`Gacha`, 23 rows), so the names, dates and cards are
+**recorded by hand** in `scripts/lib/holodori-gachas.mjs` from holodori.best's gacha pages,
+as the Path to Nowhere release record is from S1N: one entry a banner, its two gachas (the
+usual one and its "Take your pick!" twin, which share name, dates and cards) as one, times
+in UTC. Read on 18 October 2026; holodori.best does not load three (the launch banner's
+pair, `pickup-*-260728`, and the ★5 ticket gacha), so they are left out, and the build
+warns of any gacha the dump has and the record has not, and of a featured card the Card
+table lacks. **A new banner is one entry added at the top.** The logos are asked of the
+CDN by the page (`img_gacha_logo_<id>_lang-eng`, 205x128), not baked; the ★4 ticket gacha
+has none.
+
+The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
 as a pattern, and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
 site it animates whatever `prefers-reduced-motion` says. The view is mounted twice a
@@ -1444,8 +1566,7 @@ which puts the two cut corners at its top out of sight; the bake cuts at the sam
 and asks for credit, which the README gives and the site itself does not yet.
 
 Not built for any of the three: glyphs; a release order for hololive Dreams or FGO (Path
-to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: a
-dossier. Not built for FGO: search, filters, a dossier.
+to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: units, a gacha's rates and the cards it has besides its featured ones, stories, the launch banner. Not built for FGO: search, filters, a dossier.
 
 ## Testing
 
