@@ -5,6 +5,12 @@ export type Route =
   | { view: 'endfield' }
   | { view: 'endfield-detail'; id: string }
   | { view: 'ptn-detail'; id: string }
+  | { view: 'holodori-home' }
+  | { view: 'holodori-gachas' }
+  | { view: 'holodori-songs' }
+  | { view: 'holodori-cards' }
+  | { view: 'holodori-holomem'; id: string }
+  | { view: 'holodori-card'; id: string }
   | { view: RosterGame };
 
 // The Events page's tabs: #/events is the list of events, and the other two hang off it.
@@ -27,6 +33,16 @@ export function parseHash(hash: string): Route {
   if (ef) return { view: 'endfield-detail', id: decodeURIComponent(ef[1]) };
   const sinner = /^#\/ptn\/sinner\/([^/]+)$/.exec(hash);
   if (sinner) return { view: 'ptn-detail', id: decodeURIComponent(sinner[1]) };
+  // hololive Dreams opens on its front page; its roster, the sticker sheet, is a page under it.
+  if (hash === '#/holodori') return { view: 'holodori-home' };
+  if (hash === '#/holodori/holomems') return { view: 'holodori' };
+  if (hash === '#/holodori/gachas') return { view: 'holodori-gachas' };
+  if (hash === '#/holodori/songs') return { view: 'holodori-songs' };
+  if (hash === '#/holodori/cards') return { view: 'holodori-cards' };
+  const holomem = /^#\/holodori\/holomem\/([^/]+)$/.exec(hash);
+  if (holomem) return { view: 'holodori-holomem', id: decodeURIComponent(holomem[1]) };
+  const card = /^#\/holodori\/card\/([^/]+)$/.exec(hash);
+  if (card) return { view: 'holodori-card', id: decodeURIComponent(card[1]) };
   const roster = ROSTER_GAMES.find(game => hash === `#/${game}`);
   if (roster) return { view: roster };
   return { view: 'grid' };

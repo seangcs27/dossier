@@ -8,6 +8,12 @@ import { mountEndfield } from './views/endfield';
 import { mountEndfieldDetail } from './views/endfield-detail';
 import { mountFgo } from './views/fgo';
 import { mountHolodori } from './views/holodori';
+import { mountHolodoriCard } from './views/holodori-card';
+import { mountHolodoriCards } from './views/holodori-cards';
+import { mountHolodoriGachas } from './views/holodori-gachas';
+import { mountHolodoriHome } from './views/holodori-home';
+import { mountHolodoriHolomem } from './views/holodori-holomem';
+import { mountHolodoriSongs } from './views/holodori-songs';
 import { mountPtn } from './views/ptn';
 import { mountPtnDetail } from './views/ptn-detail';
 import { mountTooltips } from './tooltip';
@@ -22,6 +28,9 @@ const view = document.getElementById('view')!;
 const operatorsLink = document.getElementById('nav-operators') as HTMLAnchorElement;
 const operatorsLabel = document.getElementById('nav-operators-label')!;
 const eventsLink = document.getElementById('nav-events')!;
+const songsLink = document.getElementById('nav-songs')!;
+const cardsLink = document.getElementById('nav-cards')!;
+const gachasLink = document.getElementById('nav-gachas')!;
 const sideToggle = document.getElementById('side-toggle')!;
 
 // The games: where each one's roster is, and its word for its cast, which is what the
@@ -31,7 +40,7 @@ const GAMES = {
   arknights: { roster: '#/', cast: 'Operators' },
   endfield: { roster: '#/endfield', cast: 'Operators' },
   ptn: { roster: '#/ptn', cast: 'Sinners' },
-  holodori: { roster: '#/holodori', cast: 'Holomems' },
+  holodori: { roster: '#/holodori/holomems', cast: 'Holomems' },
   fgo: { roster: '#/fgo', cast: 'Servants' },
 };
 type Game = keyof typeof GAMES;
@@ -41,7 +50,8 @@ type Game = keyof typeof GAMES;
 function gameOf(page: Route['view']): Game {
   if (page === 'endfield' || page === 'endfield-detail') return 'endfield';
   if (page === 'ptn-detail') return 'ptn';
-  if (page === 'ptn' || page === 'holodori' || page === 'fgo') return page;
+  if (page.startsWith('holodori')) return 'holodori';
+  if (page === 'ptn' || page === 'fgo') return page;
   return 'arknights';
 }
 
@@ -62,10 +72,24 @@ function dispatch(): void {
   // A page in another language words the filter panel's Clear its own way (card.ts); the
   // Arknights and Endfield grids, which never word it, find it in English again.
   document.getElementById('clear-filters')!.textContent = 'Clear';
-  setCurrent(operatorsLink, route.view !== 'events');
-  setCurrent(eventsLink, route.view === 'events');
+  // hololive Dreams has its songs, cards and gachas beside its cast, as Arknights has its
+  // schedule; Cards stays lit on a card's own page. Its front page is none of them.
+  const own = ({
+    events: eventsLink, 'holodori-songs': songsLink, 'holodori-cards': cardsLink, 'holodori-card': cardsLink,
+    'holodori-gachas': gachasLink,
+  } as
+    Record<string, HTMLElement | undefined>)[route.view];
+  const front = route.view === 'holodori-home';
+  setCurrent(operatorsLink, !own && !front);
+  setCurrent(eventsLink, own === eventsLink);
+  setCurrent(songsLink, own === songsLink);
+  setCurrent(cardsLink, own === cardsLink);
+  setCurrent(gachasLink, own === gachasLink);
   eventsLink.hidden = game !== 'arknights';
-  markSection(route.view === 'events' ? eventsLink : operatorsLink);
+  songsLink.hidden = game !== 'holodori';
+  cardsLink.hidden = game !== 'holodori';
+  gachasLink.hidden = game !== 'holodori';
+  markSection(front ? undefined : own ?? operatorsLink);
   if (route.view === 'detail') {
     void mountDetail(view, route.id);
   } else if (route.view === 'events') {
@@ -78,8 +102,20 @@ function dispatch(): void {
     mountPtnDetail(view, route.id);
   } else if (route.view === 'ptn') {
     mountPtn(view);
+  } else if (route.view === 'holodori-home') {
+    mountHolodoriHome(view);
+  } else if (route.view === 'holodori-gachas') {
+    mountHolodoriGachas(view);
   } else if (route.view === 'holodori') {
     mountHolodori(view);
+  } else if (route.view === 'holodori-songs') {
+    mountHolodoriSongs(view);
+  } else if (route.view === 'holodori-cards') {
+    mountHolodoriCards(view);
+  } else if (route.view === 'holodori-holomem') {
+    mountHolodoriHolomem(view, route.id);
+  } else if (route.view === 'holodori-card') {
+    mountHolodoriCard(view, route.id);
   } else if (route.view === 'fgo') {
     mountFgo(view);
   } else {
