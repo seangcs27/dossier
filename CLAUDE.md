@@ -86,6 +86,7 @@ scripts/
                                jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
+  backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
@@ -435,7 +436,10 @@ dropped in that folder under the collab's name.
 — every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
-`.github/workflows/deploy-pages.yml`). With nothing on disk to keep, the build still
+`.github/workflows/deploy-pages.yml`). GitHub drops a cache nobody has used for 7 days, so
+each deploy also uploads every baked image (not the JSON) as `images.tar` on the
+`image-backup` release, and a run that finds no cache restores the images from it before
+building; the payloads are rebuilt from their sources. With nothing on disk to keep, the build still
 fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
 minutes, twice, before this).
@@ -1506,7 +1510,13 @@ files unpacked; public, no bot check). Each card's portrait (`img_card_vert`, 25
 re-encoded to WebP, its illustration (`img_card_full_…_unsquished`, 1820x1024; the plain
 file is the same squeezed to 2048 wide) baked at 1024 wide: 384 files, about 74 MB fetched,
 22 MB baked, approved by the owner on 17 October 2026. The animations, signatures, voice
-lines and the full-size illustration are asked of the CDN by the page and never downloaded.
+lines and the full-size illustration are asked of the CDN by the page and never downloaded
+by the build. **The audio and video are backed up by hand** (the owner's ask, 18 October
+2026): `node scripts/backup-holodori-media.mjs` after a build fetches every voice line,
+live dialogue, animation, signature and full-size illustration the payloads name that
+`backup/holodori-media/` (gitignored) lacks, about 440 MB the first time, and uploads the folder as
+`holodori-media.tar` on the `media-backup` release. With the folder empty it starts from
+that tar, so a run with the CDN gone never uploads less than the release had.
 holodori.best's own API sits behind a Cloudflare check and is not read.
 
 **A holomem has a page of her own** (`#/holodori/holomem/<id>`, `views/holodori-holomem.ts`,

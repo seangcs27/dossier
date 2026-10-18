@@ -43,6 +43,9 @@ docs/
 # Generated operator index (build artifact, shared by both targets)
 src/shared/generated/
 
+# hololive Dreams' audio and video, kept by scripts/backup-holodori-media.mjs
+backup/
+
 # Generated Claude Design previews (rebuilt from dist/web/styles.css by `npm run design`)
 design/
 
