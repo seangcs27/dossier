@@ -8,7 +8,7 @@ on:
     - cron: '0 0 * * 0' # weekly, Sunday 00:00 UTC — refresh bundled operator data
 
 permissions:
-  contents: read
+  contents: write # the image backup's release
   pages: write
   id-token: write
 
@@ -29,11 +29,30 @@ jobs:
       # The build downloads ~60 MB of game-data tables from GitHub. Restoring the last run's
       # generated data means a bad fetch falls back to it instead of failing the deploy.
       - uses: actions/cache@v4
+        id: cache
         with:
           path: src/shared/generated
           key: generated-${{ github.run_id }}
           restore-keys: generated-
+      # GitHub drops a cache nobody has used for 7 days, and the build would then fetch every
+      # picture again from sources that may have gone. So the baked images come back from the
+      # last run's backup instead; the payloads are rebuilt from their sources either way.
+      - if: steps.cache.outputs.cache-matched-key == ''
+        run: |
+          mkdir -p src/shared/generated
+          gh release download image-backup -p images.tar -O - | tar -x -C src/shared/generated || echo "No image backup to restore"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: npm run build:web
+      # Every image the build has baked, as one asset of the image-backup release (made on the
+      # first run). The payloads are left out: they are rebuilt from their sources each run.
+      - run: |
+          tar -cf images.tar -C src/shared/generated --exclude='*.json' .
+          gh release view image-backup > /dev/null 2>&1 || gh release create image-backup --latest=false \
+            --title "Image backup" --notes "The images the last deploy baked, restored by the next one when its cache is gone."
+          gh release upload image-backup images.tar --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

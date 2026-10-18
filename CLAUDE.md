@@ -435,7 +435,10 @@ dropped in that folder under the collab's name.
 — every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
-`.github/workflows/deploy-pages.yml`). With nothing on disk to keep, the build still
+`.github/workflows/deploy-pages.yml`). GitHub drops a cache nobody has used for 7 days, so
+each deploy also uploads every baked image (not the JSON) as `images.tar` on the
+`image-backup` release, and a run that finds no cache restores the images from it before
+building; the payloads are rebuilt from their sources. With nothing on disk to keep, the build still
 fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
 minutes, twice, before this).
