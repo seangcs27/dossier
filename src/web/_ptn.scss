@@ -242,6 +242,9 @@ body[data-view='ptn'] #view {
 
     & + .seg-btn { border-left: 1.5px solid $ink; }
     &:hover { background: rgb(23 24 26 / 10%); color: $ink; }
+    // English on a CN-only Sinner's page, which has no English text.
+    &[aria-disabled='true'] { opacity: 0.35; cursor: not-allowed; }
+    &[aria-disabled='true']:hover { background: transparent; }
     &:focus-visible { outline: 2px solid $ink; outline-offset: 2px; }
     &.on { background: $ink; color: $bone; }
   }

@@ -23,8 +23,17 @@ function stored(): PtnLang | undefined {
 // The reader's last choice, or their browser's language the first time.
 let lang: PtnLang = stored() ?? (navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en');
 
+// A language one page holds to whatever the reader chose, kept for that page alone: a
+// CN-only Sinner's, whose only text is the Chinese wiki's (the English side would be
+// Chinese under English labels). Every PtN view sets or lifts it as it mounts.
+let held: PtnLang | undefined;
+
 export function ptnLang(): PtnLang {
-  return lang;
+  return held ?? lang;
+}
+
+export function holdPtnLang(next: PtnLang | undefined): void {
+  held = next;
 }
 
 export function setPtnLang(next: PtnLang): void {
@@ -119,7 +128,7 @@ const TEXT = {
 
 /** A word of this site's own, in the language that is on. */
 export function t(key: keyof typeof TEXT.en): string {
-  return TEXT[lang][key];
+  return TEXT[ptnLang()][key];
 }
 
 // The game's own Chinese for its three ranks, six tendencies and sixteen librams: the
@@ -139,25 +148,25 @@ const LIBRAM_ZH: Record<string, string> = {
 };
 
 export function rankName(rank: string): string {
-  return lang === 'zh' ? RANK_ZH[rank] ?? rank : rank;
+  return ptnLang() === 'zh' ? RANK_ZH[rank] ?? rank : rank;
 }
 
 export function tendencyName(tendency: string): string {
-  return lang === 'zh' ? TENDENCY_ZH[tendency] ?? tendency : tendency;
+  return ptnLang() === 'zh' ? TENDENCY_ZH[tendency] ?? tendency : tendency;
 }
 
 export function libramName(libram: string): string {
-  return lang === 'zh' ? LIBRAM_ZH[libram] ?? libram : libram;
+  return ptnLang() === 'zh' ? LIBRAM_ZH[libram] ?? libram : libram;
 }
 
 /** A Sinner's name in the language that is on, where the build has it in that one. */
 export function nameOf(s: PtnSinner): string {
-  return lang === 'zh' && s.nameCn ? s.nameCn : s.name;
+  return ptnLang() === 'zh' && s.nameCn ? s.nameCn : s.name;
 }
 
 /** A Sinner's tags in the language that is on: each wiki's own, since the two do not sort them alike. */
 export function tagsOf(s: PtnSinner): string[] {
-  return (lang === 'zh' ? s.tagsCn : s.tags) ?? [];
+  return (ptnLang() === 'zh' ? s.tagsCn : s.tags) ?? [];
 }
 
 /** The number a Sinner is filed under, or a collab's own code for them. */
@@ -170,13 +179,13 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** '2026-10-08' as a placard prints it: 'Oct 2026', '2026年10月'. */
 export function monthOf(day: string): string {
   const [year, month] = day.split('-');
-  return lang === 'zh' ? `${year}年${Number(month)}月` : `${MONTHS[Number(month) - 1]} ${year}`;
+  return ptnLang() === 'zh' ? `${year}年${Number(month)}月` : `${MONTHS[Number(month) - 1]} ${year}`;
 }
 
 /** '2026-10-08' as a file prints it: '8 October 2026', '2026年10月8日'. */
 export function dayOf(day: string): string {
   // In UTC, which is how the days are written, so that no reader's clock moves one.
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-GB', {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString(ptnLang() === 'zh' ? 'zh-CN' : 'en-GB', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   });
 }

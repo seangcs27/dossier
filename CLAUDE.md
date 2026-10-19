@@ -1220,7 +1220,10 @@ line-ups' titles, the tabs, the fact lists' labels, the filter and its badges, a
 search box's prompt change; and under a Sinner's tabs, the English side is the English
 wiki's text and the Chinese side the Chinese wiki's (the owner's "fill zh", 14 October
 2026, which widened the scope from the first pass: the CN-only Sinners' files are in
-Chinese in either language, since that is the only text there is for them). The shell's own
+Chinese in either language, since that is the only text there is for them; since 20 October
+2026 a CN-only Sinner's page is held in Chinese whatever the reader chose, its EN greyed
+with a tooltip, by `holdPtnLang` in `ptn-lang.ts`, which leaves the stored choice alone and
+which every PtN view sets or lifts as it mounts). The shell's own
 words on these pages change too (the owner's ask, 14 October 2026): the Filters button,
 Clear and an empty search's message through the roster's `words` (`card.ts`), and the
 section link from each PtN view, since a change of language mounts the view again and not

@@ -29,7 +29,7 @@ import {
   type PtnSinnerDetail,
 } from '../ptn-index';
 import {
-  codeOf, dayOf, libramName, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf, tendencyName,
+  codeOf, dayOf, holdPtnLang, libramName, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf, tendencyName,
   type PtnLang,
 } from '../ptn-lang';
 import { ptnRoster } from './ptn';
@@ -508,6 +508,9 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
   }
 }
 
+// Said in English, since it is for a reader who picked English.
+const CN_ONLY_TIP = 'Only on the CN server: no English text yet, so this file is in Chinese.';
+
 // `detail` is undefined while the payload is on its way and null when it could not be had.
 // `picked` is the picture on show, among the payload's.
 function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, picked: number): string {
@@ -523,7 +526,8 @@ function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, pic
             <span class="seg" role="group" aria-label="Language">
               ${PTN_LANGS.map(l => `
                 <button class="seg-btn${l.id === ptnLang() ? ' on' : ''}" data-lang="${l.id}"
-                        aria-pressed="${l.id === ptnLang()}">${l.label}</button>
+                        aria-pressed="${l.id === ptnLang()}"${s.cnOnly && l.id === 'en'
+                          ? ` aria-disabled="true" data-tip="${escHtml(CN_ONLY_TIP)}"` : ''}>${l.label}</button>
               `).join('')}
             </span>
           </div>
@@ -555,6 +559,9 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   document.getElementById('count')!.textContent = '';
 
   const sinner = getPtnSinners().find(s => s.id === id);
+  // A CN-only Sinner has no English text to show, so their page is Chinese whatever the
+  // reader chose; the choice itself is kept for every other page.
+  holdPtnLang(sinner?.cnOnly ? 'zh' : undefined);
   if (!sinner) {
     container.innerHTML = `
       <div class="detail">
@@ -596,6 +603,7 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
       }
       const langButton = target.closest<HTMLElement>('[data-lang]');
       if (langButton) {
+        if (langButton.getAttribute('aria-disabled')) return;
         setPtnLang(langButton.dataset.lang as PtnLang);
         render();
         container.querySelector<HTMLElement>(`[data-lang="${ptnLang()}"]`)?.focus();

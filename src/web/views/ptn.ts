@@ -2,8 +2,8 @@ import { escHtml } from '../format';
 import { mountRoster, newRosterState, type RosterOrder } from '../card';
 import { getPtnSinners, type PtnSinner } from '../ptn-index';
 import {
-  codeOf, libramName, monthOf, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf, tendencyName,
-  type PtnLang,
+  codeOf, holdPtnLang, libramName, monthOf, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf,
+  tendencyName, type PtnLang,
 } from '../ptn-lang';
 
 // The game's three ranks, highest first: a line-up to each.
@@ -309,6 +309,8 @@ function distinct(values: string[]): string[] {
 }
 
 export function mountPtn(container: HTMLElement): void {
+  // The roster is in the reader's own choice, whatever a CN-only Sinner's page held.
+  holdPtnLang(undefined);
   const sinners = getPtnSinners();
   // The section link is this roster, named in the language that is on.
   document.getElementById('nav-operators-label')!.textContent = t('Sinners');
