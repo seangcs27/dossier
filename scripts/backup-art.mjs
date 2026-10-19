@@ -10,8 +10,11 @@ import sharp from 'sharp';
 import { backupToRelease } from './lib/release-backup.mjs';
 
 const GEN = 'src/shared/generated';
-// src/shared/api/hella-api.ts's IMAGE_BASE, and the paths its helpers ask it for.
-const IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+// The repository src/shared/api/hella-api.ts's IMAGE_BASE serves, and the paths its helpers
+// ask it for, fetched from GitHub itself: jsdelivr answers 403 for files the repository has
+// (new outfits, a new module), and for others now and then.
+const JSDELIVR = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+const IMAGE_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main';
 // artUrl()'s largest use, the art viewer's.
 const toViewerSize = bytes => sharp(bytes).resize({ width: 2048, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
 
@@ -24,7 +27,7 @@ function keep(dir, stem) {
 function resized(prefix, url) {
   const { host, pathname } = new URL(url);
   const at = prefix === 'ark' ? decodeURIComponent(pathname).replace(/^.*?@main\//, '') : `${host}${decodeURIComponent(pathname)}`;
-  files.set(`${prefix}/${at.replace(/\.\w+$/, '')}.webp`, { url, convert: toViewerSize });
+  files.set(`${prefix}/${at.replace(/\.\w+$/, '')}.webp`, { url: url.replace(JSDELIVR, IMAGE_BASE), convert: toViewerSize });
 }
 
 for (const name of await readdir(`${GEN}/operator-details`)) {
