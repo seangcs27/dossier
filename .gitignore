@@ -43,6 +43,9 @@ docs/
 # Generated operator index (build artifact, shared by both targets)
 src/shared/generated/
 
+# The by-hand backups' files (scripts/backup-art.mjs, scripts/backup-holodori-media.mjs)
+backup/
+
 # Generated Claude Design previews (rebuilt from dist/web/styles.css by `npm run design`)
 design/
 

@@ -13,16 +13,20 @@ the rest of the owner's plan of 20 September 2026 (a Hololive section beside the
 one part of it not started). PtN's and FGO's card art is baked (143 mugshots, 6.1 MB; 470
 figures, 5.3 MB), and the three emblems are in; the owner approved those downloads on 11
 October 2026. Path to Nowhere also has search, filters and a dossier per Sinner, and
-hololive Dreams a sticker album with search and filters (54 busts from the game's official
+hololive Dreams a sticker sheet with search and filters (54 busts from the game's official
 site, approved 15 October 2026). Not built yet:
 
 - **A design of its own for each game.** The owner means them to differ. Path to Nowhere
   is the first: its roster is a line-up wall (CLAUDE.md), built on 12 October 2026 to a
-  brief the owner confirmed. hololive Dreams is the second: a sticker album, with Grid and
-  Calendar views, built on 15 October 2026, and a sheet of all 54 it opens on since 16
-  October. Its game itself is next: a Songs page (the 211 song jackets from its official
-  site, approved 16 October 2026) and a Cards page (no card art anywhere; HolodoriDB's
-  `Card.json` has the 192 cards' data). FGO is on the Arknights card still.
+  brief the owner confirmed. hololive Dreams is the second: a sheet of all 54 stickers and a
+  birthday calendar (the album and grid built on 15 October 2026 were taken out on 17
+  October at the owner's ask). Its game itself has a Songs page (215 songs, 157 jackets from its official site,
+  approved 16 October 2026) and a Cards page (192 cards with the game's own card art from
+  HolodoriDB's CDN), each card with a page of its own (stats by level and bloom, skills,
+  voice lines and live dialogues), built 17 October 2026; on 18 October a front page
+  (`#/holodori`; the sheet moved to `#/holodori/holomems`), a Gachas page (a record kept by
+  hand from holodori.best, `scripts/lib/holodori-gachas.mjs`) and each holomem's membership
+  stickers. FGO is on the Arknights card still.
   A Sinner's page is in the same world, and the wall is set in Barlow Condensed.
 - **What the line-up wall still wants:**
   - **The placard face as WOFF2.** The two TTFs are 213 KB; a Latin-only WOFF2 of each
@@ -134,7 +138,7 @@ site, approved 15 October 2026). Not built yet:
   Island's; `File:Site-logo.png` (137x137, 31 KB) and `File:MP Icon.png` (58x50, 1.7 KB)
   were found and not looked at. hololive Dreams' tile is hololive's triangle, not the
   game's own mark.
-- **A dossier page** for hololive Dreams; **search, filters, a dossier page** for FGO.
+- **Search, filters, a dossier page** for FGO.
   `card.ts` has the search box and the filter panel for any roster that asks (`find`), so
   FGO's is a list of groups away: its index already carries rarity, class (17), attribute
   (5), alignment and JP only.
@@ -143,9 +147,11 @@ site, approved 15 October 2026). Not built yet:
 - **Credit on the site itself.** Atlas Academy's data is ODC-BY 1.0, which asks for credit
   where the data is used. The README credits every source; the site has no page that does.
 - **What else the sources have**, for later passes.
-  - hololive Dreams: 216 songs with four charts each, 192 cards (where the game's rarity
-    is, ★3 to ★5), 200 costumes, 23 gacha pools, stories. The dump includes rows not yet
-    released, so anything dated has to be filtered by its start time. The eight graduated
+  - hololive Dreams: 200 costumes, units, stories (songs, cards, gachas and stickers are
+    built). The gacha record lacks the launch banner (`pickup-*-260728`) and the ★5 ticket
+    gacha, which holodori.best does not load, and every gacha's rates and full card list.
+    The dump includes rows not yet released, so anything dated has to be filtered by its
+    start time. The eight graduated
     talents are in the table and left out.
   - FGO: gender, 107 traits, ATK and HP, costumes, later ascensions' art, and a flag on 57
     Servants that looks like the welfare set (not verified).

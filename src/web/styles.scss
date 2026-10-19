@@ -3856,8 +3856,9 @@ a.pool-op:hover { text-decoration: underline; }
   }
 
   // On the grid row 1 has no room for the pill beside the section links, so the count moves
-  // into the search box, at its right end before the magnifier.
-  [data-view='grid'] #count { display: none; }
+  // into the search box, at its right end before the magnifier. So it does on hololive
+  // Dreams' rosters.
+  :is([data-view='grid'], [data-view='holodori'], [data-view='holodori-songs'], [data-view='holodori-cards']) #count { display: none; }
 
   // A roster-only game's pill (card.ts) keeps its number and drops the word after it. The
   // section link beside it is that word, and the two together are wider than row 1 has:
@@ -3889,6 +3890,14 @@ a.pool-op:hover { text-decoration: underline; }
     font-size: var(--fs-xs);
 
     svg { display: none; }
+  }
+
+  // hololive Dreams' four section links have no room in row 1 beside the wordmark: they take
+  // row 2 at the bar's full width, sharing it, and the search box (on its rosters) row 3.
+  body[data-view^='holodori'] {
+    .sections { grid-area: 2 / 1 / 3 / -1; margin-left: 0; }
+    .section-link { flex: 1; justify-content: center; }
+    .topbar-actions { grid-area: 3 / 1 / 4 / -1; }
   }
 
   // The narrowest phones (320px) were 14px short of fitting row 1: a smaller wordmark and
