@@ -32,7 +32,8 @@ export async function placardText(sinners, details) {
       parts.push(side.title, side.mania?.name, side.brand?.name, side.dream?.name, side.dream?.kind,
         ...(side.skills ?? []).map(k => k.name), ...(side.shackles ?? []).map(k => k.name),
         ...(side.extras ?? []).map(k => k.name), ...(side.terms ?? []).map(k => k.name),
-        ...(side.brand?.terms ?? []).map(k => k.name), ...(side.file ?? []).map(k => k.title));
+        ...(side.brand?.terms ?? []).map(k => k.name), ...(side.file ?? []).map(k => k.title),
+        ...(side.voiceLines ?? []).map(k => k.name));
     }
   }
   parts.push(await readFile(path.join(ROOT, 'src', 'web', 'ptn-lang.ts'), 'utf8'));

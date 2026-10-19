@@ -44,8 +44,8 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
-import { fetchBiliBrands, fetchBiliFiles, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
-import { parseBiliBrand, parseBiliDetail, termsIn } from './lib/ptn-bili-page.mjs';
+import { fetchBiliBrands, fetchBiliFiles, fetchBiliImages, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
+import { parseBiliBrand, parseBiliDetail, parseBiliVoices, termsIn } from './lib/ptn-bili-page.mjs';
 import { bakePtnFont, placardText } from './lib/ptn-font.mjs';
 import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
 import { LAUNCH, LAUNCH_DAY, RELEASES, UNFILED } from './lib/ptn-record.mjs';
@@ -77,7 +77,7 @@ const haveLast = await readFile(SINNERS_FILE, 'utf8').then(text => text.length >
 // diff is committed with the rest.
 const SNAPSHOT_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'lib', 'ptn-bili-snapshot.json');
 const snapshot = await readFile(SNAPSHOT_FILE, 'utf8').then(JSON.parse, () => ({ rows: [], pages: {}, files: {} }));
-const fresh = { rows: [], pages: {}, files: {}, brands: {}, terms: {} };
+const fresh = { rows: [], pages: {}, files: {}, brands: {}, terms: {}, voices: {}, images: {} };
 // What a run had of the snapshot, so that it is not written back from a run that was not whole.
 let fellBack = false;
 
@@ -354,7 +354,7 @@ async function buildRoster() {
   // out are the numbers, which the English page has at more levels. What the English page
   // has nothing of (LIFT) is the payload's own, in either language.
   const ZH_SKIP = new Set(['names', 'stats', 'block', 'attackSpeed']);
-  const LIFT = ['damageType', 'releasedCn', 'reworked', 'contained', 'video', 'dream'];
+  const LIFT = ['damageType', 'releasedCn', 'reworked', 'contained', 'video', 'dream', 'phases', 'costs'];
   const VOICE_ZH = { CN: '中', JP: '日', KR: '韩' };
   const hasText = value => (typeof value === 'string' ? value !== ''
     : Array.isArray(value) ? value.length > 0
@@ -372,6 +372,17 @@ async function buildRoster() {
     const { energy, core } = parsed.skills.find(k => k.kind === 'Ultimate') ?? {};
     const ultimate = detail.skills.find(k => k.kind === 'Ultimate');
     if (ultimate) Object.assign(ultimate, energy === undefined ? {} : { energy }, core === undefined ? {} : { core });
+    // Each skill's icon and range, and each shackle's icon and the crimebrand's picture, on
+    // the English ones too: the two pages list them in the same order.
+    for (const kind of ['Basic Attack', 'Ultimate', 'Passive']) {
+      const theirs = parsed.skills.filter(k => k.kind === kind);
+      detail.skills.filter(k => k.kind === kind).forEach((k, i) => {
+        if (theirs[i]?.icon) k.icon = theirs[i].icon;
+        if (theirs[i]?.ranges) k.ranges = theirs[i].ranges;
+      });
+    }
+    detail.shackles.forEach((k, i) => { if (parsed.shackles[i]?.icon) k.icon = parsed.shackles[i].icon; });
+    if (parsed.brand.image && detail.brand.name) detail.brand.image = parsed.brand.image;
     const zh = Object.fromEntries(Object.entries(parsed).filter(([key, value]) => !ZH_SKIP.has(key) && hasText(value)));
     // The English page's sticker is the 100% stage, which the Chinese stages have as their last.
     if (zh.compliance) zh.sticker = '';
@@ -383,6 +394,48 @@ async function buildRoster() {
     }
     detail.zh = zh;
   }
+
+  // Every Sinner's voice lines, from their voice page there (语音:<name>), in Chinese in
+  // either language, since the English wiki has none. Short of the wiki, the snapshot's, or
+  // none: the lines are not worth keeping the last build whole for.
+  const castNames = sinners.filter(s => s.nameCn).map(s => s.nameCn);
+  const voiceOf = await fromChinese(
+    'the voice lines', () => fetchBiliPages(castNames, '语音:'),
+    () => new Map(Object.entries(snapshot.voices ?? {})), new Map(),
+  );
+  fresh.voices = Object.fromEntries(voiceOf);
+  for (const s of sinners.filter(s => voiceOf.has(s.nameCn))) {
+    const lines = parseBiliVoices(voiceOf.get(s.nameCn));
+    if (lines.length) details.find(d => d.id === s.id).voiceLines = lines;
+  }
+
+  // Every picture the Chinese pages show beside their text (a skill's icon, a shackle's, the
+  // crimebrand's, the phase-up's unlocks, a material's) is a file's title in the payload
+  // (`icon`, `image`): here it becomes the file's address, or goes where the wiki has none.
+  // Never downloaded: the page has the proxy resize them.
+  const pictured = new Set();
+  const walk = (value) => {
+    if (Array.isArray(value)) value.forEach(walk);
+    else if (value && typeof value === 'object') {
+      if (['icon', 'image'].some(key => typeof value[key] === 'string')) pictured.add(value);
+      Object.values(value).forEach(walk);
+    }
+  };
+  details.forEach(walk);
+  const imageTitles = [...new Set([...pictured].flatMap(v => ['icon', 'image'].map(key => v[key]).filter(t => typeof t === 'string')))];
+  const imageOf = await fromChinese(
+    'the pictures beside the text', () => fetchBiliImages(imageTitles),
+    () => new Map(Object.entries(snapshot.images ?? {})), new Map(),
+  );
+  fresh.images = Object.fromEntries(imageOf);
+  for (const value of pictured) {
+    for (const key of ['icon', 'image']) {
+      if (typeof value[key] !== 'string') continue;
+      if (imageOf.has(value[key])) value[key] = imageOf.get(value[key]);
+      else delete value[key];
+    }
+  }
+  console.log(`ptn: ${imageOf.size} of ${imageTitles.length} pictures beside the text found on the Chinese wiki`);
 
   // Every Sinner's art, as the files their two subpages name, and then the address of each
   // file the wiki really has: a page names a few that were never uploaded.
@@ -462,7 +515,7 @@ async function buildRoster() {
       .map(([name, text]) => [name, text.replace(/<!--[\s\S]*?-->/g, '')]));
     const files = Object.fromEntries([...new Set([...Object.keys(snapshot.files), ...Object.keys(fresh.files)])]
       .map(suffix => [suffix, { ...snapshot.files[suffix], ...fresh.files[suffix] }]));
-    await writeFile(SNAPSHOT_FILE, JSON.stringify({ rows: fresh.rows, pages, files, brands: fresh.brands, terms: fresh.terms }));
+    await writeFile(SNAPSHOT_FILE, JSON.stringify({ rows: fresh.rows, pages, files, brands: fresh.brands, terms: fresh.terms, voices: fresh.voices, images: fresh.images }));
   }
   return { sinners, details, unfinished, strays };
 }

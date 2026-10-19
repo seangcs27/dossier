@@ -65,6 +65,17 @@ export function getPtnSinners(): PtnSinner[] {
 // format.ts's descriptionToHtml renders: a number the wiki colours blue is a raised value,
 // what it colours orange a reminder.
 
+/**
+ * A skill's range, from the Chinese wiki: a row of the grid to a string, '#' a tile it
+ * reaches, '.' one it does not, 'o' the Sinner, 't' the target it is centred on instead.
+ */
+export interface PtnRange {
+  rows: string[];
+  times?: number;       // a skill that strikes its one target this many times
+  note?: string;        // which form or state it is the range of: '【禁锢】状态', '露薇娅'
+  step?: boolean;       // the range the one before it becomes
+}
+
 /** A skill: what it does at level 1, then what each level after changes. */
 export interface PtnSkill {
   kind: 'Basic Attack' | 'Ultimate' | 'Passive';
@@ -73,6 +84,9 @@ export interface PtnSkill {
   // An ultimate's, from the Chinese wiki: the energy it costs, the core damage it deals.
   energy?: number;
   core?: number;
+  // From the Chinese wiki: the skill's icon (a file's address there) and its range.
+  icon?: string;
+  ranges?: PtnRange[];
 }
 
 /** The attributes at one level. */
@@ -88,6 +102,24 @@ export interface PtnStats {
 export interface PtnEntry {
   name: string;
   text: string;
+  icon?: string;        // a shackle's, from the Chinese wiki
+}
+
+/** An item a phase-up or a skill level costs, or gives, as the Chinese wiki frames it. */
+export interface PtnCost {
+  item: string;         // its Chinese name: '狄斯币'
+  count: number;
+  tier: '灰' | '绿' | '蓝' | '紫' | '金';
+  icon?: string;
+}
+
+/** A phase-up: the level cap it raises, the stats' jump at the old cap, what it unlocks. */
+export interface PtnPhase {
+  cap: [number, number];
+  from: Omit<PtnStats, 'level'>;
+  to: Omit<PtnStats, 'level'>;
+  unlocks: { key: 'passive1' | 'passive2' | 'brandSlot' | 'mania' | 'attire' | 'exclusiveSlot'; icon?: string }[];
+  crystals: PtnCost;
 }
 
 /**
@@ -131,13 +163,22 @@ export interface PtnSinnerDetail {
   video?: string;
   dream?: { name: string; kind: string; text: string };
   terms?: PtnEntry[];
+  // From the same page and the voice page beside it: the three phase-ups, what each and
+  // each skill level costs (1→2 to 9→10), and the voice lines, in Chinese in either language.
+  phases?: PtnPhase[];
+  costs?: { phase: PtnCost[][]; skill: PtnCost[][] };
+  voiceLines?: PtnEntry[];
   // That page's own text laid beside the English wiki's, for the Chinese side to read, on
   // every Sinner it has a page for but the CN-only ones (whose text it is already). Only the
   // fields it has text for: what it lacks is the English wiki's in either language.
   zh?: Partial<Omit<PtnSinnerDetail, 'id' | 'arts' | 'zh'>>;
   // The exclusive crimebrand, and the skill it grants where the wiki has it written up. The
   // Chinese wiki's names that skill, and what it makes, as terms explained apart (`terms`).
-  brand: { name: string; skill: { name: string; levels: string[] } | null; terms?: PtnEntry[] };
+  brand: {
+    name: string; skill: { name: string; levels: string[] } | null; terms?: PtnEntry[];
+    quote?: string;     // the lines of the story under it, from the Chinese wiki
+    image?: string;     // its picture there
+  };
   stats: PtnStats[];
   block: string;
   attackSpeed: string;

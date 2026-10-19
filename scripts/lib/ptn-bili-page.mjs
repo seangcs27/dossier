@@ -10,10 +10,12 @@
 // reminder, a keyword ({{术语查看}}) its text, and a spoiler fold ({{展开折叠}}) its text
 // under the condition that unlocks it.
 //
-// Left on the page: a skill's range diagram, the voice files, the danger assessment (on
-// every page that has one it is the rank), and the stats just after each promotion.
+// Left on the page: the danger assessment (on every page that has one it is the rank). The
+// voice lines are a page of their own (parseBiliVoices). A picture the page shows is kept as
+// its file's title (`icon`, `image`), which the build turns into the file's address.
 //
 // Pure text in, plain objects out: no fetching here, so it can be run against a saved page.
+import { RANGES } from './ptn-ranges.mjs';
 import { templateBodies, templateParams } from './wiki-text.mjs';
 
 const TEMPLATE = '禁闭者图鉴';
@@ -94,6 +96,115 @@ const STATS = [
 // The compliance stages past 100% a few Sinners have.
 const BEYOND = [125, 150, 175, 200];
 
+// A skill's range as the page writes it, as the shapes it names (ptn-ranges.mjs): one
+// ({{技能范围|3*4}}), one becoming another ({{技能范围递进|a|b|左注释=…|右注释=…}}, the second
+// marked `step`), or one to each of two forms ("露薇娅：{{技能范围|3*4}}蕾：{{技能范围|3*6}}"),
+// the text before each its note.
+function rangesOf(source) {
+  const out = [];
+  const push = (code, note) => {
+    const shape = RANGES[code.trim()];
+    if (!shape) { console.warn(`ptn: no shape recorded for the range ${code} (scripts/lib/ptn-ranges.mjs)`); return undefined; }
+    const range = { ...shape, ...(note ? { note } : {}) };
+    out.push(range);
+    return range;
+  };
+  let from = 0;
+  for (const m of (source ?? '').matchAll(/\{\{(技能范围递进|技能范围)\|([^{}]*)\}\}|\{\{([^{}|]+)攻击范围\}\}/g)) {
+    const note = toGameText(source.slice(from, m.index)).replace(/[：:]$/, '');
+    from = m.index + m[0].length;
+    if (m[3]) { push(m[3], note); continue; }
+    if (m[1] === '技能范围') { push(pipes(`x|${m[2]}`)[0], note); continue; }
+    const named = {};
+    const positional = [];
+    for (const part of pipes(`x|${m[2]}`)) {
+      const eq = part.indexOf('=');
+      if (eq > 0) named[part.slice(0, eq).trim()] = part.slice(eq + 1).trim();
+      else positional.push(part);
+    }
+    push(positional[0] ?? '', named.左注释 || note);
+    const then = push(positional[1] ?? '', named.右注释);
+    if (then) then.step = true;
+  }
+  return out;
+}
+
+// The page's phase-up tables: each raises the level cap, and the stats jump at the level the
+// last cap was. What each unlocks is the same for every Sinner, the template's own: the first
+// passive; the second, the crimebrand slot and Mania Intensify; the phase-up attire and the
+// exclusive crimebrand's slot. Each also gives a count of 异方晶, as the template shows it.
+const PHASES = [
+  { cap: [20, 40], from: '0阶20级', to: '1阶20级', unlocks: ['passive1'], crystals: 40 },
+  { cap: [40, 70], from: '1阶40级', to: '2阶40级', unlocks: ['passive2', 'brandSlot', 'mania'], crystals: 60 },
+  { cap: [70, 90], from: '2阶70级', to: '3阶70级', unlocks: ['attire', 'exclusiveSlot'], crystals: 80 },
+];
+const STAT_KEYS = { hp: '生命值', atk: '攻击值', def: '防御值', res: '法抗值' };
+
+// What each phase-up and each skill level costs, by the Sinner's rank: the template's own
+// tables ({{禁闭者图鉴}}'s 培养材料 tab), which fill in the page's materials. An item is its
+// count and its frame's colour; 'src' is the tendency's essence for that phase (一阶精准源素),
+// 'm1' and 'm2' the page's two materials for it, 'dis' Dis coins.
+const PHASE_COST = {
+  普: [
+    [['src', 12, '绿'], ['m1', 30, '灰'], ['m2', 15, '灰'], ['dis', 24000]],
+    [['src', 12, '蓝'], ['m1', 30, '绿'], ['m2', 15, '绿'], ['dis', 80000]],
+    [['src', 20, '紫'], ['m1', 54, '蓝'], ['m2', 30, '蓝'], ['dis', 350000]],
+  ],
+  危: [
+    [['src', 15, '绿'], ['m1', 12, '绿'], ['m2', 18, '灰'], ['dis', 30000]],
+    [['src', 15, '蓝'], ['m1', 12, '蓝'], ['m2', 18, '绿'], ['dis', 100000]],
+    [['src', 25, '紫'], ['m1', 24, '紫'], ['m2', 36, '蓝'], ['dis', 480000]],
+  ],
+  狂: [
+    [['src', 18, '绿'], ['m1', 16, '绿'], ['m2', 8, '绿'], ['dis', 36000]],
+    [['src', 18, '蓝'], ['m1', 16, '蓝'], ['m2', 8, '蓝'], ['dis', 120000]],
+    [['src', 30, '紫'], ['m1', 28, '紫'], ['m2', 15, '紫'], ['dis', 560000]],
+  ],
+};
+// Skill levels 1→2 to 9→10: the skill module's count, the material's, the DisSea relic's
+// (from 7→8), and Dis coins; 9→10 takes one consciousness core (意识晶核) as well. Which
+// module and material is by the level, the same at every rank.
+const SKILL_COST = {
+  普: { module: [5, 10, 6, 10, 5, 6, 5, 6, 10], material: [4, 6, 4, 6, 4, 5, 2, 4, 5], relic: [1, 1, 1], dis: [2500, 4000, 5600, 8500, 12800, 20000, 57000, 120000, 170000] },
+  危: { module: [6, 12, 8, 12, 6, 8, 6, 8, 12], material: [8, 8, 5, 8, 5, 6, 3, 5, 6], relic: [1, 1, 2], dis: [3000, 5000, 7000, 10500, 16000, 25000, 72000, 150000, 210000] },
+  狂: { module: [8, 16, 10, 16, 8, 10, 8, 10, 15], material: [6, 10, 6, 10, 6, 8, 4, 6, 8], relic: [1, 2, 2], dis: [4000, 6000, 8500, 12800, 19200, 30000, 86000, 175000, 260000] },
+};
+const SKILL_TIER = [
+  { module: '技能模组Ⅰ', material: '技能材料2-3', tier: '灰' },
+  { module: '技能模组Ⅱ', material: '技能材料4-5', tier: '绿' },
+  { module: '技能模组Ⅲ', material: '技能材料6-7', tier: '蓝' },
+  { module: '技能模组Ⅳ', material: '技能材料8-10', tier: '紫' },
+];
+const SKILL_STEP = [0, 0, 1, 1, 2, 2, 3, 3, 3];
+
+// An item as the page shows it: its name, its count, its frame's colour, and its icon's file
+// (道具<name>.png), which the build turns into the file's address.
+const item = (name, count, tier) => ({ item: name, count, tier, icon: `道具${name}.png` });
+
+function costsOf(named) {
+  const rank = named.稀有度?.trim();
+  const tendency = named.职业?.trim();
+  const own = key => named[key]?.trim() ?? '';
+  if (!PHASE_COST[rank] || !tendency) return undefined;
+  const phase = PHASE_COST[rank].map((row, i) => row.map(([key, count, tier]) => {
+    if (key === 'dis') return item('狄斯币', count, '绿');
+    if (key === 'src') return item(`${'一二三'[i]}阶${tendency}${['源素', '源液', '源质'][i]}`, count, tier);
+    return item(own(`${'一二三'[i]}阶材料${key[1]}`), count, tier);
+  }).filter(cost => cost.item));
+  const table = SKILL_COST[rank];
+  const skill = SKILL_STEP.map((step, i) => {
+    const { module, material, tier } = SKILL_TIER[step];
+    return [
+      item(module, table.module[i], tier),
+      item(own(material), table.material[i], tier),
+      ...(i >= 6 ? [item(own('内海遗物'), table.relic[i - 6], '紫')] : []),
+      ...(i === 8 ? [item('意识晶核', 1, '金')] : []),
+      item('狄斯币', table.dis[i], '绿'),
+    ].filter(cost => cost.item && cost.item !== '无');
+  });
+  return { phase, skill };
+}
+
 // A page's text, or undefined where it has no {{禁闭者图鉴}} call. `termOf` is each term's
 // page text, for the terms the page names (explainTerms).
 export function parseBiliDetail(wikitext, nameCn, termOf = new Map()) {
@@ -120,11 +231,34 @@ export function parseBiliDetail(wikitext, nameCn, termOf = new Map()) {
       .map(part => toGameText(part).replace(/^\d+、\s*/, ''))
       .filter(Boolean),
   ].filter(Boolean);
-  const skill = (kind, prefix, upgrades = `${prefix}升级效果`, effect = `${prefix}效果`) => ({
-    kind,
-    name: field(prefix),
-    levels: levels(effect, upgrades),
-  });
+  const who = named.姓名?.trim() || nameCn;
+  // A skill's icon is the file the template names for it, "<name> 普攻 <skill>.png"; the
+  // build turns it into the file's address, or drops it where the wiki has none.
+  const iconOf = prefix => `${who} ${prefix} ${named[prefix]?.trim()}.png`;
+  const skill = (kind, prefix, upgrades = `${prefix}升级效果`, effect = `${prefix}效果`) => {
+    const ranges = rangesOf(named[`${prefix}范围`]);
+    return {
+      kind,
+      name: field(prefix),
+      levels: levels(effect, upgrades),
+      icon: iconOf(prefix),
+      ...(ranges.length ? { ranges } : {}),
+    };
+  };
+  const statsAt = key => {
+    const [hp, atk, def, res] = Object.values(STAT_KEYS).map(stat => number(`${key}${stat}`));
+    return [hp, atk, def, res].every(Number.isFinite) ? { hp, atk, def, res } : undefined;
+  };
+  const UNLOCK_ICON = {
+    passive1: iconOf('被动1'), passive2: iconOf('被动2'), brandSlot: '烙印栏解锁.png', mania: '狂厄深化.png',
+    attire: `${who}升阶装束.png`, exclusiveSlot: '专属烙印栏解锁.png',
+  };
+  const phases = PHASES.map(({ cap, from, to, unlocks, crystals }) => ({
+    cap, from: statsAt(from), to: statsAt(to),
+    unlocks: unlocks.map(key => ({ key, icon: UNLOCK_ICON[key] })),
+    crystals: item('异方晶', crystals, '金'),
+  })).filter(phase => phase.from && phase.to);
+  const costs = costsOf(named);
   const passives = [];
   for (let n = 1; field(`被动${n}`); n++) passives.push(skill('Passive', `被动${n}`));
   // What the ultimate costs in energy, and how much core damage it deals.
@@ -186,7 +320,10 @@ export function parseBiliDetail(wikitext, nameCn, termOf = new Map()) {
     attackSpeed: field('攻击速度'),
     skills: [skill('Basic Attack', '普攻'), ultimate, ...passives].filter(s => s.name),
     shackles: [1, 2, 3, 4, 5].filter(n => field(`同步率${n}段`))
-      .map(n => ({ name: field(`同步率${n}段`), text: field(`同步率${n}段效果`) })),
+      .map(n => ({ name: field(`同步率${n}段`), text: field(`同步率${n}段效果`), icon: `${who}${named[`同步率${n}段`].trim()}.png` })),
+    // The phase-up tables, and what each phase-up and skill level costs.
+    ...(phases.length ? { phases } : {}),
+    ...(costs ? { costs } : {}),
     // Ten stages here, the last at 100%, where the English page has five and a sticker.
     compliance: stages,
     sticker: '',
@@ -237,10 +374,26 @@ export function parseBiliBrand(wikitext, termOf = new Map()) {
   const named = templateParams(body).named;
   const field = key => cleaned(toGameText(named[key]));
   const effect = field('专属效果');
+  const quote = field('世界观');
   return {
     holder: field('专属角色'),
-    brand: { name: field('名称'), skill: effect ? { name: '', levels: [effect] } : null, ...explainTerms(termsIn(named['专属效果']), termOf) },
+    brand: {
+      name: field('名称'), skill: effect ? { name: '', levels: [effect] } : null,
+      // The lines of the story printed under the crimebrand, and its picture's file.
+      ...(quote ? { quote } : {}),
+      image: `烙印${named.名称?.trim()}.png`,
+      ...explainTerms(termsIn(named['专属效果']), termOf),
+    },
   };
+}
+
+// A Sinner's voice page (语音:<name>): one {{语音}} call to a line, its occasion (动作, "获得禁闭者")
+// and its words.
+export function parseBiliVoices(wikitext) {
+  return templateBodies(wikitext.replace(/<!--[\s\S]*?-->/g, ''), '语音')
+    .map(body => templateParams(body).named)
+    .map(named => ({ name: toGameText(named.动作), text: toGameText(named.语音文字) }))
+    .filter(line => line.name && line.text);
 }
 
 // Each term in `start` and every term their explanations name, in the order met, as

@@ -105,21 +105,41 @@ export async function fetchBiliFiles(namesCn, suffix) {
   return urlOf;
 }
 
-// The text of each Sinner's page (the wiki files them as 禁闭者:<name>), by their Chinese
-// name, for the ones it has.
-export async function fetchBiliPages(namesCn) {
+// The text of each Sinner's page (the wiki files them as 禁闭者:<name>, and their voice
+// lines as 语音:<name>), by their Chinese name, for the ones it has.
+export async function fetchBiliPages(namesCn, prefix = '禁闭者:') {
   const textOf = new Map();
   for (let i = 0; i < namesCn.length; i += 50) {
     const json = await wiki({
-      action: 'query', titles: namesCn.slice(i, i + 50).map(name => `禁闭者:${name}`).join('|'),
+      action: 'query', titles: namesCn.slice(i, i + 50).map(name => `${prefix}${name}`).join('|'),
       prop: 'revisions', rvprop: 'content', rvslots: 'main',
     });
     for (const page of json.query?.pages ?? []) {
       const text = page.revisions?.[0]?.slots?.main?.content;
-      if (text) textOf.set(page.title.replace(/^禁闭者:/, ''), text);
+      if (text) textOf.set(page.title.slice(prefix.length), text);
     }
   }
   return textOf;
+}
+
+// The address of each file, by its title as a page names it ('阿兰恰 普攻 旧律裁断.png'), for
+// the ones the wiki has. The wiki answers with its own form of a title (an underscore is a
+// space, the first letter capital), so each is matched back through that.
+export async function fetchBiliImages(titles) {
+  const urlOf = new Map();
+  for (let i = 0; i < titles.length; i += 50) {
+    const batch = titles.slice(i, i + 50);
+    const json = await wiki({
+      action: 'query', titles: batch.map(title => `文件:${title}`).join('|'), prop: 'imageinfo', iiprop: 'url',
+    });
+    const asked = new Map(batch.map(title => [`文件:${title}`, title]));
+    for (const { from, to } of json.query?.normalized ?? []) asked.set(to, asked.get(from));
+    for (const page of json.query?.pages ?? []) {
+      const url = page.imageinfo?.[0]?.url;
+      if (url && asked.has(page.title)) urlOf.set(asked.get(page.title), url);
+    }
+  }
+  return urlOf;
 }
 
 // The text of each term's page (术语解释:<term>, what the wiki's {{术语查看}} shows on

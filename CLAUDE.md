@@ -95,6 +95,7 @@ scripts/
   lib/ptn-bili-page.mjs      ← that wiki's {{禁闭者图鉴}} page into the same payload as ptn-page.mjs
   lib/ptn-bili-snapshot.json ← what that wiki last gave whole: its roster, 160 pages' text, the crimebrands' and their terms', for a
                                build it will not answer (tracked; a local build rewrites it)
+  lib/ptn-ranges.mjs         ← the shape of every skill range the Chinese wiki draws, recorded by hand
   lib/ptn-font.mjs           ← cuts Noto Sans SC to the characters PtN's placards set, into src/web/fonts/noto-sans-sc/
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
@@ -1096,10 +1097,24 @@ want the data"), in either language since the English wiki has none of it: the d
 whether they have been reworked there (33), the day of their containment (2), their
 capture video's Bilibili id (145, a link on the File tab), their dream (15, after Mania
 Intensify), and the ultimate's energy cost and core damage (badges beside its name, on
-the English ultimate too). Not taken: the danger assessment, which is the rank on every
-page that has one; the stats just after each promotion, since the page shows only level 1
-and 90; and the skill ranges, which are shape codes (`{{技能范围|3*3}}`) with no drawing
-yet. The voice lines, level caps and material counts that page shows are not in its text.
+the English ultimate too). **And everything else that page shows** (19 October 2026, the
+owner's "achieve whatever you see from this page"), on both sides, keyed to the English
+payload's skills and shackles by their order: each skill's range, drawn from the wiki's
+shape codes (`{{技能范围|3*3}}`) by a table recorded by hand from its 47 range templates
+(`scripts/lib/ptn-ranges.mjs`; rows set from the left as the wiki floats them, 'o' the
+Sinner, 't' a target the skill is centred on); the phase-ups (`phases`: the stats' jump at
+each old cap, what each unlocks, the 异方晶 each gives); what each phase-up and skill level
+costs (`costs`), from the template's own per-rank tables (`PHASE_COST`, `SKILL_COST` in
+`ptn-bili-page.mjs`) filled with the page's materials; the voice lines, from each Sinner's
+`语音:<name>` page (`voiceLines`, Chinese in either language); the crimebrand's 世界观
+quote; and the pictures beside the text: each skill's icon (`<name> 普攻 <skill>.png`), each
+shackle's (`<name><shackle>.png`), the crimebrand's (`烙印<brand>.png`), the phase-up
+unlocks' and each material's (`道具<item>.png`). Those are kept in the payload as the file's
+title, turned into its address by one lookup of every title (`fetchBiliImages`, 50 to a
+request), and shown through the proxy, never downloaded; a title the wiki has no file for
+is dropped. Item names stay Chinese on the English side (in the tooltip): the English wiki
+names a Sinner's materials but not in an order that lines up. Not taken: the danger
+assessment, which is the rank on every page that has one.
 **Their pictures** are that
 wiki's three files under its own names, `<name>立绘.png` (the original),
 `<name>升阶.png` (the phase-up art, 2040x1632, never downloaded: listed, and resized by
@@ -1115,7 +1130,7 @@ run. So `ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks a
 a 567 (waiting 5, 20 and 60 s), and a request that still fails falls to **the snapshot**:
 `scripts/lib/ptn-bili-snapshot.json`, tracked (2.0 MB, 0.5 compressed), which has that
 wiki's roster rows, the text of each of its 160 pages (notes to editors dropped), every
-exclusive crimebrand's page (`brands`) and the terms they and the pages name (`terms`), and the addresses of the pictures asked of it, as the last build that read it whole left them. Any
+exclusive crimebrand's page (`brands`) and the terms they and the pages name (`terms`), the voice pages (`voices`), and the addresses of the pictures asked of it (`files`, `images`), as the last build that read it whole left them. Any
 such build writes it again, so **a local build refreshes it and its diff is committed with
 the rest**; a build that fell back to it never writes it. With no snapshot a later build
 keeps the last build's files whole (`fromChinese` in `build-ptn-index.mjs`) with a warning,
@@ -1339,16 +1354,19 @@ the same reason; the Chinese wiki's illustrations go through the same proxy. A S
 only one of the two baked figures opens on that one. Under 1200px the
 wall is on top, at about 70% of the screen's height, and the file under it.
 
-The file's long page of tables becomes five
+The file's long page of tables becomes six
 tabs. **Profile** is its basic information and attributes: the wiki's lead paragraph, a fact
 list, the tags, each stat as "level 1 / highest level the wiki has" as that page prints
-one, the trait, and Mania Intensify. **Skills** is the basic attack, the ultimate and the
+one, the 溢变 (overflow) line that page prints under them, the trait, and Mania Intensify. **Skills** is the basic attack, the ultimate and the
 passives, each as it is at level 1 and then a line for what each later level changes, which
-is how both wikis write them (there is no full text per level to put under a slider).
-**Crimebrand** is the exclusive crimebrand and the skill it grants. **Shackles** is the
-five shackles, then compliance (what each tenth gives, and the sticker at 100%) and the
-materials' names. **File** is who the Sinner is and each document under the wiki's heading
-for it, folded away as the Arknights archive files are. The tab on show is kept from one
+is how both wikis write them (there is no full text per level to put under a slider), with
+its icon and its range. **Phase-up** is the three phase-ups (the cap each raises, the stats'
+jump, what it unlocks, what it costs) and then each skill level's cost, as the Arknights
+material discs squared off. **Crimebrand** is the exclusive crimebrand's picture, its quote
+and the skill it grants. **Shackles** is the five shackles with their icons, then
+compliance (what each tenth gives, and the sticker at 100%), and the materials' names where
+there are no costs. **File** is who the Sinner is, each document under the wiki's heading
+for it, folded away as the Arknights archive files are, and the voice lines. The tab on show is kept from one
 Sinner to the next. The header and the art are the roster's entry; everything under the
 tabs is `ptn/sinner-details/<id>.json`, fetched when the page opens, which the same build
 script bakes from the rest of the same page text (`scripts/lib/ptn-page.mjs`), at no
@@ -1358,10 +1376,9 @@ mended on the way (an unclosed style attribute, a stray brace in a template, a p
 nobody filled in), and a stat level it marks "TBA" is left out; three Sinners have no
 numbers at all yet, and 20 have only level 1 of each skill.
 
-Not on the dossier, though that wiki has them: skill range diagrams (the English wiki names
-a range, `MultiRow_3`, and draws it from an image), what anything costs, voice lines and
-the interrogation records' own pages, an attire's description and how it is got (its
-`Attires` subpage has both), a title (the CN-only Sinners have theirs, from the Chinese wiki).
+Not on the dossier, though the English wiki has them: the interrogation records' own pages,
+an attire's description and how it is got (its `Attires` subpage has both). The ranges,
+costs and voice lines are the Chinese wiki's (above).
 
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast).
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's

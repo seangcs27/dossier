@@ -3,7 +3,7 @@
 // What its file shows, and in what order, is the page the game's Chinese wiki gives a
 // Sinner (wiki.biligame.com/wqmt, the owner's reference): basic information, the exclusive
 // crimebrand, attributes, then skills, shackles, compliance and materials, and the file.
-// That wiki's long page of tables becomes five tabs, one for each of its sections, built
+// That wiki's long page of tables becomes six tabs, one for each of its sections, built
 // from the Arknights dossier's panel, tabs, entries and fact lists (detail.ts has the
 // reasoning behind those).
 //
@@ -24,7 +24,10 @@
 import { artUrl } from '../../shared/api/hella-api';
 import { openArtViewer } from '../art-viewer';
 import { crumbsHtml, descriptionToHtml, escHtml } from '../format';
-import { fetchPtnSinner, getPtnSinners, type PtnArt, type PtnFigure, type PtnSinner, type PtnSinnerDetail } from '../ptn-index';
+import {
+  fetchPtnSinner, getPtnSinners, type PtnArt, type PtnCost, type PtnFigure, type PtnPhase, type PtnRange, type PtnSinner,
+  type PtnSinnerDetail,
+} from '../ptn-index';
 import {
   codeOf, dayOf, libramName, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf, tendencyName,
   type PtnLang,
@@ -35,6 +38,7 @@ import { ptnRoster } from './ptn';
 const TABS = [
   { id: 'profile', label: 'tabProfile' },
   { id: 'skills', label: 'tabSkills' },
+  { id: 'phase', label: 'tabPhase' },
   { id: 'brand', label: 'tabBrand' },
   { id: 'shackles', label: 'tabShackles' },
   { id: 'file', label: 'tabFile' },
@@ -241,6 +245,7 @@ function profilePanel(s: PtnSinner, d: PtnSinnerDetail): string {
       <dl class="stat-list">
         ${rows.map(([label, value]) => `<div class="stat-row"><dt><span>${label}</span></dt><dd>${escHtml(value)}</dd></div>`).join('')}
       </dl>
+      <p class="ptn-note">${t('overflow')}</p>
     </section>
     ${d.trait ? `<section class="entry"><h2 class="entry-name">${t('trait')}</h2><p class="rich">${rich(d.trait)}</p></section>` : ''}
     ${d.mania.text ? `
@@ -277,17 +282,70 @@ function termsHtml(terms: PtnSinnerDetail['terms']): string {
 
 const KIND_KEY = { 'Basic Attack': 'kindBasic', Ultimate: 'kindUltimate', Passive: 'kindPassive' } as const;
 
+// A picture the Chinese wiki shows beside its text (a skill's icon, a shackle's, the
+// crimebrand's, a material's): its own file, asked of the proxy at twice the size shown.
+function iconHtml(url: string | undefined, cls: string, size: number): string {
+  return url
+    ? `<img class="${cls}" src="${escHtml(artUrl(url, size * 2))}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`
+    : '';
+}
+
+const CELL: Record<string, string> = { '#': 'active', o: 'op', t: 'target' };
+
+// A skill's range as the wiki draws it, a grid to each shape, an arrow before one the last
+// becomes. Its rows are set from the left, as the wiki's are.
+function rangesHtml(ranges: PtnRange[] | undefined): string {
+  if (!ranges?.length) return '';
+  return `
+    <div class="ptn-ranges">
+      <span class="section-label">${t('range')}</span>
+      <div class="ptn-range-row">
+        ${ranges.map((range) => {
+          const width = Math.max(...range.rows.map(row => row.length));
+          const cells = range.rows.map(row => row.padEnd(width, '.')).join('').split('')
+            .map(cell => `<span class="range-cell range-${CELL[cell] ?? 'empty'}"></span>`).join('');
+          return `
+            ${range.step ? '<span class="ptn-range-arrow" aria-hidden="true">→</span>' : ''}
+            <figure class="ptn-range">
+              ${range.note ? `<figcaption>${escHtml(range.note)}</figcaption>` : ''}
+              <div class="range-grid" style="grid-template-columns: repeat(${width}, 14px)">${cells}</div>
+              ${range.times ? `<span class="ptn-range-times">×${range.times}</span>` : ''}
+            </figure>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// The wiki's frame colours, as this site's rarity tiers: grey to gold.
+const TIER: Record<PtnCost['tier'], number> = { 灰: 1, 绿: 2, 蓝: 3, 紫: 4, 金: 5 };
+const COMPACT = new Intl.NumberFormat('en-US', { notation: 'compact' });
+
+// Items as the Arknights dossier's material discs (styles.scss), squared off in this world.
+function costsHtml(costs: PtnCost[]): string {
+  return `<ul class="cost-list">${costs.map(c => `
+    <li class="cost cost-r${TIER[c.tier]}" data-tip="${escHtml(`${c.item} ×${c.count.toLocaleString('en-US')}`)}">
+      ${iconHtml(c.icon, 'cost-icon', 52)}
+      <span class="cost-count">${COMPACT.format(c.count)}</span>
+      <span class="visually-hidden">${escHtml(c.item)}</span>
+    </li>
+  `).join('')}</ul>`;
+}
+
 function skillsPanel(d: PtnSinnerDetail): string {
   if (!d.skills.length) return `<p class="empty-msg">${t('noSkills')}</p>`;
   return d.skills.map(skill => `
     <section class="entry">
       <div class="entry-head">
+        ${iconHtml(skill.icon, 'ptn-icon', 40)}
         <h2 class="entry-name">${escHtml(skill.name)}</h2>
         <span class="unlock-badge">${t(KIND_KEY[skill.kind])}</span>
         ${skill.energy !== undefined ? `<span class="unlock-badge">${t('energy')} ${skill.energy}</span>` : ''}
         ${skill.core ? `<span class="unlock-badge">${t('coreDmg')} ${skill.core}</span>` : ''}
       </div>
       <p class="rich">${rich(skill.levels[0] ?? '')}</p>
+      ${rangesHtml(skill.ranges)}
       ${levelsHtml(skill.levels)}
     </section>
   `).join('') + (d.terms?.length ? `<section class="entry"><h2 class="entry-name">${t('terms')}</h2>${termsHtml(d.terms)}</section>` : '');
@@ -301,10 +359,12 @@ function brandPanel(d: PtnSinnerDetail): string {
   const skill = d.brand.skill;
   return `
     <section class="entry">
+      ${iconHtml(d.brand.image, 'ptn-brand-art', 160)}
       <div class="entry-head">
         <h2 class="entry-name">${escHtml(d.brand.name)}</h2>
         <span class="unlock-badge">${t('exclusiveBrand')}</span>
       </div>
+      ${d.brand.quote ? `<blockquote class="ptn-quote rich">${rich(d.brand.quote)}</blockquote>` : ''}
       ${skill ? `
         ${skill.name ? `<span class="section-label">${escHtml(skill.name)}</span>` : ''}
         <p class="rich">${rich(skill.levels[0] ?? '')}</p>
@@ -326,6 +386,7 @@ function shacklesPanel(d: PtnSinnerDetail): string {
     ${d.shackles.map((shackle, i) => `
       <section class="entry">
         <div class="entry-head">
+          ${iconHtml(shackle.icon, 'ptn-icon', 40)}
           <h2 class="entry-name">${escHtml(shackle.name)}</h2>
           <span class="unlock-badge">${t('shackle')} ${i + 1}</span>
         </div>
@@ -339,10 +400,60 @@ function shacklesPanel(d: PtnSinnerDetail): string {
         ['100%', d.sticker && `${t('sticker')}: ${d.sticker}`],
       ])}
     </section>
-    <section class="entry">
-      <h2 class="entry-name">${t('materials')}</h2>
-      ${factsHtml(materials)}
-    </section>
+    ${d.costs ? '' : `
+      <section class="entry">
+        <h2 class="entry-name">${t('materials')}</h2>
+        ${factsHtml(materials)}
+      </section>
+    `}
+  `;
+}
+
+// The phase-ups, as the wiki's 升阶 tab has them: the level cap each raises, the stats' jump
+// at the old cap, what it unlocks and gives, then what it costs (the 培养材料 tab, whose
+// skill levels' costs follow). A Sinner with costs has their materials here, not under
+// Shackles.
+function phasePanel(d: PtnSinnerDetail): string {
+  if (!d.phases?.length) return `<p class="empty-msg">${t('noPhases')}</p>`;
+  const passives = d.skills.filter(k => k.kind === 'Passive');
+  const unlockName = (key: PtnPhase['unlocks'][number]['key']): string => {
+    if (key === 'passive1') return passives[0]?.name ?? t('kindPassive');
+    if (key === 'passive2') return passives[1]?.name ?? t('kindPassive');
+    if (key === 'mania') return d.mania.name || t('mania');
+    return t(key);
+  };
+  const stats = ['hp', 'atk', 'def', 'res'] as const;
+  return `
+    <p class="ptn-note">${t('noBonus')}</p>
+    ${d.phases.map((phase, i) => `
+      <section class="entry">
+        <div class="entry-head">
+          <h2 class="entry-name">${t('phaseUp')} ${i + 1}</h2>
+          <span class="unlock-badge">${t('levelCap')} ${phase.cap[0]} → ${phase.cap[1]}</span>
+        </div>
+        <dl class="stat-list">
+          ${stats.map(key => `
+            <div class="stat-row"><dt><span>${t(key)}</span></dt><dd>${phase.from[key]} → <b>${phase.to[key]}</b></dd></div>
+          `).join('')}
+        </dl>
+        <span class="section-label">${t('unlocks')}</span>
+        <ul class="ptn-unlocks">
+          ${phase.unlocks.map(unlock => `
+            <li>${iconHtml(unlock.icon, 'ptn-icon', 40)}<span>${escHtml(unlockName(unlock.key))}</span></li>
+          `).join('')}
+          <li>${costsHtml([phase.crystals])}</li>
+        </ul>
+        ${d.costs?.phase[i] ? `<span class="section-label">${t('cost')}</span>${costsHtml(d.costs.phase[i])}` : ''}
+      </section>
+    `).join('')}
+    ${d.costs ? `
+      <section class="entry">
+        <h2 class="entry-name">${t('skillCosts')}</h2>
+        <dl class="ptn-cost-rows">
+          ${d.costs.skill.map((row, i) => `<div><dt>Lv ${i + 1} → ${i + 2}</dt><dd>${costsHtml(row)}</dd></div>`).join('')}
+        </dl>
+      </section>
+    ` : ''}
   `;
 }
 
@@ -369,6 +480,12 @@ function filePanel(s: PtnSinner, d: PtnSinnerDetail): string {
         <p class="rich file-text">${rich(entry.text)}</p>
       </details>
     `).join('')}
+    ${d.voiceLines?.length ? `
+      <details class="file-entry">
+        <summary>${t('voiceLines')}</summary>
+        ${factsHtml(d.voiceLines.map((line): [string, string] => [line.name, line.text]))}
+      </details>
+    ` : ''}
   `;
 }
 
@@ -382,6 +499,7 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
   switch (tab) {
     case 'profile': return profilePanel(s, d);
     case 'skills': return skillsPanel(d);
+    case 'phase': return phasePanel(d);
     case 'brand': return brandPanel(d);
     case 'shackles': return shacklesPanel(d);
     case 'file': return filePanel(s, d);

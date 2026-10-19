@@ -1,0 +1,58 @@
+// The shape of every skill range the game's Chinese wiki draws, by the code its pages write
+// ({{技能范围|3*4}}): a row of the grid to a string, '#' a tile the skill reaches, '.' one it
+// does not, 'o' the Sinner, and 't' the target a skill is centred on where it is not the
+// Sinner (the wiki's codes that start "sp"). `times` is a skill that strikes its target
+// that many times.
+//
+// Recorded by hand from the wiki's 47 templates ({{<code>攻击范围}}, each a table of cells),
+// read once on 19 October 2026: they are drawings, not data, and change only when the game
+// adds a shape. A code the table lacks is left off the skill, with a build warning.
+export const RANGES = {
+  '1': { rows: ['o'] },
+  '1*2': { rows: ['o#'] },
+  '1*3': { rows: ['o##'] },
+  '1*3-1': { rows: ['#o#'] },
+  '1*4': { rows: ['o###'] },
+  '1*6': { rows: ['o#####'] },
+  '1*8': { rows: ['o#######'] },
+  '3*1': { rows: ['#', 'o', '#'] },
+  '3*2': { rows: ['##', 'o#', '##'] },
+  '3*2-2': { rows: ['#', 'o#', '#'] },
+  '3*3': { rows: ['###', 'o##', '###'] },
+  '3*3-1': { rows: ['###', '#o#', '###'] },
+  '3*3-2': { rows: ['##', 'o##', '##'] },
+  '3*3-3': { rows: ['#.#', '.o.', '#.#'] },
+  '3*4': { rows: ['####', 'o###', '####'] },
+  '3*4-1': { rows: ['.##', 'o###', '.##'] },
+  '3*4-2': { rows: ['###', 'o###', '###'] },
+  '3*4-3': { rows: ['####', '#o##', '####'] },
+  '3*5': { rows: ['#####', 'o####', '#####'] },
+  '3*5-2': { rows: ['####', 'o####', '####'] },
+  '3*5-3': { rows: ['#####', '#o###', '#####'] },
+  '3*6': { rows: ['######', 'o#####', '######'] },
+  '3*8': { rows: ['########', 'o#######', '########'] },
+  '5*3-1': { rows: ['#', '##', '##o', '##', '#'] },
+  '5*3-2': { rows: ['#', '##', 'o##', '##', '#'] },
+  '十字': { rows: ['.#.', '#o#', '.#.'] },
+  '菱形5*5': { rows: ['..#..', '.###.', '##o##', '.###.', '..#..'] },
+  '锥形': { rows: ['..#', '.##', 'o##', '.##', '..#'] },
+  '小锥形': { rows: ['.#', 'o#', '.#'] },
+  '5*5': { rows: ['#####', '#####', '##o##', '#####', '#####'] },
+  '5*3': { rows: ['###', '###', 'o##', '###', '###'] },
+  '猫形': { rows: ['.#.#.', '.###.', '##o##', '.###.'] },
+  '大十字': { rows: ['....#....', '....#....', '####o####', '....#....', '....#....'] },
+  'sp1': { rows: ['t'] },
+  'sp1×2': { rows: ['t'], times: 2 },
+  'sp1×3': { rows: ['t'], times: 3 },
+  'sp1×6': { rows: ['t'], times: 6 },
+  'sp1*3': { rows: ['#t#'] },
+  'sp1*4': { rows: ['t###'] },
+  'sp1*5': { rows: ['##t##'] },
+  'sp3*1': { rows: ['.#.', '.t.', '.#.'] },
+  'sp3*2': { rows: ['##', 't#', '##'] },
+  'sp3*3': { rows: ['###', '#t#', '###'] },
+  'sp十字': { rows: ['.#.', '#t#', '.#.'] },
+  'sp菱形5*5': { rows: ['..#..', '.###.', '##t##', '.###.', '..#..'] },
+  'sp5*5': { rows: ['#####', '#####', '##t##', '#####', '#####'] },
+  'sp猫形': { rows: ['.#.#.', '.###.', '##t##', '.###.'] },
+};

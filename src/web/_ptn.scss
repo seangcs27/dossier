@@ -1106,3 +1106,124 @@ body[data-view='ptn'] #view {
     font-size: var(--fs-lg);
   }
 }
+
+// What the Chinese wiki shows beside the text: a skill's or a shackle's icon by its name, on
+// the dark plate the game sets them on.
+.ptn-icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  object-fit: contain;
+  background: #101112;
+}
+
+// A skill's range: the wiki's grid, a shape to a figure, the Sinner's tile filled in bone and
+// a target the skill is centred on in the world's one red.
+.ptn-ranges {
+  margin-top: var(--sp-12);
+
+  .section-label { display: block; margin-bottom: var(--sp-6); }
+}
+
+.ptn-range-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-12);
+}
+
+.ptn-range {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  margin: 0;
+
+  figcaption { color: var(--muted); font-size: var(--fs-md); }
+  .range-grid { justify-self: start; }
+  .range-cell { width: 14px; height: 14px; border-radius: 0; }
+  .range-target { background: $red; }
+}
+
+.ptn-range-arrow,
+.ptn-range-times {
+  color: var(--muted);
+  font-family: var(--ptn-placard);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+// The exclusive crimebrand's picture over its name, and the lines of the story under it.
+// The wiki's are 2:3 cards; the shape is held so that a lazy image with no height yet is
+// still seen to be on screen and asked for.
+.ptn-brand-art {
+  display: block;
+  width: 160px;
+  aspect-ratio: 2 / 3;
+  object-fit: contain;
+  margin-bottom: var(--sp-12);
+}
+
+.ptn-quote {
+  margin: 0 0 var(--sp-12);
+  padding-left: var(--sp-12);
+  border-left: 2px solid $red;
+  color: var(--dim);
+  font-style: italic;
+}
+
+.ptn-note {
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+.stat-list + .ptn-note {
+  margin-top: var(--sp-12);
+}
+
+// What a phase-up unlocks, each by its icon, and what it gives.
+.ptn-unlocks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-8) var(--sp-16);
+  margin: var(--sp-6) 0 var(--sp-12);
+  list-style: none;
+
+  li { display: flex; align-items: center; gap: var(--sp-8); }
+}
+
+// A skill level's costs, a row to each step.
+.ptn-cost-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-10) var(--sp-16);
+
+  > div { display: contents; }
+
+  dt {
+    color: var(--muted);
+    font-family: var(--ptn-placard);
+    font-size: var(--fs-md);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}
+
+// The material discs, squared off as the game frames an item: a tile with its colour along
+// the foot.
+.ptn-detail .cost {
+  border-radius: 0;
+  border-width: 0 0 3px;
+
+  .cost-count { border-radius: 0; }
+}
+
+// A phase-up's labels under its stats and over its costs.
+.ptn-detail .stat-list + .section-label,
+.ptn-unlocks + .section-label {
+  display: block;
+  margin-top: var(--sp-12);
+}

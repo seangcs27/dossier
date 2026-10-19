@@ -73,6 +73,11 @@ const TEXT = {
     damageType: 'Damage type', dmgPhysical: 'Physical', dmgMagic: 'Magic', dmgTrue: 'True',
     reworked: 'Reworked on CN', yes: 'Yes', contained: 'Contained', energy: 'Energy', coreDmg: 'Core damage',
     terms: 'Terms', dream: 'Dream', video: 'Capture video (Bilibili)',
+    tabPhase: 'Phase-up', levelCap: 'Level cap', range: 'Range', voiceLines: 'Voice lines', unlocks: 'Unlocks',
+    brandSlot: 'Crimebrand slot', exclusiveSlot: 'Exclusive crimebrand slot', attire: 'Phase-up attire',
+    cost: 'Cost', skillCosts: 'Skill level costs', noBonus: 'Stats without bonuses, at the old level cap.',
+    noPhases: 'The wiki has not written up this Sinner\'s phase-ups.',
+    overflow: 'Overflow (溢变): all four stats +3% / 6% / 10%, a percentage bonus, not added to the base values.',
   },
   zh: {
     sinners: '禁闭者', Sinners: '禁闭者', prompt: '搜索禁闭者…',
@@ -104,6 +109,11 @@ const TEXT = {
     damageType: '伤害类型', dmgPhysical: '物理伤害', dmgMagic: '法术伤害', dmgTrue: '真实伤害',
     reworked: '国服重构', yes: '是', contained: '收容日期', energy: '能量消耗', coreDmg: '核心伤害',
     terms: '术语', dream: '梦境', video: '捕获影像（哔哩哔哩）',
+    tabPhase: '升阶', levelCap: '等级上限提升', range: '技能范围', voiceLines: '语音', unlocks: '解锁',
+    brandSlot: '烙印栏解锁', exclusiveSlot: '专属烙印栏解锁', attire: '升阶装束',
+    cost: '消耗', skillCosts: '技能升级材料', noBonus: '以下数据不含加成，为升阶前等级上限时的数值。',
+    noPhases: 'WIKI 尚未收录该禁闭者的升阶数据。',
+    overflow: '溢变：四种数值提升3%/6%/10%。溢变提升为百分比增益，不直接增加基础数值。',
   },
 } as const;
 
