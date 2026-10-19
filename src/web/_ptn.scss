@@ -873,7 +873,8 @@ body[data-view='ptn'] #view {
 // The phase-up art, cut out on transparency: no frame and no mount, straight on the wall,
 // its shadow following its own edge. Given the room the frame took.
 .cell-print.bare {
-  top: calc(var(--band-h) * 0.02);
+  // Under the Sinner's height line, which is always 1/13 of the wall down, and its tag.
+  top: calc(var(--band-h) * 0.12);
   padding: 0;
   border: 0;
   background: none;
@@ -888,7 +889,7 @@ body[data-view='ptn'] #view {
 
   img {
     max-width: calc(100cqw - var(--gutter) - var(--sp-8));
-    max-height: calc(var(--band-h) * 0.96);
+    max-height: calc(var(--band-h) * 0.86);
   }
 }
 
