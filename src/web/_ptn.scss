@@ -870,6 +870,28 @@ body[data-view='ptn'] #view {
   }
 }
 
+// The phase-up art, cut out on transparency: no frame and no mount, straight on the wall,
+// its shadow following its own edge. Given the room the frame took.
+.cell-print.bare {
+  top: calc(var(--band-h) * 0.02);
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  filter: drop-shadow(0 12px 16px rgb(23 24 26 / 30%));
+  transition: filter 0.22s var(--ptn-ease);
+
+  &:not(:disabled):hover {
+    box-shadow: none;
+    filter: drop-shadow(0 18px 24px rgb(23 24 26 / 38%));
+  }
+
+  img {
+    max-width: calc(100cqw - var(--gutter) - var(--sp-8));
+    max-height: calc(var(--band-h) * 0.96);
+  }
+}
+
 // The floor: the name of the picture on show, over a frame for each picture there is.
 .cell-floor {
   position: absolute;

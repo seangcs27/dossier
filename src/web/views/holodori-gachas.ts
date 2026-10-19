@@ -1,5 +1,7 @@
 import { escHtml } from '../format';
-import { gachaLogoUrl, getHolodoriCards, getHolodoriGachas, type HolodoriGacha } from '../holodori-index';
+import {
+  gachaLogoUrl, getHolodoriCards, getHolodoriGachas, getHolodoriPreviews, type HolodoriGacha, type HolodoriPreview,
+} from '../holodori-index';
 import { tileHtml as cardTile } from './holodori-cards';
 
 // hololive Dreams' gachas (#/holodori/gachas): every banner the record has
@@ -62,6 +64,41 @@ export function bannerHtml(g: HolodoriGacha, now: number): string {
   `;
 }
 
+// The announced ★5s whose gacha the record does not have yet, one card to an opening time:
+// the record's banner for that hour takes its place once it is written.
+function upcomingHtml(now: number): string {
+  const recorded = gachas.filter(dated).map(g => Date.parse(g.from!));
+  const byStart = new Map<string, HolodoriPreview[]>();
+  for (const p of getHolodoriPreviews()) {
+    if (recorded.some(t => Math.abs(t - Date.parse(p.from)) < HOUR_MS)) continue;
+    byStart.set(p.from, [...(byStart.get(p.from) ?? []), p]);
+  }
+  if (!byStart.size) return '';
+  const cards = [...byStart].map(([from, list]) => {
+    const start = Date.parse(from);
+    return `
+      <article class="gacha live">
+        <div class="gacha-head">
+          <div class="gacha-info">
+            <p class="gacha-status">${now < start ? `Starts in ${spanText(start - now)}` : 'Open, not in the record yet'}</p>
+            <h3 class="gacha-name">New ★5 Members</h3>
+            <p class="gacha-dates">From ${whenText(from)}</p>
+            <ul class="gacha-previews">${list.map(p => `
+              <li>★5 [${escHtml(p.card)}] ${escHtml(p.holomem)}${p.source ? ` · <a href="${escHtml(p.source)}" target="_blank" rel="noopener">Announcement</a>` : ''}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      </article>
+    `;
+  });
+  return `
+    <section class="hm-section">
+      <h3 class="hm-head">Announced <small>${byStart.size}</small></h3>
+      <div class="gacha-list compact">${cards.join('')}</div>
+    </section>
+  `;
+}
+
 function groupHtml(title: string, list: HolodoriGacha[], now: number): string {
   if (!list.length) return '';
   return `
@@ -85,12 +122,13 @@ export function mountHolodoriGachas(container: HTMLElement): void {
         <h2 class="hd-title">Gachas</h2>
         <p class="hd-sub">Every banner since August 2026, with the cards it features · times are your own clock's</p>
       </header>
+      ${upcomingHtml(now)}
       ${gachas.length ? `
         ${groupHtml('Running now', gachas.filter(g => isLive(g, now)), now)}
         ${groupHtml('Always on', gachas.filter(g => !dated(g)), now)}
         ${groupHtml('Past banners', gachas.filter(g => dated(g) && !isLive(g, now)), now)}
       ` : '<div class="state-msg"><div class="label">No gachas</div>The last build had no record of them.</div>'}
-      <p class="hd-credit">Names, dates and cards: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>, recorded by hand · Logos: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN</p>
+      <p class="hd-credit">Names, dates and cards: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>, recorded by hand · Announced ★5s: the official posts, as <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a> collects them · Logos: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN</p>
     </div>
   `;
 }

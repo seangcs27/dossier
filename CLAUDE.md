@@ -70,7 +70,9 @@ fetch is correct and the flag would only add an experimental-warning banner to e
 
 **Deploying the web SPA:** Push to `master` on GitHub — `.github/workflows/deploy-pages.yml`
 builds `dist/web/` and publishes to GitHub Pages at https://seangcs27.github.io/dossier/.
-A weekly Sunday cron rebuilds so newly released operators appear without a manual push.
+A daily cron (00:00 UTC) rebuilds so newly released operators appear without a manual push;
+it was weekly until 20 October 2026, when hololive Dreams' ★5 previews, up for about a day
+before their gacha, made the owner pick daily over the Chinese wiki's 567s.
 Requires repo Settings → Pages → Source = "GitHub Actions" (one-time).
 
 ## Repository Layout
@@ -83,7 +85,8 @@ scripts/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
   build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/sinner-details/
   build-holodori-index.mjs   ← holodori/characters.json + figures/ + stickers/ + icons/ + songs.json +
-                               jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json
+                               jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json +
+                               upcoming.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
@@ -160,7 +163,8 @@ src/
       holodori/card-art/<id>.webp   ← each card's portrait, 256x512 (192), copied as static files
       holodori/card-full/<id>.webp  ← each card's illustration at 1024 wide (192), copied as static files
       holodori/card-details/<id>.json  ← 192 card payloads: stats by level, blooms, skills, voice lines, dialogues
-      holodori/gachas.json       ← the gacha record (14 entries), bundled into the web target
+      holodori/gachas.json       ← the gacha record (15 entries), bundled into the web target
+      holodori/upcoming.json     ← the ★5s announced for a gacha the record lacks, from hololive Dreams Lab, bundled
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
     types/
@@ -1382,7 +1386,9 @@ mugshot and the original stand on the floor**, from the baked figures, so the fi
 is on the wall before the payload has come. **Every other picture hangs on the wall as a
 framed print**: the attires and the phase-up art were to stand too and turned out to be
 scenes as wide as they are tall, the Sinner among effects and scenery with no floor under
-them (Hecate's are 1178 by 1100 once their empty margin is cut). A press on either opens
+them (Hecate's are 1178 by 1100 once their empty margin is cut). The phase-up art hangs
+with no frame or mount (`.cell-print.bare`, 20 October 2026, the owner's ask): it is cut
+out on transparency, so the bone mount showed through it as a white sheet. A press on either opens
 the Arknights art viewer (`openArtViewer`, which takes a `thumbOf` for callers whose pieces
 have no outfit avatars). The list is the payload's `arts`: 716 pieces across the roster
 (160 originals, 147 phase-up, 150 mugshots, 68 interrogation pictures, 191 attires), which
@@ -1577,6 +1583,20 @@ warns of any gacha the dump has and the record has not, and of a featured card t
 table lacks. **A new banner is one entry added at the top.** The logos are asked of the
 CDN by the page (`img_gacha_logo_<id>_lang-eng`, 205x128), not baked; the ★4 ticket gacha
 has none.
+
+**What is announced comes first** (20 October 2026, the owner's ask to know a banner
+before it opens). The game previews each new ★5 about a day ahead on its English X account
+(the dump learns of the gacha only once it is open, within the hour), and X cannot be read
+by a build. **hololive Dreams Lab** (`dreams.wf-calc.net/wiki/game-updates?lang=en`), a fan
+site whose robots.txt allows a crawl, collects those posts by date on a server-rendered
+page, each an `<h3>` "★5 [Card] Holomem previewed" with "from Monday, October 19 at 11:00
+AM (JST)" under it and the official post linked. `buildUpcoming` reads them into
+`holodori/upcoming.json` (card, holomem, opening time in UTC, the post), keeping those that
+open no more than 14 days before the build, and warns if the page names no preview at all.
+The page shows them under **Announced**, a card to each opening time, until the record has
+a banner opening within the hour of it. A preview names no banner, so the card reads "New
+★5 Members"; not every ★5 is previewed there (Kaela was not, for Blissful Seaside Days).
+**That is why the deploy runs daily**: a preview is up for about a day before its gacha.
 
 The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering

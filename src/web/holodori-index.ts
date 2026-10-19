@@ -2,6 +2,7 @@ import bundled from '../shared/generated/holodori/characters.json';
 import bundledCards from '../shared/generated/holodori/cards.json';
 import bundledGachas from '../shared/generated/holodori/gachas.json';
 import bundledSongs from '../shared/generated/holodori/songs.json';
+import bundledUpcoming from '../shared/generated/holodori/upcoming.json';
 
 /**
  * One hololive Dreams character, a hololive talent the game makes playable, baked by
@@ -167,4 +168,23 @@ const gachas = bundledGachas as unknown as HolodoriGacha[];
 /** The banners, newest first, then the standing and the beginner's gachas. */
 export function getHolodoriGachas(): HolodoriGacha[] {
   return gachas;
+}
+
+/**
+ * A ★5 the game has announced for a gacha, as hololive Dreams Lab collects the official
+ * posts (scripts/build-holodori-index.mjs): its card's name and its holomem's, and when the
+ * gacha opens, ISO in UTC. The dump has neither card nor gacha until it opens.
+ */
+export interface HolodoriPreview {
+  card: string;      // 'Shady Hammock Days'
+  holomem: string;   // 'Tokoyami Towa'
+  from: string;
+  source?: string;   // the official post, on X
+}
+
+const upcoming = bundledUpcoming as unknown as HolodoriPreview[];
+
+/** The previews of the last 14 days before the build and after it, soonest first. */
+export function getHolodoriPreviews(): HolodoriPreview[] {
+  return upcoming;
 }

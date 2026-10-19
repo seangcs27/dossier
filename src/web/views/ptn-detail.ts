@@ -83,8 +83,10 @@ interface Shown {
   rarity?: number;
   // One of the two the build has baked whole and cut to the figure.
   stand?: PtnFigure;
-  // Any other, through the proxy, with the wiki's own file for when the proxy fails.
-  print?: { src: string; raw: string };
+  // Any other, through the proxy, with the wiki's own file for when the proxy fails. `bare`
+  // hangs it with no frame: the phase-up art is cut out on transparency, and a mount
+  // showed through its gaps as a white sheet.
+  print?: { src: string; raw: string; bare?: boolean };
 }
 
 // A picture's name in the language that is on: this site's word for the three every Sinner
@@ -113,7 +115,7 @@ function shownOf(s: PtnSinner, art: PtnArt): Shown {
   const stand = bakedOf(s, art.kind);
   return stand
     ? { label, stand }
-    : { label, collection, rarity, print: { src: `${artUrl(art.url, 1024)}&trim=10`, raw: art.url } };
+    : { label, collection, rarity, print: { src: `${artUrl(art.url, 1024)}&trim=10`, raw: art.url, bare: art.kind === 'phase' } };
 }
 
 // Before the payload is here there is no list of pictures: the wall stands the one the
@@ -158,7 +160,7 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
     `;
   } else if (shown?.print) {
     picture = `
-      <button class="cell-print" ${press}>
+      <button class="cell-print${shown.print.bare ? ' bare' : ''}" ${press}>
         <img src="${escHtml(shown.print.src)}" alt="${escHtml(`${nameOf(s)}, ${shown.label}`)}" fetchpriority="high" decoding="async"
              onerror="this.onerror=null;this.src='${shown.print.raw.replace(/'/g, '%27')}'">
       </button>

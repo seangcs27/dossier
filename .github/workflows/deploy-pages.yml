@@ -5,7 +5,7 @@ on:
     branches: [master]
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0' # weekly, Sunday 00:00 UTC — refresh bundled operator data
+    - cron: '0 0 * * *' # daily, 00:00 UTC — refresh bundled data, and catch hololive Dreams' ★5 previews, which are up about a day
 
 permissions:
   contents: write # the image backup's release

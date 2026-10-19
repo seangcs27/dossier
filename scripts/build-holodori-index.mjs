@@ -46,6 +46,7 @@ const FIGURE_PATH = 'holodori/figures';
 const SONGS_FILE = path.join(outDir, 'songs.json');
 const CARDS_FILE = path.join(outDir, 'cards.json');
 const GACHAS_FILE = path.join(outDir, 'gachas.json');
+const UPCOMING_FILE = path.join(outDir, 'upcoming.json');
 const JACKET_DIR = path.join(outDir, 'jackets');
 const JACKET_PATH = 'holodori/jackets';
 // A song's jacket, as the Songs page shows it at up to 120px, at twice that.
@@ -486,6 +487,49 @@ async function buildGachas() {
   return GACHAS;
 }
 
+// ── Upcoming ★5s ──
+// The game announces a new ★5 about a day before its gacha opens, on its English X account,
+// which a build cannot read; the dump learns of the gacha only once it is open. hololive
+// Dreams Lab, a fan site, collects those posts by date on a server-rendered page, each as
+// an <h3> "★5 [Card] Holomem previewed" whose paragraph says "from Monday, October 19 at
+// 11:00 AM (JST)", with the official posts linked under it. Its robots.txt allows a crawl.
+// Kept: the previews whose gacha opened no more than 14 days before the build, or has not.
+const LAB_PAGE = 'https://dreams.wf-calc.net/wiki/game-updates?lang=en';
+const MONTH_NO = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December'];
+const KEEP_MS = 14 * 86_400_000;
+
+async function buildUpcoming() {
+  const res = await timedFetch(LAB_PAGE);
+  if (!res.ok) throw new Error(`hololive Dreams Lab ${res.status}`);
+  const html = await res.text();
+  const strip = s => s.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#39;|&#x27;/g, "'").trim();
+  const seen = new Map();
+  let year = 0;
+  let month = 0;
+  // The page's date headings, previews and their source lines, in the order it gives them.
+  for (const m of html.matchAll(/<h2 id="([a-z]+)-\d+-(\d{4})">|<h3[^>]*>(.*?)<\/h3>(.*?)(?=<h[23]|$)/gs)) {
+    if (m[1]) {
+      month = MONTH_NO.findIndex(n => n.toLowerCase() === m[1]) + 1;
+      year = Number(m[2]);
+      continue;
+    }
+    const title = strip(m[3]).match(/^★5 \[(.+?)\] (.+?) previewed$/);
+    const when = strip(m[4]).match(/from \w+, (\w+) (\d+) at (\d+):(\d+) (AM|PM) \(JST\)/);
+    if (!title || !when || !year) continue;
+    const mo = MONTH_NO.indexOf(when[1]) + 1;
+    const hour = (Number(when[3]) % 12) + (when[5] === 'PM' ? 12 : 0);
+    // A preview names no year: it is the heading's, or the next one's for January after December.
+    const y = mo < month ? year + 1 : year;
+    const from = new Date(Date.UTC(y, mo - 1, Number(when[2]), hour - 9, Number(when[4]))).toISOString();
+    const source = m[4].match(/href="(https:\/\/x\.com\/[^"]+)"/)?.[1];
+    seen.set(`${title[1]}|${title[2]}`, { card: title[1], holomem: title[2], from, ...(source && { source }) });
+  }
+  const list = [...seen.values()].filter(p => Date.parse(p.from) > Date.now() - KEEP_MS);
+  if (!list.length && !html.includes('previewed')) console.warn('holodori: hololive Dreams Lab names no ★5 preview; has its page changed?');
+  return list.sort((a, b) => a.from.localeCompare(b.from));
+}
+
 // Writes what `build` gives back to `file`, or on a failure keeps the last build's file, or
 // writes an empty list: the page imports each file, so one has to exist for the bundle to
 // build at all.
@@ -515,3 +559,4 @@ await writeOrKeep(SONGS_FILE, 'songs', async () => {
 });
 await writeOrKeep(CARDS_FILE, 'cards', buildCards);
 await writeOrKeep(GACHAS_FILE, 'gachas', buildGachas);
+await writeOrKeep(UPCOMING_FILE, 'upcoming ★5 previews', buildUpcoming);

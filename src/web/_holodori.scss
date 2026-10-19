@@ -1830,6 +1830,18 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-variant-numeric: tabular-nums;
   }
 
+  // An announced gacha's new ★5s, a line each, before the dump has their cards.
+  .gacha-previews {
+    margin: var(--sp-10) 0 0;
+    padding: 0;
+    list-style: none;
+    font-weight: 700;
+
+    li + li { margin-top: var(--sp-4); }
+
+    a { color: inherit; white-space: nowrap; }
+  }
+
   // The cards it features, on the banner's own sheet rather than a sheet of their own.
   .gacha-cards {
     grid-template-columns: repeat(auto-fill, minmax(120px, 140px));
