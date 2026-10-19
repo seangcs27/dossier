@@ -15,6 +15,11 @@
 
 export const GACHAS = [
   {
+    name: 'Blissful Seaside Days', gachas: ['pickup-normal-261019', 'pickup-select-261019'],
+    from: '2026-10-19T02:00Z', to: '2026-10-29T01:59Z',
+    pickup: ['card-00027-5-uniq-0092-00', 'card-00032-5-uniq-0093-00', 'card-03008-5-uniq-0095-00', 'card-04014-5-uniq-0094-00'],
+  },
+  {
     name: 'Sea Bridge', gachas: ['pickup-normal-261007', 'pickup-select-261007'],
     from: '2026-10-07T02:00Z', to: '2026-10-19T01:59Z',
     pickup: ['card-00030-5-uniq-0089-00', 'card-00034-5-uniq-0090-00', 'card-06003-5-uniq-0091-00'],
