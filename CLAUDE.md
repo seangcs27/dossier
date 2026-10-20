@@ -371,7 +371,17 @@ moduleImageUrl(uniEquipId)                 // module illustration — Arknight-I
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
 archetypeIconUrl(subProfessionId)          // bundle-relative branch-icons/ — self-hosted
 IMAGE_BASE
+bindImageMirror(document)                  // installed by both entries; see below
 ```
+
+"Arknight-Images CDN" is `IMAGE_BASE`, the repository on GitHub's raw host
+(`raw.githubusercontent.com`). An image from it that fails is asked once of the same file
+through jsDelivr before its own `onerror` runs: `bindImageMirror`, one capturing `error`
+listener on the document. jsDelivr was the first host and is the fallback only, since it
+fetches the whole repository before serving a file from it, and for this one that failed
+53 of 303 files that exist and took about 8.7 s a file cold (GitHub: none, 0.8 s; 20
+October 2026). The illustrations go through wsrv.nl, which caches a year, so GitHub is
+asked directly for little more than the avatars and icons.
 
 Branch icons are self-hosted because the old source (Aceship's mirror) stopped updating in
 2022. Coverage is 72/72. The wiki's `Category:Branch icons` isn't exhaustive — "Supportive
