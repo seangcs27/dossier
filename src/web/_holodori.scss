@@ -828,21 +828,22 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .song-art { position: relative; }
 
-  // The disc that plays a song's chorus, on its jacket's lower corner, ringed by how far the
-  // clip has gone (`--p`, 0 to 1).
+  // The disc that plays a song's clip, on its jacket's lower corner: a ring that is always
+  // there, and a pink arc along it that fills as the clip goes (`--p`, 0 to 1). While the clip
+  // plays a halo goes out from the disc, and the disc stays raised after it is paused.
   .song-play {
     position: absolute;
-    right: -8px;
-    bottom: -8px;
-    width: 42px;
-    height: 42px;
+    right: -10px;
+    bottom: -10px;
+    width: 46px;
+    height: 46px;
     padding: 0;
     border: 0;
     border-radius: 50%;
     background: #fff;
     color: $ink;
     cursor: pointer;
-    box-shadow: 0 2px 6px $lift;
+    box-shadow: 0 0 0 3px #fff, 0 4px 10px $lift;
     transition: transform 0.15s;
 
     svg { display: block; width: 100%; height: 100%; }
@@ -850,10 +851,10 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .ring,
     .ring-on {
       fill: none;
-      stroke-width: 3;
+      stroke-width: 4;
     }
 
-    .ring { stroke: $line; }
+    .ring { stroke: #c9cfee; }
 
     .ring-on {
       stroke: #ff4f9a;
@@ -869,13 +870,37 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .ico-pause { fill: currentcolor; }
     .ico-pause { display: none; }
 
+    &.is-on { transform: scale(1.1); }
+
     &.is-playing {
       .ico-play { display: none; }
       .ico-pause { display: inline; }
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 3px solid #ff4f9a;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: disc-halo 1.4s ease-out infinite;
+      }
     }
 
-    &:hover { transform: scale(1.08); }
-    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+    &:hover { transform: scale(1.12); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  @keyframes disc-halo {
+    from {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+
+    to {
+      opacity: 0;
+      transform: scale(1.7);
+    }
   }
 
   // The player the disc opens, in the window's lower corner: YouTube's own, kept in view
@@ -886,11 +911,49 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     bottom: 18px;
     z-index: 40;
     width: min(320px, calc(100vw - 36px));
-    padding: var(--sp-8) var(--sp-8) var(--sp-12);
+    padding: 0 var(--sp-8) var(--sp-12);
     border-radius: 18px;
     background: $ink;
     color: #fff;
     box-shadow: 0 10px 24px rgb(16 30 70 / 40%);
+  }
+
+  // The handle the player is moved by, along its top (and its title); the video is not one.
+  .sc-grip {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #d3d6ff;
+    cursor: grab;
+    touch-action: none;
+
+    svg {
+      width: 24px;
+      height: 6px;
+      fill: currentcolor;
+    }
+
+    &:hover { color: #fff; }
+    &:focus-visible { outline: 3px solid $sun; outline-offset: -3px; border-radius: 12px; }
+  }
+
+  .sc-meta {
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .sc-dock.is-moving {
+    user-select: none;
+
+    .sc-grip,
+    .sc-meta { cursor: grabbing; }
+
+    // The video would take the pointer from the grip once it is over it.
+    iframe { pointer-events: none; }
   }
 
   .sc-frame {
