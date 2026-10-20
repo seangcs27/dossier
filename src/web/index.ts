@@ -19,8 +19,10 @@ import { mountPtnDetail } from './views/ptn-detail';
 import { mountTooltips } from './tooltip';
 import { mountScrollbars } from './scrollbar';
 import { markSection } from './sections';
+import { bindImageMirror } from '../shared/api/hella-api';
 
 applyRandomLogo();
+bindImageMirror(document);
 mountTooltips();
 mountScrollbars();
 

@@ -97,7 +97,9 @@ const AN_EN_TAGS_JSON_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/A
 const AN_EN_TAGS_BASE = `${AN_EN_TAGS_JSON_BASE}/ace`;
 const ARKNIGHT_IMAGES_TREE_URL =
   'https://api.github.com/repos/PuppiizSunniiz/Arknight-Images/git/trees/main?recursive=1';
-const ARKNIGHT_IMAGES_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+// Mirrors IMAGE_BASE in src/shared/api/hella-api.ts, and the jsDelivr copy it falls back to.
+const ARKNIGHT_IMAGES_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main';
+const ARKNIGHT_IMAGES_MIRROR = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
 // Mirrors PORTRAIT_BASE in src/shared/api/hella-api.ts — the 180x360 bust crops the grid
 // bakes into the bundle.
 const PORTRAIT_BASE = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
@@ -180,13 +182,12 @@ async function bakeIcons(label, dirName, names, pathFor, size = 256) {
   let written = 0;
   const missing = [];
   await mapConcurrent(wanted, 4, async id => {
-    // jsDelivr is first because it is what the rest of the project uses, but it is also
-    // the flakier of the two from a CI runner: a first run lost four of nineteen logos to
-    // two timeouts, a 403 and a 404, none of which reproduced locally. GitHub's raw host
-    // serves the same bytes and fails at different times, so trying both turns a lost
-    // logo into a retry. Anything already on disk is left alone, so a later build fills
-    // gaps rather than re-fetching what worked.
-    for (const base of [ARKNIGHT_IMAGES_BASE, 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main']) {
+    // GitHub's raw host is first, as for the rest of the project; jsDelivr serves the same
+    // bytes and fails at different times (a first run there lost four of nineteen logos to
+    // two timeouts, a 403 and a 404, none of which reproduced locally), so trying both
+    // turns a lost logo into a retry. Anything already on disk is left alone, so a later
+    // build fills gaps rather than re-fetching what worked.
+    for (const base of [ARKNIGHT_IMAGES_BASE, ARKNIGHT_IMAGES_MIRROR]) {
       try {
         const res = await fetchWithRetry(`${base}/${pathFor(id)}`);
         if (!res.ok) throw new Error(String(res.status));

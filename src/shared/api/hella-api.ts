@@ -1,6 +1,24 @@
 import type { Operator, OperatorId } from '../types';
 
-export const IMAGE_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+export const IMAGE_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main';
+// The same repository through jsDelivr, which an image falls back to when GitHub fails
+// (bindImageMirror). Not first: it fetches the whole repository before it serves a file
+// from it, and for one this size that often fails (53 of 303 files that exist, 20 October
+// 2026) and takes about 8.7 s when it works, against GitHub's 0.8 s.
+const IMAGE_MIRROR = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+
+// An image from IMAGE_BASE that fails is asked of IMAGE_MIRROR once, before the image's own
+// error handler runs. One capturing listener for the whole document, since an error event
+// does not bubble; stopping it there keeps the element's own handler (which removes it or
+// puts a placeholder in) for when the mirror fails too.
+export function bindImageMirror(root: Document): void {
+  root.addEventListener('error', e => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement) || !img.src.startsWith(IMAGE_BASE)) return;
+    e.stopImmediatePropagation();
+    img.src = IMAGE_MIRROR + img.src.slice(IMAGE_BASE.length);
+  }, true);
+}
 // Pre-cropped half-body bust portraits (a fixed 180x360 — genuinely portrait-shaped,
 // unlike the square full-illustration crops in IMAGE_BASE/characters/) — the same
 // asset category Sanity Gone displays as charportraits. Not in PuppiizSunniiz's repo
