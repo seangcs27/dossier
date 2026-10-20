@@ -267,6 +267,9 @@ async function buildSongs() {
     release: tail(m.releaseType).toLowerCase(),
     unlock: text.get(m.lockDescriptionLangId) ?? '',
     mv: m.mvUrl ?? '',
+    // The chorus's start and end in milliseconds: the window the page plays of its music video.
+    chorus: Number.isFinite(m.chorusStartMillisecond) && Number.isFinite(m.chorusEndMillisecond) && m.chorusEndMillisecond > m.chorusStartMillisecond
+      ? [m.chorusStartMillisecond, m.chorusEndMillisecond] : undefined,
     copyright: m.copyright ?? '',
     // Its jacket's name on the CDN, for addJackets; not written to the file.
     jacketAsset: m.jacketAssetId || m.id,

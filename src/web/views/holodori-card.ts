@@ -1,17 +1,21 @@
 import { openArtViewer } from '../art-viewer';
 import { crumbsHtml, escHtml } from '../format';
+import { stopAudio } from '../holodori-audio';
 import {
   cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, voiceUrl,
   type HolodoriCard, type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
+import { playReveal, revealHtml } from '../holodori-reveal';
+import { bubbleHtml, dockHtml, voiceClick, type Speaker } from '../holodori-voice';
 import { skillHtml, starsHtml } from './holodori-cards';
 import { faceHtml } from './holodori-songs';
 
 // A hololive Dreams card's own page (#/holodori/card/<id>), after holodori.best's: its
-// illustration (and a 5-star card's animation and signature), its stats at the level and
-// bloom picked, its skills as that bloom has them, its voice lines and its live dialogues.
-// Everything under the head is the card's payload, fetched when the page opens. In the
-// album's world (_holodori.scss).
+// illustration (and a 5-star card's animation and signature, which Reveal plays as the game
+// does when a card is won), its stats at the level and bloom picked, its skills as that bloom
+// has them, its voice lines and its live dialogues as bubbles with a player. Everything under
+// the head is the card's payload, fetched when the page opens. In the album's world
+// (_holodori.scss).
 
 const STATS = ['Performance', 'Technique', 'Sense'];
 const SKILLS = [
@@ -20,7 +24,7 @@ const SKILLS = [
   { key: 'special', label: 'Special skill' },
   { key: 'connect', label: 'Connect effect' },
 ] as const;
-type Shown = 'art' | 'movie' | 'sign';
+type Shown = 'art' | 'movie' | 'sign' | 'reveal';
 
 const cards = getHolodoriCards();
 const cast = getHolodoriCharacters();
@@ -55,18 +59,31 @@ function stepHtml(card: HolodoriCard, rel: 'prev' | 'next'): string {
   `;
 }
 
+// The line a card's reveal plays with its signature, which a 5-star card has first.
+const cardGet = (d: HolodoriCardDetail): HolodoriLine | undefined => d.voices.find(v => v.label === 'Card get') ?? d.voices[0];
+
 // The stage is the card list's alone, so it is whole before the payload comes, or without it.
-function stageHtml(card: HolodoriCard, shown: Shown): string {
+// Only the reveal needs the payload, for its voice line, and is drawn once it is there.
+function stageHtml(card: HolodoriCard, shown: Shown, d: HolodoriCardDetail | null): string {
   const poster = card.full ?? '';
-  const media = shown === 'art'
-    ? `<button class="hc-art" type="button" aria-label="Open the illustration full size">
-         ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
-       </button>`
-    : `<video src="${escHtml(shown === 'movie' ? cardMovieUrl(card.asset) : cardSignUrl(card.asset))}" poster="${escHtml(poster)}"
-              autoplay muted loop playsinline controls></video>`;
-  const tabs: [Shown, string][] = [['art', 'Illustration'], ['movie', 'Animation'], ['sign', 'Signature']];
+  const line = d ? cardGet(d) : undefined;
+  const media = shown === 'reveal'
+    ? revealHtml({
+      poster,
+      movie: cardMovieUrl(card.asset),
+      sign: cardSignUrl(card.asset),
+      voice: line && { label: line.label ?? 'Card get', text: line.text },
+    })
+    : shown === 'art'
+      ? `<button class="hc-art" type="button" aria-label="Open the illustration full size">
+           ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
+         </button>
+         ${card.movie ? '<button class="rv-go" type="button" data-reveal>Reveal</button>' : ''}`
+      : `<video src="${escHtml(shown === 'movie' ? cardMovieUrl(card.asset) : cardSignUrl(card.asset))}" poster="${escHtml(poster)}"
+                autoplay muted loop playsinline controls></video>`;
+  const tabs: [Shown, string][] = [['reveal', 'Reveal'], ['art', 'Illustration'], ['movie', 'Animation'], ['sign', 'Signature']];
   return `
-    <figure class="hc-stage">
+    <figure class="hc-stage${shown === 'reveal' ? ' hc-reveal' : ''}">
       ${media}
       ${card.movie ? `
         <div class="hc-shows" role="group" aria-label="Show">
@@ -175,27 +192,24 @@ function skillsHtml(d: HolodoriCardDetail): string {
   `;
 }
 
-function lineHtml(line: HolodoriLine): string {
-  const who = line.holomem ? byId.get(line.holomem) : undefined;
-  return `
-    <li class="hc-line">
-      <p class="hc-line-head">
-        ${who ? faceHtml(who) : ''}
-        <b>${escHtml(line.label ?? who?.shortName ?? '')}</b>
-      </p>
-      <p class="hc-line-text">${escHtml(line.text).replace(/\n/g, '<br>')}</p>
-      <audio controls preload="none" src="${escHtml(voiceUrl(line.audio))}"></audio>
-    </li>
-  `;
+// A line's bubble: the card's own holomem on the left, whoever answers her on the right.
+function lineHtml(card: HolodoriCard, line: HolodoriLine): string {
+  const who = byId.get(line.holomem ?? card.holomem);
+  const speaker: Speaker = {
+    colour: who?.colors[0] ?? '#18c9f0',
+    face: who ? faceHtml(who) : '',
+    mine: !line.holomem || line.holomem === card.holomem,
+  };
+  return bubbleHtml(line, speaker, line.label ?? who?.shortName ?? '');
 }
 
-function voicesHtml(d: HolodoriCardDetail): string {
+function voicesHtml(card: HolodoriCard, d: HolodoriCardDetail): string {
   if (!d.voices.length && !d.dialogues.length) return '';
   return `
     ${d.voices.length ? `
       <section class="hm-section" aria-labelledby="hc-voices">
         <h3 class="hm-head" id="hc-voices">Voice lines <small>${d.voices.length}</small></h3>
-        <ul class="hc-lines">${d.voices.map(lineHtml).join('')}</ul>
+        <ul class="vl-list">${d.voices.map(line => lineHtml(card, line)).join('')}</ul>
       </section>` : ''}
     ${d.dialogues.length ? `
       <section class="hm-section" aria-labelledby="hc-dialogues">
@@ -203,11 +217,15 @@ function voicesHtml(d: HolodoriCardDetail): string {
         <div class="hc-dialogues">
           ${d.dialogues.map(x => `
             <div class="hc-dialogue">
-              <h4>${escHtml(x.title.replace('&', ' & '))}</h4>
-              <ul class="hc-lines">${x.lines.map(lineHtml).join('')}</ul>
+              <div class="hc-dialogue-head">
+                <h4>${escHtml(x.title.replace('&', ' & '))}</h4>
+                <button class="vl-conv" type="button" data-conv>Play conversation</button>
+              </div>
+              <ul class="vl-list vl-chat">${x.lines.map(line => lineHtml(card, line)).join('')}</ul>
             </div>`).join('')}
         </div>
       </section>` : ''}
+    ${dockHtml()}
   `;
 }
 
@@ -233,11 +251,23 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
   let detail: HolodoriCardDetail | null = null;
   let failed = false;
   let shown: Shown = 'art';
+  let drawn = false;
 
+  const bodyHtml = (): string => (detail
+    ? `<div class="hc-body">${statsHtml(detail)}${skillsHtml(detail)}</div>`
+    : `<div class="state-msg">${failed ? '<div class="label">No payload</div>The last build did not bake this card\'s details.' : 'Loading…'}</div>`);
+
+  // The first call draws the page. After it only the head and the stats and skills are drawn
+  // again, which a bloom or the payload coming changes: the stage and the voices hold a
+  // reveal or a line that is playing, and are left alone.
   const render = (): void => {
-    const body = detail
-      ? `<div class="hc-body">${statsHtml(detail)}${skillsHtml(detail)}</div>${voicesHtml(detail)}`
-      : `<div class="state-msg">${failed ? '<div class="label">No payload</div>The last build did not bake this card\'s details.' : 'Loading…'}</div>`;
+    const mounted = page();
+    if (drawn && mounted) {
+      mounted.querySelector('.hc-head')!.outerHTML = headHtml(card, detail);
+      mounted.querySelector('.hc-main')!.innerHTML = bodyHtml();
+      return;
+    }
+    drawn = true;
     container.innerHTML = `
       <div class="roster-page hc-page r${card.rarity}" style="--a: ${escHtml(c?.colors[0] ?? '#18c9f0')}">
         <div class="hm-trail">
@@ -247,14 +277,33 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
             ${stepHtml(cards[(i + 1) % cards.length], 'next')}
           </nav>
         </div>
-        <section class="hc-top">${stageHtml(card, shown)}${headHtml(card, detail)}</section>
-        ${body}
+        <section class="hc-top">${stageHtml(card, shown, detail)}${headHtml(card, detail)}</section>
+        <div class="hc-main">${bodyHtml()}</div>
+        <div class="hc-voices"></div>
         <p class="hd-credit">Art, video and voices: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN · Numbers checked against <a href="https://holodori.best/cards/${encodeURIComponent(card.id)}" target="_blank" rel="noopener">holodori.best</a></p>
       </div>
     `;
   };
 
   const page = (): HTMLElement | null => container.querySelector<HTMLElement>('.hc-page');
+
+  const drawStage = (): void => {
+    page()!.querySelector('.hc-stage')!.outerHTML = stageHtml(card, shown, detail);
+  };
+
+  // Plays the reveal on the stage, from a press. The card-get line is in the payload, which
+  // is asked for if it has not come yet.
+  const reveal = async (): Promise<void> => {
+    const d = detail ?? await fetchHolodoriCard(id).catch(() => null);
+    if (!page()) return;
+    detail = d ?? detail;
+    shown = 'reveal';
+    drawStage();
+    const line = d ? cardGet(d) : undefined;
+    playReveal(page()!.querySelector<HTMLElement>('.hc-stage')!, line && voiceUrl(line.audio));
+    page()!.querySelector<HTMLElement>('[data-show="reveal"]')?.focus();
+  };
+
   // Handlers are assigned to the container, since the page is drawn again on every change.
   container.oninput = (e) => {
     const input = e.target as HTMLInputElement;
@@ -264,6 +313,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
     page()!.querySelector('.hc-readout')!.innerHTML = readoutHtml(detail);
   };
   container.onclick = (e) => {
+    if (voiceClick(e, container)) return;
     const target = e.target as HTMLElement;
     const b = target.closest<HTMLElement>('[data-bloom]');
     const show = target.closest<HTMLElement>('[data-show]');
@@ -271,9 +321,12 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
       bloom = Number(b.dataset.bloom);
       render();
       page()?.querySelector<HTMLElement>(`[data-bloom="${bloom}"]`)?.focus();
+    } else if (target.closest('[data-reveal]') || show?.dataset.show === 'reveal') {
+      void reveal();
     } else if (show) {
+      stopAudio();
       shown = show.dataset.show as Shown;
-      render();
+      drawStage();
       page()?.querySelector<HTMLElement>(`[data-show="${shown}"]`)?.focus();
     } else if (target.closest('.hc-art')) {
       openArtViewer(
@@ -285,6 +338,8 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
   render();
   fetchHolodoriCard(id).then((d) => { detail = d; }, () => { failed = true; }).then(() => {
     // The page may have been left, or mounted again for another card, while it came.
-    if (page() && location.hash === `#/holodori/card/${encodeURIComponent(id)}`) render();
+    if (!page() || location.hash !== `#/holodori/card/${encodeURIComponent(id)}`) return;
+    render();
+    if (detail) page()!.querySelector('.hc-voices')!.innerHTML = voicesHtml(card, detail);
   });
 }
