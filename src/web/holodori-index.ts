@@ -70,6 +70,7 @@ export interface HolodoriSong {
   release: string;      // 'preset' (had from the start), 'shop' (bought) or 'reward' (a quest's)
   unlock: string;       // the game's own line for a reward: 'Unlock requirement: …'; or ''
   mv: string;           // its music video on YouTube, or ''
+  chorus?: [number, number];  // its chorus's start and end in milliseconds; absent where the game has none
   copyright: string;    // a licence the game credits, or ''
   jacket?: string;      // 'holodori/jackets/<id>.webp'; absent where the game's site has none
 }

@@ -207,6 +207,10 @@ src/
     sections.ts     ← the fill behind the section link being shown, and its move from one
                       link to the other as a drop with a tail (markSection)
     holodori-flip.ts  ← turning a hololive Dreams song's jacket over to its back
+    holodori-audio.ts  ← one sound at a time across hololive Dreams' pages, their volume, and the waveform strip
+    holodori-voice.ts  ← a card page's voice lines as bubbles, with the one dock they share
+    holodori-reveal.ts  ← a 5-star card's reveal: the card-get line, then the animation with the signature over it
+    holodori-clip.ts  ← a song's chorus, played from its music video in a YouTube embed
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
@@ -1506,8 +1510,17 @@ details were. Both are `mountRoster` pages with search, filters and orders, on t
 dotted paper. **Songs**: a press turns a jacket over to its back (`holodori-flip.ts`). a jacket over the title, the
 singers' faces and the four charts' levels in their colours (Easy, Normal, Hard, Expert);
 the back has the length, the day it was added, the credits, how it is unlocked, the music
-video and the copyright line. Filters: Original / Cover, branch, singer; orders: Newest,
-Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
+video and the copyright line. **A disc on the jacket's corner plays the song's chorus**
+(20 October 2026, the owner's ask; 205 of 219 songs, the ones with a music video): the part
+of the song's official music video the game marks as its chorus (`chorus`, from the Music
+table's `chorusStartMillisecond` and `chorusEndMillisecond`), in YouTube's own embedded
+player (`youtube-nocookie.com`, `holodori-clip.ts`). No audio is copied or hosted, which is
+the point: the songs are COVER's and the publishers', and COVER's guidelines leave reusing
+a song as it is out of what they allow. The player stays in view in the window's corner
+while it plays, as YouTube's API policy wants, and the disc's ring fills from the time it
+reports over `postMessage`. The chorus's window is the game's own audio's, so a music video
+with a different intro would be off by that much: unchecked song by song. Filters: Original /
+Cover, branch, singer; orders: Newest, Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
 of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy),
 opening the card's page. Filters: rarity, type, branch, holomem; orders: Newest, Holomem,
 Rarity.
@@ -1532,13 +1545,47 @@ cannot be had.
 October 2026, the owner's "card pages first"), after holodori.best's card page: its
 illustration in its rarity's frame (opening the art viewer on the CDN's full-size file),
 with an Animation and a Signature beside it on a 5-star card (84 of 192), played from the
-CDN; the name, the holomem (a link to her page) and a fact list; then **Stats**, a level
+CDN, and **Reveal** (`holodori-reveal.ts`, 20 October 2026), which plays the two and the
+card-get line as the game does for a card won, from one tap (a browser lets a page play
+sound only after one). **The order is read off a recording of a real 5-star pull** (a
+YouTube video, 21 October 2026; frames sampled and its audio's loudness measured in the
+browser, nothing downloaded): the line is said first, on a white screen with its words
+(here the line's karaoke fill, in the holomem's colour; the audio is loud for about 1.5 s
+there and silent for the rest), then the animation plays and the signature is written
+over it from the same instant. The animation is silent, begins on a white burst (which is
+why the white screen leads into it) and ends on a flash, after which the card's own art
+comes up under the signature, which stays. The owner's asks that led here: "can they all
+be play tgt" (all three at once, the first version after the animation-then-signature
+one), then "check YouTube for some reference so the timing would look impeccable".
+**The signature's video is 1280x1440: its top half is the writing in colour and its bottom
+half a white matte of the same strokes**, two 16:9 pictures that line up with the card (the
+first version drew the whole frame, which showed the writing twice and off to one side).
+Both halves are drawn onto canvases (a canvas shows a video from another host and only
+cannot be read back, which nothing does; the CDN sends no CORS headers) over the screen,
+the matte inverted and multiplied in and the colour screened in, which is the alpha
+composite. The writing fades out in the video's last half-second, so the frame before the
+fade is the one that stays (`FADE`). Under the screen three tracks (the line, the
+animation, the signature) run along the whole (10 s, 9 s and 5 s, and 0.4 s held after the
+line, on the card checked), with Skip, Replay and the volume; the
+name, the holomem (a link to her page) and a fact list; then **Stats**, a level
 slider and blooms 0 to 5 over the three stats and their total, with the limit breaks the
 level needs; **Skills**, passive, active, special, connect effect (none on a 3-star) and
 outfit skill, each at the level the bloom gives it; **Voice lines** (card get, conversation,
 live skill, bloom 1 to 5: 5-star cards only) and **Live dialogues** (her line and another
-holomem's answer, 390 across the cards), each with its audio from the CDN. The level and
-bloom are kept from one card to the next; the level opens at the card's top. Previous and
+holomem's answer, 390 across the cards), each with its audio from the CDN, as bubbles
+(`holodori-voice.ts`): in the speaker's colour with her face, the card's own holomem on the
+left and whoever answers on the right, filling with its words as it plays and with a
+waveform to press for a place in it (a shape for the eye, from the line's name, not read
+from the audio). A dialogue has Play conversation, and one dock, pinned to the window's foot
+while the voices are on screen, has previous, next, play, the line's waveform, its time, a
+volume and a speed. **The volume** (a speaker that mutes and a slider, `volumeHtml()` in
+`holodori-audio.ts`, the owner's "make voice adjustable") is one for the voice lines and a
+reveal's three parts, starting at 50% (the owner's pick, 21 October), kept in `localStorage`
+and the same wherever it stands on the page; a
+song's clip is YouTube's own player, which has its own. One sound plays at a time across
+the site (a reveal, a line or a chorus stops the one before), and a change of page stops it. The page keeps its stage
+and voices when a bloom or the payload redraws the rest, so that nothing playing is cut.
+The level and bloom are kept from one card to the next; the level opens at the card's top. Previous and
 next card in the game's order are at the trail's right.
 
 Everything under the head is the payload, `card-details/<id>.json`. **A stat is

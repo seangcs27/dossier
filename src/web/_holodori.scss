@@ -826,6 +826,145 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .song { min-width: 0; }
 
+  .song-art { position: relative; }
+
+  // The disc that plays a song's chorus, on its jacket's lower corner, ringed by how far the
+  // clip has gone (`--p`, 0 to 1).
+  .song-play {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: $ink;
+    cursor: pointer;
+    box-shadow: 0 2px 6px $lift;
+    transition: transform 0.15s;
+
+    svg { display: block; width: 100%; height: 100%; }
+
+    .ring,
+    .ring-on {
+      fill: none;
+      stroke-width: 3;
+    }
+
+    .ring { stroke: $line; }
+
+    .ring-on {
+      stroke: #ff4f9a;
+      stroke-dasharray: 100;
+      stroke-dashoffset: calc(100 - var(--p, 0) * 100);
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+      transition: stroke-dashoffset 0.25s linear;
+    }
+
+    .ico-play,
+    .ico-pause { fill: currentcolor; }
+    .ico-pause { display: none; }
+
+    &.is-playing {
+      .ico-play { display: none; }
+      .ico-pause { display: inline; }
+    }
+
+    &:hover { transform: scale(1.08); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+  }
+
+  // The player the disc opens, in the window's lower corner: YouTube's own, kept in view
+  // while the clip plays. It is the body's child, so it is shut when the page is left.
+  .sc-dock {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 40;
+    width: min(320px, calc(100vw - 36px));
+    padding: var(--sp-8) var(--sp-8) var(--sp-12);
+    border-radius: 18px;
+    background: $ink;
+    color: #fff;
+    box-shadow: 0 10px 24px rgb(16 30 70 / 40%);
+  }
+
+  .sc-frame {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  }
+
+  .sc-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    margin: var(--sp-8) 40px 0 var(--sp-6);
+
+    b {
+      overflow: hidden;
+      font-size: var(--fs-sm);
+      font-weight: 900;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: #d3d6ff;
+      font-size: var(--fs-2xs);
+      font-weight: 700;
+    }
+  }
+
+  .sc-close {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 16%);
+    color: #fff;
+    cursor: pointer;
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentcolor;
+      stroke-linecap: round;
+      stroke-width: 1.8;
+    }
+
+    &:hover { background: rgb(255 255 255 / 28%); }
+    &:focus-visible { outline: 3px solid $sun; outline-offset: 2px; }
+  }
+
+  .sc-fail {
+    margin: var(--sp-8) var(--sp-6) 0;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+
+    a { color: $sun; }
+  }
+
   .jacket {
     position: relative;
     display: block;
@@ -1214,6 +1353,208 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     &:focus-visible { outline: 3px solid $ink; outline-offset: 1px; }
   }
 
+  // The reveal, a 5-star card's: the animation, the signature over it, and the card-get line
+  // in a bubble on the screen's foot. Under the screen are three tracks, laid along the time
+  // the two videos take together and filling as each plays, and the buttons. The big button
+  // that starts it is on the illustration.
+  .rv-go {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    padding: var(--sp-8) 28px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: $sun;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-lg);
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgb(16 60 110 / 35%);
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s;
+
+    &:hover { transform: translate(-50%, -50%) scale(1.06); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  .hc-reveal .hc-shows {
+    top: 16px;
+    bottom: auto;
+  }
+
+  .rv-screen {
+    position: relative;
+    aspect-ratio: 1820 / 1024;
+    overflow: hidden;
+    border-radius: 17px 17px 0 0;
+    background: #0b1b3a;
+    isolation: isolate;
+
+    video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // The line on a white screen first; then the animation, which begins on a white burst, with
+  // the signature over it; then, when the animation has ended on a flash, the card's art
+  // under what is left of the signature.
+  .rv-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  .hc-reveal:is([data-ph='end'], [data-ph='done']) .rv-art { opacity: 1; }
+
+  // The signature's video only feeds the two canvases that show it: the matte, inverted and
+  // multiplied in to clear the strokes' place, then the writing screened in over it.
+  .rv-screen .rv-sign {
+    inset: auto;
+    width: 2px;
+    height: 2px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rv-matte,
+  .rv-ink {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .rv-matte {
+    filter: invert(1);
+    mix-blend-mode: multiply;
+  }
+
+  .rv-ink { mix-blend-mode: screen; }
+
+  .rv-intro {
+    --p: 0;
+    --tint: #fff;
+    --deep: color-mix(in srgb, var(--a) 70%, #{$ink});
+
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-8);
+    align-items: center;
+    justify-content: center;
+    padding: 0 10%;
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+
+    .rv-line {
+      max-width: 34em;
+      color: color-mix(in srgb, var(--a) 30%, #9aa0c4);
+      font-size: clamp(16px, 2.2vw, 26px);
+      font-weight: 900;
+      line-height: 1.5;
+      text-align: center;
+    }
+  }
+
+  .hc-reveal[data-ph='voice'] .rv-intro { opacity: 1; }
+
+  .rv-voice-lab {
+    display: block;
+    color: $ink-soft;
+    font-size: var(--fs-2xs);
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .rv-bar {
+    padding: var(--sp-12) var(--sp-16);
+    border-radius: 0 0 17px 17px;
+    background: $paper;
+    color: $ink;
+  }
+
+  .rv-tracks {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 6px var(--sp-12);
+    align-items: center;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+
+    [hidden] { display: none; }
+  }
+
+  .rv-track {
+    position: relative;
+    height: 8px;
+    border-radius: 4px;
+    background: $line;
+  }
+
+  .rv-seg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--l, 0) * 100%);
+    width: calc(var(--w, 0) * 100%);
+    overflow: hidden;
+    border-radius: 4px;
+    background: #b8d9ea;
+
+    &::after {
+      content: '';
+      display: block;
+      width: calc(var(--p, 0) * 100%);
+      height: 100%;
+      background: #ff4f9a;
+    }
+  }
+
+  .rv-ctl {
+    display: flex;
+    gap: var(--sp-8);
+    align-items: center;
+    margin-top: var(--sp-12);
+
+    button {
+      padding: var(--sp-4) var(--sp-12);
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: $panel;
+      color: $ink;
+      font: inherit;
+      font-size: var(--fs-xs);
+      font-weight: 900;
+      cursor: pointer;
+
+      &:hover { background: $line; }
+      &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+      &[hidden] { display: none; }
+    }
+  }
+
+  .rv-ctl .vol { margin-left: auto; }
+
+  .rv-time {
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+  }
+
   .hc-head {
     @include paper;
 
@@ -1380,46 +1721,290 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .hl { color: $cover-deep; font-weight: 900; }
   }
 
-  // A voice line on a card of paper: who or what, the words, and the line itself.
-  .hc-lines {
+  // ── Voice lines ──
+  // A line is a bubble in its speaker's colour, with her face beside it: the card's own
+  // holomem on the left and whoever answers her on the right. It fills with its own words,
+  // dark over pale, as it plays, and its waveform fills the same way. One dock under the lot.
+
+  .vl-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: var(--sp-12);
+    align-items: start;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .hc-line {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-8);
-    padding: var(--sp-12) var(--sp-16);
-    border-radius: 16px;
-    background: $paper;
-    box-shadow: 0 3px 8px $lift;
+  .vl-chat { grid-template-columns: minmax(0, 1fr); }
 
-    audio { width: 100%; height: 32px; margin-top: auto; }
+  .vl {
+    --p: 0;
+    --tint: color-mix(in srgb, var(--who) 20%, #fff);
+    --deep: color-mix(in srgb, var(--who) 40%, #{$ink});
+
+    display: flex;
+    align-items: flex-end;
+    gap: var(--sp-8);
+    min-width: 0;
+
+    .song-face { width: 32px; height: 32px; margin: 0; }
+
+    &.them { flex-direction: row-reverse; }
+
+    &.is-bad .vl-lab::after { content: ' · could not play'; }
   }
 
-  .hc-line-head {
+  .vl-bub {
     display: flex;
-    align-items: center;
+    flex: 1;
+    align-items: flex-start;
     gap: var(--sp-8);
-    margin: 0;
-    font-size: var(--fs-xs);
+    min-width: 0;
+    padding: var(--sp-8) var(--sp-16) var(--sp-8) var(--sp-8);
+    border-radius: 20px;
+    background: var(--tint);
+    cursor: pointer;
+    transition: box-shadow 0.15s;
+
+    &:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--deep) 45%, transparent); }
+  }
+
+  .is-on > .vl-bub { box-shadow: 0 0 0 2px var(--deep); }
+
+  .vl-play {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: $ink;
+    color: #fff;
+    cursor: pointer;
+
+    svg { width: 16px; height: 16px; fill: currentcolor; }
+    .ico-pause { display: none; }
+
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+  }
+
+  .is-playing > .vl-bub .vl-play {
+    .ico-play { display: none; }
+    .ico-pause { display: block; }
+  }
+
+  .vl-body { flex: 1; min-width: 0; }
+
+  .vl-lab {
+    display: block;
+    color: $ink-soft;
+    font-size: var(--fs-2xs);
     font-weight: 900;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-
-    .song-face { width: 26px; height: 26px; margin: 0; }
   }
 
-  .hc-line-text {
+  // The words twice, the second clipped to what has been said (`--p`, 0 to 1).
+  .vl-text {
+    position: relative;
     margin: 0;
+    color: color-mix(in srgb, #{$ink} 72%, var(--tint, #fff));
     font-size: var(--fs-sm);
     font-weight: 700;
-    line-height: 1.5;
+    line-height: 1.45;
+  }
+
+  .vl-fill {
+    position: absolute;
+    inset: 0;
+    color: var(--deep);
+    clip-path: inset(0 calc(100% - var(--p, 0) * 100%) 0 0);
+  }
+
+  .vl-seek { display: block; margin-top: var(--sp-6); cursor: pointer; }
+
+  .wave {
+    position: relative;
+    display: block;
+    height: 18px;
+
+    > span {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      gap: 2px;
+      align-items: center;
+    }
+
+    i {
+      display: block;
+      flex: 1;
+      min-width: 2px;
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--who, #{$ink}) 35%, #fff);
+    }
+  }
+
+  .wave-on {
+    clip-path: inset(0 calc(100% - var(--p, 0) * 100%) 0 0);
+
+    i { background: var(--deep, #{$ink}); }
+  }
+
+  // The volume: a speaker that mutes, and a slider (holodori-audio.ts). It is the same one
+  // wherever it stands, in the dock's ink or on the reveal's paper.
+  .vol {
+    display: inline-flex;
+    flex: none;
+    gap: var(--sp-6);
+    align-items: center;
+  }
+
+  .vol-mute {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: currentcolor;
+    }
+
+    .vol-waves,
+    .vol-slash {
+      fill: none;
+      stroke: currentcolor;
+      stroke-linecap: round;
+      stroke-width: 1.4;
+    }
+
+    .vol-slash { display: none; }
+
+    &.is-muted {
+      .vol-waves { display: none; }
+      .vol-slash { display: inline; }
+    }
+
+    &:hover { background: rgb(128 140 190 / 22%); }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 1px; }
+  }
+
+  .vol-range {
+    width: 72px;
+    height: 4px;
+    margin: 0;
+    border-radius: 2px;
+    background: color-mix(in srgb, currentcolor 28%, transparent);
+    accent-color: $cover-deep;
+    cursor: pointer;
+    appearance: auto;
+  }
+
+  .vd .vol-range { accent-color: $sky; }
+
+  .hc-voices { position: relative; }
+
+  // The one player for every bubble on the page, pinned to the window's foot while the voices
+  // are on screen.
+  .vd {
+    --p: 0;
+
+    position: sticky;
+    bottom: 14px;
+    z-index: 5;
+    display: flex;
+    gap: var(--sp-8);
+    align-items: center;
+    margin-top: var(--sp-16);
+    padding: var(--sp-8) var(--sp-12);
+    border-radius: 18px;
+    background: $ink;
+    color: #fff;
+    box-shadow: 0 8px 20px rgb(16 30 70 / 35%);
+
+    button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+
+      &:focus-visible { outline: 3px solid $sun; outline-offset: 2px; }
+    }
+
+    svg { display: block; fill: currentcolor; }
+
+    .vd-step { display: grid; place-items: center; width: 28px; height: 28px; }
+    .vd-step svg { width: 16px; height: 16px; }
+
+    .vd-go {
+      display: grid;
+      flex: none;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: $sky;
+      color: $ink;
+
+      svg { width: 16px; height: 16px; }
+      .ico-pause { display: none; }
+    }
+
+    &.is-playing .vd-go {
+      .ico-play { display: none; }
+      .ico-pause { display: block; }
+    }
+
+    .wave i { background: rgb(255 255 255 / 30%); }
+    .wave-on i { background: $sky; }
+  }
+
+  .vd-name {
+    flex: none;
+    min-width: 64px;
+    max-width: 120px;
+    overflow: hidden;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .vd-seek {
+    flex: 1;
+    min-width: 60px;
+    cursor: pointer;
+
+    .wave { height: 24px; }
+  }
+
+  .vd-time {
+    flex: none;
+    min-width: 68px;
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .vd .vd-rate {
+    padding: 2px var(--sp-8);
+    border: 1px solid rgb(255 255 255 / 40%);
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    font-weight: 800;
   }
 
   .hc-dialogues {
@@ -1431,10 +2016,40 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .hc-dialogue {
     @include paper;
 
-    h4 { margin: 0 0 var(--sp-12); font-size: var(--fs-lg); font-weight: 900; }
+    h4 { margin: 0; font-size: var(--fs-lg); font-weight: 900; }
+  }
 
-    .hc-lines { grid-template-columns: minmax(0, 1fr); }
-    .hc-line { background: #fff; box-shadow: 0 1px 4px $lift; }
+  .hc-dialogue-head {
+    display: flex;
+    gap: var(--sp-12);
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sp-12);
+  }
+
+  .vl-conv {
+    flex: none;
+    padding: var(--sp-4) var(--sp-12);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: $ink;
+    color: #fff;
+    font: inherit;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    cursor: pointer;
+
+    &:hover { background: $cover-deep; }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 2px; }
+  }
+
+  // On a phone the dock keeps its buttons and the line's waveform, and the bubbles fill the row.
+  @media (max-width: 640px) {
+    .vd-name,
+    .vd-time,
+    .vd .vol-range { display: none; }
+
+    .vl-list { grid-template-columns: minmax(0, 1fr); }
   }
 
   .type-word {

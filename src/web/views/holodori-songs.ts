@@ -1,5 +1,6 @@
 import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { escHtml } from '../format';
+import { clipHtml } from '../holodori-clip';
 import { wireTurns } from '../holodori-flip';
 import { getHolodoriCharacters, getHolodoriSongs, type HolodoriCharacter, type HolodoriSong } from '../holodori-index';
 
@@ -67,13 +68,16 @@ export function tileHtml(s: HolodoriSong): string {
   const more = s.cast.length && who.length > FACES ? `<b class="song-more">+${who.length - FACES}</b>` : '';
   return `
     <li class="song">
-      <button class="jacket" type="button" data-back="${escHtml(s.id)}" aria-haspopup="dialog" aria-expanded="false"
-              aria-label="${escHtml(`${s.title}, sung by ${s.singers || 'the whole cast'}`)}" style="--paint: ${escHtml(paint)}">
-        ${s.jacket
-          ? `<img src="${escHtml(s.jacket)}" alt="" width="240" height="240" loading="lazy" decoding="async" onerror="this.remove()">`
-          : noJacketHtml(s, who)}
-        ${s.kind === 'Cover' ? '<em class="jacket-kind">Cover</em>' : ''}
-      </button>
+      <div class="song-art">
+        <button class="jacket" type="button" data-back="${escHtml(s.id)}" aria-haspopup="dialog" aria-expanded="false"
+                aria-label="${escHtml(`${s.title}, sung by ${s.singers || 'the whole cast'}`)}" style="--paint: ${escHtml(paint)}">
+          ${s.jacket
+            ? `<img src="${escHtml(s.jacket)}" alt="" width="240" height="240" loading="lazy" decoding="async" onerror="this.remove()">`
+            : noJacketHtml(s, who)}
+          ${s.kind === 'Cover' ? '<em class="jacket-kind">Cover</em>' : ''}
+        </button>
+        ${clipHtml(s)}
+      </div>
       <p class="song-title">${escHtml(s.title)}</p>
       <p class="song-by">${faces}${more}<span>${escHtml(s.singers || 'Everyone')}</span></p>
       ${levelsHtml(s)}
@@ -113,10 +117,10 @@ function draw(page: HTMLElement, items: HolodoriSong[]): void {
   page.innerHTML = `
     <header class="hd-head">
       <h2 class="hd-title">Songs</h2>
-      <p class="hd-sub">Every song in the game, with its four charts' levels · press a jacket for its credits</p>
+      <p class="hd-sub">Every song in the game, with its four charts' levels · press a jacket for its credits, or its disc for the chorus</p>
     </header>
     <ul class="song-grid">${items.map(tileHtml).join('')}</ul>
-    <p class="hd-credit">Jackets: <a href="https://www.hololive-dreams.com/en/music" target="_blank" rel="noopener">hololive Dreams official site</a>, and HolodoriDB's CDN for the newer songs · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
+    <p class="hd-credit">Choruses play from the songs' official music videos on YouTube · Jackets:<a href="https://www.hololive-dreams.com/en/music" target="_blank" rel="noopener">hololive Dreams official site</a>, and HolodoriDB's CDN for the newer songs · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
   `;
   wireTurns(page, backHtml);
 }
