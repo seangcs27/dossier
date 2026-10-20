@@ -105,6 +105,7 @@ scripts/
   lib/ptn-bili-snapshot.json ← what that wiki last gave whole: its roster, 160 pages' text, the crimebrands' and their terms', for a
                                build it will not answer (tracked; a local build rewrites it)
   lib/ptn-ranges.mjs         ← the shape of every skill range the Chinese wiki draws, recorded by hand
+  lib/ptn-cn-english.mjs/.json ← the CN-only Sinners' skills and the rest in English, translated by hand
   lib/ptn-font.mjs           ← cuts Noto Sans SC to the characters PtN's placards set, into src/web/fonts/noto-sans-sc/
   lib/fetch.mjs              ← timedFetch / fetchJson / wikiApi, shared by the three roster scripts
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
@@ -1219,11 +1220,19 @@ for it, of three offered: **names and labels**. A Sinner's name, the placards, t
 line-ups' titles, the tabs, the fact lists' labels, the filter and its badges, and the
 search box's prompt change; and under a Sinner's tabs, the English side is the English
 wiki's text and the Chinese side the Chinese wiki's (the owner's "fill zh", 14 October
-2026, which widened the scope from the first pass: the CN-only Sinners' files are in
-Chinese in either language, since that is the only text there is for them; since 20 October
-2026 a CN-only Sinner's page is held in Chinese whatever the reader chose, its EN greyed
-with a tooltip, by `holdPtnLang` in `ptn-lang.ts`, which leaves the stored choice alone and
-which every PtN view sets or lifts as it mounts). The shell's own
+2026, which widened the scope from the first pass). **The CN-only Sinners' English is
+translated by hand** (20 October 2026, the owner's "translate them"): their trait, Mania
+Intensify, skills, shackles, compliance, crimebrand, extras and terms, by
+`scripts/lib/ptn-cn-english.mjs` (a term table, name table and the stock line shapes) and
+`ptn-cn-english.json` beside it (every other text, Chinese to English). The build puts the
+English on the payload and the Chinese under `zh`, as every other Sinner has it, marks the
+entry `translated`, and logs how many texts are still Chinese (0 today); the English side
+says it is an unofficial translation. Their bio, files and voice lines stay Chinese in
+either language. A CN-only Sinner with no translation is held in Chinese whatever the
+reader chose, its EN greyed with a tooltip, by `holdPtnLang` in `ptn-lang.ts`, which leaves
+the stored choice alone and which every PtN view sets or lifts as it mounts. A new CN-only
+Sinner is their terms and names in the module and their texts in the JSON; once the English
+wiki writes their page they are no longer CN-only and its text takes over. The shell's own
 words on these pages change too (the owner's ask, 14 October 2026): the Filters button,
 Clear and an empty search's message through the roster's `words` (`card.ts`), and the
 section link from each PtN view, since a change of language mounts the view again and not

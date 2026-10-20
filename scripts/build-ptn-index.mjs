@@ -46,6 +46,7 @@ import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
 import { fetchBiliBrands, fetchBiliFiles, fetchBiliImages, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
 import { parseBiliBrand, parseBiliDetail, parseBiliVoices, termsIn } from './lib/ptn-bili-page.mjs';
+import { toEnglish } from './lib/ptn-cn-english.mjs';
 import { bakePtnFont, placardText } from './lib/ptn-font.mjs';
 import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
 import { LAUNCH, LAUNCH_DAY, RELEASES, UNFILED } from './lib/ptn-record.mjs';
@@ -116,7 +117,27 @@ const RANKS = ['S', 'A', 'B'];
 
 // A Sinner's name, which is their page's title, in a form that can go in an address or name
 // a file: 'mr-fox', 'necresta-hella', '000'.
-const slugOf = title => title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+// What of a CN-only Sinner's payload is translated, and a copy of a part of it with every
+// text in English that has some. Pictures, ranges and kinds are not text; the Chinese texts
+// left are counted for the build's summary.
+const CN_ENGLISH = ['trait', 'mania', 'skills', 'shackles', 'brand', 'extras', 'terms', 'compliance'];
+const NOT_TEXT = new Set(['icon', 'image', 'kind', 'ranges']);
+let untranslated = 0;
+const english = value => {
+  if (typeof value === 'string') {
+    if (!/\p{Script=Han}/u.test(value)) return value;
+    const text = toEnglish(value);
+    if (text === undefined) untranslated++;
+    return text ?? value;
+  }
+  if (Array.isArray(value)) return value.map(english);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, v]) => [key, NOT_TEXT.has(key) ? v : english(v)]));
+  }
+  return value;
+};
+
+const slugOf = title =>title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // The day each Sinner in the record was released, by their name.
 const RELEASED = new Map([
@@ -329,13 +350,21 @@ async function buildRoster() {
       ? parseBiliDetail(pageOf.get(row.nameCn), row.nameCn, termOf) ?? {}
       : {};
     if (page.names && brandOf.has(row.nameCn)) page.brand = brandOf.get(row.nameCn);
+    // Their skills, trait, shackles and the rest in English, translated by hand
+    // (lib/ptn-cn-english.mjs), with the Chinese kept as `zh` for the Chinese side, as every
+    // other Sinner's is. A text with no English stays Chinese on both.
+    const translated = page.names && Object.fromEntries(CN_ENGLISH.filter(key => key in page).map(key => [key, english(page[key])]));
+    if (translated && Object.keys(translated).length) {
+      page.zh = Object.fromEntries(Object.keys(translated).map(key => [key, page[key]]));
+      Object.assign(page, translated);
+    }
     sinners.push({
       id, name: row.name, nameCn: row.nameCn,
       number: row.number === '数据未知' ? 'Unknown' : row.number, ...code,
       rank: row.rank, ...(row.height ? { height: row.height } : {}),
       tendency: row.tendency, libram: row.libram, birthplace, tags: [], tagsCn: row.tagsCn,
       ...(row.limited ? { limited: row.limited } : {}), ...(row.core ? { core: true } : {}),
-      cnOnly: true, releasedCn: row.releasedCn,
+      cnOnly: true, releasedCn: row.releasedCn, ...(page.zh ? { translated: true } : {}),
     });
     details.push({
       id,
@@ -527,6 +556,7 @@ try {
   // Written again every build, since a page changes with the game.
   await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));
   console.log(`ptn details: ${details.length}, ${details.filter(d => d.zh).length} with the Chinese wiki's text beside the English -> ${path.relative(process.cwd(), detailDir)}`);
+  console.log(`ptn CN-only: ${sinners.filter(s => s.translated).length} translated, ${untranslated} texts still Chinese (lib/ptn-cn-english.mjs)`);
   const artless = sinners.filter(s => !s.figure).map(s => s.name);
   const undated = sinners.filter(s => !s.released && !s.cnOnly).map(s => s.name);
   console.log(

@@ -26,6 +26,8 @@ export interface PtnSinner {
   // file is the Chinese wiki's head of it, and `releasedCn` the day they came there.
   cnOnly?: boolean;
   releasedCn?: string;
+  // A CN-only Sinner whose skills and the rest the build has an unofficial English for.
+  translated?: boolean;
   // A collab's own code for its Sinner ('FE40536'), where they have no MBCC number.
   code?: string;
   // What the Sinner's file prints after 'MBCC-S-': '019'. It does not tell two Sinners

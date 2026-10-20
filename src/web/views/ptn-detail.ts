@@ -510,6 +510,8 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
 
 // Said in English, since it is for a reader who picked English.
 const CN_ONLY_TIP = 'Only on the CN server: no English text yet, so this file is in Chinese.';
+const CN_ONLY_NOTE = 'Only on the CN server: an unofficial translation of the Chinese wiki\'s text. '
+  + 'The bio, files and voice lines are still in Chinese.';
 
 // `detail` is undefined while the payload is on its way and null when it could not be had.
 // `picked` is the picture on show, among the payload's.
@@ -526,7 +528,7 @@ function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, pic
             <span class="seg" role="group" aria-label="Language">
               ${PTN_LANGS.map(l => `
                 <button class="seg-btn${l.id === ptnLang() ? ' on' : ''}" data-lang="${l.id}"
-                        aria-pressed="${l.id === ptnLang()}"${s.cnOnly && l.id === 'en'
+                        aria-pressed="${l.id === ptnLang()}"${s.cnOnly && !s.translated && l.id === 'en'
                           ? ` aria-disabled="true" data-tip="${escHtml(CN_ONLY_TIP)}"` : ''}>${l.label}</button>
               `).join('')}
             </span>
@@ -542,7 +544,7 @@ function shellHtml(s: PtnSinner, detail: PtnSinnerDetail | null | undefined, pic
                         aria-selected="${entry.id === tab}" data-tab="${entry.id}">${t(entry.label)}</button>
               `).join('')}
             </div>
-            <div class="op-tabpanel">${panel}</div>
+            <div class="op-tabpanel">${s.translated && ptnLang() === 'en' ? `<p class="ptn-note">${CN_ONLY_NOTE}</p>` : ''}${panel}</div>
           </section>
         </div>
       </div>
@@ -559,9 +561,9 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   document.getElementById('count')!.textContent = '';
 
   const sinner = getPtnSinners().find(s => s.id === id);
-  // A CN-only Sinner has no English text to show, so their page is Chinese whatever the
+  // A CN-only Sinner with no English text to show has their page in Chinese whatever the
   // reader chose; the choice itself is kept for every other page.
-  holdPtnLang(sinner?.cnOnly ? 'zh' : undefined);
+  holdPtnLang(sinner?.cnOnly && !sinner.translated ? 'zh' : undefined);
   if (!sinner) {
     container.innerHTML = `
       <div class="detail">
