@@ -3,6 +3,9 @@ import type { OperatorId, OperatorIndexEntry, PopupOperator, Rarity } from '../.
 import bundled from '../../shared/generated/operators.json';
 import bundledDetails from '../../shared/generated/operator-popup.json';
 import { renderError, renderGrid, renderDetail } from './render';
+import { bindImageMirror } from '../../shared/api/hella-api';
+
+bindImageMirror(document);
 
 const search = document.getElementById('search') as HTMLInputElement;
 const count  = document.getElementById('count')!;

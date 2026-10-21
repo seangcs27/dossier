@@ -97,7 +97,9 @@ const AN_EN_TAGS_JSON_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/A
 const AN_EN_TAGS_BASE = `${AN_EN_TAGS_JSON_BASE}/ace`;
 const ARKNIGHT_IMAGES_TREE_URL =
   'https://api.github.com/repos/PuppiizSunniiz/Arknight-Images/git/trees/main?recursive=1';
-const ARKNIGHT_IMAGES_BASE = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+// Mirrors IMAGE_BASE in src/shared/api/hella-api.ts, and the jsDelivr copy it falls back to.
+const ARKNIGHT_IMAGES_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main';
+const ARKNIGHT_IMAGES_MIRROR = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
 // Mirrors PORTRAIT_BASE in src/shared/api/hella-api.ts — the 180x360 bust crops the grid
 // bakes into the bundle.
 const PORTRAIT_BASE = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
@@ -180,13 +182,12 @@ async function bakeIcons(label, dirName, names, pathFor, size = 256) {
   let written = 0;
   const missing = [];
   await mapConcurrent(wanted, 4, async id => {
-    // jsDelivr is first because it is what the rest of the project uses, but it is also
-    // the flakier of the two from a CI runner: a first run lost four of nineteen logos to
-    // two timeouts, a 403 and a 404, none of which reproduced locally. GitHub's raw host
-    // serves the same bytes and fails at different times, so trying both turns a lost
-    // logo into a retry. Anything already on disk is left alone, so a later build fills
-    // gaps rather than re-fetching what worked.
-    for (const base of [ARKNIGHT_IMAGES_BASE, 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main']) {
+    // GitHub's raw host is first, as for the rest of the project; jsDelivr serves the same
+    // bytes and fails at different times (a first run there lost four of nineteen logos to
+    // two timeouts, a 403 and a 404, none of which reproduced locally), so trying both
+    // turns a lost logo into a retry. Anything already on disk is left alone, so a later
+    // build fills gaps rather than re-fetching what worked.
+    for (const base of [ARKNIGHT_IMAGES_BASE, ARKNIGHT_IMAGES_MIRROR]) {
       try {
         const res = await fetchWithRetry(`${base}/${pathFor(id)}`);
         if (!res.ok) throw new Error(String(res.status));
@@ -1309,10 +1310,23 @@ const VALID_PROFESSION = new Set([
 ]);
 const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
 
+// What the last build wrote, for what only the wiki knows when it does not answer: an
+// operator's release date, and the archetype of the operators no EN operator names. An
+// operator the last build did not know sorts as undated, and has no archetype, until the wiki
+// answers. With no last build the dates are empty and the MIN_DATED check below fails the
+// run, as an empty bundle should.
+const lastIndex = await readFile(path.join(outDir, 'operators.json'), 'utf8')
+  .then(text => JSON.parse(text), () => [])
+  .then(prev => (Array.isArray(prev) ? prev : []));
+const lastArchetype = new Map(lastIndex.filter(o => o.archetype).map(o => [o.id, o.archetype]));
+
 const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
   table('en', 'character_table').catch(e => e),
   table('en', 'char_patch_table').catch(e => e),
-  fetchReleaseDates(),
+  fetchReleaseDates().catch((err) => {
+    console.warn(`release dates: the wiki did not answer (${err.message}); using the last build's`);
+    return new Map(lastIndex.filter(o => o.releaseDate && o.releaseDate !== RECENT_UNDATED).map(o => [o.name, o.releaseDate]));
+  }),
   fetchReleaseOrder(),
 ]);
 
@@ -1472,7 +1486,7 @@ for (const c of cnSupplement) {
     // operators, Pedro and Yukari Takeba, are both CN-supplement — so the wiki's own branch
     // field names it instead. Without a name the branch icon can't be matched either.
     archetype: archetypeBySubclass.get(c.subProfessionId)
-      ?? traitByName.get(normalizeWikiName(c.appellation))?.branch ?? '',
+      ?? traitByName.get(normalizeWikiName(c.appellation))?.branch ?? lastArchetype.get(c.id) ?? '',
     tags: c.tags,
     releaseDate: RECENT_UNDATED,
     releaseOrder: releaseOrders.get(c.id) ?? null,

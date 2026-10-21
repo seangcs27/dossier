@@ -89,6 +89,9 @@ scripts/
                                upcoming.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
+  lib/holodori-clips.mjs     ← where each song's clip plays in its music video where the game's window is
+                               not right for it, and the videos of two songs the dump has none for,
+                               recorded by hand from YouTube
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
   backup-art.mjs             ← Arknights' and Path to Nowhere's remote art onto the art-backup release, run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
@@ -227,6 +230,10 @@ src/
     sections.ts     ← the fill behind the section link being shown, and its move from one
                       link to the other as a drop with a tail (markSection)
     holodori-flip.ts  ← turning a hololive Dreams song's jacket over to its back
+    holodori-audio.ts  ← one sound at a time across hololive Dreams' pages, their volume, and the waveform strip
+    holodori-voice.ts  ← a card page's voice lines as bubbles, with the one dock they share
+    holodori-reveal.ts  ← a 5-star card's reveal: the card-get line, then the animation with the signature over it
+    holodori-clip.ts  ← a song's chorus, played from its music video in a YouTube embed
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
@@ -391,7 +398,17 @@ moduleImageUrl(uniEquipId)                 // module illustration — Arknight-I
 classIconUrl(slug)                         // Arknight-Images CDN, takes the CSS slug
 archetypeIconUrl(subProfessionId)          // bundle-relative branch-icons/ — self-hosted
 IMAGE_BASE
+bindImageMirror(document)                  // installed by both entries; see below
 ```
+
+"Arknight-Images CDN" is `IMAGE_BASE`, the repository on GitHub's raw host
+(`raw.githubusercontent.com`). An image from it that fails is asked once of the same file
+through jsDelivr before its own `onerror` runs: `bindImageMirror`, one capturing `error`
+listener on the document. jsDelivr was the first host and is the fallback only, since it
+fetches the whole repository before serving a file from it, and for this one that failed
+53 of 303 files that exist and took about 8.7 s a file cold (GitHub: none, 0.8 s; 20
+October 2026). The illustrations go through wsrv.nl, which caches a year, so GitHub is
+asked directly for little more than the avatars and icons.
 
 Branch icons are self-hosted because the old source (Aceship's mirror) stopped updating in
 2022. Coverage is 72/72. The wiki's `Category:Branch icons` isn't exhaustive — "Supportive
@@ -461,7 +478,11 @@ badge: Rainbow Six Siege has Team Rainbow's from the game. A new collab's logo i
 dropped in that folder under the collab's name.
 
 **Seven sources are joined at build time.** Only the game's own excel tables are load-bearing
-— every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
+— every other fetch degrades with a `console.warn`. (The wiki's release dates did not until
+21 October 2026, when a wiki.gg outage, 502s on every wiki on the platform, failed the whole
+operator build and with it the daily deploy, since `build:index` is a chain of `&&`. They now
+fall back to the last build's dates, and the two operators whose archetype only the wiki
+names keep the last build's: run against the downed wiki, the index came out identical.) When those tables are unreachable, both index
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
 `.github/workflows/deploy-pages.yml`). GitHub drops a cache nobody has used for 7 days, so
@@ -665,10 +686,13 @@ tail's length is the gap between two edges that each ease on their own. The blob
 by measuring the link, and a `ResizeObserver` on the links re-places it when one changes
 size (another game's label, a phone's smaller type); CSS cannot lay it out against the
 links, for the reason the filter panel's tab is measured. `markSection()` does nothing but
-re-place for the link already marked, which matters: **one change of page reaches the
-router twice**, as a `popstate` and then a `hashchange` (`onRouteChange` listens to both, so
-every view is mounted twice per navigation), and cancelling on the second call killed the
-move as it began. Like the filter panel it plays whatever `prefers-reduced-motion` says.
+re-place for the link already marked, which matters: **a change of hash fires a `popstate`
+and then a `hashchange`**, and until 21 October 2026 every view was mounted twice per
+navigation because `onRouteChange` acted on both, the second call cancelling the move as it
+began. The router now skips a route whose address is the one it last drew for (`drawn` in
+`router.ts`, which `goHome()` also sets, since it changes the address through the history API
+and fires only `popstate`), so a view mounts once. Like the filter panel it plays whatever
+`prefers-reduced-motion` says.
 
 **The topbar lays itself out by its own width**, a container query on `.topbar`, because the
 sidebar takes a share of the window that the bar never has. With 960px or more it is one
@@ -1526,8 +1550,33 @@ details were. Both are `mountRoster` pages with search, filters and orders, on t
 dotted paper. **Songs**: a press turns a jacket over to its back (`holodori-flip.ts`). a jacket over the title, the
 singers' faces and the four charts' levels in their colours (Easy, Normal, Hard, Expert);
 the back has the length, the day it was added, the credits, how it is unlocked, the music
-video and the copyright line. Filters: Original / Cover, branch, singer; orders: Newest,
-Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
+video and the copyright line. **A disc on the jacket's corner plays the song's chorus**
+(20 October 2026, the owner's ask; 205 of 219 songs, the ones with a music video): the part
+of the song's official music video the game marks as its chorus (`chorus`, from the Music
+table's `chorusStartMillisecond` and `chorusEndMillisecond`), in YouTube's own embedded
+player (`youtube-nocookie.com`, `holodori-clip.ts`). No audio is copied or hosted, which is
+the point: the songs are COVER's and the publishers', and COVER's guidelines leave reusing
+a song as it is out of what they allow. The player stays in view in the window's corner
+while it plays, as YouTube's API policy wants, and can be moved (the owner's ask, 21
+October): by the grip along its top, its title, or the arrow keys on the grip, kept inside
+the window and remembered while the page is open. The disc has a ring that is always there
+and a pink arc that fills from the time the player reports over `postMessage`, with a halo
+going out from it while the clip plays. **The game's chorus window is in the game's own cut
+of the song, which is about 2 minutes, and the dump's `mvUrl` is most often the full music
+video (3 to 5)**: found on 21 October by comparing each video's length with the song's
+`playingSeconds`, 171 of 205 were more than 8 s apart, and the window landed in the wrong
+part of them. Those songs' clips are therefore **recorded by hand** in
+`scripts/lib/holodori-clips.mjs` (`CLIP_AT`): the first peak of the video's "most replayed"
+graph where the game's chorus could be in the full version, 3 s before it, for the length of
+the game's chorus. It is an estimate, which the song carries as `estimated` and the player
+words "Highlight" instead of "Chorus"; the same pick on the 32 songs whose lengths line up
+fell within 8 s of the game's own window 29 times in 32, over a narrow range. The same file
+gives two songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
+channel, the game's length); 12 songs still have no disc: 10 older ones whose only uploads
+are the full-length audio or a different version, and Amaryllis and CORE//UNBREAKABLE,
+dated 23 and 25 October, which have no video yet. A new song's link comes from the dump,
+and its game window is used as it is until someone checks its length. Filters: Original /
+Cover, branch, singer; orders: Newest, Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
 of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy),
 opening the card's page. Filters: rarity, type, branch, holomem; orders: Newest, Holomem,
 Rarity.
@@ -1552,13 +1601,47 @@ cannot be had.
 October 2026, the owner's "card pages first"), after holodori.best's card page: its
 illustration in its rarity's frame (opening the art viewer on the CDN's full-size file),
 with an Animation and a Signature beside it on a 5-star card (84 of 192), played from the
-CDN; the name, the holomem (a link to her page) and a fact list; then **Stats**, a level
+CDN, and **Reveal** (`holodori-reveal.ts`, 20 October 2026), which plays the two and the
+card-get line as the game does for a card won, from one tap (a browser lets a page play
+sound only after one). **The order is read off a recording of a real 5-star pull** (a
+YouTube video, 21 October 2026; frames sampled and its audio's loudness measured in the
+browser, nothing downloaded): the line is said first, on a white screen with its words
+(here the line's karaoke fill, in the holomem's colour; the audio is loud for about 1.5 s
+there and silent for the rest), then the animation plays and the signature is written
+over it from the same instant. The animation is silent, begins on a white burst (which is
+why the white screen leads into it) and ends on a flash, after which the card's own art
+comes up under the signature, which stays. The owner's asks that led here: "can they all
+be play tgt" (all three at once, the first version after the animation-then-signature
+one), then "check YouTube for some reference so the timing would look impeccable".
+**The signature's video is 1280x1440: its top half is the writing in colour and its bottom
+half a white matte of the same strokes**, two 16:9 pictures that line up with the card (the
+first version drew the whole frame, which showed the writing twice and off to one side).
+Both halves are drawn onto canvases (a canvas shows a video from another host and only
+cannot be read back, which nothing does; the CDN sends no CORS headers) over the screen,
+the matte inverted and multiplied in and the colour screened in, which is the alpha
+composite. The writing fades out in the video's last half-second, so the frame before the
+fade is the one that stays (`FADE`). Under the screen three tracks (the line, the
+animation, the signature) run along the whole (10 s, 9 s and 5 s, and 0.4 s held after the
+line, on the card checked), with Skip, Replay and the volume; the
+name, the holomem (a link to her page) and a fact list; then **Stats**, a level
 slider and blooms 0 to 5 over the three stats and their total, with the limit breaks the
 level needs; **Skills**, passive, active, special, connect effect (none on a 3-star) and
 outfit skill, each at the level the bloom gives it; **Voice lines** (card get, conversation,
 live skill, bloom 1 to 5: 5-star cards only) and **Live dialogues** (her line and another
-holomem's answer, 390 across the cards), each with its audio from the CDN. The level and
-bloom are kept from one card to the next; the level opens at the card's top. Previous and
+holomem's answer, 390 across the cards), each with its audio from the CDN, as bubbles
+(`holodori-voice.ts`): in the speaker's colour with her face, the card's own holomem on the
+left and whoever answers on the right, filling with its words as it plays and with a
+waveform to press for a place in it (a shape for the eye, from the line's name, not read
+from the audio). A dialogue has Play conversation, and one dock, pinned to the window's foot
+while the voices are on screen, has previous, next, play, the line's waveform, its time, a
+volume and a speed. **The volume** (a speaker that mutes and a slider, `volumeHtml()` in
+`holodori-audio.ts`, the owner's "make voice adjustable") is one for the voice lines and a
+reveal's three parts, starting at 50% (the owner's pick, 21 October), kept in `localStorage`
+and the same wherever it stands on the page; a
+song's clip is YouTube's own player, which has its own. One sound plays at a time across
+the site (a reveal, a line or a chorus stops the one before), and a change of page stops it. The page keeps its stage
+and voices when a bloom or the payload redraws the rest, so that nothing playing is cut.
+The level and bloom are kept from one card to the next; the level opens at the card's top. Previous and
 next card in the game's order are at the trail's right.
 
 Everything under the head is the payload, `card-details/<id>.json`. **A stat is
@@ -1633,9 +1716,8 @@ a banner opening within the hour of it. A preview names no banner, so the card r
 The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
 as a pattern, and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
-site it animates whatever `prefers-reduced-motion` says. The view is mounted twice a
-navigation, as every view is, and its handlers are assigned to its own page element,
-since `card.ts`'s finder takes `document`'s.
+site it animates whatever `prefers-reduced-motion` says. Its handlers are assigned to its
+own page element, since `card.ts`'s finder takes `document`'s.
 
 **Fate/Grand Order** (`#/fgo`, 470 Servants, 52 of them JP only).
 `scripts/build-fgo-index.mjs` reads Atlas Academy's two "basic" exports, NA's and JP's with

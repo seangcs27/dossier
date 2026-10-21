@@ -96,9 +96,9 @@ export function markSection(link?: HTMLElement): void {
     shown = undefined;
     return;
   }
-  // Called again for the link already marked, it must leave a move in progress alone: one
-  // change of page reaches the router twice, as a popstate and then as a hashchange. The
-  // link's box may still have changed, with the game and so its label.
+  // Called again for the link already marked, it must leave a move in progress alone (a
+  // page that is redrawn for the same section, which the router used to do on every
+  // change of page). The link's box may still have changed, with the game and so its label.
   if (link === shown) {
     place();
     return;

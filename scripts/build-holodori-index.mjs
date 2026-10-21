@@ -33,6 +33,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { fetchJson, timedFetch } from './lib/fetch.mjs';
+import { CLIP_AT, MV_FOR } from './lib/holodori-clips.mjs';
 import { GACHAS } from './lib/holodori-gachas.mjs';
 
 const outDir = path.join(
@@ -266,7 +267,14 @@ async function buildSongs() {
     // PRESET is had from the start, SHOP is bought, REWARD is a quest's, and says which.
     release: tail(m.releaseType).toLowerCase(),
     unlock: text.get(m.lockDescriptionLangId) ?? '',
-    mv: m.mvUrl ?? '',
+    mv: m.mvUrl || (MV_FOR[m.id] ? `https://www.youtube.com/watch?v=${MV_FOR[m.id]}` : ''),
+    // The start and end in milliseconds of the part the page plays of its music video: the
+    // chorus the game marks, or, where the video is not the game's cut, the recorded estimate.
+    chorus: CLIP_AT[m.id]
+      ? CLIP_AT[m.id].map(s => s * 1000)
+      : Number.isFinite(m.chorusStartMillisecond) && Number.isFinite(m.chorusEndMillisecond) && m.chorusEndMillisecond > m.chorusStartMillisecond
+        ? [m.chorusStartMillisecond, m.chorusEndMillisecond] : undefined,
+    estimated: CLIP_AT[m.id] ? true : undefined,
     copyright: m.copyright ?? '',
     // Its jacket's name on the CDN, for addJackets; not written to the file.
     jacketAsset: m.jacketAssetId || m.id,

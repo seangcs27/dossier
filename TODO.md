@@ -170,16 +170,9 @@ site, approved 15 October 2026). Not built yet:
 - **The drawer shows the short names** (PtN, Holodori, FGO) where it has room for the full
   ones.
 
-### Every change of hash mounts its view twice
+### Astro hybrid for the website
 
-`onRouteChange` (`router.ts`) listens to both `hashchange` and `popstate`, and a change of
-hash fires both, `popstate` first. So `dispatch()` runs twice per navigation: the grid is
-built twice, a dossier mounted twice. Seen on 11 October 2026, when the second run
-cancelled the section links' blob as it set off; `sections.ts` now only re-places the fill
-when called for the link already marked. Nothing else is known to break, but every view was
-written as if it mounted once. `popstate` is there for Back and Forward across `goHome()`,
-which changes the address through the history API and fires no `hashchange`. Skipping a
-route equal to the one just dispatched would make it once.
+A phase-by-phase plan is in `PLAN-astro-hybrid.md` (written 22 October 2026, not started): Astro for the shell and the read-mostly pages, the existing views kept as client scripts, the extension untouched. It has two go/no-go gates, and the cheaper fallback is on-demand loading of each game inside the webpack build (about 74% of `app.js` is bundled JSON).
 
 ### Arknights: Endfield — what is left
 

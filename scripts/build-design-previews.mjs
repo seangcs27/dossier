@@ -12,7 +12,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cssPath = path.join(root, 'dist', 'web', 'styles.css');
 const outDir = path.join(root, 'design', 'components');
 
-const CDN = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
+const CDN = 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main';
 const PORTRAIT_CDN = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameResource@main/portrait';
 const avatar = id => `${CDN}/avatars/${id}.png`;
 const portrait = id => `${PORTRAIT_CDN}/${id}_1.png`;
