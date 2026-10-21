@@ -170,6 +170,10 @@ site, approved 15 October 2026). Not built yet:
 - **The drawer shows the short names** (PtN, Holodori, FGO) where it has room for the full
   ones.
 
+### Astro hybrid for the website
+
+A phase-by-phase plan is in `PLAN-astro-hybrid.md` (written 22 October 2026, not started): Astro for the shell and the read-mostly pages, the existing views kept as client scripts, the extension untouched. It has two go/no-go gates, and the cheaper fallback is on-demand loading of each game inside the webpack build (about 74% of `app.js` is bundled JSON).
+
 ### Arknights: Endfield — what is left
 
 The second game has a sidebar tile (Endfield Industries' emblem), a roster (`#/endfield`, 33
