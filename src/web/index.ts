@@ -1,5 +1,5 @@
 import './styles.scss';
-import { applyRandomLogo } from './logo';
+import { applyRandomLogo, setLogoGame } from './logo';
 import { currentRoute, goHome, onRouteChange, type Route } from './router';
 import { mountGrid } from './views/grid';
 import { mountDetail } from './views/detail';
@@ -62,6 +62,7 @@ function dispatch(): void {
   const game = gameOf(route.view);
   // Which page is showing, for the few rules that differ by it (the phone's count).
   document.body.dataset.view = route.view;
+  setLogoGame(game);
   setDrawer(false);
   for (const name of Object.keys(GAMES)) {
     document.getElementById(`nav-${name}`)!.classList.toggle('active', name === game);
