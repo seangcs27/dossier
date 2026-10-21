@@ -170,17 +170,6 @@ site, approved 15 October 2026). Not built yet:
 - **The drawer shows the short names** (PtN, Holodori, FGO) where it has room for the full
   ones.
 
-### Every change of hash mounts its view twice
-
-`onRouteChange` (`router.ts`) listens to both `hashchange` and `popstate`, and a change of
-hash fires both, `popstate` first. So `dispatch()` runs twice per navigation: the grid is
-built twice, a dossier mounted twice. Seen on 11 October 2026, when the second run
-cancelled the section links' blob as it set off; `sections.ts` now only re-places the fill
-when called for the link already marked. Nothing else is known to break, but every view was
-written as if it mounted once. `popstate` is there for Back and Forward across `goHome()`,
-which changes the address through the history API and fires no `hashchange`. Skipping a
-route equal to the one just dispatched would make it once.
-
 ### Arknights: Endfield — what is left
 
 The second game has a sidebar tile (Endfield Industries' emblem), a roster (`#/endfield`, 33

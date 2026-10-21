@@ -52,8 +52,16 @@ export function currentRoute(): Route {
   return parseHash(window.location.hash);
 }
 
+// The address the page was last drawn for. A change of hash fires popstate and then
+// hashchange, so a route is acted on only if the address differs from this.
+let drawn = window.location.href;
+
 export function onRouteChange(handler: (route: Route) => void): void {
-  const fire = (): void => handler(currentRoute());
+  const fire = (): void => {
+    if (window.location.href === drawn) return;
+    drawn = window.location.href;
+    handler(currentRoute());
+  };
   window.addEventListener('hashchange', fire);
   // goHome() navigates with the history API rather than the hash, and that fires popstate
   // instead — including when the visitor presses Back afterwards.
@@ -68,4 +76,5 @@ export function onRouteChange(handler: (route: Route) => void): void {
  */
 export function goHome(): void {
   history.pushState(null, '', window.location.pathname + window.location.search);
+  drawn = window.location.href;
 }
