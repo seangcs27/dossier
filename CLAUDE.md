@@ -662,10 +662,13 @@ tail's length is the gap between two edges that each ease on their own. The blob
 by measuring the link, and a `ResizeObserver` on the links re-places it when one changes
 size (another game's label, a phone's smaller type); CSS cannot lay it out against the
 links, for the reason the filter panel's tab is measured. `markSection()` does nothing but
-re-place for the link already marked, which matters: **one change of page reaches the
-router twice**, as a `popstate` and then a `hashchange` (`onRouteChange` listens to both, so
-every view is mounted twice per navigation), and cancelling on the second call killed the
-move as it began. Like the filter panel it plays whatever `prefers-reduced-motion` says.
+re-place for the link already marked, which matters: **a change of hash fires a `popstate`
+and then a `hashchange`**, and until 21 October 2026 every view was mounted twice per
+navigation because `onRouteChange` acted on both, the second call cancelling the move as it
+began. The router now skips a route whose address is the one it last drew for (`drawn` in
+`router.ts`, which `goHome()` also sets, since it changes the address through the history API
+and fires only `popstate`), so a view mounts once. Like the filter panel it plays whatever
+`prefers-reduced-motion` says.
 
 **The topbar lays itself out by its own width**, a container query on `.topbar`, because the
 sidebar takes a share of the window that the bar never has. With 960px or more it is one
@@ -1689,9 +1692,8 @@ a banner opening within the hour of it. A preview names no banner, so the card r
 The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
 as a pattern, and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
-site it animates whatever `prefers-reduced-motion` says. The view is mounted twice a
-navigation, as every view is, and its handlers are assigned to its own page element,
-since `card.ts`'s finder takes `document`'s.
+site it animates whatever `prefers-reduced-motion` says. Its handlers are assigned to its
+own page element, since `card.ts`'s finder takes `document`'s.
 
 **Fate/Grand Order** (`#/fgo`, 470 Servants, 52 of them JP only).
 `scripts/build-fgo-index.mjs` reads Atlas Academy's two "basic" exports, NA's and JP's with
