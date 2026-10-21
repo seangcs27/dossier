@@ -202,8 +202,28 @@ src/
                       mountRoster, and its search box and filter panel for a game that asks
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, again on hover, and
                       then once a second for as long as a mouse rests on the logo. All seven
-                      are on the emoticon set's red square: the plain avatar's copy (-1) was
-                      given one, rebuilt from the other six
+                      are on the emoticon set's red square: the plain avatar (-1) was given
+                      one by laying the cut-out over the other six's shared background, at the
+                      1.17x (and 1px) a search over scale and shift found it best fits them
+                      (they fit themselves at 1.00). Per game since 21 October 2026
+                      (`setLogoGame`, from `dispatch`): hololive Dreams rests on hololive's
+                      triangle in white on its blue (`icons/logo-holodori.webp`, the
+                      sidebar's emblem) and, with a mouse on the logo, rolls Kronie, Ouro
+                      Kronii's blue clock bear (`icons/holodori-kronie.webp`, the owner's own
+                      copy of the emoji from their hololive-helper repo) every 2.5 s, and one
+                      roll in 8 an animated Ina'nis chibi (`icons/holodori-ina.webp`, from
+                      that repo's `ina-nis.gif`, cropped to a square on her body); it goes
+                      back to the triangle when the mouse leaves. Endfield, Path to Nowhere
+                      and Fate/Grand Order wear their sidebar emblem in white on a square of
+                      our own choice (`icons/logo-<game>.webp`: charcoal, red, blue; one face
+                      each), and with a mouse on Path to Nowhere's, one roll in 20 (every second while
+                      it rests there) is the duck of its April Fools 2025
+                      (`icons/ptn-duck.webp`, the game's own "Ga" avatar from the Chinese
+                      wiki), until the mouse leaves. The owner's first plan for hololive Dreams was
+                      a mascot per holomem from hololive.wiki's "List of Mascots" (50
+                      baked; only 10 were clean, the rest video screenshots, a smudge at
+                      44px) and they cut it down. All of it is third-party art the owner
+                      approved on 21 and 22 October; baked once by hand, not by the build
     sections.ts     ← the fill behind the section link being shown, and its move from one
                       link to the other as a drop with a tail (markSection)
     holodori-flip.ts  ← turning a hololive Dreams song's jacket over to its back
