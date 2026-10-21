@@ -1310,10 +1310,23 @@ const VALID_PROFESSION = new Set([
 ]);
 const VALID_RARITY = new Set(['TIER_1', 'TIER_2', 'TIER_3', 'TIER_4', 'TIER_5', 'TIER_6']);
 
+// What the last build wrote, for what only the wiki knows when it does not answer: an
+// operator's release date, and the archetype of the operators no EN operator names. An
+// operator the last build did not know sorts as undated, and has no archetype, until the wiki
+// answers. With no last build the dates are empty and the MIN_DATED check below fails the
+// run, as an empty bundle should.
+const lastIndex = await readFile(path.join(outDir, 'operators.json'), 'utf8')
+  .then(text => JSON.parse(text), () => [])
+  .then(prev => (Array.isArray(prev) ? prev : []));
+const lastArchetype = new Map(lastIndex.filter(o => o.archetype).map(o => [o.id, o.archetype]));
+
 const [enChars, enPatch, releaseDates, releaseOrders] = await Promise.all([
   table('en', 'character_table').catch(e => e),
   table('en', 'char_patch_table').catch(e => e),
-  fetchReleaseDates(),
+  fetchReleaseDates().catch((err) => {
+    console.warn(`release dates: the wiki did not answer (${err.message}); using the last build's`);
+    return new Map(lastIndex.filter(o => o.releaseDate && o.releaseDate !== RECENT_UNDATED).map(o => [o.name, o.releaseDate]));
+  }),
   fetchReleaseOrder(),
 ]);
 
@@ -1473,7 +1486,7 @@ for (const c of cnSupplement) {
     // operators, Pedro and Yukari Takeba, are both CN-supplement — so the wiki's own branch
     // field names it instead. Without a name the branch icon can't be matched either.
     archetype: archetypeBySubclass.get(c.subProfessionId)
-      ?? traitByName.get(normalizeWikiName(c.appellation))?.branch ?? '',
+      ?? traitByName.get(normalizeWikiName(c.appellation))?.branch ?? lastArchetype.get(c.id) ?? '',
     tags: c.tags,
     releaseDate: RECENT_UNDATED,
     releaseOrder: releaseOrders.get(c.id) ?? null,

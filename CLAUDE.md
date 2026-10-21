@@ -458,7 +458,11 @@ badge: Rainbow Six Siege has Team Rainbow's from the game. A new collab's logo i
 dropped in that folder under the collab's name.
 
 **Seven sources are joined at build time.** Only the game's own excel tables are load-bearing
-— every other fetch degrades with a `console.warn`. When those tables are unreachable, both index
+— every other fetch degrades with a `console.warn`. (The wiki's release dates did not until
+21 October 2026, when a wiki.gg outage, 502s on every wiki on the platform, failed the whole
+operator build and with it the daily deploy, since `build:index` is a chain of `&&`. They now
+fall back to the last build's dates, and the two operators whose archetype only the wiki
+names keep the last build's: run against the downed wiki, the index came out identical.) When those tables are unreachable, both index
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
 `.github/workflows/deploy-pages.yml`). GitHub drops a cache nobody has used for 7 days, so
