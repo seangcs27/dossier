@@ -89,6 +89,9 @@ scripts/
                                upcoming.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
+  lib/holodori-clips.mjs     ← where each song's clip plays in its music video where the game's window is
+                               not right for it, and the videos of two songs the dump has none for,
+                               recorded by hand from YouTube
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
   backup-art.mjs             ← Arknights' and Path to Nowhere's remote art onto the art-backup release, run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
@@ -1527,9 +1530,25 @@ table's `chorusStartMillisecond` and `chorusEndMillisecond`), in YouTube's own e
 player (`youtube-nocookie.com`, `holodori-clip.ts`). No audio is copied or hosted, which is
 the point: the songs are COVER's and the publishers', and COVER's guidelines leave reusing
 a song as it is out of what they allow. The player stays in view in the window's corner
-while it plays, as YouTube's API policy wants, and the disc's ring fills from the time it
-reports over `postMessage`. The chorus's window is the game's own audio's, so a music video
-with a different intro would be off by that much: unchecked song by song. Filters: Original /
+while it plays, as YouTube's API policy wants, and can be moved (the owner's ask, 21
+October): by the grip along its top, its title, or the arrow keys on the grip, kept inside
+the window and remembered while the page is open. The disc has a ring that is always there
+and a pink arc that fills from the time the player reports over `postMessage`, with a halo
+going out from it while the clip plays. **The game's chorus window is in the game's own cut
+of the song, which is about 2 minutes, and the dump's `mvUrl` is most often the full music
+video (3 to 5)**: found on 21 October by comparing each video's length with the song's
+`playingSeconds`, 171 of 205 were more than 8 s apart, and the window landed in the wrong
+part of them. Those songs' clips are therefore **recorded by hand** in
+`scripts/lib/holodori-clips.mjs` (`CLIP_AT`): the first peak of the video's "most replayed"
+graph where the game's chorus could be in the full version, 3 s before it, for the length of
+the game's chorus. It is an estimate, which the song carries as `estimated` and the player
+words "Highlight" instead of "Chorus"; the same pick on the 32 songs whose lengths line up
+fell within 8 s of the game's own window 29 times in 32, over a narrow range. The same file
+gives two songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
+channel, the game's length); 12 songs still have no disc: 10 older ones whose only uploads
+are the full-length audio or a different version, and Amaryllis and CORE//UNBREAKABLE,
+dated 23 and 25 October, which have no video yet. A new song's link comes from the dump,
+and its game window is used as it is until someone checks its length. Filters: Original /
 Cover, branch, singer; orders: Newest, Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
 of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy),
 opening the card's page. Filters: rarity, type, branch, holomem; orders: Newest, Holomem,

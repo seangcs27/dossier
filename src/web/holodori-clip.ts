@@ -75,11 +75,61 @@ function shut(): void {
   paint();
 }
 
+// Where the player was left when it was moved, kept for the next time it opens. Until it is
+// moved it stands in the window's lower right corner, which is the stylesheet's.
+let place: { x: number; y: number } | undefined;
+const EDGE = 8;
+
+// Puts the player's top left at x, y, kept inside the window.
+function moveTo(el: HTMLElement, x: number, y: number): void {
+  const left = Math.min(Math.max(x, EDGE), Math.max(EDGE, window.innerWidth - el.offsetWidth - EDGE));
+  const top = Math.min(Math.max(y, EDGE), Math.max(EDGE, window.innerHeight - el.offsetHeight - EDGE));
+  el.style.left = `${left}px`;
+  el.style.top = `${top}px`;
+  el.style.right = 'auto';
+  el.style.bottom = 'auto';
+  place = { x: left, y: top };
+}
+
+// The player is moved by its grip and its title, never by the video, which would take the
+// press for itself; the grip answers the arrow keys too.
+function wireMove(el: HTMLElement): void {
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !(e.target as Element).closest('.sc-grip, .sc-meta')) return;
+    const box = el.getBoundingClientRect();
+    const dx = e.clientX - box.left;
+    const dy = e.clientY - box.top;
+    const drag = (m: PointerEvent): void => moveTo(el, m.clientX - dx, m.clientY - dy);
+    const drop = (): void => {
+      el.classList.remove('is-moving');
+      el.removeEventListener('pointermove', drag);
+      el.removeEventListener('pointerup', drop);
+      el.removeEventListener('pointercancel', drop);
+    };
+    el.setPointerCapture(e.pointerId);
+    el.classList.add('is-moving');
+    el.addEventListener('pointermove', drag);
+    el.addEventListener('pointerup', drop);
+    el.addEventListener('pointercancel', drop);
+    e.preventDefault();
+  });
+  el.addEventListener('keydown', (e) => {
+    const step = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] }[e.key];
+    if (!step || !(e.target as Element).closest('.sc-grip')) return;
+    const box = el.getBoundingClientRect();
+    moveTo(el, box.left + step[0], box.top + step[1]);
+    e.preventDefault();
+  });
+}
+
 function build(): HTMLElement {
   const el = document.createElement('aside');
   el.className = 'sc-dock';
   el.setAttribute('aria-label', 'Song clip');
   el.innerHTML = `
+    <button class="sc-grip" type="button" aria-label="Move the player: drag, or use the arrow keys">
+      <svg viewBox="0 0 24 6" aria-hidden="true"><circle cx="6" cy="3" r="1.4"></circle><circle cx="12" cy="3" r="1.4"></circle><circle cx="18" cy="3" r="1.4"></circle></svg>
+    </button>
     <div class="sc-frame">
       <iframe title="Music video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen
               referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -91,6 +141,8 @@ function build(): HTMLElement {
     <p class="sc-fail" hidden>This video can't play here. <a target="_blank" rel="noopener">Watch it on YouTube</a></p>
   `;
   document.body.append(el);
+  wireMove(el);
+  if (place) moveTo(el, place.x, place.y);
   frame = el.querySelector('iframe')!;
   // The player talks only to a page that says it is listening, once it has loaded.
   frame.addEventListener('load', () => {
@@ -109,7 +161,8 @@ function open(song: HolodoriSong): void {
   progress = 0;
   dock ??= build();
   dock.querySelector('.sc-title')!.textContent = song.title;
-  dock.querySelector('.sc-note')!.textContent = `Chorus ${clock(from)} to ${clock(to)} · official music video`;
+  dock.querySelector('.sc-note')!.textContent =
+    `${song.estimated ? 'Highlight' : 'Chorus'} ${clock(from)} to ${clock(to)} · official music video`;
   dock.querySelector<HTMLElement>('.sc-fail')!.hidden = true;
   dock.querySelector<HTMLAnchorElement>('.sc-fail a')!.href = song.mv;
   frame!.src = `${HOST}/embed/${videoOf(song)}?start=${from}&end=${to}&autoplay=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(location.origin)}`;
@@ -182,3 +235,8 @@ document.addEventListener('click', (e) => {
 
 // The player is the body's and not the page's, so it is put away with the page.
 window.addEventListener('hashchange', shut);
+
+// A smaller window must not leave it out of reach.
+window.addEventListener('resize', () => {
+  if (dock && place) moveTo(dock, place.x, place.y);
+});
