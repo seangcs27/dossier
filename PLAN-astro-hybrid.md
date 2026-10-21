@@ -45,9 +45,11 @@ Astro (site/)                                 existing TypeScript, unchanged in 
 src/shared/generated  ← untouched (build:index)        webpack.ext.js → dist/ext  ← untouched
 ```
 
-## Decisions to take before Phase 1
+## Decisions
 
-| # | Question | Recommendation |
+**Taken 22 October 2026: the owner accepted every recommendation below (D1 to D6).** Phase 1 can start once Phase 0 is done.
+
+| # | Question | Decision |
 |---|---|---|
 | D1 | URLs: real paths (`/dossier/holodori/songs/`) or keep `#/` for the client views | Real paths everywhere, with a shim that turns an old `#/…` link into its path (`parseHash` already knows them) |
 | D2 | Moving between pages: plain page loads, or Astro's `ClientRouter` | `ClientRouter`. Plain loads would drop what the SPA keeps today: roster filters, a playing voice line, the chorus player. See Phase 6 |
