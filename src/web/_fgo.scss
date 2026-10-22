@@ -1,22 +1,399 @@
-// Fate/Grand Order's roster page (views/fgo.ts): what its cards need beyond the rules they
-// share with the Arknights grid in styles.scss.
+// Fate/Grand Order's roster page (views/fgo.ts): Chaldea's navy and gold, the summoning
+// circle that picks a class, and the game's own frames for its Servants. Classes of its own
+// start `fg-`.
 
-// The art is the figure the game stands in a party slot, 148x375, where an Arknights
-// portrait is the plate's own 1:2. Contained, as those are, it would stand at four fifths
-// of the plate's width between two bare strips. Covering, it fills the plate and loses its
-// lowest fifth, which is under the gradient and the name.
-//
-// Not anchored to the top, as the shared rule has it: the figure's four corners are cut, 13px
-// across and 14 down, and at the top of the plate the two upper cuts showed as dark notches.
-// The figure overhangs the plate by 0.534 of the plate's width and its first 14 rows are
-// 0.095 of that width, so 18% of the overhang lifts exactly those rows out of sight, at
-// any card size.
-//
-// The build bakes a figure already cut to exactly this (build-fgo-index.mjs, whose LIFT is
-// the 18% here: change one and change the other), so on a baked figure these two lines
-// change nothing. They are for a figure the build could not fetch, which the card loads
-// whole from Atlas Academy.
-[data-view='fgo'] .op-avatar {
-  object-fit: cover;
-  object-position: 50% 18%;
+@use 'sass:map';
+
+// Cinzel for what is engraved (class names, numbers, headings) and EB Garamond for the rest:
+// Google Fonts' Latin cuts, self-hosted (the owner approved the download, 22 October 2026).
+// OFL, beside each file.
+@font-face {
+  font-family: 'Cinzel';
+  font-weight: 500 700;
+  font-display: swap;
+  src: url('./fonts/cinzel/cinzel-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'EB Garamond';
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('./fonts/eb-garamond/eb-garamond-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'EB Garamond';
+  font-style: italic;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('./fonts/eb-garamond/eb-garamond-italic-latin.woff2') format('woff2');
+}
+
+$fg-night: #070d22;
+$fg-navy: #0a1430;
+$fg-gold: #d9b866;
+$fg-gold-light: #f3de9a;
+$fg-cream: #ede6d3;
+$fg-mist: #9aa3bd;
+
+// The game's three metals, by rarity: bronze for one and two stars, silver for three, gold
+// for four and five. Each is a band of light across a metal, which is how its frames read.
+$fg-metals: (
+  'gold': (frame: linear-gradient(155deg, #fff3c2 0%, #c99a2e 30%, #fbe6a0 52%, #a8791e 78%, #f0d27e 100%), star: #f3de9a),
+  'silver': (frame: linear-gradient(155deg, #fff 0%, #8f99a6 30%, #eef2f6 52%, #6d7682 78%, #d5dbe2 100%), star: #e3e8ee),
+  'bronze': (frame: linear-gradient(155deg, #f7cda6 0%, #8e5228 30%, #dda170 52%, #6b3a1a 78%, #c98a57 100%), star: #e3a777),
+);
+
+// The shell takes every colour from the site's surface variables: these take it from
+// Dossier's blue to Chaldea's deeper navy, with the gold kept and brightened.
+body[data-view='fgo'] {
+  --bg: #{$fg-navy};
+  --surface: #0d1a3a;
+  --surface2: #12224a;
+  --border: #2c3a62;
+  --chip: #1b2a52;
+  --edge: #{$fg-mist};
+  --text: #{$fg-cream};
+  --muted: #{$fg-mist};
+  --dim: #c7ccda;
+  --accent: #{$fg-gold};
+  --link: #{$fg-gold-light};
+  --fg-engraved: 'Cinzel', 'Trajan Pro', Georgia, serif;
+  --fg-book: 'EB Garamond', Garamond, Georgia, serif;
+
+  background:
+    radial-gradient(ellipse 70% 40% at 55% -8%, rgb(70 110 200 / 35%), transparent 70%) fixed,
+    $fg-navy;
+
+  ::selection { background: $fg-gold; color: $fg-navy; }
+
+  .side-game.active .side-mark {
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgb(217 184 102 / 45%);
+  }
+
+  .sections-blob,
+  .sections-drop { background: linear-gradient(180deg, $fg-gold-light, #c99a2e); }
+  .section-link.active { color: $fg-navy; }
+
+  #more-label {
+    font-family: var(--fg-engraved);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  // The order switch, engraved, at the head of the list's column.
+  .roster-bar .seg-btn {
+    font-family: var(--fg-engraved);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+}
+
+.fg-page {
+  display: grid;
+  grid-template-columns: minmax(340px, 540px) minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+  padding: var(--sp-8) var(--sp-24) 48px;
+  color: $fg-cream;
+  font-family: var(--fg-book);
+}
+
+// ── The circle ──
+// It stays in view while the list beside it scrolls. Everything on it is placed and sized
+// in percent of its width, and set in container units, so it is the same drawing at any
+// size; a ring's button is centred on its place by its own translate.
+
+.fg-throne {
+  position: sticky;
+  top: 96px;
+}
+
+.fg-kicker {
+  font-family: var(--fg-engraved);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  text-align: center;
+  color: $fg-gold;
+}
+
+.fg-circle {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  margin-top: var(--sp-12);
+  background: radial-gradient(circle, rgb(40 90 170 / 40%), transparent 62%);
+}
+
+.fg-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.fg-ring-outer { inset: 4%; border: 1px solid rgb(217 184 102 / 35%); }
+.fg-ring-dash { inset: 13%; border: 1px dashed rgb(217 184 102 / 45%); }
+
+.fg-ring-inner {
+  inset: 30%;
+  border: 2px solid rgb(232 200 112 / 85%);
+  box-shadow: 0 0 24px rgb(232 200 112 / 35%), inset 0 0 24px rgb(232 200 112 / 25%);
+}
+
+.fg-spoke {
+  position: absolute;
+  left: 50%;
+  top: 13%;
+  bottom: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, rgb(232 200 112 / 35%), transparent);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+.fg-core,
+.fg-class {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--fg-book);
+  transition: background-color 0.2s, box-shadow 0.2s, color 0.2s, border-color 0.2s;
+
+  &:focus-visible { outline: 2px solid $fg-gold-light; outline-offset: 3px; }
+}
+
+.fg-core {
+  position: absolute;
+  inset: 36%;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(232 200 112 / 22%), rgb(6 10 24 / 90%) 70%);
+  color: $fg-cream;
+
+  &:hover { background: radial-gradient(circle, rgb(232 200 112 / 34%), rgb(6 10 24 / 90%) 70%); }
+  &.on { box-shadow: 0 0 0 2px $fg-gold, 0 0 30px rgb(232 200 112 / 55%); }
+}
+
+.fg-core-count {
+  font-family: var(--fg-engraved);
+  font-weight: 600;
+  font-size: 9cqw;
+  line-height: 1;
+  color: #fff1c4;
+  text-shadow: 0 0 18px rgb(232 200 112 / 60%);
+}
+
+.fg-core-label {
+  font-style: italic;
+  font-size: max(11px, 2.7cqw);
+  color: #c9c3b2;
+}
+
+.fg-class {
+  position: absolute;
+  translate: -50% -50%;
+  gap: 0.2cqw;
+  padding: 0;
+  border: 1px solid rgb(232 200 112 / 60%);
+  background: #0b1226;
+  color: $fg-gold-light;
+
+  &:hover:not(:disabled, .on) { border-color: $fg-gold-light; background: #141f3d; }
+
+  &.on {
+    border-color: transparent;
+    background: radial-gradient(circle, #fff1c4, #e8c870 70%);
+    color: $fg-night;
+    box-shadow: 0 0 28px rgb(232 200 112 / 70%);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.35;
+  }
+}
+
+.fg-knight {
+  width: 16cqw;
+  height: 16cqw;
+  border-radius: 50%;
+}
+
+.fg-extra {
+  width: 17.5cqw;
+  height: 8.4cqw;
+  border-color: rgb(154 163 189 / 40%);
+  border-radius: var(--radius-pill);
+  background: rgb(6 10 24 / 88%);
+  color: #c9c3b2;
+}
+
+.fg-class-name {
+  font-family: var(--fg-engraved);
+  font-weight: 700;
+  font-size: max(8px, 1.9cqw);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.fg-extra .fg-class-name { font-weight: 600; font-size: max(7.5px, 1.7cqw); }
+
+.fg-class-count {
+  font-size: max(10px, 2.5cqw);
+  line-height: 1.1;
+  opacity: 0.8;
+}
+
+// ── The list ──
+
+.fg-list { min-width: 0; padding-top: var(--sp-12); }
+.fg-section + .fg-section { margin-top: 36px; }
+
+.fg-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-16);
+  margin-bottom: 22px;
+}
+
+.fg-diamond {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: $fg-gold;
+  transform: rotate(45deg);
+}
+
+.fg-title {
+  font-family: var(--fg-engraved);
+  font-weight: 600;
+  font-size: 28px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f7ebc4;
+}
+
+h1.fg-title { font-size: 40px; }
+
+.fg-heading-count {
+  flex: none;
+  font-style: italic;
+  font-size: var(--fs-2xl);
+  color: $fg-mist;
+}
+
+.fg-heading-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(217 184 102 / 70%), transparent);
+}
+
+.fg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 22px var(--sp-12);
+}
+
+.fg-card { text-align: center; }
+
+.fg-frame {
+  padding: 3px;
+  border-radius: 3px;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 45%);
+}
+
+.fg-art {
+  position: relative;
+  aspect-ratio: 1 / 2;
+  overflow: hidden;
+  background: $fg-navy;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 60%);
+
+  // The figure the game stands in a party slot, 148x375, baked as the 148x296 of it the
+  // plate shows (build-fgo-index.mjs); one the build could not fetch is the whole figure,
+  // lifted by the same 18% of its overhang, which puts its cut top corners out of sight.
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 18%;
+  }
+}
+
+.fg-card-class {
+  position: absolute;
+  inset: 0 0 auto;
+  padding: var(--sp-4) var(--sp-2) 10px;
+  font-family: var(--fg-engraved);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f7ebc4;
+  background: linear-gradient(180deg, rgb(6 12 31 / 85%), transparent);
+}
+
+.fg-stars {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 18px 0 5px;
+  font-size: var(--fs-sm);
+  letter-spacing: 1px;
+  text-shadow: 0 1px 2px #000;
+  background: linear-gradient(0deg, rgb(6 12 31 / 92%), transparent);
+}
+
+@each $metal, $spec in $fg-metals {
+  .fg-#{$metal} { background: map.get($spec, frame); }
+  .fg-#{$metal} .fg-stars { color: map.get($spec, star); }
+}
+
+.fg-card-no {
+  margin-top: var(--sp-8);
+  font-family: var(--fg-engraved);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.14em;
+  color: $fg-gold;
+}
+
+.fg-jp { color: $fg-mist; }
+
+.fg-card-name {
+  font-size: var(--fs-base);
+  line-height: 1.15;
+  color: $fg-cream;
+}
+
+.fg-card-variant {
+  font-size: var(--fs-md);
+  font-style: italic;
+  line-height: 1.2;
+  color: $fg-mist;
+}
+
+// Under 900px the circle goes over the list, no wider than a phone, and stops following.
+@media (max-width: 900px) {
+  .fg-page {
+    grid-template-columns: 1fr;
+    gap: var(--sp-16);
+    padding: var(--sp-8) var(--sp-12) 40px;
+  }
+
+  .fg-throne {
+    position: static;
+    width: min(100%, 420px);
+    margin: 0 auto;
+  }
+
+  .fg-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  .fg-title { font-size: 22px; }
+  h1.fg-title { font-size: 28px; }
 }

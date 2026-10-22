@@ -12,7 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    a roster and a first dossier page (see "Endfield" below), **Path to Nowhere**, as a
    roster with search and filters and a dossier per Sinner, **hololive Dreams**, as a
    front page, a sticker sheet of its cast with search and filters, its songs, its cards, its gachas and a page per holomem, and **Fate/Grand Order**, as a roster
-   and nothing else yet (see "The other games' rosters"); the extension is Arknights alone.
+   with a summoning circle for its classes, search and filters, and no dossier yet (see "The
+   other games' rosters"); the extension is Arknights alone.
 
 Everything is resolved **at build time**: the operator index, one full detail payload per
 operator, every attack range, and the branch icons are all baked into the bundle. At
@@ -250,16 +251,17 @@ src/
                       site's own words in each (t), and a Sinner's name, tags and code in it
     styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events; loads
                       the games' own partials last
-    _endfield-grid.scss / _endfield-detail.scss  ← Endfield's own rules, a file for each of its pages
+    _endfield-grid.scss / _endfield-detail.scss  ← Endfield's world (paper, ink and signal yellow), its
+                      showcase and its panel; the dossier's rules on that paper
     _ptn.scss / _fgo.scss  ← PtN's roster, a world of its own (the line-up wall), and its dossier's
-                      own rules; how FGO's art sits on the plate
+                      own rules; FGO's world (Chaldea navy and gold), its summoning circle and its frames
     _holodori.scss  ← hololive Dreams' world: its front page, the sticker sheet, its calendar, songs, cards,
                       gachas and a holomem's page
     views/
       grid.ts       ← operator grid, live search, filter popover
       detail.ts     ← operator dossier, cloned from Sanity Gone (see below)
       events.ts     ← the Global event schedule, after Arkpedia's (see below)
-      endfield.ts   ← the Endfield roster, on the Arknights card, with its search and filters (see below)
+      endfield.ts   ← the Endfield roster, a showcase of one operator and a filmstrip, with its search and filters (see below)
       endfield-detail.ts  ← the Endfield dossier (see below)
       ptn.ts / holodori.ts / fgo.ts  ← those games' roster pages: each fills card.ts's slots
       holodori-songs.ts / holodori-cards.ts  ← hololive Dreams' Songs and Cards pages, on the same roster
@@ -274,6 +276,8 @@ src/
     fonts/noto-sans-sc/  ← that face's Chinese: two weights cut by the build to what the placard
                       sets (scripts/lib/ptn-font.mjs), and the licence (tracked)
     fonts/poppins/  ← hololive Dreams' face: four weights (600 to 900) as WOFF2, and the licence (tracked)
+    fonts/archivo/, fonts/jetbrains-mono/  ← Endfield's two faces, variable Latin WOFF2s, and their licences (tracked)
+    fonts/cinzel/, fonts/eb-garamond/  ← FGO's two faces (Garamond with its italic), the same (tracked)
 
   styles.d.ts       ← `declare module '*.scss'` for the side-effect imports
 ```
@@ -988,12 +992,30 @@ its wiki (`endfield.wiki.gg`, the same platform as the Arknights one) keeps the 
 Cargo table the Arknights build already reads, and because an operator there is close enough
 to one here to go on the same card.
 
-**The roster** (`#/endfield`) deals every operator onto the Arknights card: class where the
-class sits, beside the class's glyph; element and weapon on the branch line, behind the
-element's glyph; faction up the edge strip, tags on the back, rarity (4 to 6) on the tab.
-There are 33, the Endministrator's two forms as two cards, told apart on the line an alter's
-epithet takes. A card opens the operator's dossier. The Events section link is Arknights'
-and is hidden; Operators links here.
+**The roster** (`#/endfield`) is a showcase, the owner's pick of three directions on 22
+October 2026 (a design canvas of Endfield's and FGO's directions, built with the real art):
+one operator at a time, their splash art at full size on a drafting grid with a ruler down
+its edge, their element written out huge behind it in outline and its colour, and their file
+on a plate beside it: rarity as ticks in the game's colours (6★ orange, 5★ gold, 4★ violet),
+the name in wide capitals, faction, class / element / weapon with their glyphs, the quote,
+the tags and an "Open dossier" bar in the yellow. Under it a filmstrip holds every operator
+the search and the picks leave, in a group to each rarity; a frame, the plate's arrows or
+the arrow keys anywhere in the showcase put an operator up (only the feature is redrawn, so
+the strip keeps its scroll), and the operator up is kept across visits and through a search
+that keeps them. There are 34, the Endministrator's two forms as two. Under 900px the art
+goes over the plate. The element colours are ours (Electric is violet so it never reads as
+the yellow); the game's own were not checked. The Events section link is Arknights' and is
+hidden; Operators links here.
+
+**The world** is the game's own interface, on both its pages (`body[data-view='endfield']`
+and `'endfield-detail'`, `_endfield-grid.scss`): off-white and concrete, ink, one signal
+yellow, Archivo at its widest for names and JetBrains Mono for codes (Google Fonts' variable
+Latin cuts, self-hosted; the owner approved the download on 22 October 2026). Like Path to
+Nowhere's it is the site's surface variables restated, so the sidebar, the topbar and the
+panel follow; the game showing is its emblem in ink on the yellow, the section link ink with
+the yellow on it. The dossier is still the Arknights dossier's parts on that paper, its
+header band paper with an ink rule (the Arknights header's charcoal glass left the ink name
+unreadable) and the name in the roster's wide capitals.
 
 It has the topbar's search box and filter panel, which are the same elements the Arknights
 grid works: whichever grid mounted last has them, each keeps its own state, and every handler
@@ -1003,8 +1025,8 @@ chips): any pick within a group, every group across them. Its buttons carry `dat
 `data-value` where the Arknights panel's carry `data-kind`, so that neither grid's handler
 takes the other's buttons in the half second the panel takes to hide after a change of page.
 `grid.ts` exports the two things both grids need, `focusSelector` and `watchFilterTab`; the
-rest of the box's and the panel's handling is a second copy of `grid.ts`'s, about 45 lines,
-as the card's markup is: a change to either there has to be made here too.
+rest of the box's and the panel's handling is a second copy of `grid.ts`'s, about 45 lines:
+a change to either there has to be made here too.
 
 **The dossier** (`#/endfield/op/<id>`, `views/endfield-detail.ts`) is on the Arknights
 dossier's layout: the splash art behind the page and in the art column, and in the panel the
@@ -1048,9 +1070,9 @@ Not built: the dossier's sections from the payload, what anything costs, a relea
 Path to Nowhere, hololive Dreams and Fate/Grand Order (PtN, Holodori and FGO on the sidebar,
 the owner's names for them) are the rest of the owner's plan of 20 September 2026 for the
 site to carry the games they play. The sources were researched then, and each was checked
-again on 11 October. FGO is a roster and nothing else: one page, no search, no filters, no
-dossier, cards that turn and open nothing. Path to Nowhere has search, filters and a
-dossier per Sinner as well, and hololive Dreams search and filters (both below).
+again on 11 October. FGO has a roster with search and filters, and no dossier: its cards
+open nothing. Path to Nowhere has search, filters and a dossier per Sinner as well, and
+hololive Dreams search and filters (all below).
 
 **The owner means each game to have a design of its own in time.** Path to Nowhere's roster
 is the first to have one (the line-up wall, below), hololive Dreams' the second (the
@@ -1728,16 +1750,33 @@ Servant only JP has is kept and flagged `jpOnly`. A row is playable when its `ty
 numbers. An entry is id, collection number, name (the true name, with the first as `alias`
 for the eight who are summoned under another), rarity, class, attribute, alignment, and
 `art`, the figure the game stands in a party slot (`NarrowFigure/<id>/<id>@0.png`,
-148x375), baked as the 148x296 of it a card shows. The order is the collection number's. On the card: a star to a line with 5★ on
-tier 6, the site's red, as every game's highest is; the class, `No. 002` (and "JP only"),
-the attribute up the edge, the alignment on the back, and a bracketed variant ("Santa
-Alter") on the epithet's line. `_fgo.scss` also lifts the figure by 18% of its overhang,
-which puts the two cut corners at its top out of sight; the bake cuts at the same 18%
-(`LIFT` in the script), and the two have to agree. Atlas Academy's data is ODC-BY 1.0
+148x375), baked as the 148x296 of it a card shows. The order is the collection number's.
+
+**The roster is a summoning circle with the game's own frames** (`draw` in `views/fgo.ts`,
+`_fgo.scss`), the owner's pick of 22 October 2026: of the directions on the canvas, the
+circle of one with the Saint Graph cards of another. On the left, sticky while the list
+scrolls, the circle: every Servant at its centre (a button, the one that shows every class),
+the seven knight classes on its inner ring and the eight Extra classes round the outside
+(Shielder, Ruler, Avenger, Alter Ego, Moon Cancer, Foreigner, Pretender, Beast; the game's
+three Beast classes are the one Beast here), each with how many the search and the filters
+leave, and dimmed at none. It is drawn in percent of its width and set in container units,
+so it is the same drawing at any size. On the right, the class picked, or every class in
+the circle's order under a heading each; a Servant is the game's frame, its metal by rarity
+as the game's own (bronze for one and two stars, silver for three, gold for four and five),
+the class over the figure and the stars under it, then `No. 002` (and "JP"), the name, and a
+bracketed variant ("Alter") or the name they are first summoned under on a line of its own.
+The search looks in the name, that first name and the number; the filters are rarity,
+attribute, alignment and server; the order switch is Number, Rarity or Name. The class
+picked is kept across visits, and a search that empties it goes back to every class. The
+world is Chaldea's navy and gold, Cinzel for what is engraved and EB Garamond for the rest
+(self-hosted, approved with Endfield's). The art sits 18% of its overhang down, which puts
+the two cut corners at the figure's top out of sight; the bake cuts at the same 18% (`LIFT`
+in the script), and the two have to agree. Not built: the game's class icons (Atlas Academy
+has them, a download to ask for), a dossier. Atlas Academy's data is ODC-BY 1.0
 and asks for credit, which the README gives and the site itself does not yet.
 
 Not built for any of the three: glyphs; a release order for hololive Dreams or FGO (Path
-to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: units, a gacha's rates and the cards it has besides its featured ones, stories, the launch banner. Not built for FGO: search, filters, a dossier.
+to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: units, a gacha's rates and the cards it has besides its featured ones, stories, the launch banner. Not built for FGO: a dossier.
 
 ## Testing
 

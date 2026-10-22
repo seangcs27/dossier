@@ -1,7 +1,6 @@
-import { endfieldIconUrl, endfieldPortraitUrl } from '../../shared/api/hella-api';
+import { endfieldIconUrl, endfieldPortraitUrl, endfieldSplashUrl } from '../../shared/api/hella-api';
 import { getEndfieldOperators, type EndfieldOperator } from '../endfield-index';
 import { escHtml } from '../format';
-import { mountCardSpin } from '../card-spin';
 import { focusSelector, watchFilterTab } from './grid';
 
 // This page's own search and picks. The box in the topbar and the panel under it are the
@@ -20,75 +19,86 @@ const state = {
     faction: new Set<string>(),
   },
   moreOpen: false,
+  // The operator the showcase has up, by id; '' until the page is first drawn.
+  featured: '',
 };
 
 type Group = keyof typeof state.picks;
 
-// The plate the Arknights grid deals (grid.ts has the reasoning behind each layer), with an
-// Endfield operator's own lines on it: class where the class sits, element and weapon where
-// the branch does, faction up the edge, tags on the back. It opens the operator's dossier,
-// and has a glyph where the Arknights card has each of its two: the class's beside the
-// class, the element's at the head of the element and weapon line. A value the build has no
-// glyph for goes without one.
-function buildCard(op: EndfieldOperator): string {
-  const portrait = endfieldPortraitUrl(op.id);
-  // As many repeats as fill the strip, the same sum as the Arknights card's.
-  const edgeText = Array(Math.max(2, Math.round(55 / (op.faction.length + 3))))
-    .fill(op.faction).join(' · ');
+// The roster is a showcase (the owner's pick of three directions, 22 October 2026): one
+// operator at a time, their splash art at full size on a drafting grid with their element
+// written out behind it, their file on a plate beside it, and every operator the search and
+// the picks leave in a filmstrip underneath, grouped by rarity. A frame in the strip, or
+// the arrows, puts its operator up; the plate's link opens their dossier. Only the feature
+// is redrawn on a change, so the strip keeps its scroll.
+
+const pad = (n: number): string => String(n).padStart(2, '0');
+
+function featureHtml(op: EndfieldOperator, at: number, of: number): string {
+  const href = `#/endfield/op/${encodeURIComponent(op.id)}`;
+  const index = `${pad(at + 1)} / ${pad(of)}`;
+  // The id's number is the game's own file number: 'chr_0026_lastrite' is 0026.
+  const file = /^chr_(\d+)/.exec(op.id)?.[1] ?? op.id;
+  const specs = (['class', 'element', 'weapon'] as const).map(kind => `
+    <div>
+      <dt>${kind[0].toUpperCase() + kind.slice(1)}</dt>
+      <dd><img src="${endfieldIconUrl(kind, op[kind])}" alt="" onerror="this.remove()">${escHtml(op[kind])}</dd>
+    </div>`).join('');
   return `
-    <a class="op-card r${op.rarity}" href="#/endfield/op/${encodeURIComponent(op.id)}">
-      <div class="op-plate">
-      <div class="op-card-body">
-        <img class="op-avatar" src="${portrait}" alt="${escHtml(op.name)}" loading="lazy"
-             onerror="this.outerHTML='<div class=\\'op-avatar-placeholder\\'>?</div>'">
-        <div class="op-shade" aria-hidden="true"></div>
-        <div class="op-overlay">
-          <span class="visually-hidden">Rarity: ${op.rarity}</span>
-          <div class="op-info">
-            <div class="op-name">${escHtml(op.name)}</div>
-            <div class="op-epithet">${op.variant ? escHtml(op.variant) : '&nbsp;'}</div>
-            <div class="op-meta-row">
-              <img class="op-meta-icon" src="${endfieldIconUrl('class', op.class)}" alt="" data-tip="${escHtml(op.class)}" loading="lazy" onerror="this.remove()">
-              <span class="op-class-label">${escHtml(op.class)}</span>
-            </div>
-            <div class="op-serial" data-tip="${escHtml(op.id)}">
-              <img class="op-serial-icon" src="${endfieldIconUrl('element', op.element)}" alt="" loading="lazy" onerror="this.remove()">
-              <span class="op-serial-text">${escHtml(op.element)} · ${escHtml(op.weapon)}</span>
-            </div>
-          </div>
-          <span class="op-cta">View operator</span>
+    <div class="ef-feature" data-element="${escHtml(op.element.toLowerCase())}">
+      <div class="ef-stage">
+        <span class="ef-ghost" aria-hidden="true">${escHtml(op.element)}</span>
+        <span class="ef-ruler" aria-hidden="true"></span>
+        <span class="ef-code" aria-hidden="true">EF-${escHtml(file)} · ${escHtml(op.class)} · ${escHtml(op.element)}</span>
+        <span class="ef-index" aria-hidden="true">${index}</span>
+        <a class="ef-splash-link" href="${href}" tabindex="-1">
+          <img class="ef-splash" src="${endfieldSplashUrl(op.id)}" alt="${escHtml(op.name)}"
+               onerror="this.src='${endfieldPortraitUrl(op.id)}'; this.onerror=null">
+        </a>
+      </div>
+      <div class="ef-plate">
+        <div class="ef-plate-top">
+          <span>File ${index}</span>
+          <span class="ef-steps">
+            <button type="button" class="ef-step" data-step="-1" aria-label="Previous operator">←</button>
+            <button type="button" class="ef-step" data-step="1" aria-label="Next operator">→</button>
+          </span>
         </div>
-        <div class="op-edge" aria-hidden="true">${escHtml(edgeText)}</div>
-        <div class="op-light" aria-hidden="true"></div>
-      </div>
-      <div class="op-card-back" aria-hidden="true">
-        <img class="op-avatar op-avatar-ghost" data-src="${portrait}" alt="" onerror="this.remove()">
-        <div class="op-shade"></div>
-        <div class="op-back-frost"></div>
-        <div class="op-back-print">
-          <div class="bk-head"><span class="bk-serial">${escHtml(op.id)}</span></div>
-          <div class="bk-mid"></div>
-          <div class="bk-foot">
-            <div class="bk-tags">${op.tags.map(t => `<span class="bk-tag">${escHtml(t)}</span>`).join('')}</div>
-          </div>
+        <div>
+          <span class="ef-ticks r${op.rarity}" role="img" aria-label="Rarity: ${op.rarity}">${'<span></span>'.repeat(op.rarity)}</span>
+          <h2 class="ef-name">${escHtml(op.name)}${op.variant ? `<span class="ef-variant">${escHtml(op.variant)}</span>` : ''}</h2>
+          <div class="ef-faction">${escHtml(op.faction)}</div>
         </div>
-        <div class="op-edge op-edge-back">${escHtml(edgeText)}</div>
-        <div class="op-light"></div>
+        <dl class="ef-specs">${specs}</dl>
+        ${op.quote ? `<blockquote class="ef-quote">${escHtml(op.quote)}</blockquote>` : ''}
+        ${op.tags.length ? `<div class="ef-tags">${op.tags.map(t => `<span>${escHtml(t)}</span>`).join('')}</div>` : ''}
+        <a class="ef-open" href="${href}">Open dossier<span aria-hidden="true">→</span></a>
       </div>
-      <div class="op-side op-side-l" aria-hidden="true"></div>
-      <div class="op-side op-side-r" aria-hidden="true"></div>
-      <div class="op-stars r${op.rarity}" aria-hidden="true">
-        <div class="op-tab-slice op-tab-front"></div>
-        <div class="op-tab-slice op-tab-back"></div>
-        <div class="op-tab-edge op-tab-edge-top"></div>
-        <div class="op-tab-edge op-tab-edge-right"></div>
-        <div class="op-tab-edge op-tab-edge-taper"></div>
-        <div class="op-tab-edge op-tab-edge-bottom"></div>
-        ${'<span>★</span>'.repeat(op.rarity)}
-      </div>
-      </div>
-    </a>
+    </div>
   `;
+}
+
+// The strip, a group to each rarity there is, highest first as the roster is baked. A frame
+// is the bust from the card, with the name's first letter under it for an operator the
+// build has no bust of (Si, today).
+function stripHtml(ops: EndfieldOperator[], current: string): string {
+  const rarities = [...new Set(ops.map(op => op.rarity))].sort((a, b) => b - a);
+  return rarities.map((r) => {
+    const group = ops.filter(op => op.rarity === r);
+    return `
+      <div class="ef-strip-group">
+        <div class="ef-strip-label r${r}">${r}★ · ${pad(group.length)}</div>
+        <div class="ef-strip-row">
+          ${group.map(op => `
+            <button type="button" class="ef-thumb" data-id="${escHtml(op.id)}" aria-pressed="${op.id === current}"
+                    data-tip="${escHtml(op.name + (op.variant ? ` (${op.variant})` : ''))}"
+                    aria-label="${escHtml(op.name + (op.variant ? ` (${op.variant})` : ''))}">
+              <span class="ef-thumb-letter" aria-hidden="true">${escHtml(op.name[0])}</span>
+              <img src="${endfieldPortraitUrl(op.id)}" alt="" loading="lazy" onerror="this.remove()">
+            </button>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
 }
 
 // What the search and the picks leave of the roster. Within a group any one pick will do;
@@ -113,10 +123,46 @@ function render(container: HTMLElement): void {
       : `<div class="state-msg"><div class="label">No operators</div>The last build could not reach the Endfield wiki.</div>`;
     return;
   }
-  // In one pass, with none of the Arknights grid's batching: that is there for a roster of
-  // hundreds, and this one is a few dozen.
-  container.innerHTML = `<div id="grid">${ops.map(buildCard).join('')}</div>`;
-  mountCardSpin(container);
+  // The operator up stays up through a search that keeps them, and across visits.
+  let at = Math.max(0, ops.findIndex(op => op.id === state.featured));
+  state.featured = ops[at].id;
+  container.innerHTML = `
+    <div class="ef-show">
+      <section class="ef-feature-slot" aria-label="Featured operator" aria-live="polite">${featureHtml(ops[at], at, ops.length)}</section>
+      <nav class="ef-strip" aria-label="Operators">${stripHtml(ops, state.featured)}</nav>
+    </div>
+  `;
+  const show = container.querySelector<HTMLElement>('.ef-show')!;
+  const slot = show.querySelector<HTMLElement>('.ef-feature-slot')!;
+
+  const feature = (next: number, focusStep?: string): void => {
+    at = (next + ops.length) % ops.length;
+    state.featured = ops[at].id;
+    slot.innerHTML = featureHtml(ops[at], at, ops.length);
+    show.querySelectorAll<HTMLElement>('.ef-thumb').forEach((thumb) => {
+      const on = thumb.dataset.id === state.featured;
+      thumb.setAttribute('aria-pressed', String(on));
+      if (on) thumb.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    // The arrow pressed was rebuilt with the plate; the focus goes to its replacement.
+    if (focusStep) slot.querySelector<HTMLElement>(`[data-step="${focusStep}"]`)?.focus();
+  };
+
+  show.onclick = (ev) => {
+    const el = (ev.target as Element).closest<HTMLElement>('[data-step], .ef-thumb');
+    if (!el) return;
+    if (el.dataset.step) feature(at + Number(el.dataset.step), el.dataset.step);
+    else feature(ops.findIndex(op => op.id === el.dataset.id));
+  };
+  // The arrow keys step through the strip from anywhere in the showcase.
+  show.onkeydown = (ev) => {
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    ev.preventDefault();
+    const step = ev.key === 'ArrowLeft' ? -1 : 1;
+    const fromThumb = (ev.target as Element).closest('.ef-thumb');
+    feature(at + step, fromThumb ? undefined : String(step));
+    if (fromThumb) show.querySelector<HTMLElement>(`.ef-thumb[data-id="${CSS.escape(state.featured)}"]`)?.focus();
+  };
 }
 
 // ── Filter popover: the Arknights grid's panel, with this game's groups in it ──
