@@ -1067,7 +1067,9 @@ actors.
 Images already on disk are kept; the payloads are written again every build. None of it is
 load-bearing: with the wiki unreachable the last roster is kept, or an empty one written,
 and the page says it has no operators; a single image or page that cannot be had is named
-in that set's summary line and whatever is on disk for it stays.
+in that set's summary line and whatever is on disk for it stays. An operator whose bust the
+wiki has no file of (Si, today) is marked `noPortrait` in the roster, so the filmstrip shows
+its first letter without asking for a file that is not there.
 
 Not built: the dossier's sections from the payload, what anything costs, a release order.
 

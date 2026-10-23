@@ -94,7 +94,7 @@ function stripHtml(ops: EndfieldOperator[], current: string): string {
                     data-tip="${escHtml(op.name + (op.variant ? ` (${op.variant})` : ''))}"
                     aria-label="${escHtml(op.name + (op.variant ? ` (${op.variant})` : ''))}">
               <span class="ef-thumb-letter" aria-hidden="true">${escHtml(op.name[0])}</span>
-              <img src="${endfieldPortraitUrl(op.id)}" alt="" loading="lazy" onerror="this.remove()">
+              ${op.noPortrait ? '' : `<img src="${endfieldPortraitUrl(op.id)}" alt="" loading="lazy" onerror="this.remove()">`}
             </button>`).join('')}
         </div>
       </div>`;
