@@ -40,6 +40,10 @@ npm run build:index  # Regenerate everything under src/shared/generated/ (runs a
 
 npm run design       # build:web, then regenerate design/components/*.html previews
 
+npm run routes       # Every route the web target answers (919), checked against router.ts → dist/routes.txt
+npm run shots -- capture dist/web .shots/<set>   # Screenshots at 3 widths, and the smoke run
+npm run shots -- compare .shots/<a> .shots/<b>   # Pixel diff of two sets; changed ones to <b>/diff/
+
 npm run clean        # Remove ./dist/
 ```
 
@@ -115,6 +119,8 @@ scripts/
   lib/bake-images.mjs        ← bakeImages: card art fetched once, re-encoded to WebP and kept
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
+  route-inventory.mjs        ← every route the web target answers, from the generated data, checked against router.ts
+  shots.mjs                  ← screenshots of 21 pages at 3 widths, the smoke run, and the diff of two sets
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
                      (gitignored), source/ holds the icon artwork
@@ -1784,6 +1790,18 @@ No test suite. Verification is `npx tsc --noEmit` plus both webpack builds, then
 checks: load `dist/ext/` in Firefox/Chrome and open the toolbar popup, and open
 `dist/web/index.html` for the SPA. Both grids should render with no data requests. After a
 style change, run `npm run design` and check `design/components/*.html`.
+
+**`scripts/shots.mjs`** (24 October 2026, Phase 0 of `PLAN-astro-hybrid.md`) is the nearest
+thing to a test. `capture` serves a built `dist/web` over http, opens 21 pages (one per view
+and a dossier or two per game) at 1400, 800 and 390 px in the Chrome or Edge on the machine
+(`puppeteer-core`; `CHROME_PATH` names one), and writes PNGs: about 100 s for the 63. It holds
+everything still so that two shots of one build match (the clock at 23 October 2026 noon,
+`Math.random` seeded, animations at their last frame, lazy images loaded, every other host
+refused), one page at a time (three tabs at once starved the background ones into timeouts).
+It is also the smoke run, and exits 1 on an exception, a console error or a file of the
+site's own that 404s. `compare` takes two sets and passes a page that differs by up to 0.01%
+of its pixels. Sets live in `.shots/` (git-ignored): shoot `master` as the baseline, change
+something, shoot again, compare. It is not a test of behaviour: nothing is clicked.
 
 Visual changes are reviewed by the author personally — say what you changed and where to
 look, don't just assert it works.

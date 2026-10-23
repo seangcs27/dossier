@@ -60,3 +60,6 @@ PRODUCT.md
 
 # Golden payloads for scripts/compare-payloads.mjs
 .golden/
+
+# Screenshot sets for scripts/shots.mjs (baselines to compare a build against)
+.shots/
