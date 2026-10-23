@@ -1,0 +1,39 @@
+---
+import Shell from '../layouts/Shell.astro';
+import { eventsPageHtml } from '@web/render/events-html';
+import type { EventsTab } from '@web/router';
+import { buildNow } from '../lib/now';
+
+interface Props {
+  tab: EventsTab;
+}
+const { tab } = Astro.props;
+const NAMES: Record<EventsTab, string> = { list: 'Events', pools: 'Headhunting', calendar: 'Calendar' };
+---
+<Shell
+  view="events"
+  title={`${NAMES[tab]} — Arknights Global schedule — Dossier`}
+  description="The Arknights Global server's schedule: events and headhunting pools, running, announced and predicted from what CN has run."
+  data={{ tab }}
+>
+  <Fragment set:html={eventsPageHtml(tab, buildNow(), { month: undefined, pools: false })} />
+</Shell>
+
+<script>
+  import { freshen } from '@web/fresh';
+  import { hideSearch, initShell, showShell } from '@web/shell';
+
+  initShell();
+  showShell('events');
+  hideSearch();
+  const view = document.getElementById('view')!;
+  if (view.dataset.tab === 'calendar') {
+    // The calendar's month, its Headhunting toggle and its steps are the SPA's own, loaded
+    // for this tab alone.
+    void import('@web/views/events').then(({ mountEvents }) => mountEvents(view, 'calendar'));
+  } else {
+    // The countdowns are a clock: set again every second, as the SPA's ticker does.
+    freshen();
+    setInterval(() => freshen(), 1000);
+  }
+</script>

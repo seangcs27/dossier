@@ -10,8 +10,11 @@ interface Props {
   view: string;
   title?: string;
   description?: string;
+  // Becomes data-* attributes on #view, for the page's script (an id, a tab).
+  data?: Record<string, string | undefined>;
 }
-const { view, title = 'Dossier', description } = Astro.props;
+const { view, title = 'Dossier', description, data = {} } = Astro.props;
+const dataAttrs = Object.fromEntries(Object.entries(data).map(([key, value]) => [`data-${key}`, value]));
 
 // Astro bundles this file, so import.meta.url would point into the build's output: the
 // build is run from site/, and the SPA's page is one folder up.
@@ -44,7 +47,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   </head>
   <body data-view={view}>
     <Fragment set:html={top} />
-    <main id="view"><slot /></main>
+    <main id="view" {...dataAttrs}><slot /></main>
     <Fragment set:html={bottom} />
   </body>
 </html>

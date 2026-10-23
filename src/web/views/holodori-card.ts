@@ -1,5 +1,5 @@
 import { openArtViewer } from '../art-viewer';
-import { getVolume, stopAudio } from '../holodori-audio';
+import { getVolume, paintVolume, stopAudio } from '../holodori-audio';
 import {
   cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, voiceUrl,
   type HolodoriCardDetail, type HolodoriLine,
@@ -27,7 +27,11 @@ let bloom = 0;
 // The line a card's reveal plays with its signature, which a 5-star card has first.
 const cardGet = (d: HolodoriCardDetail): HolodoriLine | undefined => d.voices.find(v => v.label === 'Card get') ?? d.voices[0];
 
-export function mountHolodoriCard(container: HTMLElement, id: string): void {
+/**
+ * Mounts the page. A page the Astro site drew at build time comes with its payload (`inlined`):
+ * it is kept as it is, and only the handlers are put on it.
+ */
+export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: HolodoriCardDetail): void {
   // The search box, its filters and the count are a roster's: put away as on every dossier.
   document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
   document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
@@ -39,10 +43,10 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
     container.innerHTML = cardHtml(id);
     return;
   }
-  let detail: HolodoriCardDetail | null = null;
+  let detail: HolodoriCardDetail | null = inlined ?? null;
   let failed = false;
   let shown: Shown = 'art';
-  let drawn = false;
+  let drawn = Boolean(inlined);
 
   // The first call draws the page. After it only the head and the stats and skills are drawn
   // again, which a bloom or the payload coming changes: the stage and the voices hold a
@@ -117,6 +121,11 @@ export function mountHolodoriCard(container: HTMLElement, id: string): void {
       );
     }
   };
+  if (inlined) {
+    // Drawn at the default volume, and with the first level and bloom of a visit.
+    paintVolume();
+    return;
+  }
   render();
   fetchHolodoriCard(id).then((d) => { detail = d; }, () => { failed = true; }).then(() => {
     // The page may have been left, or mounted again for another card, while it came.
