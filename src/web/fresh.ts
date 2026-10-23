@@ -1,3 +1,4 @@
+import { whenText as eventWhenText, yourTimeTip } from './render/events-clock';
 import { daysAway, daysToBirthday, debutYears, today } from './render/holodori-format';
 import { previewText, whenText, windowText } from './render/holodori-gachas-html';
 
@@ -18,4 +19,14 @@ export function freshen(root: ParentNode = document, at = Date.now()): void {
   each('[data-preview-from]', el => previewText(Date.parse(el.dataset.previewFrom!), at));
   each('[data-bday]', el => daysAway(daysToBirthday({ birthday: el.dataset.bday! }, day)));
   each('[data-debut]', el => debutYears(el.dataset.debut!, day));
+  // The Events page: a card's countdown, and the reader's own time in its dates' tooltip.
+  each('[data-ev-start]', el => eventWhenText({
+    predicted: 'evPredicted' in el.dataset,
+    start: Number(el.dataset.evStart),
+    end: Number(el.dataset.evEnd),
+    shopEnd: Number(el.dataset.evUntil),
+  }, at));
+  root.querySelectorAll<HTMLElement>('[data-ev-tip-start]').forEach((el) => {
+    el.dataset.tip = yourTimeTip(Number(el.dataset.evTipStart), Number(el.dataset.evTipEnd));
+  });
 }

@@ -21,6 +21,13 @@ const [songs, cards] = await Promise.all([json('holodori/songs.json'), json('hol
 // module -> [export, ...arguments] for each way it is drawn. An empty list is a module with
 // nothing to draw (it is only imported).
 const CHECKS = {
+  'events-clock': [],
+  'events-html': [
+    ['eventsPageHtml', 'list', NOW, { month: undefined, pools: false }],
+    ['eventsPageHtml', 'pools', NOW, { month: undefined, pools: false }],
+    ['eventsPageHtml', 'calendar', NOW, { month: undefined, pools: false }],
+    ['eventsPageHtml', 'calendar', NOW, { month: undefined, pools: true }],
+  ],
   'holodori-format': [],
   'holodori-clip-html': [['clipButtonHtml', songs.find(s => s.mv)]],
   'holodori-songs-html': [['songTileHtml', songs[0]], ['songBackHtml', songs[0].id]],
