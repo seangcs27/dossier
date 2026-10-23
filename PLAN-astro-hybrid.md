@@ -4,13 +4,17 @@ Written 22 October 2026, after a spike (21 October). Not started. The owner exec
 by phase; each phase ends in something that can be merged and, if it goes wrong, reverted
 alone. Sizes are guesses: S under a day, M one to three days, L three to seven.
 
+Revised 23 October 2026 for the Endfield and FGO redesign (#18 per-game logo, #19 the Endfield
+showcase and the FGO summoning circle). The phases, gates and decisions are unchanged; what
+moved is marked in Phases 0 to 4 and the route table.
+
 ## What "hybrid" means here
 
 **The website only.** Astro builds the pages, the shell (sidebar, topbar) and the routes; the
 interactive views we already have (filters, the Path to Nowhere wall, the dossiers, the
 players) stay TypeScript and mount into an Astro page as client scripts. The pages that are
-mostly reading (hololive Dreams' front page, gachas, a holomem, a card, Events, the FGO
-roster) become real HTML at build time.
+mostly reading (hololive Dreams' front page, gachas, a holomem, a card, Events) become real
+HTML at build time.
 
 **The extension is not touched.** It stays plain TypeScript built by `webpack.ext.js`, and
 reads only `src/shared`. No Astro, no WXT. WXT would matter only if the popup were ever
@@ -19,14 +23,14 @@ rewritten in a UI library, which nothing here asks for.
 Not goals: a UI framework for the views, a rewrite of `detail.ts` / `grid.ts` / `ptn.ts`, a
 server, or Rust.
 
-## Baseline (measured 21 October 2026)
+## Baseline (measured 21 October 2026, before #18 and #19; Phase 0 measures it again)
 
 | | Today |
 |---|---|
 | Entry | `dist/web/app.js` 782 KB (151 KB gzipped), the whole site's code **and about 579 KB of bundled JSON** (74% of it) |
 | CSS | `styles.css` 224 KB (27 KB gzipped) |
 | `dist/web` | 119 MB: operator payloads 25 MB, hololive Dreams 35 MB, Path to Nowhere 60 MB (generated, all games) |
-| Routes | about 915 once every dossier has an address (table below) |
+| Routes | about 916 once every dossier has an address (table below) |
 | Spike: hololive Dreams front page in Astro | HTML 26 KB (5.6 KB gz) + JS 102 KB (19.7 KB gz); looked the same with the same CSS; the JS was mostly `songs.json`, so it would be a few KB with the data left out |
 
 The spike showed one thing that must be designed for: the front page's "Ends in 7d 10h" and
@@ -65,13 +69,20 @@ src/shared/generated  ← untouched (build:index)        webpack.ext.js → dist
   addresses. Becomes the CI route-count check.
 - **Screenshot harness** (`scripts/shots.mjs`): headless Edge or Chrome over http (never
   `file://`; it hides broken fetches), about 25 representative routes (one per view, one
-  dossier per game) at 1400, 800 and 390 px, compared with pixelmatch. Baselines kept out of
+  dossier per game; the Endfield showcase and the FGO circle included) at 1400, 800 and 390 px, compared with pixelmatch. Baselines kept out of
   git.
 - **Smoke run**: each route mounts with no console error.
 - **Audit**: modules that touch `document` or `window` on import must be client-only. Today:
   `holodori-audio.ts`, `holodori-clip.ts`, `index.ts`, `sections.ts`, `views/detail.ts`
   (and `ptn-lang.ts`, `holodori-audio.ts` use `localStorage`). The `*-index.ts` data modules
   are DOM-free (the spike imported them in Node).
+- **Import audit**: `card.ts` (the roster page every game after Endfield uses) and
+  `views/endfield.ts` import `focusSelector` and `watchFilterTab` from `views/grid.ts`, which
+  imports `operator-index` and so bundles `operators.json`. Once Vite splits the code per
+  page, each of those pages would carry the Arknights grid and its data. List every such
+  cross-view import; Phase 2 removes them.
+- **Re-measure the baseline table** above on current `master`. Its figures predate #19, which
+  added about 850 lines of SCSS (`_endfield-grid`, `_fgo`) and four font families.
 - **Done when**: `npm run shots` compares any two builds and the baseline set exists.
 
 ### Phase 1 — Astro beside webpack · M
@@ -82,10 +93,13 @@ src/shared/generated  ← untouched (build:index)        webpack.ext.js → dist
   SVG filters) with `game`, `view`, `title` props. `<body data-view>` stays: the CSS keys on
   it.
 - Styles: import `src/web/styles.scss` as a global. Check the emblem `mask-image` URLs, the
-  `@font-face` URLs under `base`, and `@property --thumb`.
+  `@font-face` URLs under `base`, and `@property --thumb`. Seven font families are now
+  self-hosted (four came with #19), each declared in its game's partial. The five game
+  partials are 125 KB of SCSS source: decide here whether they stay one stylesheet or split
+  per game (they are scoped by `body[data-view]`, so they can).
 - `shell.ts`: the parts of `index.ts` that are the shell's (drawer, section links and
-  `sections.ts`, the search box) split from `dispatch()`. Each page's script calls
-  `markSection(...)` itself.
+  `sections.ts`, the search box, the per-game logo and favicon in `logo.ts`) split from
+  `dispatch()`. Each page's script calls `markSection(...)` and `setLogoGame(...)` itself.
 - `assetUrl()` per D6.
 - The spike page, kept: `/holodori/`.
 - **Done when**: `/holodori/` matches the SPA at the three widths, the drawer and section
@@ -107,6 +121,10 @@ The refactor everything else depends on.
   daily deploy bounds the staleness to a day.
 - **Data**: a page ships no JSON it neither renders nor filters. Server side imports the file
   in the page's frontmatter; client side takes an inlined slice or a cached fetch.
+- **Shared helpers out of `views/grid.ts`**: move `focusSelector` and `watchFilterTab` (the
+  search box's and filter tab's shared handling, used by `card.ts` and `views/endfield.ts`)
+  into a module of their own, so the Endfield, FGO, Path to Nowhere and hololive Dreams pages
+  do not carry the Arknights grid and `operators.json`.
 - **Done when**: the SPA's string output and Astro's are identical for the same data, for
   every renderer moved. **Rollback**: the renderers stay valid for the SPA.
 
@@ -116,9 +134,8 @@ In this order (value over risk):
    stats readout and fact list at build, with the payload inlined instead of fetched; the
    level slider, blooms, skills, the reveal and the voice player as client scripts).
 2. Events (3 tabs; the countdown script from Phase 2).
-3. FGO roster (no filters).
-4. Endfield dossier × 33.
-5. Path to Nowhere dossier × 160 (the wall stays client).
+3. Endfield dossier × 34.
+4. Path to Nowhere dossier × 160 (the wall stays client).
 
 Each page gets a `<title>`, a description, a canonical URL and a JS budget (proposed: 25 KB
 gzipped for a static page, 40 KB with an interactive island).
@@ -126,8 +143,10 @@ gzipped for a static page, 40 KB with an interactive island).
   links resolve. **Rollback**: remove the page; the SPA route is still there.
 
 ### Phase 4 — Interactive rosters as client views · L
-Arknights grid, Endfield roster, the Path to Nowhere wall, hololive Dreams' sheet, songs and
-cards. The Astro page is the shell plus an empty `#view` and a `<script>` that calls the
+Arknights grid, Endfield roster (the showcase), FGO roster (the summoning circle), the Path to
+Nowhere wall, hololive Dreams' sheet, songs and cards. The Endfield and FGO rosters were
+simple before #19; both now keep search, filters and the operator or class picked in module
+state. The Astro page is the shell plus an empty `#view` and a `<script>` that calls the
 existing `mount*(container)` unchanged. Vite splits the code per page and each page loads
 only its game's data.
 - **Done when**: search, every filter group, sort and the language switch behave as before
@@ -175,12 +194,12 @@ of `CLAUDE.md`; close the items in `TODO.md`. Remove `/next/`.
 | Game | Routes |
 |---|---|
 | Arknights | roster `/`, dossier × 460, Events × 3 |
-| Endfield | roster, dossier × 33 |
+| Endfield | roster, dossier × 34 |
 | Path to Nowhere | wall, dossier × 160 |
 | hololive Dreams | front, sheet, songs, cards, gachas, holomem × 54, card × 196 |
 | FGO | roster |
 
-About 915 pages. At 10 to 60 KB each that is 10 to 50 MB on top of today's 119 MB, well under
+About 916 pages. At 10 to 60 KB each that is 10 to 50 MB on top of today's 119 MB, well under
 GitHub Pages' 1 GB site limit.
 
 ## Risks
