@@ -7,8 +7,8 @@ import {
 } from '../holodori-index';
 import { playReveal, revealHtml } from '../holodori-reveal';
 import { bubbleHtml, dockHtml, voiceClick, type Speaker } from '../holodori-voice';
-import { skillHtml, starsHtml } from './holodori-cards';
-import { faceHtml } from './holodori-songs';
+import { skillHtml, starsHtml } from '../render/holodori-cards-html';
+import { faceHtml } from '../render/holodori-songs-html';
 
 // A hololive Dreams card's own page (#/holodori/card/<id>), after holodori.best's: its
 // illustration (and a 5-star card's animation and signature, which Reveal plays as the game

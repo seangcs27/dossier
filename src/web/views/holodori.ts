@@ -1,6 +1,9 @@
 import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { escHtml } from '../format';
 import { getHolodoriCharacters, type HolodoriCharacter } from '../holodori-index';
+import {
+  MONTHS, birthdayIn, birthdayText, daysToBirthday, groupsOf, nextBirthday, no, ordinal, place, today,
+} from '../render/holodori-format';
 
 // hololive Dreams' roster as the stickers the game would hand you, on the sheet they come
 // on, all 54 at once (the owner's ask of 16 October 2026). A sticker whose birthday is
@@ -8,16 +11,10 @@ import { getHolodoriCharacters, type HolodoriCharacter } from '../holodori-index
 // same holomems can be had as a year of their birthdays and debut anniversaries. The album
 // and the grid beside them were taken out on 17 October 2026, at the owner's ask.
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December'];
-const DAY_MS = 86_400_000;
 // A sticker stands lifted when her birthday is this many days off or nearer.
 const LIFT_DAYS = 60;
 
 const cast = getHolodoriCharacters();
-// Her number is her place in the game's own order.
-const place = new Map(cast.map((c, i) => [c.id, i + 1]));
-export const no = (c: HolodoriCharacter): string => String(place.get(c.id)).padStart(3, '0');
 
 const state = newRosterState();
 
@@ -29,9 +26,6 @@ interface Section {
   branch: string;
   members: HolodoriCharacter[];
 }
-
-// A holomem in no group stands in a row named for her branch.
-export const groupsOf = (c: HolodoriCharacter): string[] => (c.groups.length ? c.groups : [c.branch]);
 
 // A section stands where the first holomem whose own generation it is stands, so GAMERS,
 // which Fubuki is in beside Gen 1, comes after Gen 2 as it does in the game.
@@ -50,50 +44,10 @@ const sections: Section[] = [];
 const branches = [...new Set(cast.map(c => c.branch))];
 
 // ── Dates ──
-// A birthday is a day of the year with no hour to it, so everything here is the reader's
-// own calendar: what is lifted, and what is today, is decided by their clock.
-
-export function today(): Date {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-}
-
-// Her birthday in a given year. Hakos Baelz's is 29 February, and a year with no such day
-// keeps it on the 28th.
-function birthdayIn(c: HolodoriCharacter, year: number): Date {
-  const [m, d] = c.birthday.split('-').map(Number);
-  const leap = new Date(year, 1, 29).getDate() === 29;
-  return new Date(year, m - 1, m === 2 && d === 29 && !leap ? 28 : d);
-}
-
-function nextBirthday(c: HolodoriCharacter, now: Date): Date {
-  const day = birthdayIn(c, now.getFullYear());
-  return day < now ? birthdayIn(c, now.getFullYear() + 1) : day;
-}
-
-// Rounded, since a day with a change of the clocks in it is 23 or 25 hours long.
-export function daysToBirthday(c: HolodoriCharacter, now: Date): number {
-  return Math.round((nextBirthday(c, now).getTime() - now.getTime()) / DAY_MS);
-}
+// What is lifted, and what is today, is decided by the reader's clock (see
+// render/holodori-format.ts for the rest).
 
 const shortDate = (d: Date): string => `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3)}`;
-
-// Her birthday as her profile has it, '29 Feb' or '29 February', whatever the year.
-export function birthdayText(c: HolodoriCharacter, long = false): string {
-  const [m, d] = c.birthday.split('-').map(Number);
-  return `${d} ${long ? MONTHS[m - 1] : MONTHS[m - 1].slice(0, 3)}`;
-}
-
-export function debutText(c: HolodoriCharacter): string {
-  const [y, m, d] = c.debut.split('-').map(Number);
-  return `${d} ${MONTHS[m - 1]} ${y}`;
-}
-
-export function ordinal(n: number): string {
-  const tens = n % 100;
-  const suffix = tens > 10 && tens < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th';
-  return `${n}${suffix}`;
-}
 
 /** Whose birthdays are near: days to each, and who is next (everyone on that one day). */
 interface Soon {

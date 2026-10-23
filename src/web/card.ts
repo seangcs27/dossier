@@ -1,6 +1,6 @@
 import { escHtml } from './format';
 import { mountCardSpin } from './card-spin';
-import { focusSelector, watchFilterTab } from './views/grid';
+import { focusSelector, watchFilterTab } from './filter-box';
 
 /**
  * One card on the roster of a game that is not Arknights or Endfield: the plate the

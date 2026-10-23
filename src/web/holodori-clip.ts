@@ -1,6 +1,6 @@
-import { escHtml } from './format';
 import { claimAudio, clock, releaseAudio } from './holodori-audio';
 import { getHolodoriSongs, type HolodoriSong } from './holodori-index';
+import { clipButtonHtml, videoOf } from './render/holodori-clip-html';
 
 // A song's chorus on hololive Dreams' pages (views/holodori-songs.ts): a disc on its jacket
 // that plays the part of its official music video the game marks as the chorus, in YouTube's
@@ -20,27 +20,9 @@ let progress = 0;
 let dock: HTMLElement | undefined;
 let frame: HTMLIFrameElement | undefined;
 
-/** The YouTube id of a song's music video, or undefined for a song that has none. */
-export function videoOf(song: HolodoriSong): string | undefined {
-  return /(?:[?&]v=|youtu\.be\/)([\w-]{11})/.exec(song.mv)?.[1];
-}
-
-/** A song's disc, the button that plays its chorus; nothing for a song with no video. */
+/** A song's disc, the button that plays its chorus, as the player has it now. */
 export function clipHtml(song: HolodoriSong): string {
-  if (!videoOf(song)) return '';
-  const mine = now?.song.id === song.id;
-  return `
-    <button class="song-play${mine ? ' is-on' : ''}${mine && state === 'playing' ? ' is-playing' : ''}" type="button"
-            data-clip="${escHtml(song.id)}" aria-pressed="${mine && state === 'playing'}"
-            aria-label="Play the chorus of ${escHtml(song.title)}" style="--p: ${mine ? progress : 0}">
-      <svg viewBox="0 0 44 44" aria-hidden="true">
-        <circle class="ring" cx="22" cy="22" r="19" pathLength="100"></circle>
-        <circle class="ring-on" cx="22" cy="22" r="19" pathLength="100"></circle>
-        <path class="ico-play" d="M18 14.5v15l12-7.5z"></path>
-        <path class="ico-pause" d="M16.5 14h4v16h-4zM23.5 14h4v16h-4z"></path>
-      </svg>
-    </button>
-  `;
+  return clipButtonHtml(song, now && { id: now.song.id, playing: state === 'playing', progress });
 }
 
 function paint(): void {
