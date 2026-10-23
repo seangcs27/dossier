@@ -85,6 +85,13 @@ export function songTileHtml(s: HolodoriSong, disc: (song: HolodoriSong) => stri
   `;
 }
 
+/**
+ * The backs of some songs as inert `<template>`s, for a page that is drawn at build time and
+ * so cannot draw a back when a jacket is pressed (holodori-flip.ts reads them back).
+ */
+export const songBackTemplatesHtml = (list: HolodoriSong[]): string =>
+  list.map(s => `<template data-back-of="${escHtml(s.id)}">${songBackHtml(s.id)}</template>`).join('');
+
 /** What a jacket turns over to: the song's credits. Undefined for a song nobody has. */
 export function songBackHtml(id: string): string | undefined {
   const s = songById.get(id);

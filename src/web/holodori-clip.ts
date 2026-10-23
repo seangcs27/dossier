@@ -1,5 +1,5 @@
 import { claimAudio, clock, releaseAudio } from './holodori-audio';
-import { getHolodoriSongs, type HolodoriSong } from './holodori-index';
+import type { HolodoriSong } from './holodori-index';
 import { clipButtonHtml, videoOf } from './render/holodori-clip-html';
 
 // A song's chorus on hololive Dreams' pages (views/holodori-songs.ts): a disc on its jacket
@@ -9,12 +9,26 @@ import { clipButtonHtml, videoOf } from './render/holodori-clip-html';
 // clip goes, from the time the player reports.
 
 const HOST = 'https://www.youtube-nocookie.com';
-const songs = new Map(getHolodoriSongs().map(s => [s.id, s]));
+
+// What the player needs of a song: its disc carries it (render/holodori-clip-html.ts), so
+// no page has to hold the songs for it.
+type ClipSong = Pick<HolodoriSong, 'id' | 'title' | 'mv' | 'chorus' | 'estimated'>;
+
+function songOf(button: HTMLElement): ClipSong {
+  const { clip, title, mv, chorus, estimated } = button.dataset;
+  return {
+    id: clip!,
+    title: title!,
+    mv: mv!,
+    ...(chorus ? { chorus: chorus.split(',').map(Number) as [number, number] } : {}),
+    ...(estimated !== undefined ? { estimated: true as const } : {}),
+  };
+}
 
 // What the player reports as `playerState`: 0 ended, 1 playing, 2 paused, 3 buffering.
 type State = 'idle' | 'playing' | 'paused';
 
-let now: { song: HolodoriSong; from: number; to: number } | undefined;
+let now: { song: ClipSong; from: number; to: number } | undefined;
 let state: State = 'idle';
 let progress = 0;
 let dock: HTMLElement | undefined;
@@ -133,7 +147,7 @@ function build(): HTMLElement {
   return el;
 }
 
-function open(song: HolodoriSong): void {
+function open(song: ClipSong): void {
   const [start, end] = song.chorus ?? [0, 30000];
   const from = Math.floor(start / 1000);
   const to = Math.ceil(end / 1000);
@@ -209,8 +223,9 @@ document.addEventListener('click', (e) => {
     shut();
     return;
   }
-  const song = songs.get(target.closest<HTMLElement>('[data-clip]')?.dataset.clip ?? '');
-  if (!song) return;
+  const button = target.closest<HTMLElement>('[data-clip]');
+  if (!button) return;
+  const song = songOf(button);
   if (now?.song.id === song.id && state !== 'idle') toggle();
   else open(song);
 });
