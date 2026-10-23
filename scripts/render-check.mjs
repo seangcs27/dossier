@@ -23,6 +23,13 @@ const [songs, cards] = await Promise.all([json('holodori/songs.json'), json('hol
 const CHECKS = {
   'clock-text': [],
   'holodori-dates': [],
+  'events-clock': [],
+  'events-html': [
+    ['eventsPageHtml', 'list', NOW, { month: undefined, pools: false }],
+    ['eventsPageHtml', 'pools', NOW, { month: undefined, pools: false }],
+    ['eventsPageHtml', 'calendar', NOW, { month: undefined, pools: false }],
+    ['eventsPageHtml', 'calendar', NOW, { month: undefined, pools: true }],
+  ],
   'holodori-format': [],
   'holodori-clip-html': [['clipButtonHtml', songs.find(s => s.mv)]],
   'holodori-songs-html': [['songTileHtml', songs[0]], ['songBackHtml', songs[0].id]],
