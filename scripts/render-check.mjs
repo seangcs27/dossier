@@ -17,6 +17,9 @@ const OUT = 'dist/render-check';
 
 const json = async file => JSON.parse(await readFile(path.join(GENERATED, file), 'utf8'));
 const [songs, cards] = await Promise.all([json('holodori/songs.json'), json('holodori/cards.json')]);
+const five = cards.find(card => card.rarity === 5);
+const three = cards.find(card => card.rarity === 3);
+const [fiveDetail, threeDetail] = await Promise.all([five, three].map(card => json(`holodori/card-details/${card.id}.json`)));
 
 // module -> [export, ...arguments] for each way it is drawn. An empty list is a module with
 // nothing to draw (it is only imported).
@@ -28,6 +31,10 @@ const CHECKS = {
   'holodori-gachas-html': [['gachasPageHtml', NOW]],
   'holodori-home-html': [['homeHtml', NOW]],
   'holodori-holomem-html': [['holomemHtml', 'chr-00001', NOW], ['holomemHtml', 'nobody', NOW]],
+  'holodori-card-html': [
+    ['cardHtml', five.id, fiveDetail], ['cardHtml', five.id, fiveDetail, 1, 5, 0], ['cardHtml', five.id],
+    ['cardHtml', three.id, threeDetail], ['cardHtml', 'nobody'],
+  ],
 };
 
 // Node has a navigator of its own; a page does not read it at import, and nor may a renderer.
