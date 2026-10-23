@@ -2,6 +2,7 @@ import { escHtml } from '../format';
 import {
   gachaLogoUrl, getHolodoriCards, getHolodoriGachas, getHolodoriPreviews, type HolodoriGacha, type HolodoriPreview,
 } from '../holodori-index';
+import { previewText, whenText, windowText } from './clock-text';
 import { cardTileHtml } from './holodori-cards-html';
 
 // hololive Dreams' gachas: every banner the record has (scripts/lib/holodori-gachas.mjs), as
@@ -10,7 +11,6 @@ import { cardTileHtml } from './holodori-cards-html';
 // reader's clock decides (a status, a date in their time zone) is marked with data-*
 // attributes, which fresh.ts sets again in the browser.
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const HOUR_MS = 3_600_000;
 
 const gachas = getHolodoriGachas();
@@ -20,31 +20,7 @@ export const dated = (g: HolodoriGacha): boolean => Boolean(g.from && g.to);
 /** A dated banner the reader's clock has not yet seen end: running, or still to start. */
 export const isLive = (g: HolodoriGacha, now: number): boolean => dated(g) && now <= Date.parse(g.to!);
 
-const two = (n: number): string => String(n).padStart(2, '0');
-
-/** '7 Oct 2026, 10:00', in the reader's own time zone. */
-export function whenText(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${two(d.getHours())}:${two(d.getMinutes())}`;
-}
-
 const whenHtml = (iso: string): string => `<time data-when="${iso}">${whenText(iso)}</time>`;
-
-// '2d 5h' or '5h 12m', rounded down.
-function spanText(ms: number): string {
-  const h = Math.floor(ms / HOUR_MS);
-  return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h` : `${h}h ${Math.floor((ms % HOUR_MS) / 60_000)}m`;
-}
-
-/** Where a dated banner is: still to start, running, or over. */
-export function windowText(from: number, to: number, now: number): string {
-  if (now < from) return `Starts in ${spanText(from - now)}`;
-  return now <= to ? `Ends in ${spanText(to - now)}` : 'Ended';
-}
-
-/** An announced ★5 whose gacha is not in the record: still to open, or open and unrecorded. */
-export const previewText = (from: number, now: number): string =>
-  now < from ? `Starts in ${spanText(from - now)}` : 'Open, not in the record yet';
 
 function statusText(g: HolodoriGacha, now: number): string {
   if (g.standing) return 'Always on';

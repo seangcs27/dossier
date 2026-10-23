@@ -1,5 +1,5 @@
-import { daysAway, daysToBirthday, debutYears, today } from './render/holodori-format';
-import { previewText, whenText, windowText } from './render/holodori-gachas-html';
+import { previewText, whenText, windowText } from './render/clock-text';
+import { daysAway, daysToBirthday, debutYears, today } from './render/holodori-dates';
 
 // A page built at build time says what the clock said then: a gacha's "Ends in 5d 8h", a
 // date in the builder's time zone, a birthday's "in 12 days". The renderers (render/) mark
