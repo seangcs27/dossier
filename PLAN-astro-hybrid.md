@@ -1,7 +1,7 @@
 # Plan: Astro hybrid for the Dossier website
 
-Written 22 October 2026, after a spike (21 October). Not started. The owner executes it, phase
-by phase; each phase ends in something that can be merged and, if it goes wrong, reverted
+Written 22 October 2026, after a spike (21 October). Phases 0 and 1 are done (24 October); the
+rest is not started. The owner executes it, phase by phase; each phase ends in something that can be merged and, if it goes wrong, reverted
 alone. Sizes are guesses: S under a day, M one to three days, L three to seven.
 
 Revised 23 October 2026 for the Endfield and FGO redesign (#18 per-game logo, #19 the Endfield
@@ -105,7 +105,7 @@ src/shared/generated  ← untouched (build:index)        webpack.ext.js → dist
     `endfield/portraits/chr_0036_jsspsi.webp` (Si), which the wiki does not have, so it is a
     404. Not fixed here.
 
-### Phase 1 — Astro beside webpack · M
+### Phase 1 — Astro beside webpack · M · done 24 October 2026
 - `site/` per D4: Astro 5, strict TS, `output: 'static'`, `base: '/dossier'`,
   `trailingSlash: 'always'`, `outDir` somewhere other than `dist/web` for now. (Astro 5.18 on
   Node 22 needed an `estree-walker` hoist on this machine; pin and prove it in CI.)
@@ -123,12 +123,58 @@ src/shared/generated  ← untouched (build:index)        webpack.ext.js → dist
 - `assetUrl()` per D6.
 - The spike page, kept: `/holodori/`.
 - **Done when**: `/holodori/` matches the SPA at the three widths, the drawer and section
-  blob work, no console errors. **Rollback**: delete `site/`.
+  blob work, no console errors. **Rollback**: delete `site/`, `src/web/shell.ts` and put
+  `index.ts` back.
+
+**Met 24 October 2026.** What is there: `site/` is an npm workspace (Astro 5.18.2, pinned; it
+installs clean, the `estree-walker` hoist the spike needed did not come back). `Shell.astro`
+reads `src/web/index.html` instead of copying it, so the two targets share one source of the
+markup until Phase 8. `site/integrations/assets.mjs` copies the files webpack's CopyPlugin
+copies (read out of it, so the lists cannot differ) and serves them under `astro dev`.
+`src/web/shell.ts` has `initShell()` and `showShell(view)`, moved out of `index.ts` as they
+were. `npm run build:site` writes `dist/astro` (17 s for one page; 119 MB of it is the assets).
+
+How it was checked:
+- The SPA after the split: 63 of 63 shots identical to the Phase 0 baseline. The webpack web
+  bundle and all 88 files of the extension build are byte for byte what they were before the
+  workspace was added.
+- `/holodori/` is identical to the SPA's `#/holodori` at 1400, 800 and 390 px, and so was a
+  temporary second page, `/holodori/songs/` (left out of the commit), which also checks the
+  section fill and a second route. `shots capture … --astro` shoots the routes in
+  `site/src/ported-routes.json`.
+- By script (not kept): the drawer opens from the menu button, shuts on Escape, the scrim and
+  on widening past a phone, and the page behind it is inert while it is out; the section fill
+  sits exactly under the link being shown; no console error, exception or 404.
+
+Three differences from the text above:
+- **`/holodori/` is the SPA's own front page**, mounted into the shell by the page's script, not
+  the spike's static page. The spike's page does not match the SPA (other links, no gacha
+  logos); drawing the page at build time is Phases 2 and 3. The spike's numbers stay above.
+- **`<base href>` is in, and `assetUrl()` (D6) is not yet.** The views and the baked JSON write
+  every address beside `index.html` (`icons/…`, `holodori/jackets/…`); one folder down they
+  miss, and wrapping each one is Phase 2's work. `<base href="/dossier/">` makes them resolve
+  as they do now, and sends a `#/…` link to the SPA at the root, where a route not yet ported
+  lives. D6's worry, `url(#goo)`, did not bite: those references are in the stylesheet, where
+  a fragment-only address is the document's own. Revisit it route by route in Phase 2.
+- **The stylesheet goes at the site's root**, not in `_astro/`, which is the "emblem URLs" check
+  in the Styles item. A custom property holding a relative `url()` is read against the
+  stylesheet, not the page: `--logo: url(icons/games/arknights.webp)` (the sidebar's emblems)
+  and the same in `icons.ts`, `detail.ts` and `grid.ts`. From `_astro/` the emblems were 404s,
+  and no `<base>` helps. Set in `site/astro.config.mjs`.
+
+What it costs today: `/holodori/` ships 236 KB of JavaScript (44 KB gzipped) and 236 KB of CSS,
+because it mounts the whole view with its imports, `views/grid.ts` and `operators.json`
+among them (the list Phase 2 starts from).
 
 ### Gate 1
 Stop here and choose again if shell parity took far longer than estimated, or the shell cannot
 be separated from `dispatch()` without rewriting it. The fallback is the cheaper plan:
 on-demand loading of each game's views and data inside the current webpack build.
+
+**Passed 24 October 2026.** Parity came within the estimate, and the shell came out of
+`dispatch()` by moving code, not rewriting it. Not tested yet: a page that is not a client
+mount, `ClientRouter`, a dynamic route, and the SPA and the Astro build served together (the
+`#/…` links assume it).
 
 ### Phase 2 — The pure render layer · L
 The refactor everything else depends on.

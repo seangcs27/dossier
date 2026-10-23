@@ -2,6 +2,9 @@
   "name": "dossier",
   "version": "0.1.0",
   "description": "Arknights operator lookup — browser extension + web SPA",
+  "workspaces": [
+    "site"
+  ],
   "scripts": {
     "build": "npm run build:ext && npm run build:web",
     "build:index": "npm run build:index:operators && npm run build:index:ranges && npm run build:index:events && npm run build:index:endfield && npm run build:index:ptn && npm run build:index:holodori && npm run build:index:fgo",
@@ -13,6 +16,10 @@
     "build:index:holodori": "node --no-network-family-autoselection scripts/build-holodori-index.mjs",
     "build:index:fgo": "node --no-network-family-autoselection scripts/build-fgo-index.mjs",
     "design": "npm run build:web && node scripts/build-design-previews.mjs",
+    "prebuild:site": "npm run build:index",
+    "build:site": "npm run build -w site",
+    "predev:site": "npm run build:index",
+    "dev:site": "npm run dev -w site",
     "routes": "node scripts/route-inventory.mjs",
     "shots": "node scripts/shots.mjs",
     "prebuild:ext": "npm run build:index",

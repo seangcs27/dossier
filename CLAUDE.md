@@ -34,6 +34,8 @@ npm run dev:web      # Watch mode — web SPA only
 npm run build        # Production build — both targets
 npm run build:ext    # Production build — extension only  → dist/ext/
 npm run build:web    # Production build — web SPA only   → dist/web/
+npm run build:site   # The Astro site (site/), one page so far (see "The Astro site")  → dist/astro/
+npm run dev:site     # Its dev server, http://localhost:4321/dossier/
 
 npm run build:index  # Regenerate everything under src/shared/generated/ (runs automatically
                      # via prebuild:*/predev:* hooks — rarely needed by hand)
@@ -131,6 +133,8 @@ icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size (
   ptn/<kind>-<name>.webp  ← Path to Nowhere's 25 rank, tendency and libram badges, 72px (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
+site/              ← the Astro site (an npm workspace), built beside the SPA until the cut-over
+                     (PLAN-astro-hybrid.md); see "The Astro site"
 
 src/
   shared/           ← shared by both targets
@@ -198,10 +202,13 @@ src/
       html.ts       ← escHtml
 
   web/              ← SPA
-    index.ts        ← app entry: random logo, hash-router dispatch (grid, detail, events,
-                      the other games' pages), the table of games (GAMES: each one's
-                      roster and its word for its cast), which game the sidebar and which
-                      page the section links mark, and the phone's games drawer
+    index.ts        ← app entry: the hash-router dispatch (grid, detail, events, the other
+                      games' pages), over shell.ts
+    shell.ts        ← the page around a view: initShell() (random logo, image mirror,
+                      tooltips, scrollbars, the phone's games drawer) and showShell(view)
+                      (the table of games, GAMES: each one's roster and its word for its
+                      cast; which game the sidebar and which page the section links mark).
+                      index.ts and the Astro pages (site/) both start it
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
                       #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
@@ -216,7 +223,7 @@ src/
                       one by laying the cut-out over the other six's shared background, at the
                       1.17x (and 1px) a search over scale and shift found it best fits them
                       (they fit themselves at 1.00). Per game since 21 October 2026
-                      (`setLogoGame`, from `dispatch`): hololive Dreams rests on hololive's
+                      (`setLogoGame`, from `showShell`): hololive Dreams rests on hololive's
                       triangle in white on its blue (`icons/logo-holodori.webp`, the
                       sidebar's emblem) and, with a mouse on the logo, rolls Kronie, Ouro
                       Kronii's blue clock bear (`icons/holodori-kronie.webp`, the owner's own
@@ -658,7 +665,7 @@ for Path to Nowhere, the X of its logo (the wiki's `PtN Logo.png` is the name in
 across a red X of chain and brush, which one colour cannot hold and a 30px tile cannot
 read, so the emblem is how red a pixel is, its gaps closed and its spatter dropped). A
 squarer emblem dropped into `icons/games/` under the same name replaces any of them.
-Which game a page belongs to is `gameOf()` in `index.ts`, by the route: everything that is
+Which game a page belongs to is `gameOf()` in `shell.ts`, by the route: everything that is
 not another game's is Arknights', so a link made before there were others still lands where
 it did. `GAMES` beside it holds each game's roster and its word for its cast; a game's tile
 is `#nav-<its name there>`.
@@ -676,7 +683,7 @@ is out the topbar and the page are `inert`. Like the filter panel it animates wh
 own pages as a segmented pair: Operators and Events, the one showing filled in 群青. They
 replaced a lone Events link, from which the only way back was the wordmark. The first goes
 to the roster of whichever game is showing and is named for that game's cast (Operators,
-Sinners, Holomems, Servants: `GAMES` in `index.ts`); it stays lit on a dossier. Events is
+Sinners, Holomems, Servants: `GAMES` in `shell.ts`); it stays lit on a dossier. Events is
 Arknights' alone and hides on the other games. hololive Dreams has three of its own, Songs,
 Cards and Gachas, which show on its pages alone; its front page (`#/holodori`, where its
 tile lands) is none of the four and lights none, so the fill is hidden there
@@ -713,7 +720,7 @@ width. The phone rules at the foot of `styles.scss` lay the bar out the same way
 window's width, which is what a browser without container queries is left with, with the
 menu button first; on the grid the count pill gives its room in row 1 to the section links
 and shows instead as a bare number inside the search box (`#search-count`), which `body`'s
-`data-view` (set by `index.ts`) decides. Under 360px the wordmark shrinks to fit a 320px phone.
+`data-view` (set by `showShell`) decides. Under 360px the wordmark shrinks to fit a 320px phone.
 
 **Breadcrumbs** (`crumbsHtml` in `format.ts`) open a dossier and the schedule: the way back
 as a pill with a back chevron ("‹ Operators", or "‹ Sinners" on a Sinner's page), a chevron, and the page's own name, in the
@@ -1308,7 +1315,7 @@ wiki writes their page they are no longer CN-only and its text takes over. The s
 words on these pages change too (the owner's ask, 14 October 2026): the Filters button,
 Clear and an empty search's message through the roster's `words` (`card.ts`), and the
 section link from each PtN view, since a change of language mounts the view again and not
-the route. `dispatch` in `index.ts` puts Clear back to English on every change of page,
+the route. `showShell` in `shell.ts` puts Clear back to English on every change of page,
 since the Arknights and Endfield grids never word it. The sidebar, the drawer and the
 search box's clear and close buttons' screen-reader names stay English. The tags
 are each wiki's own, so a pick among them does not carry over a change of language.
@@ -1413,7 +1420,7 @@ asks for 500 or 700**, the two it ships (17 October 2026): one that asked for th
 400 or 600 got the nearest anyway, so nothing moved but the rule. The small labels went
 into it too (a line-up's head count, the trail, a fact's label, a badge, the Filters
 button), the placard's number and kind lines went from 10.5px to 12, and on the Chinese
-side the page is `lang="zh-CN"` (set by both views, put back to English by `dispatch`),
+side the page is `lang="zh-CN"` (set by both views, put back to English by `showShell`),
 which picks the Chinese glyphs and sets the names, titles and tabs without tracking.
 
 **Beside that switch is the order's: Newest, which the page opens in by the owner's choice,
@@ -1784,6 +1791,30 @@ and asks for credit, which the README gives and the site itself does not yet.
 Not built for any of the three: glyphs; a release order for hololive Dreams or FGO (Path
 to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: units, a gacha's rates and the cards it has besides its featured ones, stories, the launch banner. Not built for FGO: a dossier.
 
+## The Astro site (`site/`)
+
+The web target is being moved onto Astro in phases (`PLAN-astro-hybrid.md`; the extension is
+not part of it and stays webpack). Phase 1 (24 October 2026) is in: one page, `/holodori/`, and
+the SPA is untouched but for `shell.ts`, split out of `index.ts`. `npm run build:site` writes
+`dist/astro`; `npm run dev:site` serves it at `http://localhost:4321/dossier/`.
+
+- **`Shell.astro` reads `src/web/index.html`**, split at `<main id="view">`, and does not copy
+  it, so the sidebar and topbar are one source for both targets until Phase 8. Run the build
+  from `site/` (`npm run build -w site` does): the layout reads `../src/web/index.html`.
+- **A page is a client mount** for now: `initShell(); showShell(view); mount…(#view)` in the
+  page's own script, so it is the SPA's view and matches it to the pixel. Rendering at build
+  time is Phases 2 and 3.
+- **`<base href="/dossier/">`** is in every page (D6 in the plan, deviated from for now):
+  the views and the baked JSON write addresses beside `index.html` (`icons/…`), which one folder
+  down would miss, and it sends a `#/…` link to the SPA at the root. `site/src/ported-routes.json`
+  maps the hash routes Astro serves to their paths; the shell's links to those are rewritten, and
+  `shots capture --astro` shoots them.
+- **The stylesheet is emitted at the site's root** (`site/astro.config.mjs`), because a custom
+  property with a relative `url()` (`--logo: url(icons/games/…)`) is read against the stylesheet,
+  not the page. From `_astro/` it would 404.
+- `site/integrations/assets.mjs` copies the files webpack's CopyPlugin copies (it reads that
+  list from `webpack.web.js`) into the build, and serves them under `astro dev`.
+
 ## Testing
 
 No test suite. Verification is `npx tsc --noEmit` plus both webpack builds, then manual
@@ -1799,7 +1830,9 @@ everything still so that two shots of one build match (the clock at 23 October 2
 `Math.random` seeded, animations at their last frame, lazy images loaded, every other host
 refused), one page at a time (three tabs at once starved the background ones into timeouts).
 It is also the smoke run, and exits 1 on an exception, a console error or a file of the
-site's own that 404s. `compare` takes two sets and passes a page that differs by up to 0.01%
+site's own that 404s. With `--astro` it shoots the Astro build (`dist/astro`) at the routes in
+`site/src/ported-routes.json`, under the same names, so a page there can be compared with the
+SPA's. `compare` takes two sets and passes a page that differs by up to 0.01%
 of its pixels. Sets live in `.shots/` (git-ignored): shoot `master` as the baseline, change
 something, shoot again, compare. It is not a test of behaviour: nothing is clicked.
 

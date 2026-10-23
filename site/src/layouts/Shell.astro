@@ -1,0 +1,47 @@
+---
+// The SPA's own index.html (sidebar, topbar, the goo filters), split where a page goes. It is
+// read, not copied, so the two targets cannot drift while both exist; Phase 8 moves the markup
+// in here and deletes index.html.
+import { readFileSync } from 'node:fs';
+import '../../../src/web/styles.scss';
+import ported from '../ported-routes.json';
+
+interface Props {
+  view: string;
+  title?: string;
+}
+const { view, title = 'Dossier' } = Astro.props;
+
+// Astro bundles this file, so import.meta.url would point into the build's output: the
+// build is run from site/, and the SPA's page is one folder up.
+const source = readFileSync('../src/web/index.html', 'utf8');
+const between = (open: string, close: string): string =>
+  source.slice(source.indexOf(open) + open.length, source.indexOf(close));
+
+const head = between('<head>', '</head>')
+  .replace(/<title>.*<\/title>\s*/, '')
+  .replace(/<link rel="stylesheet" href="styles.css">\s*/, '');
+
+// A route Astro already serves links to its page; the others still live in the SPA, which is
+// where <base> below sends a '#/…' link.
+let [top, bottom] = between('<body>', '<script src="app.js"></script>').split('<main id="view"></main>');
+for (const [hash, page] of Object.entries(ported)) top = top.replaceAll(`href="${hash}"`, `href="${page}"`);
+
+// Every address in the SPA's markup and code is written beside index.html ('icons/…',
+// 'holodori/jackets/…'). Under /holodori/ that would be one folder too deep, so the pages
+// resolve them from the site's root, as the SPA does.
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <base href={base} />
+    <Fragment set:html={head} />
+    <title>{title}</title>
+  </head>
+  <body data-view={view}>
+    <Fragment set:html={top} />
+    <main id="view"><slot /></main>
+    <Fragment set:html={bottom} />
+  </body>
+</html>

@@ -1,0 +1,28 @@
+import { defineConfig } from 'astro/config';
+import assets from './integrations/assets.mjs';
+
+// Written to dist/astro, beside the webpack build's dist/web, until the cut-over (Phase 7).
+export default defineConfig({
+  output: 'static',
+  base: '/dossier',
+  trailingSlash: 'always',
+  outDir: '../dist/astro',
+  integrations: [assets()],
+  vite: {
+    // The pages are built from the repo's own sources, which sit above this folder.
+    server: { fs: { allow: ['..'] } },
+    build: {
+      rollupOptions: {
+        output: {
+          // The stylesheet goes at the site's root, as webpack's does. A relative address in a
+          // custom property ('--logo: url(icons/games/arknights.webp)', in the markup and in
+          // the views) is read against the stylesheet, not the page, and from _astro/ it
+          // would miss.
+          assetFileNames: ({ names }) => (names.some(name => name.endsWith('.css'))
+            ? '[name].[hash][extname]'
+            : '_astro/[name].[hash][extname]'),
+        },
+      },
+    },
+  },
+});
