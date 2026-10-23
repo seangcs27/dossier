@@ -1,3 +1,5 @@
 {
-  "#/holodori": "holodori/"
+  "#/holodori": "holodori/",
+  "#/holodori/gachas": "holodori/gachas/",
+  "#/holodori/holomem/": "holodori/holomem/"
 }

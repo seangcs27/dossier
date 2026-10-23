@@ -4,7 +4,7 @@ import {
 } from '../holodori-index';
 import { birthdayText, daysAway, daysToBirthday, today } from './holodori-format';
 import { bannerHtml, isLive } from './holodori-gachas-html';
-import { songTileHtml } from './holodori-songs-html';
+import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
 // hololive Dreams' front page (#/holodori), where its tile in the sidebar lands: a way into
 // each of its four pages, then what is going on in the game now (the gachas running, the
@@ -32,11 +32,14 @@ function linkHtml(href: string, count: number, name: string, pics: string[], kin
   `;
 }
 
-/**
- * The page's body, as of `now` (ms). `disc` draws a song's chorus button, as songTileHtml
- * takes it.
- */
-export function homeHtml(now: number, disc?: (song: HolodoriSong) => string): string {
+/** How the page is drawn: `disc` as songTileHtml takes it, and `backs` to carry the songs' backs in `<template>`s. */
+export interface HomeOptions {
+  disc?: (song: HolodoriSong) => string;
+  backs?: boolean;
+}
+
+/** The page's body, as of `now` (ms). */
+export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string {
   const live = gachas.filter(g => isLive(g, now));
   const day = today(new Date(now));
   const soon = [...cast].sort((a, b) => daysToBirthday(a, day) - daysToBirthday(b, day)).slice(0, BIRTHDAYS);
@@ -80,6 +83,7 @@ export function homeHtml(now: number, disc?: (song: HolodoriSong) => string): st
         <p class="hm-note"><a href="#/holodori/songs">Every song</a></p>
       </section>
       <p class="hd-credit">Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Gachas: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a></p>
+      ${backs ? songBackTemplatesHtml(newest) : ''}
     </div>
   `;
 }

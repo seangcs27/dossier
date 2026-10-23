@@ -1,15 +1,26 @@
 ---
 import Shell from '../../layouts/Shell.astro';
+import { homeHtml } from '@web/render/holodori-home-html';
+import { buildNow } from '../../lib/now';
 ---
-<Shell view="holodori-home" title="hololive Dreams — Dossier" />
+<Shell
+  view="holodori-home"
+  title="hololive Dreams — Dossier"
+  description="hololive Dreams: its holomems, songs, cards and gachas, the gachas running now and the birthdays coming."
+>
+  <Fragment set:html={homeHtml(buildNow(), { backs: true })} />
+</Shell>
 
 <script>
-  // The SPA's own front page, mounted into the shell as it is. Rendering it at build time is
-  // Phases 2 and 3 of the plan; this page proves the shell, the styles and the route.
-  import { initShell, showShell } from '../../../../src/web/shell';
-  import { mountHolodoriHome } from '../../../../src/web/views/holodori-home';
+  import { backsInPage, wireTurns } from '@web/holodori-flip';
+  import { freshen } from '@web/fresh';
+  import { hideSearch, initShell, showShell } from '@web/shell';
+  import '@web/holodori-clip';
 
   initShell();
   showShell('holodori-home');
-  mountHolodoriHome(document.getElementById('view')!);
+  hideSearch();
+  freshen();
+  const page = document.querySelector<HTMLElement>('.hh-page')!;
+  wireTurns(page, backsInPage(page));
 </script>

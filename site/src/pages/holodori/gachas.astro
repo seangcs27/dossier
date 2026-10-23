@@ -1,0 +1,22 @@
+---
+import Shell from '../../layouts/Shell.astro';
+import { gachasPageHtml } from '@web/render/holodori-gachas-html';
+import { buildNow } from '../../lib/now';
+---
+<Shell
+  view="holodori-gachas"
+  title="Gachas — hololive Dreams — Dossier"
+  description="Every hololive Dreams gacha banner since August 2026, with its dates and the cards it features."
+>
+  <Fragment set:html={gachasPageHtml(buildNow())} />
+</Shell>
+
+<script>
+  import { freshen } from '@web/fresh';
+  import { hideSearch, initShell, showShell } from '@web/shell';
+
+  initShell();
+  showShell('holodori-gachas');
+  hideSearch();
+  freshen();
+</script>

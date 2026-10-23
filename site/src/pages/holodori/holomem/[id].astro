@@ -1,0 +1,34 @@
+---
+import Shell from '../../../layouts/Shell.astro';
+import { getHolodoriCharacters } from '@web/holodori-index';
+import { holomemHtml } from '@web/render/holodori-holomem-html';
+import { buildNow } from '../../../lib/now';
+
+export function getStaticPaths() {
+  return getHolodoriCharacters().map(c => ({ params: { id: c.id }, props: { name: c.name, branch: c.branch } }));
+}
+
+const { id } = Astro.params;
+const { name, branch } = Astro.props;
+---
+<Shell
+  view="holodori-holomem"
+  title={`${name} — hololive Dreams — Dossier`}
+  description={`${name} (${branch}) in hololive Dreams: profile, cards, songs and membership stickers.`}
+>
+  <Fragment set:html={holomemHtml(id!, buildNow(), { backs: true })} />
+</Shell>
+
+<script>
+  import { backsInPage, wireTurns } from '@web/holodori-flip';
+  import { freshen } from '@web/fresh';
+  import { hideSearch, initShell, showShell } from '@web/shell';
+  import '@web/holodori-clip';
+
+  initShell();
+  showShell('holodori-holomem');
+  hideSearch();
+  freshen();
+  const page = document.querySelector<HTMLElement>('.hm-page')!;
+  wireTurns(page, backsInPage(page));
+</script>
