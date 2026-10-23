@@ -30,6 +30,10 @@ const CHECKS = {
   'holodori-gachas-html': [['gachasPageHtml', NOW]],
   'holodori-home-html': [['homeHtml', NOW]],
   'holodori-holomem-html': [['holomemHtml', 'chr-00001', NOW], ['holomemHtml', 'nobody', NOW]],
+  'endfield-detail-html': [
+    ['endfieldDetailHtml', 'chr_0032_lizhiyan'], ['endfieldDetailHtml', 'chr_0002_endminm'],
+    ['endfieldDetailHtml', 'chr_0003_endminf'], ['endfieldDetailHtml', 'nobody'],
+  ],
 };
 
 // Node has a navigator of its own; a page does not read it at import, and nor may a renderer.
