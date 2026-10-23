@@ -26,7 +26,8 @@ site, approved 15 October 2026). Not built yet:
   voice lines and live dialogues), built 17 October 2026; on 18 October a front page
   (`#/holodori`; the sheet moved to `#/holodori/holomems`), a Gachas page (a record kept by
   hand from holodori.best, `scripts/lib/holodori-gachas.mjs`) and each holomem's membership
-  stickers. FGO is on the Arknights card still.
+  stickers. Endfield's roster is a showcase and FGO's a summoning circle with the game's
+  frames, built on 22 October 2026 from a canvas of three directions each (CLAUDE.md).
   A Sinner's page is in the same world, and the wall is set in Barlow Condensed.
 - **What the line-up wall still wants:**
   - **The placard face as WOFF2.** The two TTFs are 213 KB; a Latin-only WOFF2 of each
@@ -138,10 +139,8 @@ site, approved 15 October 2026). Not built yet:
   Island's; `File:Site-logo.png` (137x137, 31 KB) and `File:MP Icon.png` (58x50, 1.7 KB)
   were found and not looked at. hololive Dreams' tile is hololive's triangle, not the
   game's own mark.
-- **Search, filters, a dossier page** for FGO.
-  `card.ts` has the search box and the filter panel for any roster that asks (`find`), so
-  FGO's is a list of groups away: its index already carries rarity, class (17), attribute
-  (5), alignment and JP only.
+- **A dossier page** for FGO, and the game's class icons for the circle and the frames
+  (Atlas Academy has them; a download to ask the owner for). Search and filters are built.
 - **PtN's birthplace is not a filter**: it would need folding first (`WhiteSands Region`
   beside `WhiteSands`, and four ways of saying unknown).
 - **Credit on the site itself.** Atlas Academy's data is ODC-BY 1.0, which asks for credit
@@ -176,8 +175,8 @@ A phase-by-phase plan is in `PLAN-astro-hybrid.md` (written 22 October 2026, not
 
 ### Arknights: Endfield — what is left
 
-The second game has a sidebar tile (Endfield Industries' emblem), a roster (`#/endfield`, 33
-operators on the Arknights card, with name search and a filter panel for class, element,
+The second game has a sidebar tile (Endfield Industries' emblem), a roster (`#/endfield`, 34
+operators as a showcase of one at a time and a filmstrip, on the game's paper, with name search and a filter panel for class, element,
 weapon, rarity and faction) and a first dossier page (`#/endfield/op/<id>`: splash art, name,
 class / element / weapon, quote, the profile facts, tags), all baked from `endfield.wiki.gg`.
 CLAUDE.md has how. Not built yet, roughly in the order worth doing:
@@ -192,15 +191,14 @@ CLAUDE.md has how. Not built yet, roughly in the order worth doing:
   the page; the parser leaves them there. They need the wiki's `Items` table and its icons.
 - **Order.** Rarity, then name. The `Operators` table has no release date; `Versions` and
   `Banners` might date them.
-- **Four cards elide their element and weapon line at a phone's two columns**, with no
-  tooltip to read it in full: the line's `data-tip` is the operator's id alone.
 - **Left on the wiki page by choice:** its opening paragraph, "Additional Info", the weapons
   the game recommends, the voice actors. The wiki's other tables that could feed a later
   pass: `Weapons`, `WeaponSkills`, `Gears`, `GearSets`, `BaseSkills`, `AbilityMatrixUpgrades`.
-- **Three copies of the card's markup**: `grid.ts`, `views/endfield.ts`, and `card.ts`, the
-  one the roster-only games share. Folding the first two into the third means rewriting two
-  builders that are not broken; the Arknights card has slots the shared one lacks (the
-  portrait's fallback chain, the mode badge, the faction logo on the back, the link).
+- **Two copies of the card's markup**: `grid.ts` and `card.ts`, the one the roster-only
+  games share (Endfield's roster is a showcase now and has no card). Folding the first into
+  the second means rewriting a builder that is not broken; the Arknights card has slots the
+  shared one lacks (the portrait's fallback chain, the mode badge, the faction logo on the
+  back, the link).
 - **Two copies of the search box's and filter panel's handling**, `grid.ts` and
   `views/endfield.ts`, about 45 lines.
 - **Three copies of the build scripts' fetch helpers** (`timedFetch`, `wiki`): the operator,

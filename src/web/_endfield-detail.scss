@@ -11,3 +11,19 @@
     'name'
     'classes';
 }
+
+// On the game's paper (the world in _endfield-grid.scss) the band under the name is paper
+// with an ink rule, not the Arknights header's charcoal glass, which left the ink name on a
+// grey it could not be read on; and the name is in the roster's wide capitals.
+.ef-header {
+  background: transparent;
+  border-bottom: 1px solid var(--text);
+
+  .op-header-name {
+    font-family: var(--ef-wide);
+    font-weight: 900;
+    font-stretch: 125%;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+}

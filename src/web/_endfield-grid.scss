@@ -1,6 +1,421 @@
-// Arknights: Endfield's roster page (views/endfield.ts): what its grid and its filter panel
-// need beyond the rules they share with the Arknights grid in styles.scss, which loads this
-// file last. Classes of its own start `ef-`.
+// Arknights: Endfield's roster page (views/endfield.ts): its world, the showcase, and what
+// its filter panel needs beyond the rules it shares with the Arknights grid in styles.scss,
+// which loads this file last. Classes of its own start `ef-`.
+
+@use 'sass:map';
+
+// ── The world ──
+// The game's own interface: off-white and concrete, ink, and one signal yellow, with type
+// that is wide capitals for names and a monospace for codes. The owner picked it from three
+// directions on 22 October 2026 (the showcase).
+
+$ef-ink: #121212;
+$ef-ink-soft: #55554f;
+$ef-paper: #ececE8;
+$ef-concrete: #dadad5;
+$ef-rule: #c9c9c3;
+$ef-yellow: #ffe100;
+// Rarity as the game colours it, ticks and labels only: 6★ orange, 5★ gold, 4★ violet.
+$ef-rarity: (6: #ff6b1a, 5: #e0a400, 4: #8b5cf6);
+// Each element's colour, ours: the game's own were not checked. Electric is violet so that
+// it never reads as the yellow every control here is.
+$ef-elements: (physical: #8a939e, heat: #f2552c, cryo: #1fa6db, electric: #9a6bff, nature: #4dae5b);
+
+// Archivo with its width axis (62 to 125%), and JetBrains Mono: Google Fonts' Latin cuts,
+// self-hosted (the owner approved the download, 22 October 2026). OFL, beside each file.
+@font-face {
+  font-family: 'Archivo';
+  font-weight: 400 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('./fonts/archivo/archivo-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/jetbrains-mono/jetbrains-mono-latin.woff2') format('woff2');
+}
+
+$ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
+
+// The shell takes every colour from the site's surface variables, so restating them turns
+// the sidebar, the topbar and the filter panel paper and ink, as Path to Nowhere's turn ink
+// and bone.
+#{$ef-world} {
+  --bg: #{$ef-concrete};
+  --surface: #{$ef-paper};
+  --surface2: #e2e2dd;
+  --border: #b4b4ad;
+  --chip: #d2d2cc;
+  --edge: #8a8a84;
+  --text: #{$ef-ink};
+  --muted: #{$ef-ink-soft};
+  --dim: #3a3a36;
+  --accent: #{$ef-ink};
+  --link: #{$ef-ink};
+  --ef-wide: 'Archivo', 'Bahnschrift', 'Arial Narrow', sans-serif;
+  --ef-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --thumb: #{$ef-ink-soft};
+  &.is-scrolling { --thumb: #{$ef-ink}; }
+
+  ::selection { background: $ef-yellow; color: $ef-ink; }
+
+  .topbar header { border-bottom-color: $ef-ink; }
+
+  // The game being shown: its emblem in ink on the yellow.
+  .side-game.active .side-mark {
+    border-color: $ef-ink;
+    background: $ef-yellow;
+    color: $ef-ink;
+  }
+
+  // The section link being shown: ink with the yellow on it.
+  .sections-blob,
+  .sections-drop { background: $ef-ink; }
+  .section-link.active { color: $ef-yellow; }
+
+  #more-label {
+    font-family: var(--ef-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}
+
+// ── The showcase ──
+
+.ef-show {
+  --ef-line: 1px solid #{$ef-ink};
+  color: $ef-ink;
+  font-family: var(--ef-wide);
+}
+
+.ef-feature {
+  --ef-el: #{map.get($ef-elements, physical)};
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
+  border-bottom: var(--ef-line);
+
+  @each $name, $colour in $ef-elements {
+    &[data-element='#{$name}'] { --ef-el: #{$colour}; }
+  }
+}
+
+// The art's side: a drafting grid, a ruler down its edge, the file's code at the top and its
+// place in the strip at the foot, and the element's name written out huge behind the art in
+// its colour. The stage is as tall as the window has left over the strip, within reason.
+.ef-stage {
+  position: relative;
+  height: clamp(420px, calc(100vh - 300px), 760px);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-24) var(--sp-24) var(--sp-24) 56px;
+  overflow: hidden;
+  border-right: var(--ef-line);
+  background:
+    linear-gradient($ef-rule 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(90deg, $ef-rule 1px, transparent 1px) 0 0 / 64px 64px,
+    $ef-concrete;
+}
+
+.ef-ghost {
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: clamp(120px, 17vw, 240px);
+  line-height: 0.8;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--ef-el);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.ef-ruler {
+  position: absolute;
+  left: 20px;
+  top: var(--sp-24);
+  bottom: var(--sp-24);
+  width: 14px;
+  border-right: var(--ef-line);
+  background: repeating-linear-gradient($ef-ink 0 1px, transparent 1px 16px);
+}
+
+.ef-code,
+.ef-index {
+  position: absolute;
+  font-family: var(--ef-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ef-code { left: 48px; top: 22px; }
+.ef-index { right: 18px; bottom: 16px; }
+
+.ef-splash-link {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+}
+
+.ef-splash {
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  animation: ef-in 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ef-in {
+  from { opacity: 0; transform: translateX(24px); }
+}
+
+// The file's side.
+.ef-plate {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 36px 36px 32px;
+  background: $ef-paper;
+}
+
+.ef-plate-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--ef-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ef-steps { display: flex; gap: var(--sp-6); }
+
+.ef-step {
+  width: 44px;
+  height: 44px;
+  border: var(--ef-line);
+  background: transparent;
+  color: $ef-ink;
+  font-size: var(--fs-xl);
+  cursor: pointer;
+
+  &:hover { background: $ef-ink; color: $ef-yellow; }
+  &:focus-visible { outline: 3px solid $ef-yellow; outline-offset: 2px; }
+}
+
+.ef-ticks {
+  display: flex;
+  gap: 3px;
+
+  span {
+    width: 8px;
+    height: 16px;
+  }
+
+  @each $tier, $colour in $ef-rarity {
+    &.r#{$tier} span { background: $colour; }
+  }
+}
+
+.ef-name {
+  margin-top: var(--sp-12);
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: clamp(40px, 5.2vw, 76px);
+  line-height: 0.9;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.ef-variant {
+  display: block;
+  margin-top: var(--sp-8);
+  font-family: var(--ef-mono);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  font-stretch: 100%;
+  letter-spacing: 0.1em;
+  color: $ef-ink-soft;
+}
+
+.ef-faction {
+  margin-top: var(--sp-8);
+  font-family: var(--ef-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: $ef-ink-soft;
+}
+
+.ef-specs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: var(--ef-line);
+  border-bottom: var(--ef-line);
+
+  > div { padding: var(--sp-12) 0 var(--sp-12) 14px; min-width: 0; }
+  > div:first-child { padding-left: 0; }
+  > div + div { border-left: var(--ef-line); }
+
+  dt {
+    font-family: var(--ef-mono);
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: $ef-ink-soft;
+  }
+
+  dd {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-8);
+    margin-top: var(--sp-6);
+    font-weight: 700;
+    font-size: var(--fs-lg);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  img { width: 22px; height: 22px; flex: none; }
+}
+
+.ef-quote {
+  padding-left: 14px;
+  border-left: 3px solid $ef-ink;
+  font-size: var(--fs-lg);
+  line-height: 1.5;
+}
+
+.ef-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+
+  span {
+    padding: 5px 9px;
+    border: var(--ef-line);
+    font-family: var(--ef-mono);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+  }
+}
+
+.ef-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  margin-top: auto;
+  padding: 0 var(--sp-20);
+  background: $ef-yellow;
+  color: $ef-ink;
+  text-decoration: none;
+  font-weight: 900;
+  font-stretch: 115%;
+  font-size: var(--fs-lg);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background-color 0.16s, color 0.16s;
+
+  &:hover { background: $ef-ink; color: $ef-yellow; }
+  &:focus-visible { outline: 3px solid $ef-ink; outline-offset: 3px; }
+}
+
+// The filmstrip: a group to each rarity, its count over it in its colour.
+.ef-strip {
+  display: flex;
+  gap: 18px;
+  padding: 18px 32px 22px;
+  overflow-x: auto;
+}
+
+.ef-strip-group { flex: none; }
+
+.ef-strip-label {
+  padding-top: var(--sp-6);
+  border-top: 3px solid;
+  font-family: var(--ef-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+
+  @each $tier, $colour in $ef-rarity {
+    &.r#{$tier} { border-top-color: $colour; }
+  }
+}
+
+.ef-strip-row {
+  display: flex;
+  gap: var(--sp-4);
+  margin-top: var(--sp-8);
+}
+
+.ef-thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 108px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: $ef-rule;
+  cursor: pointer;
+  opacity: 0.78;
+  transition: opacity 0.16s;
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 8%;
+  }
+
+  &:hover { opacity: 1; }
+
+  &[aria-pressed='true'] {
+    opacity: 1;
+    outline: 3px solid $ef-yellow;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px $ef-ink;
+  }
+
+  &:focus-visible { outline: 3px solid $ef-ink; outline-offset: 2px; }
+}
+
+.ef-thumb-letter {
+  font-weight: 900;
+  font-size: var(--fs-2xl);
+  color: #8a8a84;
+}
+
+// Under 900px the art goes over the file, a little under a phone's width tall.
+@media (max-width: 900px) {
+  .ef-feature { grid-template-columns: 1fr; }
+
+  .ef-stage {
+    height: min(88vw, 520px);
+    border-right: 0;
+    border-bottom: var(--ef-line);
+  }
+
+  .ef-plate { padding: var(--sp-24) var(--sp-16); }
+  .ef-strip { padding: var(--sp-16); }
+}
 
 // ── Filter panel ──
 // The tiles, the segments and the chips are the Arknights panel's own. All that differs is
@@ -20,6 +435,9 @@
 
 // Three rarities, 4★ to 6★, in the group Arknights cuts six ways.
 .ef-rarity-row { grid-template-columns: repeat(3, 1fr); }
+
+// The panel's glyphs are the game's, mostly ink on transparency, which the Arknights panel's
+// navy hid; on this paper they stand as they are.
 
 // ── Narrow screens ──
 // The count is inside the search box here, as it is on the Arknights grid (the phone rules
