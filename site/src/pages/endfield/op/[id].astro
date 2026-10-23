@@ -1,0 +1,30 @@
+---
+import Shell from '../../../layouts/Shell.astro';
+import { getEndfieldOperators } from '@web/endfield-index';
+import { endfieldDetailHtml } from '@web/render/endfield-detail-html';
+
+export function getStaticPaths() {
+  return getEndfieldOperators().map(op => ({
+    params: { id: op.id },
+    props: { name: op.variant ? `${op.name} (${op.variant})` : op.name, op },
+  }));
+}
+
+const { id } = Astro.params;
+const { name, op } = Astro.props;
+---
+<Shell
+  view="endfield-detail"
+  title={`${name} — Arknights: Endfield — Dossier`}
+  description={`${name}, a ${op.rarity}★ ${op.class} of ${op.faction} in Arknights: Endfield (${op.element}, ${op.weapon}).`}
+>
+  <Fragment set:html={endfieldDetailHtml(id!)} />
+</Shell>
+
+<script>
+  import { hideSearch, initShell, showShell } from '@web/shell';
+
+  initShell();
+  showShell('endfield-detail');
+  hideSearch();
+</script>

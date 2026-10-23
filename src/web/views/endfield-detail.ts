@@ -5,14 +5,12 @@
 // fetched but the images. The page is drawn by render/endfield-detail-html.ts.
 
 import { endfieldDetailHtml, knowsEndfieldOperator } from '../render/endfield-detail-html';
+import { hideSearch } from '../shell';
 
 export function mountEndfieldDetail(container: HTMLElement, id: string): void {
   // The search box, its filters and the count are a roster's: put away here as they are on
   // the Arknights dossier.
-  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
-  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
-  document.getElementById('more-filters')!.hidden = true;
-  document.getElementById('count')!.textContent = '';
+  hideSearch();
 
   container.innerHTML = endfieldDetailHtml(id);
   if (!knowsEndfieldOperator(id)) return;

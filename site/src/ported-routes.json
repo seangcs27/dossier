@@ -1,5 +1,6 @@
 {
   "#/holodori": "holodori/",
   "#/holodori/gachas": "holodori/gachas/",
-  "#/holodori/holomem/": "holodori/holomem/"
+  "#/holodori/holomem/": "holodori/holomem/",
+  "#/endfield/op/": "endfield/op/"
 }
