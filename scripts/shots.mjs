@@ -2,8 +2,9 @@
 // change that is meant to leave the site as it was can show that it did (the Astro plan,
 // PLAN-astro-hybrid.md, runs this before and after each phase).
 //
-//   node scripts/shots.mjs capture <site-dir> <out-dir> [name]   shoot a built site (dist/web), over
-//                                                      http; with a name, only the pages it is part of
+//   node scripts/shots.mjs capture <site-dir> <out-dir> [name] [--astro]
+//        shoot a built site (dist/web), over http; with a name, only the pages it is part of;
+//        with --astro the site is the Astro build (dist/astro) and only the routes it has
 //   node scripts/shots.mjs compare <dir-a> <dir-b>        pixel diff; changed ones go to <dir-b>/diff/
 //
 // Capture is also the smoke run: it exits 1 if a page throws, logs a console error or asks its
@@ -20,6 +21,10 @@ import pixelmatch from 'pixelmatch';
 import puppeteer from 'puppeteer-core';
 import sharp from 'sharp';
 import { routeInventory } from './route-inventory.mjs';
+
+// The routes the Astro site serves, hash to path under BASE; only those are shot with --astro.
+const PORTED = JSON.parse(await readFile(new URL('../site/src/ported-routes.json', import.meta.url), 'utf8'));
+const BASE = '/dossier';
 
 const WIDTHS = [1400, 800, 390];
 const VIEWPORT_HEIGHT = 900;
@@ -97,8 +102,10 @@ function holdStill(now) {
 function serve(root) {
   const base = path.resolve(root);
   const server = http.createServer(async (req, res) => {
-    const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
-    const file = path.join(base, pathname === '/' ? 'index.html' : pathname);
+    // The Astro site is built for BASE, and its folders have an index.html each.
+    let pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (pathname.startsWith(`${BASE}/`)) pathname = pathname.slice(BASE.length);
+    const file = path.join(base, pathname.endsWith('/') ? `${pathname}index.html` : pathname);
     if (!file.startsWith(base)) {
       res.writeHead(403).end();
       return;
@@ -114,7 +121,7 @@ function serve(root) {
 }
 
 /** One page at one width: shot to outDir, and what the page did wrong on the way. */
-async function shoot(browser, origin, outDir, { name, hash }, width) {
+async function shoot(browser, origin, outDir, { name, url }, width) {
   const problems = [];
   const page = await browser.newPage();
   try {
@@ -133,7 +140,7 @@ async function shoot(browser, origin, outDir, { name, hash }, width) {
       if (req.url().startsWith(origin)) problems.push(`request failed ${req.url()}`);
     });
 
-    await page.goto(`${origin}/index.html${hash}`, { waitUntil: 'load' });
+    await page.goto(`${origin}${url}`, { waitUntil: 'load' });
     await page.waitForNetworkIdle({ idleTime: 500, timeout: 20000 });
     // Whether a lazy image has loaded by the time of the shot is a matter of timing (and one
     // off the screen would never load, so decode() would wait on it for ever): load them all.
@@ -157,8 +164,8 @@ async function shoot(browser, origin, outDir, { name, hash }, width) {
   return problems.map(problem => `${name} @${width}: ${problem}`);
 }
 
-async function capture(siteDir, outDir, only) {
-  if (!existsSync(path.join(siteDir, 'index.html'))) throw new Error(`${siteDir} has no index.html: build it first`);
+async function capture(siteDir, outDir, only, astro) {
+  if (!existsSync(siteDir)) throw new Error(`${siteDir} is not there: build it first`);
   const executablePath = BROWSERS.find(candidate => candidate && existsSync(candidate));
   if (!executablePath) throw new Error('no Chrome or Edge found: set CHROME_PATH');
   const { hashes } = await routeInventory();
@@ -169,7 +176,10 @@ async function capture(siteDir, outDir, only) {
   const server = await serve(siteDir);
   const origin = `http://127.0.0.1:${server.address().port}`;
   const browser = await puppeteer.launch({ executablePath, headless: true, protocolTimeout: 60000 });
-  const jobs = PAGES.filter(({ name }) => !only || name.includes(only)).flatMap(page => WIDTHS.map(width => [page, width]));
+  const pages = PAGES
+    .filter(({ name, hash }) => (!only || name.includes(only)) && (!astro || PORTED[hash]))
+    .map(page => ({ ...page, url: astro ? `${BASE}/${PORTED[page.hash]}` : `/index.html${page.hash}` }));
+  const jobs = pages.flatMap(page => WIDTHS.map(width => [page, width]));
   const problems = [];
   const started = Date.now();
   try {
@@ -231,10 +241,12 @@ async function compare(dirA, dirB) {
   }
 }
 
-const [command, first, second, third] = process.argv.slice(2);
-if (command === 'capture' && first && second) await capture(first, second, third);
+const args = process.argv.slice(2);
+const astro = args.includes('--astro');
+const [command, first, second, third] = args.filter(arg => arg !== '--astro');
+if (command === 'capture' && first && second) await capture(first, second, third, astro);
 else if (command === 'compare' && first && second) await compare(first, second);
 else {
-  console.error('usage: shots.mjs capture <site-dir> <out-dir> [name] | shots.mjs compare <dir-a> <dir-b>');
+  console.error('usage: shots.mjs capture <site-dir> <out-dir> [name] [--astro] | shots.mjs compare <dir-a> <dir-b>');
   process.exitCode = 1;
 }
