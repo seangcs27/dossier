@@ -25,6 +25,8 @@ export interface EndfieldOperator {
   mainAttr: string;     // 'Strength', 'Agility', 'Intellect', 'Will'
   subAttr: string;
   headhunting: string;  // 'standard', 'chartered', 'welfare', or '' (the Endministrator)
+  // Set where the wiki has no bust of the operator, so none was baked.
+  noPortrait?: true;
 }
 
 // Baked in at build time, highest rarity first — no runtime fetch. Empty when the build

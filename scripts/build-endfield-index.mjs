@@ -173,6 +173,7 @@ async function buildRoster() {
   await bakeImages(
     'portraits', portraitDir, art('Portrait'), pipeline => pipeline.webp({ quality: 80, effort: 4 }),
   );
+  const portraits = new Set(await readdir(portraitDir));
   // The originals are 2048px PNGs of 2 to 7 MB, wanted by one page each.
   await bakeImages(
     'splash art', splashDir, art('Splash'), pipeline => pipeline.webp({ quality: 82, effort: 4 }), SPLASH_WIDTH,
@@ -216,6 +217,9 @@ async function buildRoster() {
     mainAttr: r.MainAttr,
     subAttr: r.SubAttr,
     headhunting: r.Headhunting,
+    // An operator the wiki has no bust of (Si, today) is marked, so the page does not ask for
+    // a file that is not there.
+    ...(portraits.has(`${r.Id}.webp`) ? {} : { noPortrait: true }),
   }));
 }
 
