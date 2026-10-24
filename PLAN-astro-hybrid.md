@@ -243,6 +243,33 @@ gzipped for a static page, 40 KB with an interactive island).
 - **Done when**, per page: the screenshot diff is inside the threshold, the budget is met,
   links resolve. **Rollback**: remove the page; the SPA route is still there.
 
+**Met 24 October 2026, except one budget and the link check.** `npm run build:site` writes 449
+pages (133 MB with the assets): hololive Dreams' front page, gachas, 54 holomems and 196 cards,
+the three Events tabs, 34 Endfield dossiers, 160 Path to Nowhere dossiers. The 11 page kinds
+the screenshot harness covers (`shots capture dist/astro … --astro`, 33 shots) are identical to
+the SPA's at 1400, 800 and 390 px, and the smoke run is clean; the clock was pinned with
+`DOSSIER_NOW`. Each page has a title, a description and a canonical address.
+
+| Page | First-load JS, gzipped | Drawn how |
+|---|---|---|
+| Endfield dossier, gachas | 3.3 to 4.4 KB | at build time |
+| Events list, Headhunting | 5.3 KB | at build time; countdowns set every second; **drawn again by the SPA's own view the moment a card has changed section since the build** (checked: built three weeks early, both tabs still identical to the SPA's) |
+| front page, holomem | 8.3 KB | at build time, plus the chorus player |
+| Events calendar | 5.3 KB, then 168 KB (raw) | built, then the SPA's view mounted over it (month, toggle and steps are its) |
+| Path to Nowhere dossier | 31.7 KB | a shell, and the SPA's view mounted |
+| **Card page** | **52.8 KB** | at build time with its payload inlined; the SPA's handlers adopt it (`mountHolodoriCard(view, id, payload)` draws nothing) |
+
+- **Over budget: the card page** (52.8 KB against 40). It carries the art viewer, the reveal,
+  the voice player and the audio engine up front. A later pass can load those on first use.
+- **Adopted, not redrawn:** on the card page a bloom, a level change and the volume were
+  clicked: the stats change, the stage and voice nodes are untouched, and the slider takes the
+  stored volume (80) where the page was drawn at the default (50).
+- **Card level and bloom reset on each load** until Phase 6 (`ClientRouter` keeps module
+  state); the gachas and front page are as stale as the last deploy for what a banner's
+  group is (the text is set again), a day at most.
+- **Links** still go to `#/…` and so, through `<base>`, to the SPA at the root; making them
+  real paths and checking them is Phase 6, as the plan has it.
+
 ### Phase 4 — Interactive rosters as client views · L
 Arknights grid, Endfield roster (the showcase), FGO roster (the summoning circle), the Path to
 Nowhere wall, hololive Dreams' sheet, songs and cards. The Endfield and FGO rosters were
