@@ -1,0 +1,29 @@
+---
+import Shell from '../../layouts/Shell.astro';
+import { rarityNum } from '@web/format';
+import { getOperators } from '@web/operator-index';
+
+export function getStaticPaths() {
+  return getOperators().map(op => ({ params: { id: op.id }, props: { name: op.name, rarity: rarityNum(op.rarity), archetype: op.archetype } }));
+}
+
+const { id } = Astro.params;
+const { name, rarity, archetype } = Astro.props;
+---
+<Shell
+  view="detail"
+  title={`${name} — Arknights — Dossier`}
+  description={`${name}, a ${rarity}★ ${archetype} in Arknights: attributes, talents, skills, modules, base skills and file.`}
+  data={{ id }}
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountDetail } from '@web/views/detail';
+
+  initShell();
+  showShell('detail');
+  // An operator's dossier is a client page: the payload is fetched and the SPA's view draws it.
+  const view = document.getElementById('view')!;
+  void mountDetail(view, view.dataset.id!);
+</script>

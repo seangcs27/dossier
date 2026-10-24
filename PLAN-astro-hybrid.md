@@ -307,8 +307,9 @@ matched after every step, with no error.
   own, whole as far as any page uses it, and the rosters share `format.ts`, `ptn.ts` and the
   render modules with the static pages. Built without the rosters, then with them: front page
   and holomem 8.3 → 17.8 KB, gachas 4.4 → 5.4, Events 5.3 → 6.4, Endfield dossier 3.3 → 3.7
-  (all inside 25), **Path to Nowhere dossier 31.9 → 42.0 (over 40)**, card page 53.4 → 58.1.
-  Splitting `format.ts` and moving `ptnRoster` out of `views/ptn.ts` would win it back.
+  (all inside 25), **Path to Nowhere dossier 31.9 → 42.0 (over 40, accepted by the owner, 25
+  October 2026)**, card page 53.4 → 58.1. Splitting `format.ts` and moving `ptnRoster` out of
+  `views/ptn.ts` would win it back.
 - **Search, filters, look and order reset on each load** until Phase 6.
 
 ### Gate 2
@@ -326,6 +327,20 @@ Per D3: one generated shell page per operator (`/op/<id>/`, about 10 KB each, wi
 right `<title>`), whose script fetches `operator-details/<id>.json` and calls `mountDetail`.
 `detail.ts` (1,386 lines), `art-viewer.ts` and `tooltip.ts` stay as they are. **Done when**
 all 463 resolve and the Misc, Modules and Skills tabs match the baseline screenshots.
+
+**Met 25 October 2026.** `site/src/pages/op/[id].astro` writes the 463 shells (`getStaticPaths`
+over `getOperators()`, the id in `#view`'s `data-id`, a title and description per operator), and
+`npm run build:site` writes **919 pages, the Phase 0 route inventory's count**. Every hash route
+now has a page, so the root no longer loads the SPA: an address it is handed goes on to its page,
+and one no page has is the grid, as in the SPA.
+- **All 463 resolve**: each page, loaded in turn, drew its dossier and tabs with no error.
+- **Screenshots**: the full set, 63 of 63, identical to the SPA's (the three dossiers among them).
+- **The Skills, Modules and Misc tabs** of Amiya, SilverAsh and the CN-only Catapult (Elite 2):
+  `#view`'s markup after the tab is picked is the same in the SPA and on the page, all 9; a
+  screenshot of it differs by 0 to 640 pixels, which is the SPA's own run-to-run difference (0
+  to 278 between two loads of the SPA; the module and Misc art loading).
+- **Weight**: the page is 10.7 KB of HTML (3.6 gzipped) and 28.2 KB of first-load JS gzipped,
+  inside the 40 KB island budget, then the operator's payload. The site is 139 MB.
 
 ### Phase 6 — Navigation · M
 - **Router**: `ClientRouter` (D2). The page is not reloaded, so module state, the audio
