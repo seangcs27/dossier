@@ -1,4 +1,5 @@
 import { gachasPageHtml } from '../render/holodori-gachas-html';
+import { hideSearch } from '../shell';
 
 // hololive Dreams' gachas (#/holodori/gachas): every banner the record has
 // (scripts/lib/holodori-gachas.mjs), as its logo, its dates in the reader's own clock and
@@ -7,10 +8,7 @@ import { gachasPageHtml } from '../render/holodori-gachas-html';
 // drawn by render/holodori-gachas-html.ts.
 
 export function mountHolodoriGachas(container: HTMLElement): void {
-  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
-  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
-  document.getElementById('more-filters')!.hidden = true;
-  document.getElementById('count')!.textContent = '';
+  hideSearch();
 
   container.innerHTML = gachasPageHtml(Date.now());
 }

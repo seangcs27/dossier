@@ -122,3 +122,14 @@ function setDrawer(open: boolean, returnFocus = false): void {
   if (open) document.querySelector<HTMLElement>('.side-game.active')?.focus();
   else if (returnFocus) sideToggle.focus();
 }
+
+/**
+ * A page that is not a roster puts the topbar's search box, its filters and the count away.
+ * The views of such pages do it as they mount, and the pages built at build time call it.
+ */
+export function hideSearch(): void {
+  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
+  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
+  document.getElementById('more-filters')!.hidden = true;
+  document.getElementById('count')!.textContent = '';
+}

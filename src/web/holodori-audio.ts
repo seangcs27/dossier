@@ -54,6 +54,15 @@ export function onVolume(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
+/** Puts every slider and mute button in step with the volume: a page drawn at build time shows the default. */
+export function paintVolume(): void {
+  document.querySelectorAll<HTMLInputElement>('.vol-range').forEach((range) => { range.value = String(Math.round(volume * 100)); });
+  document.querySelectorAll<HTMLElement>('.vol-mute').forEach((button) => {
+    button.classList.toggle('is-muted', volume === 0);
+    button.setAttribute('aria-pressed', String(volume === 0));
+  });
+}
+
 function setVolume(next: number): void {
   volume = Math.min(1, Math.max(0, next));
   if (volume > 0) before = volume;
@@ -62,11 +71,7 @@ function setVolume(next: number): void {
   } catch {
     // Not kept; it holds for this visit.
   }
-  document.querySelectorAll<HTMLInputElement>('.vol-range').forEach((range) => { range.value = String(Math.round(volume * 100)); });
-  document.querySelectorAll<HTMLElement>('.vol-mute').forEach((button) => {
-    button.classList.toggle('is-muted', volume === 0);
-    button.setAttribute('aria-pressed', String(volume === 0));
-  });
+  paintVolume();
   listeners.forEach(listener => listener());
 }
 

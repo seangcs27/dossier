@@ -2,6 +2,7 @@ import { clipHtml } from '../holodori-clip';
 import { wireTurns } from '../holodori-flip';
 import { homeHtml } from '../render/holodori-home-html';
 import { songBackHtml } from '../render/holodori-songs-html';
+import { hideSearch } from '../shell';
 
 // hololive Dreams' front page (#/holodori), where its tile in the sidebar lands: a way into
 // each of its four pages, then what is going on in the game now (the gachas running, the
@@ -9,11 +10,8 @@ import { songBackHtml } from '../render/holodori-songs-html';
 // drawn by render/holodori-home-html.ts.
 
 export function mountHolodoriHome(container: HTMLElement): void {
-  document.querySelector<HTMLElement>('.search-wrap')!.style.display = 'none';
-  document.querySelector<HTMLElement>('.topbar-actions')!.style.display = 'none';
-  document.getElementById('more-filters')!.hidden = true;
-  document.getElementById('count')!.textContent = '';
+  hideSearch();
 
-  container.innerHTML = homeHtml(Date.now(), clipHtml);
+  container.innerHTML = homeHtml(Date.now(), { disc: clipHtml });
   wireTurns(container.querySelector<HTMLElement>('.hh-page')!, songBackHtml);
 }

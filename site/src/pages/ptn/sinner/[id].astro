@@ -1,0 +1,28 @@
+---
+import Shell from '../../../layouts/Shell.astro';
+import { getPtnSinners } from '@web/ptn-index';
+
+export function getStaticPaths() {
+  return getPtnSinners().map(sinner => ({ params: { id: sinner.id }, props: { name: sinner.name, rank: sinner.rank, tendency: sinner.tendency } }));
+}
+
+const { id } = Astro.params;
+const { name, rank, tendency } = Astro.props;
+---
+<Shell
+  view="ptn-detail"
+  title={`${name} — Path to Nowhere — Dossier`}
+  description={`${name}, a rank ${rank} ${tendency} Sinner in Path to Nowhere: attributes, skills, shackles, crimebrand and file.`}
+  data={{ id }}
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountPtnDetail } from '@web/views/ptn-detail';
+
+  initShell();
+  showShell('ptn-detail');
+  // A Sinner's file is a client page: the wall, the tabs and the viewer are the SPA's own.
+  const view = document.getElementById('view')!;
+  mountPtnDetail(view, view.dataset.id!);
+</script>

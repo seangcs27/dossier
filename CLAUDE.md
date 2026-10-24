@@ -1829,6 +1829,21 @@ the SPA is untouched but for `shell.ts`, split out of `index.ts`. `npm run build
 - `site/integrations/assets.mjs` copies the files webpack's CopyPlugin copies (it reads that
   list from `webpack.web.js`) into the build, and serves them under `astro dev`.
 
+**What the Astro site serves** (Phase 3, 24 October 2026; `npm run build:site` writes 449 pages):
+hololive Dreams' front page, gachas, a page per holomem (54) and per card (196), the three Events
+tabs, a page per Endfield operator (34) and per Path to Nowhere Sinner (160). The first group are
+drawn at build time from the renderers (`<Fragment set:html>`) and a script of a few hundred bytes
+starts the shell, calls `freshen()` and wires what a click needs (`backsInPage` for a jacket's
+back, the chorus player). `DOSSIER_NOW` (an ISO time) pins the build's clock, which is how a page
+is compared with the SPA's screenshots. A page that needs an id reads it from `#view`'s
+`data-id` (the layout's `data` prop). Three kinds are not plain static pages: the **Events**
+list and Headhunting pages count down every second and draw themselves again, by the SPA's own
+view, once a card has changed section since the build (`data-built`); the **calendar** and the
+**Path to Nowhere dossier** are the SPA's views mounted over a shell; the **card page** carries
+its payload in a `<script type="application/json" id="card-data">` and the SPA's handlers adopt
+it (`mountHolodoriCard(view, id, payload)`). `site/src/ported-routes.json` lists the routes
+(a key ending in `/` stands for every route under it), and `shots capture --astro` shoots them.
+
 **The pure render layer** (`src/web/render/`, Phase 2, 24 October 2026) is what lets a page be
 drawn at build time. A renderer is a module `<name>-html.ts` that returns the page's markup
 and does nothing else: no `document`, `window`, `localStorage` or `navigator`, not even at

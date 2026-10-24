@@ -1,0 +1,60 @@
+---
+import Shell from '../layouts/Shell.astro';
+import { eventsPageHtml } from '@web/render/events-html';
+import type { EventsTab } from '@web/router';
+import { buildNow } from '../lib/now';
+
+interface Props {
+  tab: EventsTab;
+}
+const { tab } = Astro.props;
+const NAMES: Record<EventsTab, string> = { list: 'Events', pools: 'Headhunting', calendar: 'Calendar' };
+const now = buildNow();
+---
+<Shell
+  view="events"
+  title={`${NAMES[tab]} — Arknights Global schedule — Dossier`}
+  description="The Arknights Global server's schedule: events and headhunting pools, running, announced and predicted from what CN has run."
+  data={{ tab, built: String(now) }}
+>
+  <Fragment set:html={eventsPageHtml(tab, now, { month: undefined, pools: false })} />
+</Shell>
+
+<script>
+  import { freshen } from '@web/fresh';
+  import type { EventsTab } from '@web/router';
+  import { hideSearch, initShell, showShell } from '@web/shell';
+
+  initShell();
+  showShell('events');
+  hideSearch();
+  const view = document.getElementById('view')!;
+  // The SPA's own view draws the page again, and keeps it true while it is open.
+  const mount = (): void => {
+    void import('@web/views/events').then(({ mountEvents }) => mountEvents(view, view.dataset.tab as EventsTab));
+  };
+  if (view.dataset.tab === 'calendar') {
+    // The calendar's month, its Headhunting toggle and its steps are that view's.
+    mount();
+  } else {
+    // A card changes section when its event starts, ends or its shop closes. Once the clock
+    // is past one of those since the build, the page is not true any more, so it is drawn
+    // again; until then only the countdowns, a clock, are set again every second.
+    const built = Number(view.dataset.built);
+    const stale = (): boolean => {
+      const now = Date.now();
+      return Array.from(view.querySelectorAll<HTMLElement>('[data-ev-start]')).some(el =>
+        [el.dataset.evStart, el.dataset.evEnd, el.dataset.evUntil].some(t => t && Number(t) > built && Number(t) <= now));
+    };
+    const tick = (): void => {
+      if (stale()) {
+        clearInterval(timer);
+        mount();
+      } else {
+        freshen();
+      }
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+  }
+</script>

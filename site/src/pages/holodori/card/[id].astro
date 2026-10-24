@@ -1,0 +1,40 @@
+---
+import { readFileSync } from 'node:fs';
+import Shell from '../../../layouts/Shell.astro';
+import { getHolodoriCards, getHolodoriCharacters, type HolodoriCardDetail } from '@web/holodori-index';
+import { cardHtml } from '@web/render/holodori-card-html';
+
+export function getStaticPaths() {
+  const cast = new Map(getHolodoriCharacters().map(c => [c.id, c]));
+  return getHolodoriCards().map(card => ({ params: { id: card.id }, props: { card, holomem: cast.get(card.holomem)?.name ?? '' } }));
+}
+
+const { id } = Astro.params;
+const { card, holomem } = Astro.props;
+// The payload is the file the SPA fetches, read at build time and carried in the page, so
+// the stats, skills and voice lines are drawn without a request.
+const detail: HolodoriCardDetail = JSON.parse(readFileSync(`../src/shared/generated/holodori/card-details/${id}.json`, 'utf8'));
+// Inside a <script>, '<' must not end the element.
+const inlined = JSON.stringify(detail).replace(/</g, '\u003c');
+---
+<Shell
+  view="holodori-card"
+  title={`${card.name} — ${holomem} — hololive Dreams — Dossier`}
+  description={`${card.name}, a ${card.rarity}★ ${card.type} card of ${holomem} in hololive Dreams: stats by level and bloom, skills and voice lines.`}
+  data={{ id }}
+>
+  <Fragment set:html={cardHtml(id!, detail, 'max', 0, 0.5)} />
+  <script is:inline type="application/json" id="card-data" set:html={inlined}></script>
+</Shell>
+
+<script>
+  import { hideSearch, initShell, showShell } from '@web/shell';
+  import { mountHolodoriCard } from '@web/views/holodori-card';
+
+  initShell();
+  showShell('holodori-card');
+  hideSearch();
+  // The page came drawn, with its payload: the SPA's own handlers go on it.
+  const view = document.getElementById('view')!;
+  mountHolodoriCard(view, view.dataset.id!, JSON.parse(document.getElementById('card-data')!.textContent!));
+</script>

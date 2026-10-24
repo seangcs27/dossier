@@ -1,3 +1,11 @@
 {
-  "#/holodori": "holodori/"
+  "#/holodori": "holodori/",
+  "#/holodori/gachas": "holodori/gachas/",
+  "#/holodori/holomem/": "holodori/holomem/",
+  "#/holodori/card/": "holodori/card/",
+  "#/endfield/op/": "endfield/op/",
+  "#/events": "events/",
+  "#/events/pools": "events/pools/",
+  "#/events/calendar": "events/calendar/",
+  "#/ptn/sinner/": "ptn/sinner/"
 }

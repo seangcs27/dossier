@@ -23,8 +23,16 @@ import sharp from 'sharp';
 import { routeInventory } from './route-inventory.mjs';
 
 // The routes the Astro site serves, hash to path under BASE; only those are shot with --astro.
+// A key ending in '/' stands for every route under it ('#/holodori/holomem/' + id).
 const PORTED = JSON.parse(await readFile(new URL('../site/src/ported-routes.json', import.meta.url), 'utf8'));
 const BASE = '/dossier';
+
+/** The Astro site's path for a hash route, or undefined where it does not serve it yet. */
+function portedPath(hash) {
+  if (PORTED[hash]) return PORTED[hash];
+  const prefix = Object.keys(PORTED).find(key => key.endsWith('/') && hash.startsWith(key));
+  return prefix && `${PORTED[prefix]}${hash.slice(prefix.length)}/`;
+}
 
 const WIDTHS = [1400, 800, 390];
 const VIEWPORT_HEIGHT = 900;
@@ -177,8 +185,8 @@ async function capture(siteDir, outDir, only, astro) {
   const origin = `http://127.0.0.1:${server.address().port}`;
   const browser = await puppeteer.launch({ executablePath, headless: true, protocolTimeout: 60000 });
   const pages = PAGES
-    .filter(({ name, hash }) => (!only || name.includes(only)) && (!astro || PORTED[hash]))
-    .map(page => ({ ...page, url: astro ? `${BASE}/${PORTED[page.hash]}` : `/index.html${page.hash}` }));
+    .filter(({ name, hash }) => (!only || name.includes(only)) && (!astro || portedPath(hash)))
+    .map(page => ({ ...page, url: astro ? `${BASE}/${portedPath(page.hash)}` : `/index.html${page.hash}` }));
   const jobs = pages.flatMap(page => WIDTHS.map(width => [page, width]));
   const problems = [];
   const started = Date.now();

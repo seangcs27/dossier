@@ -6,7 +6,7 @@ import { cardTileHtml } from './holodori-cards-html';
 import {
   birthdayText, daysAway, daysToBirthday, debutText, debutYears, groupsOf, no, today,
 } from './holodori-format';
-import { songTileHtml } from './holodori-songs-html';
+import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
 // A holomem's own page (#/holodori/holomem/<id>): her whole key art on her colours beside
 // her profile, then her cards, each opening its own page, the songs she sings, each
@@ -37,11 +37,14 @@ function stepHtml(c: HolodoriCharacter, rel: 'prev' | 'next'): string {
 /** Whether the album has her. */
 export const knowsHolomem = (id: string): boolean => cast.some(c => c.id === id);
 
-/**
- * Her page's body as of `now` (ms), or the page that says nobody has this id. `disc` draws
- * a song's chorus button, as songTileHtml takes it.
- */
-export function holomemHtml(id: string, now: number, disc?: (song: HolodoriSong) => string): string {
+/** How the page is drawn: `disc` as songTileHtml takes it, and `backs` to carry the songs' backs in `<template>`s. */
+export interface HolomemOptions {
+  disc?: (song: HolodoriSong) => string;
+  backs?: boolean;
+}
+
+/** Her page's body as of `now` (ms), or the page that says nobody has this id. */
+export function holomemHtml(id: string, now: number, { disc, backs }: HolomemOptions = {}): string {
   const i = cast.findIndex(c => c.id === id);
   const c = cast[i];
   if (!c) {
@@ -104,6 +107,7 @@ export function holomemHtml(id: string, now: number, disc?: (song: HolodoriSong)
         </ul>
       </section>` : ''}
       <p class="hd-credit">Picture: <a href="https://www.hololive-dreams.com/en/holomem" target="_blank" rel="noopener">hololive Dreams official site</a> · Stickers: HolodoriDB's CDN · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
+      ${backs ? songBackTemplatesHtml(sung) : ''}
     </div>
   `;
 }
