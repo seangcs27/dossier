@@ -1,0 +1,17 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="ptn"
+  title="Path to Nowhere Sinners — Dossier"
+  description="Every Path to Nowhere Sinner, Global and CN, on a line-up wall by height, with search, filters and a dossier each."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountPtn } from '@web/views/ptn';
+
+  initShell();
+  showShell('ptn');
+  mountPtn(document.getElementById('view')!);
+</script>

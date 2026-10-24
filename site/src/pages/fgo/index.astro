@@ -1,0 +1,17 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="fgo"
+  title="Fate/Grand Order Servants — Dossier"
+  description="Every Fate/Grand Order Servant, NA and JP, by collection number."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountFgo } from '@web/views/fgo';
+
+  initShell();
+  showShell('fgo');
+  mountFgo(document.getElementById('view')!);
+</script>

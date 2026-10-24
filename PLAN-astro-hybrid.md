@@ -259,8 +259,8 @@ the SPA's at 1400, 800 and 390 px, and the smoke run is clean; the clock was pin
 | Path to Nowhere dossier | 31.7 KB | a shell, and the SPA's view mounted |
 | **Card page** | **52.8 KB** | at build time with its payload inlined; the SPA's handlers adopt it (`mountHolodoriCard(view, id, payload)` draws nothing) |
 
-- **Over budget: the card page** (52.8 KB against 40). It carries the art viewer, the reveal,
-  the voice player and the audio engine up front. A later pass can load those on first use.
+- **Over budget: the card page** (52.8 KB against 40), **accepted by the owner** (25 October
+  2026). It carries the art viewer, the reveal, the voice player and the audio engine up front.
 - **Adopted, not redrawn:** on the card page a bloom, a level change and the volume were
   clicked: the stats change, the stage and voice nodes are untouched, and the slider takes the
   stored volume (80) where the page was drawn at the default (50).
@@ -281,10 +281,45 @@ only its game's data.
   (scripted checks), and per-page JS meets a budget (proposed 120 KB gzipped for a roster).
 - Needs Phase 6 (or `sessionStorage`) to keep state across a visit elsewhere.
 
+**Met 25 October 2026.** `npm run build:site` writes 456 pages: the seven rosters are added at
+`/`, `endfield/`, `ptn/`, `holodori/holomems/`, `holodori/songs/`, `holodori/cards/` and `fgo/`,
+each the shell and its view's `mount*` unchanged. Their 21 shots are identical to the SPA's (54
+of 54 with Phase 3's). A scripted run did the same 384 steps on each roster in the SPA and on
+its Astro page (a search, every button of the filter panel in turn, Clear, every switch over
+the roster: look, order and Path to Nowhere's language) and the count and the view's text
+matched after every step, with no error.
+
+| Roster | First-load JS, gzipped |
+|---|---|
+| Endfield | 20.4 KB |
+| FGO | 29.9 KB |
+| Path to Nowhere wall | 34.8 KB |
+| Arknights grid | 35.9 KB |
+| hololive Dreams cards, sheet, songs | 52.2, 54.0, 57.5 KB |
+
+- **The site's root is where every `#/…` link lands** until Phase 6 (it does, through
+  `<base>`). There the grid's page sends a route Astro serves to its page
+  (`site/src/lib/ported.ts`, `location.replace`) and loads the whole SPA, by `import()`, for
+  one it does not (an Arknights dossier). A card on the grid is a `#/op/…` link on that same
+  page, so a change of hash reloads it. Checked: a grid card opens the SPA's dossier, an
+  Endfield or a Path to Nowhere card and a hololive Dreams card open their Astro pages.
+- **Shared code costs the Phase 3 pages.** A module two pages import goes into a chunk of its
+  own, whole as far as any page uses it, and the rosters share `format.ts`, `ptn.ts` and the
+  render modules with the static pages. Built without the rosters, then with them: front page
+  and holomem 8.3 → 17.8 KB, gachas 4.4 → 5.4, Events 5.3 → 6.4, Endfield dossier 3.3 → 3.7
+  (all inside 25), **Path to Nowhere dossier 31.9 → 42.0 (over 40)**, card page 53.4 → 58.1.
+  Splitting `format.ts` and moving `ptnRoster` out of `views/ptn.ts` would win it back.
+- **Search, filters, look and order reset on each load** until Phase 6.
+
 ### Gate 2
 Compare first-load JavaScript on the non-dossier pages with the 152 KB gzipped baseline. The
 case for continuing is a drop of about 60% with no feature lost. If it is not there, stop and
 take the cheaper plan.
+
+**Passed 25 October 2026.** The 11 non-dossier pages (7 rosters, the front page, gachas, the
+Events list and the calendar's first load) are 5.4 to 57.5 KB, 29 KB on average: 81% under
+152 KB, and the heaviest, hololive Dreams' songs, 62% under. No feature is lost (the shots
+and the scripted runs above); what is not kept yet is a roster's state across pages (Phase 6).
 
 ### Phase 5 — The Arknights dossier (463) · M
 Per D3: one generated shell page per operator (`/op/<id>/`, about 10 KB each, with the

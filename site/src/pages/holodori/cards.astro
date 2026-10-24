@@ -1,0 +1,17 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="holodori-cards"
+  title="hololive Dreams cards — Dossier"
+  description="Every card in hololive Dreams by rarity, type, branch and holomem, each with a page of its own."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountHolodoriCards } from '@web/views/holodori-cards';
+
+  initShell();
+  showShell('holodori-cards');
+  mountHolodoriCards(document.getElementById('view')!);
+</script>

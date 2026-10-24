@@ -1,0 +1,17 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="endfield"
+  title="Arknights: Endfield operators — Dossier"
+  description="Every Arknights: Endfield operator by class, element, weapon, rarity and faction, each with a dossier."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountEndfield } from '@web/views/endfield';
+
+  initShell();
+  showShell('endfield');
+  mountEndfield(document.getElementById('view')!);
+</script>

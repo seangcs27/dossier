@@ -1,0 +1,31 @@
+---
+import Shell from '../layouts/Shell.astro';
+---
+<Shell
+  view="grid"
+  title="Arknights operators — Dossier"
+  description="Every Arknights operator, Global and CN, by class, branch, rarity, collab and tag, each with a dossier."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountGrid } from '@web/views/grid';
+  import { portedPath } from '../lib/ported';
+
+  // The site's root is also where every '#/…' link lands (through <base>) until Phase 6 gives
+  // them paths: a route Astro serves goes to its page, any other is the SPA's, which is
+  // loaded whole only then.
+  const hash = window.location.hash;
+  const page = portedPath(hash);
+  if (page) {
+    window.location.replace(page);
+  } else if (hash && hash !== '#/') {
+    void import('@web/index');
+  } else {
+    initShell();
+    showShell('grid');
+    mountGrid(document.getElementById('view')!);
+    // A card is a '#/op/…' link on this same page, so it changes the hash and nothing else.
+    window.addEventListener('hashchange', () => window.location.reload(), { once: true });
+  }
+</script>
