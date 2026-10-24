@@ -378,11 +378,11 @@ on each `astro:page-load` whose body has that `data-view`.
   loads unchanged: 63 of 63 shots, the 384 roster steps, 463 of 463 dossiers.
 - **The voice line stops** on a card step. The SPA stops every sound on a change of page by
   design (`holodori-audio.ts`: "none outlives the page that started it"), and this phase keeps
-  that. Letting it run on is a change of behaviour for the owner to ask for.
+  that, and the owner chose it (25 October 2026: "keep it stopping on a page change").
 - **Cost**: the router is 5.2 KB gzipped on a first load (the front page 23.2, the grid 40.0,
   an Arknights dossier 33.7, Path to Nowhere's 47.3, a card 62.6); a page reached by a link
   loads only the chunks it lacks. The 11 non-dossier pages average 34 KB, 78% under 152.
-- **`<base>` stays** (D6 is still open: the owner's call).
+- **`<base>` stays**: the owner kept it on 25 October 2026, so D6's `assetUrl()` is not done.
 
 ### Phase 7 — CI and cut-over · M
 - `build:web` becomes `astro build` (the `prebuild:web` index step stays); the artifact path
@@ -393,6 +393,27 @@ on each `astro:page-load` whose body has that `data-view`.
   inventory, and a per-page size budget script.
 - The daily cron stays.
 - **Rollback**: revert the workflow change; the webpack path still exists until Phase 8.
+
+**The trial, 25 October 2026 (the flip is still to come).** The deploy builds the SPA as
+before, then the Astro site with `DOSSIER_BASE=/dossier/next` (`site/astro.config.mjs` reads
+it) and copies it into the artifact as `next/`: 258 MB in all, the SPA's 119 and the Astro
+site's 139, since each has its own copy of the images. The step runs `tsc` (the repo and
+`site/`), the build and `scripts/site-check.mjs`, and is `continue-on-error`: until the flip a
+failure leaves `/next/` out of that deploy and cannot hold the SPA back.
+- **`scripts/site-check.mjs <dir> [base]`**: a page for each of the inventory's routes and
+  no more (919); every `href` and `src` in the HTML resolved against `<base>` as the browser
+  would, a `#/…` one through `ported-routes.json`, to a file in the build (25,110 addresses);
+  each page's first-load JavaScript inside the budget of its `data-view`. Two budgets are what
+  the pages are now, rounded up (the Path to Nowhere dossier 50 KB, a card 65), because the
+  router added 5.2 KB after the owner accepted them at 42 and 52.8. Shown to fail on a removed
+  page and on a link to no route.
+- **Checked locally** with the deploy's layout (the SPA's `dist/web` and the Astro build in
+  `next/`, served under `/dossier/`): the navigation checks, 35 of 35, and an old SPA address
+  under `/dossier/next/#/…` lands on its page.
+- **Not tested before merge**: the workflow itself, since a manual run deploys to production.
+  The first run on `master` is the test: the step's log, and `/dossier/next/` live.
+- **To flip** after about a week: `build:web` becomes the Astro build at `/dossier`, the step
+  loses `continue-on-error`, and the SPA build leaves the artifact (or moves to `/old/`).
 
 ### Phase 8 — Cleanup · S
 Delete `webpack.web.js`, the CopyPlugin lists, `src/web/index.html`, `router.ts` and

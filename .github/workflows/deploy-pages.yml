@@ -53,6 +53,19 @@ jobs:
           gh release upload image-backup images.tar --clobber
         env:
           GH_TOKEN: ${{ github.token }}
+      # The Astro build (PLAN-astro-hybrid.md, Phase 7), deployed beside the SPA at /dossier/next/
+      # for a trial before it takes the SPA's place. Until then it cannot hold the SPA's deploy
+      # back: a failed check leaves /next/ out of this deploy and marks the step failed.
+      - name: Astro build at /dossier/next/
+        continue-on-error: true
+        run: |
+          npx tsc --noEmit
+          npx tsc --noEmit -p site
+          npm run build -w site
+          node scripts/site-check.mjs dist/astro "$DOSSIER_BASE"
+          cp -r dist/astro dist/web/next
+        env:
+          DOSSIER_BASE: /dossier/next
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
