@@ -1,5 +1,11 @@
 {
+  "#/": "./",
+  "#/endfield": "endfield/",
+  "#/ptn": "ptn/",
   "#/holodori": "holodori/",
+  "#/holodori/holomems": "holodori/holomems/",
+  "#/holodori/songs": "holodori/songs/",
+  "#/holodori/cards": "holodori/cards/",
   "#/holodori/gachas": "holodori/gachas/",
   "#/holodori/holomem/": "holodori/holomem/",
   "#/holodori/card/": "holodori/card/",
@@ -7,5 +13,6 @@
   "#/events": "events/",
   "#/events/pools": "events/pools/",
   "#/events/calendar": "events/calendar/",
-  "#/ptn/sinner/": "ptn/sinner/"
+  "#/ptn/sinner/": "ptn/sinner/",
+  "#/fgo": "fgo/"
 }

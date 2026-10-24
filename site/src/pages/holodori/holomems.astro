@@ -1,0 +1,17 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="holodori"
+  title="hololive Dreams holomems — Dossier"
+  description="Every holomem in hololive Dreams as a sheet of stickers by branch and generation, with a calendar of birthdays and debuts."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountHolodori } from '@web/views/holodori';
+
+  initShell();
+  showShell('holodori');
+  mountHolodori(document.getElementById('view')!);
+</script>

@@ -1842,7 +1842,18 @@ view, once a card has changed section since the build (`data-built`); the **cale
 **Path to Nowhere dossier** are the SPA's views mounted over a shell; the **card page** carries
 its payload in a `<script type="application/json" id="card-data">` and the SPA's handlers adopt
 it (`mountHolodoriCard(view, id, payload)`). `site/src/ported-routes.json` lists the routes
-(a key ending in `/` stands for every route under it), and `shots capture --astro` shoots them.
+(a key ending in `/` stands for every route under it, but for `#/`), and `shots capture --astro`
+shoots them.
+
+**The rosters** (Phase 4, 25 October 2026; 456 pages): the Arknights grid at the root, then
+`endfield/`, `ptn/`, `holodori/holomems/`, `holodori/songs/`, `holodori/cards/` and `fgo/`, each
+the shell and its view's `mount*` called unchanged; their search, filters, look and order reset
+on each load until Phase 6. **The root is where every `#/…` link lands** through `<base>`, so its
+page sends a route Astro serves to that page (`site/src/lib/ported.ts`) and loads the whole SPA
+(`import('@web/index')`) for any other, which today is an Arknights dossier; a grid card changes
+the hash on that same page, which reloads it. A module two pages share goes into a chunk of its
+own, whole as far as any page uses it, so adding a page can make another heavier: measure the
+others too (`PLAN-astro-hybrid.md`, Phase 4).
 
 **The pure render layer** (`src/web/render/`, Phase 2, 24 October 2026) is what lets a page be
 drawn at build time. A renderer is a module `<name>-html.ts` that returns the page's markup

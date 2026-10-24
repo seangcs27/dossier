@@ -1,0 +1,17 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="holodori-songs"
+  title="hololive Dreams songs — Dossier"
+  description="Every song in hololive Dreams with its singers, its four charts' levels and its credits."
+/>
+
+<script>
+  import { initShell, showShell } from '@web/shell';
+  import { mountHolodoriSongs } from '@web/views/holodori-songs';
+
+  initShell();
+  showShell('holodori-songs');
+  mountHolodoriSongs(document.getElementById('view')!);
+</script>

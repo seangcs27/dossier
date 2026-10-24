@@ -23,14 +23,15 @@ import sharp from 'sharp';
 import { routeInventory } from './route-inventory.mjs';
 
 // The routes the Astro site serves, hash to path under BASE; only those are shot with --astro.
-// A key ending in '/' stands for every route under it ('#/holodori/holomem/' + id).
+// A key ending in '/' stands for every route under it ('#/holodori/holomem/' + id), but for
+// '#/', the grid's own (site/src/lib/ported.ts reads it the same way).
 const PORTED = JSON.parse(await readFile(new URL('../site/src/ported-routes.json', import.meta.url), 'utf8'));
 const BASE = '/dossier';
 
 /** The Astro site's path for a hash route, or undefined where it does not serve it yet. */
 function portedPath(hash) {
   if (PORTED[hash]) return PORTED[hash];
-  const prefix = Object.keys(PORTED).find(key => key.endsWith('/') && hash.startsWith(key));
+  const prefix = Object.keys(PORTED).find(key => key !== '#/' && key.endsWith('/') && hash.startsWith(key));
   return prefix && `${PORTED[prefix]}${hash.slice(prefix.length)}/`;
 }
 
