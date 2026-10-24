@@ -18,12 +18,9 @@ const { name, rarity, archetype } = Astro.props;
 />
 
 <script>
-  import { initShell, showShell } from '@web/shell';
   import { mountDetail } from '@web/views/detail';
+  import { onPage } from '../../lib/page';
 
-  initShell();
-  showShell('detail');
   // An operator's dossier is a client page: the payload is fetched and the SPA's view draws it.
-  const view = document.getElementById('view')!;
-  void mountDetail(view, view.dataset.id!);
+  onPage('detail', view => void mountDetail(view, view.dataset.id!));
 </script>

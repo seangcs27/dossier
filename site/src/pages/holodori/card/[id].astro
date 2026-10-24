@@ -28,13 +28,13 @@ const inlined = JSON.stringify(detail).replace(/</g, '\u003c');
 </Shell>
 
 <script>
-  import { hideSearch, initShell, showShell } from '@web/shell';
+  import { hideSearch } from '@web/shell';
   import { mountHolodoriCard } from '@web/views/holodori-card';
+  import { onPage } from '../../../lib/page';
 
-  initShell();
-  showShell('holodori-card');
-  hideSearch();
-  // The page came drawn, with its payload: the SPA's own handlers go on it.
-  const view = document.getElementById('view')!;
-  mountHolodoriCard(view, view.dataset.id!, JSON.parse(document.getElementById('card-data')!.textContent!));
+  onPage('holodori-card', (view) => {
+    hideSearch();
+    // The page came drawn, with its payload: the SPA's own handlers go on it.
+    mountHolodoriCard(view, view.dataset.id!, JSON.parse(document.getElementById('card-data')!.textContent!));
+  });
 </script>

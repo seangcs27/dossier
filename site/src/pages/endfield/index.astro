@@ -8,10 +8,8 @@ import Shell from '../../layouts/Shell.astro';
 />
 
 <script>
-  import { initShell, showShell } from '@web/shell';
   import { mountEndfield } from '@web/views/endfield';
+  import { onPage } from '../../lib/page';
 
-  initShell();
-  showShell('endfield');
-  mountEndfield(document.getElementById('view')!);
+  onPage('endfield', mountEndfield);
 </script>

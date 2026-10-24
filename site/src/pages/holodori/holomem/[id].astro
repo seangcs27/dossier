@@ -22,13 +22,14 @@ const { name, branch } = Astro.props;
 <script>
   import { backsInPage, wireTurns } from '@web/holodori-flip';
   import { freshen } from '@web/fresh';
-  import { hideSearch, initShell, showShell } from '@web/shell';
+  import { hideSearch } from '@web/shell';
   import '@web/holodori-clip';
+  import { onPage } from '../../../lib/page';
 
-  initShell();
-  showShell('holodori-holomem');
-  hideSearch();
-  freshen();
-  const page = document.querySelector<HTMLElement>('.hm-page')!;
-  wireTurns(page, backsInPage(page));
+  onPage('holodori-holomem', () => {
+    hideSearch();
+    freshen();
+    const page = document.querySelector<HTMLElement>('.hm-page')!;
+    wireTurns(page, backsInPage(page));
+  });
 </script>

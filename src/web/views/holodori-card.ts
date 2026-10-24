@@ -122,8 +122,10 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
     }
   };
   if (inlined) {
-    // Drawn at the default volume, and with the first level and bloom of a visit.
+    // Drawn at the default volume, and with the first level and bloom of a visit; the Astro
+    // site keeps a visit's across its pages, so a later card is drawn again at those.
     paintVolume();
+    if (level !== 'max' || bloom !== 0) render();
     return;
   }
   render();
