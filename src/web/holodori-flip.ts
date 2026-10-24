@@ -65,6 +65,14 @@ export function turnBack(refocus: boolean): void {
 }
 
 /**
+ * The backs a page built at build time carries in `<template data-back-of="<id>">` elements
+ * (render/holodori-songs-html.ts), for wireTurns: it need not hold the songs to draw one.
+ */
+export function backsInPage(page: HTMLElement): (id: string) => string | undefined {
+  return id => page.querySelector<HTMLTemplateElement>(`template[data-back-of="${CSS.escape(id)}"]`)?.innerHTML;
+}
+
+/**
  * A page whose buttons carry `data-back="<id>"` turns each over to `backOf(id)`; the close
  * button, Escape or a press anywhere else turns it back. Assigned, not added, since the
  * view is mounted twice a navigation.

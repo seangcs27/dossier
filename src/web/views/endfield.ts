@@ -1,7 +1,7 @@
 import { endfieldIconUrl, endfieldPortraitUrl, endfieldSplashUrl } from '../../shared/api/hella-api';
 import { getEndfieldOperators, type EndfieldOperator } from '../endfield-index';
 import { escHtml } from '../format';
-import { focusSelector, watchFilterTab } from './grid';
+import { focusSelector, watchFilterTab } from '../filter-box';
 
 // This page's own search and picks. The box in the topbar and the panel under it are the
 // Arknights grid's too, and whichever grid mounted last has them; each keeps its state to

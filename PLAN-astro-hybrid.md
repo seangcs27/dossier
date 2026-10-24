@@ -176,7 +176,7 @@ on-demand loading of each game's views and data inside the current webpack build
 mount, `ClientRouter`, a dynamic route, and the SPA and the Astro build served together (the
 `#/…` links assume it).
 
-### Phase 2 — The pure render layer · L
+### Phase 2 — The pure render layer · L · done 24 October 2026
 The refactor everything else depends on.
 - Each view is split into `render(data, now?) → string` (pure: no DOM, no `window`) and
   `mount(container)` (events, state, side effects). Most tile and banner helpers are already
@@ -194,6 +194,40 @@ The refactor everything else depends on.
   so a hololive Dreams page imports only the JSON it uses.
 - **Done when**: the SPA's string output and Astro's are identical for the same data, for
   every renderer moved. **Rollback**: the renderers stay valid for the SPA.
+
+**Met 24 October 2026.** Thirteen modules in `src/web/render/`: hololive Dreams' front page,
+gachas, holomem page, card page, the songs' tile and back, the cards' tile, the chorus disc,
+the Events page and the Endfield dossier, plus the date and clock formatters. Each view mounts
+what its renderer draws and keeps its state and events. `npm run render-check` runs them all
+in plain Node (no window, no document) twice from a fixed clock: 22 draws, and it fails a
+module that touches a global, draws two ways or has no entry in its table (checked against a
+module that reads `document`). Three were done by subagents in worktrees of their own (the
+Events page, the Endfield dossier, the card page), each shown against the baseline before it
+was merged; the integrated result is 63 of 63 shots identical to the Phase 0 baseline, so no
+view moved a pixel. The Endfield dossier's markup was also compared as a string, old view
+against new, for all 34 operators, and the card page's for 10 states: byte for byte.
+
+Where it differs from the text above:
+- **`fresh.ts` is in** (`src/web/fresh.ts`, `freshen(root, at)`). Clock-dependent text carries a
+  `data-*` attribute and `freshen` sets it again from the reader's clock: a gacha's status, a
+  date in the reader's time zone, a birthday's "in N days", the years since a debut, an
+  event's countdown and its "your time" tooltip. It imports only formatters that have no
+  data of their own, or the data would ship on every page. Checked by building a page six
+  hours before the screenshot clock: its shots still match. What `freshen` cannot do is move
+  a card between sections (a banner that has ended stays under "Running now"), so a page is
+  as stale as the last deploy, a day at most.
+- **`holodori-index.ts` was not split.** Measured, it did not need it: Rollup drops a JSON
+  file nothing in the page uses, and the cost was the player and the song backs. The chorus
+  disc now carries what the player needs (`data-title`, `-mv`, `-chorus`, `-estimated`) and a
+  jacket's back is a `<template data-back-of>` the page carries, so no page holds `songs.json`.
+  The SPA's player was checked by clicking both kinds of disc.
+- **The card page's renderer has its own copies of two audio helpers** (`waveHtml`, and
+  `volumeHtml` taking the volume as an argument), because `holodori-audio.ts` reads
+  `window` and `localStorage` at import. A later pass can make that module import them.
+  The reveal stays client-side; an Astro card page takes the 0.5 default volume and the
+  client script has to sync the slider from `localStorage`.
+- **Not done here, and not needed:** the Path to Nowhere and Arknights dossiers, which are shell
+  pages with a client mount (D3), and the rosters, which are Phase 4.
 
 ### Phase 3 — Static content pages · L
 In this order (value over risk):

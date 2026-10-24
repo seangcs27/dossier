@@ -19,6 +19,7 @@ import {
 } from '../operator-index';
 import { MODE_LABEL, PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 import { mountCardSpin } from '../card-spin';
+import { focusSelector, watchFilterTab } from '../filter-box';
 
 const state = {
   query: '',
@@ -204,17 +205,6 @@ function activeCount(): number {
 const CLASS_ORDER: Profession[] = [
   'PIONEER', 'WARRIOR', 'TANK', 'SNIPER', 'CASTER', 'MEDIC', 'SUPPORT', 'SPECIAL',
 ];
-
-// A selector that finds the same control again after renderMore() rebuilds the panel.
-// Every panel control is identified by its id or by its data-* attributes.
-export function focusSelector(el: HTMLElement): string | null {
-  const control = el.closest<HTMLElement>('button');
-  if (!control) return null;
-  if (control.id) return `#${CSS.escape(control.id)}`;
-  const attrs = Object.entries(control.dataset)
-    .map(([k, v]) => `[data-${k}="${CSS.escape(v ?? '')}"]`).join('');
-  return attrs ? `button${attrs}` : null;
-}
 
 // One picked class's branches, as tiles under a header. "1 of 9" in the header is the cue
 // that a pick narrows this class only; "All branches" says nothing narrows it yet. Labels drop
@@ -466,24 +456,6 @@ function clearAll(): void {
   state.subclasses.clear();
   state.servers.clear();
   state.games.clear();
-}
-
-// Watches the two sizes the filter panel's shape is drawn from (.filter-blob in styles.scss):
-// how wide the buttons' part of the search box is, which is the tab's width, and how tall
-// the box is, which is the tab's height. The first changes with the Filters label and all the
-// way through Clear and the close button folding in or out, so it is observed, not read once.
-let tabWatch: ResizeObserver | undefined;
-
-// Started by whichever grid mounts first. The Endfield grid (views/endfield.ts) hangs the
-// same panel from the same box, and a visitor can open that page before this one.
-export function watchFilterTab(actions: HTMLElement, wrap: HTMLElement): void {
-  if (tabWatch) return;
-  const tab = actions.querySelector<HTMLElement>('.filter-tab')!;
-  tabWatch = new ResizeObserver(() => {
-    actions.style.setProperty('--tab-w', `${tab.offsetWidth}px`);
-    actions.style.setProperty('--box-h', `${wrap.offsetHeight}px`);
-  });
-  tabWatch.observe(tab);
 }
 
 export function mountGrid(container: HTMLElement): void {

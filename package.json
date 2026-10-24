@@ -22,6 +22,7 @@
     "dev:site": "npm run dev -w site",
     "routes": "node scripts/route-inventory.mjs",
     "shots": "node scripts/shots.mjs",
+    "render-check": "node scripts/render-check.mjs",
     "prebuild:ext": "npm run build:index",
     "build:ext": "webpack --config webpack.ext.js --mode production",
     "prebuild:web": "npm run build:index",

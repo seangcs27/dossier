@@ -1,61 +1,14 @@
-import { escHtml } from './format';
-import { claimAudio, clock, getVolume, onVolume, volumeHtml, waveHtml } from './holodori-audio';
-import { voiceUrl, type HolodoriLine } from './holodori-index';
+import { claimAudio, clock, getVolume, onVolume, waveHtml } from './holodori-audio';
+import { voiceUrl } from './holodori-index';
 
 // A card page's voice lines and live dialogues as speech bubbles (views/holodori-card.ts): a
 // bubble in the speaker's colour that fills with its own words as the line goes and shows a
 // waveform to press for a place in it, and one dock for the lot, with previous and next, a
 // speed and the line's own waveform. One line plays at a time, here and everywhere
-// (holodori-audio.ts); a conversation plays its lines one after another.
+// (holodori-audio.ts); a conversation plays its lines one after another. The bubbles and the
+// dock are drawn by render/holodori-card-html.ts; this plays them.
 
-/** Who says a line, for its bubble. */
-export interface Speaker {
-  colour: string;   // '#RRGGBB'
-  face: string;     // her round face, as markup
-  mine: boolean;    // the card's own holomem, whose bubbles stand on the left
-}
-
-const PLAY = '<svg class="ico-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L13 8z"></path></svg>';
-const PAUSE = '<svg class="ico-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3h2.6v10H4.5zM8.9 3h2.6v10H8.9z"></path></svg>';
 const RATES = [1, 1.25, 1.5, 0.75];
-
-/** One line as a bubble: `label` is what it is called, a kind of line or who says it. */
-export function bubbleHtml(line: HolodoriLine, who: Speaker, label: string): string {
-  const text = escHtml(line.text).replace(/\n/g, '<br>');
-  return `
-    <li class="vl${who.mine ? '' : ' them'}" data-audio="${escHtml(line.audio)}" style="--who: ${escHtml(who.colour)}">
-      ${who.face}
-      <div class="vl-bub">
-        <button class="vl-play" type="button" aria-pressed="false" aria-label="Play: ${escHtml(label)}">${PLAY}${PAUSE}</button>
-        <div class="vl-body">
-          <span class="vl-lab">${escHtml(label)}</span>
-          <p class="vl-text"><span>${text}</span><span class="vl-fill" aria-hidden="true">${text}</span></p>
-          <span class="vl-seek" data-seek>${waveHtml(line.audio)}</span>
-        </div>
-      </div>
-    </li>
-  `;
-}
-
-/** The dock the page's bubbles share. */
-export function dockHtml(): string {
-  const skip = (to: 'prev' | 'next', path: string): string => `
-    <button class="vd-step" type="button" data-vd="${to}" aria-label="${to === 'prev' ? 'Previous' : 'Next'} line">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="${path}"></path></svg>
-    </button>`;
-  return `
-    <div class="vd" role="group" aria-label="Voice player">
-      ${skip('prev', 'M11.5 3.5v9L6 8zM3.8 3.5h1.8v9H3.8z')}
-      <button class="vd-go" type="button" data-vd="play" aria-label="Play or pause">${PLAY}${PAUSE}</button>
-      ${skip('next', 'M4.5 3.5v9L10 8zM10.4 3.5h1.8v9h-1.8z')}
-      <span class="vd-name">Pick a line</span>
-      <span class="vd-seek" data-seek></span>
-      <span class="vd-time" aria-hidden="true">0:00 / 0:00</span>
-      ${volumeHtml()}
-      <button class="vd-rate" type="button" data-vd="rate" aria-label="Speed">1×</button>
-    </div>
-  `;
-}
 
 let audio: HTMLAudioElement | undefined;
 let scope: HTMLElement | undefined;   // the page the bubbles are in, as of the last press

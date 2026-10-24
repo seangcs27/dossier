@@ -43,6 +43,7 @@ npm run build:index  # Regenerate everything under src/shared/generated/ (runs a
 npm run design       # build:web, then regenerate design/components/*.html previews
 
 npm run routes       # Every route the web target answers (919), checked against router.ts → dist/routes.txt
+npm run render-check # Every module in src/web/render/ in plain Node, twice from a fixed clock
 npm run shots -- capture dist/web .shots/<set>   # Screenshots at 3 widths, and the smoke run
 npm run shots -- compare .shots/<a> .shots/<b>   # Pixel diff of two sets; changed ones to <b>/diff/
 
@@ -122,6 +123,7 @@ scripts/
   collab-logos/<slug>.svg|png  ← the four collabs' own logos, from Wikimedia Commons (tracked)
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
   route-inventory.mjs        ← every route the web target answers, from the generated data, checked against router.ts
+  render-check.mjs           ← runs every module in src/web/render/ in plain Node (see "The Astro site")
   shots.mjs                  ← screenshots of 21 pages at 3 widths, the smoke run, and the diff of two sets
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
@@ -208,7 +210,17 @@ src/
                       tooltips, scrollbars, the phone's games drawer) and showShell(view)
                       (the table of games, GAMES: each one's roster and its word for its
                       cast; which game the sidebar and which page the section links mark).
-                      index.ts and the Astro pages (site/) both start it
+                      index.ts and the Astro pages (site/) both start it; hideSearch() puts
+                      the topbar's search box away on a page that is not a roster
+    render/         ← the pure string renderers the views and the Astro pages share (see "The
+                      Astro site"): `<name>-html.ts` for hololive Dreams' front page, gachas,
+                      holomem and card pages, songs and cards tiles, the Events page and the
+                      Endfield dossier; holodori-dates.ts, clock-text.ts and events-clock.ts,
+                      the date and clock formatters with no data of their own
+    fresh.ts        ← sets the clock-dependent text of a page built at build time from the
+                      reader's clock (freshen)
+    filter-box.ts   ← focusSelector and watchFilterTab, the search box's and filter tab's
+                      handling every roster shares
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
                       #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
@@ -1037,7 +1049,7 @@ panel's groups are Class (6 tiles), Element (5), Weapon (5), Rarity (4 to 6) and
 chips): any pick within a group, every group across them. Its buttons carry `data-group` /
 `data-value` where the Arknights panel's carry `data-kind`, so that neither grid's handler
 takes the other's buttons in the half second the panel takes to hide after a change of page.
-`grid.ts` exports the two things both grids need, `focusSelector` and `watchFilterTab`; the
+`filter-box.ts` has the two things both grids need, `focusSelector` and `watchFilterTab`; the
 rest of the box's and the panel's handling is a second copy of `grid.ts`'s, about 45 lines:
 a change to either there has to be made here too.
 
@@ -1816,6 +1828,30 @@ the SPA is untouched but for `shell.ts`, split out of `index.ts`. `npm run build
   not the page. From `_astro/` it would 404.
 - `site/integrations/assets.mjs` copies the files webpack's CopyPlugin copies (it reads that
   list from `webpack.web.js`) into the build, and serves them under `astro dev`.
+
+**The pure render layer** (`src/web/render/`, Phase 2, 24 October 2026) is what lets a page be
+drawn at build time. A renderer is a module `<name>-html.ts` that returns the page's markup
+and does nothing else: no `document`, `window`, `localStorage` or `navigator`, not even at
+import, and it imports only modules that are as clean (`format.ts`, the `*-index.ts` data
+stores, other renderers), never a view, `card.ts`, `tooltip.ts` or the audio, clip, flip,
+voice or reveal modules. A view (`views/<name>.ts`) calls it and keeps everything else: module
+state, events, timers, fetches. Three rules:
+- **The clock is an argument.** A renderer takes `now` (ms) and does not read the clock itself.
+- **What the reader's clock decides is marked.** A countdown, a date in the reader's time zone
+  or a birthday's "in N days" is wrapped in an element with a `data-*` attribute carrying what
+  it is worked out from (`data-when`, `data-gacha-from`, `data-bday`, `data-ev-start`…), and
+  `freshen()` in `fresh.ts` sets it again in the browser. What it cannot do is move a thing
+  between sections (a banner that has ended stays under "Running now" until the next build),
+  so a page is as stale as the last deploy, a day at most. The formatters `fresh.ts` imports
+  live in modules with no data of their own (`clock-text.ts`, `holodori-dates.ts`,
+  `events-clock.ts`), or the data would ship on every page.
+- **A page that needs something of the song or card for a click carries it.** A chorus disc
+  has `data-title`, `-mv`, `-chorus` and `-estimated`, and a jacket's back is a
+  `<template data-back-of>` (`songBackTemplatesHtml`), so the page does not hold `songs.json`.
+
+`npm run render-check` runs every module in `render/` in plain Node, where there is no window
+or document, twice from a fixed clock; one that touches a global, draws two ways or has no
+entry in the script's `CHECKS` fails. A new renderer adds its entry there.
 
 ## Testing
 
