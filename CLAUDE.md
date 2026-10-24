@@ -1871,6 +1871,14 @@ drawer's body class into the next page. What the SPA undoes on `hashchange` (sou
 player, the art viewer, the tooltip) also listens to `astro:before-swap`; a timer of a page's
 own stops once its `#view` is not connected.
 
+**Deployed beside the SPA at `/dossier/next/`** (Phase 7's trial, 25 October 2026): after
+`build:web`, `deploy-pages.yml` builds the site with `DOSSIER_BASE=/dossier/next`, checks it
+with `node scripts/site-check.mjs dist/astro /dossier/next` (a page per route, every address in
+the HTML a file of the build, each page's first-load JS inside its view's budget) and copies it
+into the artifact as `next/`. The step is `continue-on-error`, so it cannot hold the SPA's
+deploy back. In Git Bash, set `MSYS_NO_PATHCONV=1` before passing a base like `/dossier/next`,
+or it is rewritten into a Windows path.
+
 **The pure render layer** (`src/web/render/`, Phase 2, 24 October 2026) is what lets a page be
 drawn at build time. A renderer is a module `<name>-html.ts` that returns the page's markup
 and does nothing else: no `document`, `window`, `localStorage` or `navigator`, not even at

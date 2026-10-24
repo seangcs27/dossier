@@ -3,10 +3,11 @@ import { defineConfig } from 'astro/config';
 import assets from './integrations/assets.mjs';
 
 // Written to dist/astro, beside the webpack build's dist/web, until the cut-over (Phase 7).
+// DOSSIER_BASE moves it: the deploy builds it for /dossier/next/ to stand beside the SPA.
 export default defineConfig({
   site: 'https://seangcs27.github.io',
   output: 'static',
-  base: '/dossier',
+  base: process.env.DOSSIER_BASE ?? '/dossier',
   trailingSlash: 'always',
   outDir: '../dist/astro',
   integrations: [assets()],
