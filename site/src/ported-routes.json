@@ -1,5 +1,6 @@
 {
   "#/": "./",
+  "#/op/": "op/",
   "#/endfield": "endfield/",
   "#/ptn": "ptn/",
   "#/holodori": "holodori/",
