@@ -13,10 +13,11 @@ import { buildNow } from '../../lib/now';
 
 <script>
   import { freshen } from '@web/fresh';
-  import { hideSearch, initShell, showShell } from '@web/shell';
+  import { hideSearch } from '@web/shell';
+  import { onPage } from '../../lib/page';
 
-  initShell();
-  showShell('holodori-gachas');
-  hideSearch();
-  freshen();
+  onPage('holodori-gachas', () => {
+    hideSearch();
+    freshen();
+  });
 </script>

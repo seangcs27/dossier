@@ -104,4 +104,5 @@ export function mountTooltips(): void {
   // route change replaces the whole view under it.
   window.addEventListener('scroll', hide, { passive: true, capture: true });
   window.addEventListener('hashchange', hide);
+  document.addEventListener('astro:before-swap', hide);
 }

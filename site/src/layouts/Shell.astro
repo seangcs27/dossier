@@ -3,6 +3,7 @@
 // read, not copied, so the two targets cannot drift while both exist; Phase 8 moves the markup
 // in here and deletes index.html.
 import { readFileSync } from 'node:fs';
+import { ClientRouter } from 'astro:transitions';
 import '../../../src/web/styles.scss';
 import ported from '../ported-routes.json';
 
@@ -31,19 +32,26 @@ const head = between('<head>', '</head>')
 let [top, bottom] = between('<body>', '<script src="app.js"></script>').split('<main id="view"></main>');
 for (const [hash, page] of Object.entries(ported)) top = top.replaceAll(`href="${hash}"`, `href="${page}"`);
 
+// The client router swaps the page under the sidebar and the topbar and keeps them, as the
+// SPA does: their handlers, the section links' moving fill and the search box are the shell's.
+const keep = (html: string, open: string, id: string): string => html.replace(open, `${open} data-astro-transition-persist="${id}"`);
+top = keep(keep(keep(top, '<nav class="sidebar"', 'sidebar'), '<div class="side-scrim"', 'side-scrim'), '<div class="topbar"', 'topbar');
+bottom = keep(bottom, '<svg class="svg-defs"', 'svg-defs');
+
 // Every address in the SPA's markup and code is written beside index.html ('icons/…',
 // 'holodori/jackets/…'). Under /holodori/ that would be one folder too deep, so the pages
 // resolve them from the site's root, as the SPA does.
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" transition:animate="none">
   <head>
     <base href={base} />
     <Fragment set:html={head} />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={Astro.url} />
+    <ClientRouter />
   </head>
   <body data-view={view}>
     <Fragment set:html={top} />

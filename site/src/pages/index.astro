@@ -8,23 +8,20 @@ import Shell from '../layouts/Shell.astro';
 />
 
 <script>
-  import { initShell, showShell } from '@web/shell';
   import { mountGrid } from '@web/views/grid';
+  import { onPage } from '../lib/page';
   import { portedPath } from '../lib/ported';
 
-  // The site's root is also where every '#/…' link lands (through <base>) until Phase 6 gives
-  // them paths, and each goes on to its page; an address no page has is the grid, as in the SPA.
-  const page = portedPath(window.location.hash);
-  if (page) {
-    window.location.replace(page);
-  } else {
-    initShell();
-    showShell('grid');
-    mountGrid(document.getElementById('view')!);
-    // A card is a '#/op/…' link on this same page, so it changes the hash and nothing else.
-    window.addEventListener('hashchange', () => {
-      const next = portedPath(window.location.hash);
-      if (next) window.location.replace(next);
-    });
-  }
+  // An old address ('/dossier/#/op/…', a bookmark from the SPA) is the root's, and goes on to
+  // its page; an address no page has is the grid, as in the SPA.
+  onPage('grid', (view) => {
+    const page = portedPath(window.location.hash);
+    if (page) window.location.replace(page);
+    else mountGrid(view);
+  });
+  // One typed into the address bar changes the hash and nothing else.
+  window.addEventListener('hashchange', () => {
+    const page = portedPath(window.location.hash);
+    if (page) window.location.replace(page);
+  });
 </script>

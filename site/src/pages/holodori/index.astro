@@ -14,13 +14,14 @@ import { buildNow } from '../../lib/now';
 <script>
   import { backsInPage, wireTurns } from '@web/holodori-flip';
   import { freshen } from '@web/fresh';
-  import { hideSearch, initShell, showShell } from '@web/shell';
+  import { hideSearch } from '@web/shell';
   import '@web/holodori-clip';
+  import { onPage } from '../../lib/page';
 
-  initShell();
-  showShell('holodori-home');
-  hideSearch();
-  freshen();
-  const page = document.querySelector<HTMLElement>('.hh-page')!;
-  wireTurns(page, backsInPage(page));
+  onPage('holodori-home', () => {
+    hideSearch();
+    freshen();
+    const page = document.querySelector<HTMLElement>('.hh-page')!;
+    wireTurns(page, backsInPage(page));
+  });
 </script>

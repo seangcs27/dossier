@@ -232,6 +232,7 @@ document.addEventListener('click', (e) => {
 
 // The player is the body's and not the page's, so it is put away with the page.
 window.addEventListener('hashchange', shut);
+document.addEventListener('astro:before-swap', shut);
 
 // A smaller window must not leave it out of reach.
 window.addEventListener('resize', () => {

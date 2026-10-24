@@ -23,6 +23,7 @@ export function stopAudio(): void {
 
 // A change of page ends it: what plays is never in the page that comes next.
 window.addEventListener('hashchange', stopAudio);
+document.addEventListener('astro:before-swap', stopAudio);
 
 // ── Volume ──
 // One volume for every sound the pages make themselves (the voice lines and a reveal's three

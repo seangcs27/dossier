@@ -250,9 +250,11 @@ export function openArtViewer(
   const dispose = (): void => {
     window.removeEventListener('resize', refit);
     window.removeEventListener('hashchange', dispose);
+    document.removeEventListener('astro:before-swap', dispose);
     dialog.remove();
   };
   window.addEventListener('hashchange', dispose);
+  document.addEventListener('astro:before-swap', dispose);
 
   // Tidies up and hands the page its piece. Called directly by the viewer's own ways out,
   // and by the `close` event for Escape, which the browser handles itself. Not left to that

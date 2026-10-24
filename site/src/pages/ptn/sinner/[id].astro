@@ -17,12 +17,9 @@ const { name, rank, tendency } = Astro.props;
 />
 
 <script>
-  import { initShell, showShell } from '@web/shell';
   import { mountPtnDetail } from '@web/views/ptn-detail';
+  import { onPage } from '../../../lib/page';
 
-  initShell();
-  showShell('ptn-detail');
   // A Sinner's file is a client page: the wall, the tabs and the viewer are the SPA's own.
-  const view = document.getElementById('view')!;
-  mountPtnDetail(view, view.dataset.id!);
+  onPage('ptn-detail', view => mountPtnDetail(view, view.dataset.id!));
 </script>

@@ -23,38 +23,41 @@ const now = buildNow();
 <script>
   import { freshen } from '@web/fresh';
   import type { EventsTab } from '@web/router';
-  import { hideSearch, initShell, showShell } from '@web/shell';
+  import { hideSearch } from '@web/shell';
+  import { onPage } from '../lib/page';
 
-  initShell();
-  showShell('events');
-  hideSearch();
-  const view = document.getElementById('view')!;
-  // The SPA's own view draws the page again, and keeps it true while it is open.
-  const mount = (): void => {
-    void import('@web/views/events').then(({ mountEvents }) => mountEvents(view, view.dataset.tab as EventsTab));
-  };
-  if (view.dataset.tab === 'calendar') {
-    // The calendar's month, its Headhunting toggle and its steps are that view's.
-    mount();
-  } else {
-    // A card changes section when its event starts, ends or its shop closes. Once the clock
-    // is past one of those since the build, the page is not true any more, so it is drawn
-    // again; until then only the countdowns, a clock, are set again every second.
-    const built = Number(view.dataset.built);
-    const stale = (): boolean => {
-      const now = Date.now();
-      return Array.from(view.querySelectorAll<HTMLElement>('[data-ev-start]')).some(el =>
-        [el.dataset.evStart, el.dataset.evEnd, el.dataset.evUntil].some(t => t && Number(t) > built && Number(t) <= now));
+  onPage('events', (view) => {
+    hideSearch();
+    // The SPA's own view draws the page again, and keeps it true while it is open.
+    const mount = (): void => {
+      void import('@web/views/events').then(({ mountEvents }) => mountEvents(view, view.dataset.tab as EventsTab));
     };
-    const tick = (): void => {
-      if (stale()) {
-        clearInterval(timer);
-        mount();
-      } else {
-        freshen();
-      }
-    };
-    const timer = setInterval(tick, 1000);
-    tick();
-  }
+    if (view.dataset.tab === 'calendar') {
+      // The calendar's month, its Headhunting toggle and its steps are that view's.
+      mount();
+    } else {
+      // A card changes section when its event starts, ends or its shop closes. Once the clock
+      // is past one of those since the build, the page is not true any more, so it is drawn
+      // again; until then only the countdowns, a clock, are set again every second.
+      const built = Number(view.dataset.built);
+      const stale = (): boolean => {
+        const now = Date.now();
+        return Array.from(view.querySelectorAll<HTMLElement>('[data-ev-start]')).some(el =>
+          [el.dataset.evStart, el.dataset.evEnd, el.dataset.evUntil].some(t => t && Number(t) > built && Number(t) <= now));
+      };
+      const tick = (): void => {
+        // Another page has been swapped in for this one.
+        if (!view.isConnected) {
+          clearInterval(timer);
+        } else if (stale()) {
+          clearInterval(timer);
+          mount();
+        } else {
+          freshen();
+        }
+      };
+      const timer = setInterval(tick, 1000);
+      tick();
+    }
+  });
 </script>

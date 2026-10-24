@@ -352,6 +352,38 @@ and one no page has is the grid, as in the SPA.
 - **Done when**: Back and Forward, a filter kept across a visit, a voice line continuing
   across a card step, and an old bookmark all work.
 
+**Met 25 October 2026, but for the voice line, which stops as the SPA's does (below).**
+`<ClientRouter />` is in `Shell.astro`, with `transition:animate="none"` on `<html>`, since the
+SPA has no fade. The sidebar, the scrim, the topbar and the SVG filters persist
+(`data-astro-transition-persist`), as the SPA keeps its shell: their handlers, the section
+links' moving fill, the search box and the filter panel are the shell's. Every page's script
+goes through `site/src/lib/page.ts`: the shell is started once, and `onPage(view, mount)` mounts
+on each `astro:page-load` whose body has that `data-view`.
+- **Links**: a `#/…` link (views and static pages alike) is given its page's path as it is
+  pressed, in a capturing click handler, and the router takes it from there; a view that
+  cancels the press (the Path to Nowhere wall after a drag) still cancels it. Not rewritten at
+  build time: one handler covers both kinds. A middle-click or a copied link keeps the `#/…`
+  address, which the root sends on (the legacy shim, `location.replace`, since Phase 4).
+- **Sound and the overlays**: `stopAudio`, the clip player's `shut`, the art viewer's `dispose`
+  and the tooltip's `hide` listen to `astro:before-swap` beside `hashchange`. The tooltip
+  element is carried into the next body; the drawer's body class too, so that `showShell`
+  closes it and leaves nothing inert.
+- **The card page** draws its stats again when a visit's level or bloom is not the default,
+  since the page arrives drawn at the default.
+- **Checked** (scripted, 35 of 35): a walk through all 15 kinds of page by their own links with
+  no reload, each mounted with a title of its own; Back three times and Forward; the grid's
+  search kept over a dossier and Back, a class filter kept over a visit to Path to Nowhere,
+  bloom 3 kept over a card step; the clip player gone after a change of page; the tooltip after
+  five; the phone's drawer closing on a pick with nothing inert; three old bookmarks. Initial
+  loads unchanged: 63 of 63 shots, the 384 roster steps, 463 of 463 dossiers.
+- **The voice line stops** on a card step. The SPA stops every sound on a change of page by
+  design (`holodori-audio.ts`: "none outlives the page that started it"), and this phase keeps
+  that. Letting it run on is a change of behaviour for the owner to ask for.
+- **Cost**: the router is 5.2 KB gzipped on a first load (the front page 23.2, the grid 40.0,
+  an Arknights dossier 33.7, Path to Nowhere's 47.3, a card 62.6); a page reached by a link
+  loads only the chunks it lacks. The 11 non-dossier pages average 34 KB, 78% under 152.
+- **`<base>` stays** (D6 is still open: the owner's call).
+
 ### Phase 7 — CI and cut-over · M
 - `build:web` becomes `astro build` (the `prebuild:web` index step stays); the artifact path
   stays `dist/web`.

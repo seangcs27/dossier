@@ -1815,8 +1815,8 @@ the SPA is untouched but for `shell.ts`, split out of `index.ts`. `npm run build
 - **`Shell.astro` reads `src/web/index.html`**, split at `<main id="view">`, and does not copy
   it, so the sidebar and topbar are one source for both targets until Phase 8. Run the build
   from `site/` (`npm run build -w site` does): the layout reads `../src/web/index.html`.
-- **A page is a client mount** for now: `initShell(); showShell(view); mount…(#view)` in the
-  page's own script, so it is the SPA's view and matches it to the pixel. Rendering at build
+- **A page is a client mount** for now: `onPage(view, mount…)` in the page's own script (see
+  "Navigation" below), so it is the SPA's view and matches it to the pixel. Rendering at build
   time is Phases 2 and 3.
 - **`<base href="/dossier/">`** is in every page (D6 in the plan, deviated from for now):
   the views and the baked JSON write addresses beside `index.html` (`icons/…`), which one folder
@@ -1858,6 +1858,18 @@ Phase 4).
 **The Arknights dossier** (Phase 5, 25 October 2026; 919 pages, every route the SPA has):
 `site/src/pages/op/[id].astro`, a shell per operator (463) whose script calls `mountDetail` with
 `#view`'s `data-id`; the payload is fetched as in the SPA.
+
+**Navigation** (Phase 6, 25 October 2026) is Astro's `<ClientRouter />` (in `Shell.astro`, with
+no fade): a link swaps the page without a reload, so module state (filters, a card's level and
+bloom) lives for the visit. The sidebar, scrim, topbar and SVG filters persist across the swap
+(`data-astro-transition-persist`, put on them in `Shell.astro`), as the SPA keeps its shell.
+**A page's script runs once**, the first time its page is shown, so every page mounts through
+`onPage(view, mount)` in `site/src/lib/page.ts`, which runs `mount` on each `astro:page-load`
+whose body has that `data-view`; a new page uses it too. `page.ts` also starts the shell once,
+gives a pressed `#/…` link its page's path (`ported.ts`), and carries the tooltip and the
+drawer's body class into the next page. What the SPA undoes on `hashchange` (sound, the clip
+player, the art viewer, the tooltip) also listens to `astro:before-swap`; a timer of a page's
+own stops once its `#view` is not connected.
 
 **The pure render layer** (`src/web/render/`, Phase 2, 24 October 2026) is what lets a page be
 drawn at build time. A renderer is a module `<name>-html.ts` that returns the page's markup

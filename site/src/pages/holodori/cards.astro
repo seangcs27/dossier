@@ -8,10 +8,8 @@ import Shell from '../../layouts/Shell.astro';
 />
 
 <script>
-  import { initShell, showShell } from '@web/shell';
   import { mountHolodoriCards } from '@web/views/holodori-cards';
+  import { onPage } from '../../lib/page';
 
-  initShell();
-  showShell('holodori-cards');
-  mountHolodoriCards(document.getElementById('view')!);
+  onPage('holodori-cards', mountHolodoriCards);
 </script>
