@@ -26,8 +26,8 @@ window.addEventListener('hashchange', stopAudio);
 document.addEventListener('astro:before-swap', stopAudio);
 
 // ── Volume ──
-// One volume for every sound the pages make themselves (the voice lines and a reveal's three
-// parts; a song's clip is YouTube's own player, which has its own), kept in localStorage.
+// One volume for every sound the pages play (the voice lines, a reveal's three parts, and a
+// song's clip, which holodori-clip.ts sets on YouTube's player), kept in localStorage.
 // Every slider and mute button on the page is the same one, found by class and kept in step
 // from here, so a page's views need only put `volumeHtml()` in and ask `getVolume()`.
 

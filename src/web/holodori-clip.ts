@@ -1,4 +1,4 @@
-import { claimAudio, clock, releaseAudio } from './holodori-audio';
+import { claimAudio, clock, getVolume, onVolume, releaseAudio, volumeHtml } from './holodori-audio';
 import type { HolodoriSong } from './holodori-index';
 import { clipButtonHtml, videoOf } from './render/holodori-clip-html';
 
@@ -49,9 +49,19 @@ function paint(): void {
   });
 }
 
-function post(func: string): void {
-  frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: '' }), HOST);
+function post(func: string, args: number[] | '' = ''): void {
+  frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), HOST);
 }
+
+// The clip plays at the site's one volume (holodori-audio.ts), from the slider under the
+// video: in a player this small, YouTube's own slider drops below its speaker with a gap the
+// pointer loses it in.
+function applyVolume(): void {
+  const level = Math.round(getVolume() * 100);
+  post('setVolume', [level]);
+  post(level === 0 ? 'mute' : 'unMute');
+}
+onVolume(applyVolume);
 
 // Pauses the clip, for another sound that starts.
 function halt(): void {
@@ -131,6 +141,7 @@ function build(): HTMLElement {
               referrerpolicy="strict-origin-when-cross-origin"></iframe>
     </div>
     <div class="sc-meta"><b class="sc-title"></b><span class="sc-note"></span></div>
+    <div class="sc-vol">${volumeHtml()}</div>
     <button class="sc-close" type="button" aria-label="Close the player">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"></path></svg>
     </button>
@@ -200,7 +211,9 @@ window.addEventListener('message', (e) => {
     return;
   }
   const info = data.info as { currentTime?: number; playerState?: number } | number | undefined;
-  if (data.event === 'onError') {
+  if (data.event === 'onReady') {
+    applyVolume();
+  } else if (data.event === 'onError') {
     state = 'idle';
     dock!.querySelector<HTMLElement>('.sc-fail')!.hidden = false;
     paint();

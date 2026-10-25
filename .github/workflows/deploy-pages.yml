@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          # The runner's cached 22 can lag a security release (22.23.4, 21 October 2026) by days.
+          check-latest: true
           cache: npm
       - run: npm ci
       # The build downloads ~60 MB of game-data tables from GitHub. Restoring the last run's
