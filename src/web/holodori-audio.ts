@@ -32,15 +32,15 @@ document.addEventListener('astro:before-swap', stopAudio);
 // from here, so a page's views need only put `volumeHtml()` in and ask `getVolume()`.
 
 const VOLUME_KEY = 'holodori-volume';
-let volume = 0.5;
-let before = 0.5;   // what the volume goes back to when mute is pressed again
+let volume = 0.25;
+let before = 0.25;   // what the volume goes back to when mute is pressed again
 const listeners = new Set<() => void>();
 
 try {
   const saved = localStorage.getItem(VOLUME_KEY);
   if (saved !== null && Number.isFinite(Number(saved))) volume = Math.min(1, Math.max(0, Number(saved)));
 } catch {
-  // Storage can be blocked, in a private window; the volume then starts at half.
+  // Storage can be blocked, in a private window; the volume then starts at a quarter.
 }
 if (volume > 0) before = volume;
 

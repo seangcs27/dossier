@@ -11,7 +11,7 @@ import {
 } from '../render/holodori-card-html';
 
 // A hololive Dreams card's own page (#/holodori/card/<id>), after holodori.best's: its
-// illustration (and a 5-star card's animation and signature, which Reveal plays as the game
+// illustration (and a 5-star card's animation and signature, which Play plays as the game
 // does when a card is won), its stats at the level and bloom picked, its skills as that bloom
 // has them, its voice lines and its live dialogues as bubbles with a player. Everything under
 // the head is the card's payload, fetched when the page opens. In the album's world
@@ -79,8 +79,8 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
         movie: cardMovieUrl(card.asset),
         sign: cardSignUrl(card.asset),
         voice: line && (line.ja && speaksJapanese(card.holomem)
-          ? { label: line.label ?? 'Card get', text: line.ja, lang: 'ja' }
-          : { label: line.label ?? 'Card get', text: line.text }),
+          ? { text: line.ja, lang: 'ja' }
+          : { text: line.text }),
       })
       : '');
   };

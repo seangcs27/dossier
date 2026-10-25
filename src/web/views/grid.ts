@@ -11,15 +11,17 @@ import {
   allTags,
   allCollabs,
   gameModeOf,
+  obtainOf,
   serverOf,
   type GameMode,
+  type Obtain,
   type Server,
   type SortKey,
   type TagMode,
 } from '../operator-index';
 import { MODE_LABEL, PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 import { mountCardSpin } from '../card-spin';
-import { focusSelector, watchFilterTab } from '../filter-box';
+import { focusSelector, settlePress, watchFilterTab } from '../filter-box';
 
 const state = {
   query: '',
@@ -32,6 +34,7 @@ const state = {
   collabs: new Set<string>(),
   servers: new Set<Server>(),
   games: new Set<GameMode>(),
+  obtains: new Set<Obtain>(),
   moreOpen: false,
   // Tags and sort live behind a disclosure. They're the least-reached-for controls and
   // the tag list alone is longer than everything above it put together.
@@ -195,7 +198,7 @@ function render(container: HTMLElement): void {
 
 function activeCount(): number {
   return state.classes.size + state.rarities.size + state.tags.size + state.collabs.size
-    + state.subclasses.size + state.servers.size + state.games.size;
+    + state.subclasses.size + state.servers.size + state.games.size + state.obtains.size;
 }
 
 // ── Filter popover: every dimension in one panel, opened from the topbar ──
@@ -279,6 +282,13 @@ function renderMore(): void {
     { id: 'SP', label: 'SP', title: `${MODE_LABEL.SP} only: lent by the mode, never obtained` },
   ];
 
+  // Free operators against the rest, split the same way as Server.
+  const obtainCount = (id: Obtain): number => getOperators().filter(op => obtainOf(op) === id).length;
+  const obtains: { id: Obtain; label: string; title: string }[] = [
+    { id: 'welfare', label: 'Welfare', title: 'Free: an event, an anniversary or Integrated Strategies gives them' },
+    { id: 'other', label: 'Other', title: 'Pulled, recruited or bought' },
+  ];
+
   panel.innerHTML = `
     <div class="filter-group">
       <div class="filter-label">Class</div>
@@ -351,6 +361,18 @@ function renderMore(): void {
       </div>
     </div>
 
+    <div class="filter-group">
+      <div class="filter-label">Obtain</div>
+      <div class="server-row">
+        ${obtains.map(o => `
+          <button class="server-btn${state.obtains.has(o.id) ? ' on' : ''}" data-obtain="${o.id}"
+                  aria-pressed="${state.obtains.has(o.id)}" data-tip="${escHtml(o.title)}">
+            ${o.label}<span>${obtainCount(o.id)}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+
     <button class="filter-disclosure${state.advancedOpen ? ' open' : ''}" id="advanced-toggle"
             aria-expanded="${state.advancedOpen}" aria-controls="advanced-options">
       Advanced options
@@ -405,8 +427,10 @@ function renderMore(): void {
     // The rebuild can leave the control out, a branch tile whose class was just unpicked,
     // so hand the focus to the toggle rather than letting it fall away.
     const target = panel.querySelector<HTMLButtonElement>(refocus);
-    if (target && !target.disabled) target.focus();
-    else document.getElementById('more-toggle')?.focus();
+    if (target && !target.disabled) {
+      target.focus();
+      settlePress(target);
+    } else document.getElementById('more-toggle')?.focus();
   }
 }
 
@@ -456,6 +480,7 @@ function clearAll(): void {
   state.subclasses.clear();
   state.servers.clear();
   state.games.clear();
+  state.obtains.clear();
 }
 
 export function mountGrid(container: HTMLElement): void {
@@ -516,6 +541,12 @@ export function mountGrid(container: HTMLElement): void {
     const game = el.dataset.game as GameMode | undefined;
     if (game) {
       if (state.games.has(game)) state.games.delete(game); else state.games.add(game);
+      refresh();
+      return;
+    }
+    const obtain = el.dataset.obtain as Obtain | undefined;
+    if (obtain) {
+      if (state.obtains.has(obtain)) state.obtains.delete(obtain); else state.obtains.add(obtain);
       refresh();
       return;
     }
