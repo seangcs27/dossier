@@ -876,10 +876,12 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       .ico-play { display: none; }
       .ico-pause { display: inline; }
 
+      // The halo starts outside the disc's white rim: on the disc's edge, in the same pink, it
+      // covered the arc and the ring read as full.
       &::after {
         content: '';
         position: absolute;
-        inset: 0;
+        inset: -6px;
         border: 3px solid #ff4f9a;
         border-radius: 50%;
         pointer-events: none;
@@ -899,7 +901,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
     to {
       opacity: 0;
-      transform: scale(1.7);
+      transform: scale(1.45);
     }
   }
 
