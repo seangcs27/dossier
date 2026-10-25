@@ -1,7 +1,7 @@
 import { endfieldIconUrl, endfieldPortraitUrl, endfieldSplashUrl } from '../../shared/api/hella-api';
 import { getEndfieldOperators, type EndfieldOperator } from '../endfield-index';
 import { escHtml } from '../format';
-import { focusSelector, settlePress, watchFilterTab } from '../filter-box';
+import { focusSelector, riseLines, settlePress, sinkLines, unsink, watchFilterTab } from '../filter-box';
 
 // This page's own search and picks. The box in the topbar and the panel under it are the
 // Arknights grid's too, and whichever grid mounted last has them; each keeps its state to
@@ -305,10 +305,17 @@ export function mountEndfield(container: HTMLElement): void {
     if (el.id === 'clear-filters') {
       for (const picked of Object.values(state.picks)) picked.clear();
       refresh();
-    } else {
-      // The close button only closes.
-      state.moreOpen = el === toggle && !state.moreOpen;
+    } else if (el === toggle && !state.moreOpen) {
+      state.moreOpen = true;
       refreshChrome();
+      riseLines();
+    } else if (!(el === toggle && unsink())) {
+      // The close button only closes; the toggle pressed again while the panel shuts keeps
+      // it open.
+      sinkLines(() => {
+        state.moreOpen = false;
+        refreshChrome();
+      });
     }
     // Clear has just disabled itself and the close button has folded away, and neither can
     // hold the focus then, so it goes to the toggle.
@@ -330,8 +337,10 @@ export function mountEndfield(container: HTMLElement): void {
   document.onpointerdown = (ev) => {
     if (!state.moreOpen || panel.hidden) return;
     if ((ev.target as Element).closest('.topbar-actions')) return;
-    state.moreOpen = false;
-    refreshChrome();
+    sinkLines(() => {
+      state.moreOpen = false;
+      refreshChrome();
+    });
   };
 
   // Escape, while the panel is on screen: the dossier hides it without resetting the state,
@@ -343,8 +352,10 @@ export function mountEndfield(container: HTMLElement): void {
     const target = ev.target as HTMLElement;
     if (target.id === 'search') return;
     const fromPanel = panel.contains(target);
-    state.moreOpen = false;
-    refreshChrome();
+    sinkLines(() => {
+      state.moreOpen = false;
+      refreshChrome();
+    });
     if (fromPanel) toggle.focus();
   };
 }

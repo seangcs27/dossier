@@ -219,8 +219,8 @@ src/
                       the date and clock formatters with no data of their own
     fresh.ts        ← sets the clock-dependent text of a page built at build time from the
                       reader's clock (freshen)
-    filter-box.ts   ← focusSelector, settlePress and watchFilterTab, the search box's and filter
-                      tab's handling every roster shares
+    filter-box.ts   ← focusSelector, settlePress, riseLines, sinkLines and watchFilterTab, the
+                      search box's and filter tab's handling every roster shares
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
                       #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
@@ -782,7 +782,7 @@ squares whose radial gradient leaves the inside of the curve clear, draws the li
 it and fills the rest with the field's fill, with the flat edge's line as a border down one
 side. So the curve is the field's own line and turns the accent with it. The top right one
 fades in with the field's line; the bottom left one, and that corner of the field going
-square, wait 0.42s for the body, which is within 2px of the edge by then. The field's bottom right
+square, wait 0.56s for the body, which is within 2px of the edge by then. The field's bottom right
 corner is a little tighter than the filter's (6px) and is the only line there, with the
 shape solid behind it. Filters gives up its lit state for a quiet outline while the panel
 is open, like Clear beside it. The box is on a layer above the shape. Open, the box's own
@@ -796,9 +796,23 @@ nothing is left hanging under the box when the body has run back up. `grid.ts` m
 through Clear and the close button folding. CSS anchor positioning cannot do that job here:
 a `filter` makes its element the containing block for everything positioned inside it, and
 an anchor has to be reachable from that containing block, so the blocks inside the filtered
-layer cannot anchor to the buttons outside it. Opening scales the body out from under the
-tab on the card's ease (a fast start and a long settle, no rebound) and closing draws it
-back up; the blocks never fade, because the filter cuts on opacity. `#more-filters[hidden]`
+layer cannot anchor to the buttons outside it. **It opens as a folder** (25 October 2026, the
+owner's pick of five tried, after a pour and an iris): the body is clipped, and a strip as
+wide as the tab drops down under it, then the panel opens out from it to the left; closing
+folds it back in and the strip goes up. Two registered numbers, `--fold-down` and
+`--fold-out`, drive the clip's bottom and left edges on timings of their own, so a press
+mid-way turns it round where it is. The blocks never fade, because the filter cuts on
+opacity. Once it is open out, **the panel's lines rise into place one after another**
+(`riseLines` in `filter-box.ts`, 16px over 380 ms, up to 70 ms apart): a line is the largest
+boxes standing at one height, so a frame of buttons moves with its frame and tiles that
+wrap move as two lines. It is played from the press that opens the panel, not from CSS,
+since the panel is rebuilt on every change. **Shutting is the same backwards** (the owner's
+ask): the lines sink out from the last up (`sinkLines`, 12px over 220 ms, up to 40 ms apart),
+and only then does the view close and the folder fold in, about 1 s in all. The view's state
+stays open while they sink, so every way to shut (the toggle, the close button, a press
+outside, Escape) goes through `sinkLines`; the toggle pressed again meanwhile reverses them
+and keeps the panel open (`unsink`). A chevron after the Filters label turns over while the
+panel is open. `#more-filters[hidden]`
 keeps its layout: the shape takes its height from the panel and still has to run back up.
 
 **It animates whatever `prefers-reduced-motion` says, on purpose** (the comment on

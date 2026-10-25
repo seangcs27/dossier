@@ -270,7 +270,7 @@ body {
 .filters-open .search-field {
   border-color: var(--box-line);
   border-radius: var(--box-radius) 0 var(--radius-md) 0;
-  transition: border-color 0.16s, border-bottom-right-radius 0.16s, border-bottom-left-radius 0.1s 0.42s;
+  transition: border-color 0.16s, border-bottom-right-radius 0.16s, border-bottom-left-radius 0.1s 0.56s;
 }
 
 // The hollow at each of those corners: a square the size of the curve and its line, lying
@@ -313,7 +313,7 @@ body {
 }
 
 .filters-open .search-field::before { opacity: 1; transition-duration: 0.16s; }
-.filters-open .search-field::after { opacity: 1; transition: opacity 0.1s 0.42s; }
+.filters-open .search-field::after { opacity: 1; transition: opacity 0.1s 0.56s; }
 
 // The buttons' part: no fill or line of its own, only the inset. The 1px short of it is the
 // box's border, which the inset is measured from.
@@ -334,6 +334,21 @@ body {
   background: transparent;
   border-color: var(--border);
 }
+
+// After the label, turned over while the panel is open.
+.filter-chev {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.filters-open .filter-chev { transform: rotate(180deg); }
 
 // The box's leading icon, and its clear button: a magnifier while the box is empty, turning
 // into a cross once there is something to clear. Disabled it is decoration, and lets a click
@@ -657,31 +672,47 @@ body {
   height: calc(var(--box-h, 38px) - 1px);
 }
 
-// Scale is the whole animation, with no fade: the filter cuts on opacity, so a block at
-// half strength would not look faint, it would vanish. Opening, the ease is the card's: a
-// fast start and a long settle with no rebound, the way something thick pours. Closing
-// takes its time too; a quick ease-in was over before it read as anything but the panel
-// vanishing. What makes it move like a liquid is the filter, rounding the join as the body
-// runs out from under the tab.
+// The clip is the whole animation, with no fade: the filter cuts on opacity, so a block at
+// half strength would not look faint, it would vanish.
 //
 // It starts at the box's lower edge, not up behind the box, so the shape turns round the
 // end of the field: the turn that shows is the field's own bottom right corner, with the
 // tab and the body solid behind it.
+//
+// The folder: a strip as wide as the tab drops down under it (--fold-down, 0 to 1), then
+// the panel opens out from it to the left (--fold-out); closing, it folds back in under the
+// tab and the strip goes up into it. Two registered numbers, so that each edge of the clip
+// has its own timing and a press mid-way turns it round where it is. The clip's top stands
+// above the box by the stub's height (below), which shows once the panel is open out. The
+// filter rounds the moving edges as it does every corner.
+@property --fold-down {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --fold-out {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
 .blob-body {
   top: var(--box-h, 38px);
   left: 1px;
   bottom: 1px;
-  transform: scale(0.4, 0);
-  // Under the middle of the tab, which is where it pours from.
-  transform-origin: calc(100% - var(--tab-w, 92px) / 2) 0;
-  transition: transform 0.38s ease-in-out;
+  clip-path: inset(
+    calc(-1 * var(--sp-12)) 0 calc((1 - var(--fold-down)) * 100%)
+    calc((1 - var(--fold-out)) * (100% - var(--tab-w, 92px)))
+  );
+  transition: --fold-out 0.22s ease-in, --fold-down 0.2s ease-in 0.18s;
 }
 
 // The body's top left corner would come out round as well, and pinch in under the field's.
 // A stub standing up from that corner, behind the field, takes the rounding up out of
 // sight with it, so the left edge that shows runs straight down from the field's; the round
 // corner seen beside it is the field's hollow again (.search-field::after). It is part of
-// the body and scales with it: nothing of it is left once the body has run back up.
+// the body and the fold clips it with the rest: nothing of it is left once the panel is shut.
 .blob-body::before {
   content: '';
   position: absolute;
@@ -692,7 +723,11 @@ body {
   background: inherit;
 }
 
-.filters-open .blob-body { transform: none; transition: transform 0.52s cubic-bezier(0.2, 0.9, 0.2, 1) 0.06s; }
+.filters-open .blob-body {
+  --fold-down: 1;
+  --fold-out: 1;
+  transition: --fold-down 0.28s cubic-bezier(0.4, 0, 0.2, 1) 0.06s, --fold-out 0.36s cubic-bezier(0.2, 0.9, 0.2, 1) 0.3s;
+}
 
 // No box of its own: the blob behind it is the panel. Hidden, it keeps its place in the
 // layout, since the blob takes its height from it and still has to run back up.
@@ -711,8 +746,9 @@ body {
   &::-webkit-scrollbar-track { margin-bottom: var(--sp-4); }
 }
 
-// The content arrives once the blob has mostly landed.
-.filters-open #more-filters { opacity: 1; transition: opacity 0.2s 0.26s; }
+// The content is there at once; its lines rise in one after another as the folder opens
+// (riseLines in filter-box.ts).
+.filters-open #more-filters { opacity: 1; transition: none; }
 
 // A filter control held down while pressed; its replacement settles from here (settlePress
 // in filter-box.ts), since the panel is rebuilt on every change.

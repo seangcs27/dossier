@@ -1,6 +1,6 @@
 import { escHtml } from './format';
 import { mountCardSpin } from './card-spin';
-import { focusSelector, settlePress, watchFilterTab } from './filter-box';
+import { focusSelector, riseLines, settlePress, sinkLines, unsink, watchFilterTab } from './filter-box';
 
 /**
  * One card on the roster of a game that is not Arknights or Endfield: the plate the
@@ -418,10 +418,17 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
     if (el.id === 'clear-filters') {
       for (const f of filters) picksOf(state, f.key).clear();
       refresh();
-    } else {
-      // The close button only closes.
-      state.open = el === toggle && !state.open;
+    } else if (el === toggle && !state.open) {
+      state.open = true;
       refreshChrome();
+      riseLines();
+    } else if (!(el === toggle && unsink())) {
+      // The close button only closes; the toggle pressed again while the panel shuts keeps
+      // it open.
+      sinkLines(() => {
+        state.open = false;
+        refreshChrome();
+      });
     }
     // Clear has just disabled itself and the close button has folded away, and neither can
     // hold the focus then, so it goes to the toggle.
@@ -450,8 +457,10 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
   document.onpointerdown = (ev) => {
     if (!state.open || panel.hidden) return;
     if ((ev.target as Element).closest('.topbar-actions')) return;
-    state.open = false;
-    refreshChrome();
+    sinkLines(() => {
+      state.open = false;
+      refreshChrome();
+    });
   };
 
   // Escape, while the panel is on screen. Never from the search box, where Escape is the
@@ -461,8 +470,10 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
     const target = ev.target as HTMLElement;
     if (target.id === 'search') return;
     const fromPanel = panel.contains(target);
-    state.open = false;
-    refreshChrome();
+    sinkLines(() => {
+      state.open = false;
+      refreshChrome();
+    });
     if (fromPanel) toggle.focus();
   };
 
