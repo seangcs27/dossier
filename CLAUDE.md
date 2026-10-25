@@ -1596,8 +1596,8 @@ today's are on the sun, and the card is ringed in it with "Today" on its head.
 **The game itself has two pages, Songs and Cards** (`views/holodori-songs.ts`,
 `views/holodori-cards.ts`), built on 17 October 2026 after the owner asked where the game's
 details were. Both are `mountRoster` pages with search, filters and orders, on the sheet's
-dotted paper. **Songs**: a press turns a jacket over to its back (`holodori-flip.ts`). a jacket over the title, the
-singers' faces and the four charts' levels in their colours (Easy, Normal, Hard, Expert);
+dotted paper. **Songs**: a press turns a jacket over to its back (`holodori-flip.ts`). a jacket over the title (two lines held for every title, so a
+row's singers and levels line up), the singers' faces and the four charts' levels in their colours (Easy, Normal, Hard, Expert);
 the back has the length, the day it was added, the credits, how it is unlocked, the music
 video and the copyright line. **A disc on the jacket's corner plays the song's chorus**
 (20 October 2026, the owner's ask; 205 of 219 songs, the ones with a music video): the part
@@ -1620,10 +1620,13 @@ graph where the game's chorus could be in the full version, 3 s before it, for t
 the game's chorus. It is an estimate, which the song carries as `estimated` and the player
 words "Highlight" instead of "Chorus"; the same pick on the 32 songs whose lengths line up
 fell within 8 s of the game's own window 29 times in 32, over a narrow range. The same file
-gives two songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
-channel, the game's length); 12 songs still have no disc: 10 older ones whose only uploads
-are the full-length audio or a different version, and Amaryllis and CORE//UNBREAKABLE,
-dated 23 and 25 October, which have no video yet. A new song's link comes from the dump,
+gives four songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
+channel, the game's length; Amaryllis and CORE//UNBREAKABLE added 25 October); 10 songs
+still have no disc, older ones whose only uploads are the full-length audio or a different
+version. **The clip plays at the site's volume** (25 October 2026), from a speaker and
+slider under the video that set YouTube's volume over `postMessage`: in a player that small
+YouTube's own slider drops below its speaker, and the owner found the pointer lost it on the
+way. A new song's link comes from the dump,
 and its game window is used as it is until someone checks its length. Filters: Original /
 Cover, branch, singer; orders: Newest, Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
 of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy),
@@ -1684,10 +1687,10 @@ waveform to press for a place in it (a shape for the eye, from the line's name, 
 from the audio). A dialogue has Play conversation, and one dock, pinned to the window's foot
 while the voices are on screen, has previous, next, play, the line's waveform, its time, a
 volume and a speed. **The volume** (a speaker that mutes and a slider, `volumeHtml()` in
-`holodori-audio.ts`, the owner's "make voice adjustable") is one for the voice lines and a
-reveal's three parts, starting at 50% (the owner's pick, 21 October), kept in `localStorage`
-and the same wherever it stands on the page; a
-song's clip is YouTube's own player, which has its own. One sound plays at a time across
+`holodori-audio.ts`, the owner's "make voice adjustable") is one for the voice lines, a
+reveal's three parts and a song's clip, starting at 50% (the owner's pick, 21 October,
+confirmed 25 October), kept in `localStorage` and the same wherever it stands on the page.
+One sound plays at a time across
 the site (a reveal, a line or a chorus stops the one before), and a change of page stops it. The page keeps its stage
 and voices when a bloom or the payload redraws the rest, so that nothing playing is cut.
 The level and bloom are kept from one card to the next; the level opens at the card's top. Previous and
