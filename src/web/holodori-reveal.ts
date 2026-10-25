@@ -63,6 +63,29 @@ export function revealHtml(r: Reveal): string {
   `;
 }
 
+// The signature's colour half and its matte half, each onto its own canvas. Once the video
+// has ended its frame is empty, so the canvases keep the one before.
+function paintSign(sign: HTMLVideoElement, ink: CanvasRenderingContext2D, matte: CanvasRenderingContext2D): void {
+  if (sign.readyState < 2 || !sign.videoHeight || sign.ended) return;
+  const half = sign.videoHeight / 2;
+  ink.drawImage(sign, 0, 0, sign.videoWidth, half, 0, 0, 1280, 720);
+  matte.drawImage(sign, 0, half, sign.videoWidth, half, 0, 0, 1280, 720);
+}
+
+/** Draws the stage's looping signature (the card page's Signature) over its art, for as long as it is on the page. */
+export function loopSign(stage: HTMLElement): void {
+  const sign = stage.querySelector<HTMLVideoElement>('.rv-sign');
+  if (!sign) return;
+  const ink = stage.querySelector<HTMLCanvasElement>('.rv-ink')!.getContext('2d')!;
+  const matte = stage.querySelector<HTMLCanvasElement>('.rv-matte')!.getContext('2d')!;
+  const loop = (): void => {
+    if (!sign.isConnected) return;
+    paintSign(sign, ink, matte);
+    requestAnimationFrame(loop);
+  };
+  loop();
+}
+
 /** Plays the reveal laid out by `revealHtml` in `stage`, from a press. */
 export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   const find = <T extends HTMLElement>(selector: string): T => stage.querySelector<T>(selector)!;
@@ -92,14 +115,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   const stopVolume = onVolume(applyVolume);
   applyVolume();
 
-  // The signature's colour half and its matte half, each onto its own canvas. Once the video
-  // has ended its frame is empty, so the canvases keep the one before.
-  function drawSign(): void {
-    if (sign.readyState < 2 || !sign.videoHeight || sign.ended) return;
-    const half = sign.videoHeight / 2;
-    ink.drawImage(sign, 0, 0, sign.videoWidth, half, 0, 0, 1280, 720);
-    matte.drawImage(sign, 0, half, sign.videoWidth, half, 0, 0, 1280, 720);
-  }
+  const drawSign = (): void => paintSign(sign, ink, matte);
 
   // The line first, then the animation and the signature side by side: the tracks run in that
   // order along the whole, and fill as each plays.

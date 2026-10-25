@@ -4,7 +4,7 @@ import {
   cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, voiceUrl,
   type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
-import { playReveal, revealHtml } from '../holodori-reveal';
+import { loopSign, playReveal, revealHtml } from '../holodori-reveal';
 import { voiceClick } from '../holodori-voice';
 import {
   bodyHtml, cardHtml, headHtml, readoutHtml, stageHtml, voicesHtml, type Shown,
@@ -121,6 +121,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
       stopAudio();
       shown = show.dataset.show as Shown;
       drawStage();
+      if (shown === 'sign') loopSign(page()!.querySelector<HTMLElement>('.hc-stage')!);
       page()?.querySelector<HTMLElement>(`[data-show="${shown}"]`)?.focus();
     } else if (target.closest('.hc-art')) {
       openArtViewer(

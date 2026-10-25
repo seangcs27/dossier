@@ -1527,6 +1527,14 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .hc-reveal:is([data-ph='end'], [data-ph='done']) .rv-art { opacity: 1; }
 
+  // The card page's Signature: the reveal's screen with the art under the writing throughout,
+  // and no bar under it.
+  .hc-sign {
+    border-radius: 17px;
+
+    .rv-art { opacity: 1; }
+  }
+
   // The signature's video only feeds the two canvases that show it: the matte, inverted and
   // multiplied in to clear the strokes' place, then the writing screened in over it.
   .rv-screen .rv-sign {

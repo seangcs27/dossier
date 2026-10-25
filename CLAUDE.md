@@ -1655,7 +1655,9 @@ cannot be had.
 October 2026, the owner's "card pages first"), after holodori.best's card page: its
 illustration in its rarity's frame (opening the art viewer on the CDN's full-size file),
 with an Animation and a Signature beside it on a 5-star card (84 of 192), played from the
-CDN, and **Reveal** (`holodori-reveal.ts`, 20 October 2026), which plays the two and the
+CDN (the Signature drawn over the art as the reveal draws it, `loopSign`: played as it is,
+its two halves, below, showed as the writing doubled and off its place; 25 October 2026,
+checked against a recording of the game), and **Reveal** (`holodori-reveal.ts`, 20 October 2026), which plays the two and the
 card-get line as the game does for a card won, from one tap (a browser lets a page play
 sound only after one). **The order is read off a recording of a real 5-star pull** (a
 YouTube video, 21 October 2026; frames sampled and its audio's loudness measured in the
