@@ -946,6 +946,43 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     touch-action: none;
   }
 
+  // The handle the player is resized by, in its upper left corner over the grip.
+  .sc-size {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 18px 0 0;
+    background: transparent;
+    color: #d3d6ff;
+    cursor: nwse-resize;
+    touch-action: none;
+
+    svg {
+      width: 10px;
+      height: 10px;
+      fill: none;
+      stroke: currentcolor;
+      stroke-linecap: round;
+      stroke-width: 1.6;
+    }
+
+    &:hover { color: #fff; }
+    &:focus-visible { outline: 3px solid $sun; outline-offset: -3px; }
+  }
+
+  // The video would take the pointer from the handle once it is over it.
+  .sc-dock.is-sizing {
+    user-select: none;
+
+    iframe { pointer-events: none; }
+  }
+
   .sc-dock.is-moving {
     user-select: none;
 

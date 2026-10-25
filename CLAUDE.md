@@ -1608,7 +1608,9 @@ the point: the songs are COVER's and the publishers', and COVER's guidelines lea
 a song as it is out of what they allow. The player stays in view in the window's corner
 while it plays, as YouTube's API policy wants, and can be moved (the owner's ask, 21
 October): by the grip along its top, its title, or the arrow keys on the grip, kept inside
-the window and remembered while the page is open. The disc has a ring that is always there
+the window and remembered while the page is open; and resized (25 October), by a handle in
+its upper left corner or the arrow keys on it, from 240px wide to as large as the window
+holds it, keeping its lower right corner where it was. The disc has a ring that is always there
 and a pink arc that fills from the time the player reports over `postMessage`, with a halo
 going out from it while the clip plays. **The game's chorus window is in the game's own cut
 of the song, which is about 2 minutes, and the dump's `mvUrl` is most often the full music

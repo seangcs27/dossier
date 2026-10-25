@@ -128,6 +128,59 @@ function wireMove(el: HTMLElement): void {
   });
 }
 
+// The player's width once it has been resized, kept for the next time it opens; its height
+// follows from the video's. Until it is resized the width is the stylesheet's.
+let size: number | undefined;
+const MIN_WIDTH = 240;
+
+// Gives the player as much of `width` as the window has room for, keeping its lower right
+// corner where it was, since the handle is at its upper left.
+function sizeTo(el: HTMLElement, width: number): void {
+  const box = el.getBoundingClientRect();
+  const video = el.querySelector<HTMLElement>('.sc-frame')!;
+  const sides = el.offsetWidth - video.offsetWidth;
+  const rest = el.offsetHeight - video.offsetHeight;
+  const most = Math.min(box.right - EDGE, ((box.bottom - EDGE - rest) * 16) / 9 + sides);
+  el.style.width = `${Math.round(Math.max(MIN_WIDTH, Math.min(width, most)))}px`;
+  if (place) moveTo(el, box.right - el.offsetWidth, box.bottom - el.offsetHeight);
+}
+
+// The player is resized by the handle at its upper left, dragged up or left to grow, or with
+// the arrow keys on it.
+function wireSize(el: HTMLElement): void {
+  const handle = el.querySelector<HTMLElement>('.sc-size')!;
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const from = el.offsetWidth;
+    // The axis the pointer has moved further along decides, so a drag along either one works.
+    const drag = (m: PointerEvent): void => {
+      const across = e.clientX - m.clientX;
+      const up = ((e.clientY - m.clientY) * 16) / 9;
+      sizeTo(el, from + (Math.abs(across) >= Math.abs(up) ? across : up));
+      size = el.offsetWidth;
+    };
+    const drop = (): void => {
+      el.classList.remove('is-sizing');
+      handle.removeEventListener('pointermove', drag);
+      handle.removeEventListener('pointerup', drop);
+      handle.removeEventListener('pointercancel', drop);
+    };
+    handle.setPointerCapture(e.pointerId);
+    el.classList.add('is-sizing');
+    handle.addEventListener('pointermove', drag);
+    handle.addEventListener('pointerup', drop);
+    handle.addEventListener('pointercancel', drop);
+    e.preventDefault();
+  });
+  handle.addEventListener('keydown', (e) => {
+    const step = { ArrowLeft: 32, ArrowUp: 32, ArrowRight: -32, ArrowDown: -32 }[e.key];
+    if (!step) return;
+    sizeTo(el, el.offsetWidth + step);
+    size = el.offsetWidth;
+    e.preventDefault();
+  });
+}
+
 function build(): HTMLElement {
   const el = document.createElement('aside');
   el.className = 'sc-dock';
@@ -135,6 +188,9 @@ function build(): HTMLElement {
   el.innerHTML = `
     <button class="sc-grip" type="button" aria-label="Move the player: drag, or use the arrow keys">
       <svg viewBox="0 0 24 6" aria-hidden="true"><circle cx="6" cy="3" r="1.4"></circle><circle cx="12" cy="3" r="1.4"></circle><circle cx="18" cy="3" r="1.4"></circle></svg>
+    </button>
+    <button class="sc-size" type="button" aria-label="Resize the player: drag, or use the arrow keys">
+      <svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 9L9 1M1 5L5 1"></path></svg>
     </button>
     <div class="sc-frame">
       <iframe title="Music video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen
@@ -149,6 +205,8 @@ function build(): HTMLElement {
   `;
   document.body.append(el);
   wireMove(el);
+  wireSize(el);
+  if (size) el.style.width = `${size}px`;
   if (place) moveTo(el, place.x, place.y);
   frame = el.querySelector('iframe')!;
   // The player talks only to a page that says it is listening, once it has loaded.
@@ -249,5 +307,6 @@ document.addEventListener('astro:before-swap', shut);
 
 // A smaller window must not leave it out of reach.
 window.addEventListener('resize', () => {
+  if (dock && size) sizeTo(dock, size);
   if (dock && place) moveTo(dock, place.x, place.y);
 });
