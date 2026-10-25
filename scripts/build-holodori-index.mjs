@@ -54,6 +54,8 @@ const JACKET_PATH = 'holodori/jackets';
 const JACKET_W = 240;
 
 const DB = 'https://raw.githubusercontent.com/HolodoriDB/holodori-db-eng-diff/main';
+// The same dump's Japanese edition, read for the voice lines' Japanese alone.
+const DB_JA = 'https://raw.githubusercontent.com/HolodoriDB/holodori-db-jpn-diff/main';
 const SITE = 'https://www.hololive-dreams.com/en/holomem';
 const MUSIC_PAGE = 'https://www.hololive-dreams.com/en/music';
 
@@ -369,6 +371,12 @@ function groupBy(rows, key, order) {
 }
 
 async function buildCards() {
+  // A JP holomem's reveal shows her line in Japanese, as she says it. Without it the reveal
+  // shows the English, so it is not worth failing the cards for.
+  const jaVoices = fetchJson(`${DB_JA}/LangCharacterVoice_Jpn.json`).catch((err) => {
+    console.warn(`holodori: no Japanese voice text: ${err.message}`);
+    return [];
+  });
   const [
     cards, levels, limits, potentials, passives, actives, specials, connects, costumes, leaders, targets,
     voices, dialogues, ...texts
@@ -383,6 +391,7 @@ async function buildCards() {
   ].map(table));
   // A voice table's row can have no text at all.
   const text = new Map(texts.flat().map(t => [t.id, (t.text ?? '').trim()]));
+  const ja = new Map((await jaVoices).map(({ data: t }) => [t.id, (t.text ?? '').trim()]));
   // A card's type ('Cute', 'Pure', 'Happy') is named nowhere but in the skills that aim at
   // it: a target's text is '1 [attribute=cute]Cute Type[/attribute] Members'.
   const typeOf = new Map();
@@ -446,7 +455,10 @@ async function buildCards() {
       outfitSkill: leader ? text.get(leader.descriptionLangId) ?? '' : '',
       voices: VOICES.flatMap(([key, label]) => {
         const v = voiceOf.get(c[key]);
-        return v ? [{ label, text: text.get(v.textLangId) ?? '', audio: v.voiceAssetId }] : [];
+        return v ? [{
+          label, text: text.get(v.textLangId) ?? '', ...(ja.get(v.textLangId) ? { ja: ja.get(v.textLangId) } : {}),
+          audio: v.voiceAssetId,
+        }] : [];
       }),
       dialogues: dialogues.filter(d => d.id.startsWith(prefix) && !d.id.endsWith('_myself'))
         .sort((a, b) => a.order - b.order)

@@ -1,10 +1,10 @@
 import { openArtViewer } from '../art-viewer';
 import { getVolume, paintVolume, stopAudio } from '../holodori-audio';
 import {
-  cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, voiceUrl,
+  cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, voiceUrl,
   type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
-import { playReveal, revealHtml } from '../holodori-reveal';
+import { loopSign, playReveal, revealHtml } from '../holodori-reveal';
 import { voiceClick } from '../holodori-voice';
 import {
   bodyHtml, cardHtml, headHtml, readoutHtml, stageHtml, voicesHtml, type Shown,
@@ -26,6 +26,12 @@ let bloom = 0;
 
 // The line a card's reveal plays with its signature, which a 5-star card has first.
 const cardGet = (d: HolodoriCardDetail): HolodoriLine | undefined => d.voices.find(v => v.label === 'Card get') ?? d.voices[0];
+
+// The branches whose holomems speak Japanese in the game. Their reveal shows the line as they
+// say it, not the English subtitle; EN and ID holomems say the English line.
+const JAPANESE = new Set(['hololive', 'DEV_IS']);
+const speaksJapanese = (holomem: string): boolean =>
+  JAPANESE.has(getHolodoriCharacters().find(h => h.id === holomem)?.branch ?? '');
 
 /**
  * Mounts the page. A page the Astro site drew at build time comes with its payload (`inlined`):
@@ -72,7 +78,9 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
         poster: card.full ?? '',
         movie: cardMovieUrl(card.asset),
         sign: cardSignUrl(card.asset),
-        voice: line && { label: line.label ?? 'Card get', text: line.text },
+        voice: line && (line.ja && speaksJapanese(card.holomem)
+          ? { label: line.label ?? 'Card get', text: line.ja, lang: 'ja' }
+          : { label: line.label ?? 'Card get', text: line.text }),
       })
       : '');
   };
@@ -113,6 +121,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
       stopAudio();
       shown = show.dataset.show as Shown;
       drawStage();
+      if (shown === 'sign') loopSign(page()!.querySelector<HTMLElement>('.hc-stage')!);
       page()?.querySelector<HTMLElement>(`[data-show="${shown}"]`)?.focus();
     } else if (target.closest('.hc-art')) {
       openArtViewer(

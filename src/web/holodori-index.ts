@@ -101,6 +101,7 @@ export interface HolodoriLine {
   label?: string;       // 'Card get', 'Bloom 1'
   holomem?: string;     // who says it, in a dialogue
   text: string;
+  ja?: string;          // the same line in Japanese, a card's voice lines only
   audio: string;        // 'vo_card_cmn_00006_…'; see voiceUrl()
 }
 

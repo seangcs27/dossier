@@ -65,7 +65,17 @@ export function stageHtml(card: HolodoriCard, shown: Shown, reveal = ''): string
            ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
          </button>
          ${card.movie ? '<button class="rv-go" type="button" data-reveal>Reveal</button>' : ''}`
-      : `<video src="${escHtml(shown === 'movie' ? cardMovieUrl(card.asset) : cardSignUrl(card.asset))}" poster="${escHtml(poster)}"
+      : shown === 'sign'
+        // The signature's video is its writing over a matte of it, one above the other: shown
+        // as it is, the box showed the foot of the one over the head of the other. It is drawn
+        // over the art as the reveal draws it (holodori-reveal.ts, loopSign).
+        ? `<div class="rv-screen hc-sign">
+             ${poster ? `<img class="rv-art" src="${escHtml(poster)}" alt="">` : ''}
+             <video class="rv-sign" src="${escHtml(cardSignUrl(card.asset))}" autoplay muted loop playsinline></video>
+             <canvas class="rv-matte" width="1280" height="720"></canvas>
+             <canvas class="rv-ink" width="1280" height="720"></canvas>
+           </div>`
+        : `<video src="${escHtml(cardMovieUrl(card.asset))}" poster="${escHtml(poster)}"
                 autoplay muted loop playsinline controls></video>`;
   const tabs: [Shown, string][] = [['reveal', 'Reveal'], ['art', 'Illustration'], ['movie', 'Animation'], ['sign', 'Signature']];
   return `
