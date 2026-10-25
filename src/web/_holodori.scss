@@ -859,7 +859,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .ring-on {
       stroke: #ff4f9a;
       stroke-dasharray: 100;
-      stroke-dashoffset: calc(100 - var(--p, 0) * 100);
+      // In px, not a bare number: Firefox drops a unitless calc() here and draws the arc full.
+      stroke-dashoffset: calc((1 - var(--p, 0)) * 100px);
       stroke-linecap: round;
       transform: rotate(-90deg);
       transform-origin: 50% 50%;
