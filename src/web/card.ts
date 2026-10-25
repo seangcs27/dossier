@@ -1,6 +1,6 @@
 import { escHtml } from './format';
 import { mountCardSpin } from './card-spin';
-import { focusSelector, riseGroups, settlePress, watchFilterTab } from './filter-box';
+import { focusSelector, riseLines, settlePress, watchFilterTab } from './filter-box';
 
 /**
  * One card on the roster of a game that is not Arknights or Endfield: the plate the
@@ -422,7 +422,7 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
       // The close button only closes.
       state.open = el === toggle && !state.open;
       refreshChrome();
-      if (state.open) riseGroups();
+      if (state.open) riseLines();
     }
     // Clear has just disabled itself and the close button has folded away, and neither can
     // hold the focus then, so it goes to the toggle.

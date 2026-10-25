@@ -746,8 +746,8 @@ body {
   &::-webkit-scrollbar-track { margin-bottom: var(--sp-4); }
 }
 
-// The content is there at once; its groups rise in one after another as the folder opens
-// (riseGroups in filter-box.ts).
+// The content is there at once; its lines rise in one after another as the folder opens
+// (riseLines in filter-box.ts).
 .filters-open #more-filters { opacity: 1; transition: none; }
 
 // A filter control held down while pressed; its replacement settles from here (settlePress

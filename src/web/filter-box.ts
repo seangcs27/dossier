@@ -23,16 +23,43 @@ export function settlePress(control: HTMLElement): void {
   );
 }
 
-// The panel's groups rising into place one after another as it opens, once the shape behind
-// them has mostly grown (styles.scss). Played from the press that opens it, not from CSS:
-// the panel is rebuilt on every change, and a CSS animation would play again on each.
-export function riseGroups(): void {
-  Array.from(document.getElementById('more-filters')!.children).forEach((group, i) => {
-    group.animate(
-      [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
-      { duration: 260, delay: 360 + i * 45, easing: 'ease-out', fill: 'backwards' },
-    );
-  });
+// The panel's lines rising into place one after another as it opens, once the folder behind
+// them has opened out (styles.scss): a group's name, then each line its buttons wrap to, down
+// the whole panel. A line is whatever stands at the same height, so it holds for any game's
+// panel. Played from the press that opens it, not from CSS: the panel is rebuilt on every
+// change, and a CSS animation would play again on each.
+export function riseLines(): void {
+  const panel = document.getElementById('more-filters')!;
+  // What a line is made of: the largest boxes that each stand on one line, so a row of
+  // buttons in a frame of its own (Server, Game mode) moves with its frame, and tiles that
+  // wrap to two lines move as two.
+  const found: { el: Element; top: number }[] = [];
+  const split = (el: Element): void => {
+    const kids = Array.from(el.children)
+      .map(kid => ({ el: kid, box: kid.getBoundingClientRect() }))
+      .filter(kid => kid.box.height > 0);
+    const tops = kids.map(kid => kid.box.top);
+    if (el !== panel && (el.matches('button') || !kids.length || Math.max(...tops) - Math.min(...tops) <= 6)) {
+      found.push({ el, top: el.getBoundingClientRect().top });
+    } else kids.forEach(kid => split(kid.el));
+  };
+  split(panel);
+  const parts = found.sort((a, b) => a.top - b.top);
+  const lines: Element[][] = [];
+  let top = -Infinity;
+  for (const part of parts) {
+    if (part.top - top > 6) {
+      lines.push([]);
+      top = part.top;
+    }
+    lines[lines.length - 1].push(part.el);
+  }
+  // A tall panel's lines come closer together, so the last is in place within about 1.6 s.
+  const gap = Math.min(70, 840 / lines.length);
+  lines.forEach((line, i) => line.forEach(el => el.animate(
+    [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'none' }],
+    { duration: 380, delay: 360 + i * gap, easing: 'cubic-bezier(0.2, 0.9, 0.2, 1)', fill: 'backwards' },
+  )));
 }
 
 // Watches the two sizes the filter panel's shape is drawn from (.filter-blob in styles.scss):

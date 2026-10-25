@@ -1,7 +1,7 @@
 import { endfieldIconUrl, endfieldPortraitUrl, endfieldSplashUrl } from '../../shared/api/hella-api';
 import { getEndfieldOperators, type EndfieldOperator } from '../endfield-index';
 import { escHtml } from '../format';
-import { focusSelector, riseGroups, settlePress, watchFilterTab } from '../filter-box';
+import { focusSelector, riseLines, settlePress, watchFilterTab } from '../filter-box';
 
 // This page's own search and picks. The box in the topbar and the panel under it are the
 // Arknights grid's too, and whichever grid mounted last has them; each keeps its state to
@@ -309,7 +309,7 @@ export function mountEndfield(container: HTMLElement): void {
       // The close button only closes.
       state.moreOpen = el === toggle && !state.moreOpen;
       refreshChrome();
-      if (state.moreOpen) riseGroups();
+      if (state.moreOpen) riseLines();
     }
     // Clear has just disabled itself and the close button has folded away, and neither can
     // hold the focus then, so it goes to the toggle.
