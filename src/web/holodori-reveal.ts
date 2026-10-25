@@ -20,7 +20,7 @@ export interface Reveal {
   poster: string;
   movie: string;
   sign: string;
-  voice?: { label: string; text: string };
+  voice?: { label: string; text: string; lang?: string };
 }
 
 // Seconds the white screen is held after the line ends, before the animation.
@@ -44,7 +44,7 @@ export function revealHtml(r: Reveal): string {
       ${r.voice ? `
         <div class="rv-intro">
           <b class="rv-voice-lab">${escHtml(r.voice.label)}</b>
-          <p class="vl-text rv-line"><span>${text}</span><span class="vl-fill" aria-hidden="true">${text}</span></p>
+          <p class="vl-text rv-line"${r.voice.lang ? ` lang="${r.voice.lang}"` : ''}><span>${text}</span><span class="vl-fill" aria-hidden="true">${text}</span></p>
         </div>` : ''}
     </div>
     <div class="rv-bar">

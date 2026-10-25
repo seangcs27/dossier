@@ -1661,7 +1661,10 @@ sound only after one). **The order is read off a recording of a real 5-star pull
 YouTube video, 21 October 2026; frames sampled and its audio's loudness measured in the
 browser, nothing downloaded): the line is said first, on a white screen with its words
 (here the line's karaoke fill, in the holomem's colour; the audio is loud for about 1.5 s
-there and silent for the rest), then the animation plays and the signature is written
+there and silent for the rest; the words are what she says, so a holomem of the hololive or
+DEV_IS branch has the game's own Japanese, from the dump's Japanese edition
+(`holodori-db-jpn-diff`, `LangCharacterVoice_Jpn`, a voice line's `ja`; 25 October 2026), and
+an EN or ID holomem the English), then the animation plays and the signature is written
 over it from the same instant. The animation is silent, begins on a white burst (which is
 why the white screen leads into it) and ends on a flash, after which the card's own art
 comes up under the signature, which stays. The owner's asks that led here: "can they all
