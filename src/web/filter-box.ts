@@ -30,7 +30,7 @@ export function riseGroups(): void {
   Array.from(document.getElementById('more-filters')!.children).forEach((group, i) => {
     group.animate(
       [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
-      { duration: 260, delay: 220 + i * 45, easing: 'ease-out', fill: 'backwards' },
+      { duration: 260, delay: 360 + i * 45, easing: 'ease-out', fill: 'backwards' },
     );
   });
 }
