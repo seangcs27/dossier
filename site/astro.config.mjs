@@ -19,7 +19,7 @@ export default defineConfig({
     // The pages are built from the repo's own sources, which sit above this folder.
     server: { fs: { allow: ['..'] } },
     build: {
-      rollupOptions: {
+      rolldownOptions: {
         output: {
           // The stylesheet goes at the site's root, as webpack's does. A relative address in a
           // custom property ('--logo: url(icons/games/arknights.webp)', in the markup and in
