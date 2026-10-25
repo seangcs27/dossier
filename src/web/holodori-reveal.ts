@@ -20,7 +20,7 @@ export interface Reveal {
   poster: string;
   movie: string;
   sign: string;
-  voice?: { label: string; text: string; lang?: string };
+  voice?: { text: string; lang?: string };
 }
 
 // Seconds the white screen is held after the line ends, before the animation.
@@ -30,7 +30,7 @@ const HOLD = 0.4;
 // the frame this many seconds before the end is the one that stays over the art.
 const FADE = 0.6;
 
-/** The reveal's screen, its three tracks and its buttons, in place of a stage's picture. */
+/** The reveal's screen, its three tracks with the seek bar over them and its buttons, in place of a stage's picture. */
 export function revealHtml(r: Reveal): string {
   const text = r.voice ? escHtml(r.voice.text).replace(/\n/g, '<br>') : '';
   const rows = [['Voice line', !!r.voice], ['Animation', true], ['Signature', true]] as const;
@@ -43,8 +43,7 @@ export function revealHtml(r: Reveal): string {
       <canvas class="rv-ink" width="1280" height="720"></canvas>
       ${r.voice ? `
         <div class="rv-intro">
-          <b class="rv-voice-lab">${escHtml(r.voice.label)}</b>
-          <p class="vl-text rv-line"${r.voice.lang ? ` lang="${r.voice.lang}"` : ''}><span>${text}</span><span class="vl-fill" aria-hidden="true">${text}</span></p>
+          <p class="vl-text rv-line"${r.voice.lang ? ` lang="${r.voice.lang}"` : ''}>${text}</p>
         </div>` : ''}
     </div>
     <div class="rv-bar">
@@ -52,6 +51,10 @@ export function revealHtml(r: Reveal): string {
         ${rows.map(([name, shown]) => `
           <span${shown ? '' : ' hidden'}>${name}</span>
           <span class="rv-track"${shown ? '' : ' hidden'}><b class="rv-seg"></b></span>`).join('')}
+        <div class="rv-scrub">
+          <input class="rv-seek" type="range" min="0" max="1" step="any" value="0" aria-label="Seek">
+          <b class="rv-head" aria-hidden="true"></b>
+        </div>
       </div>
       <div class="rv-ctl">
         <button type="button" data-rv="skip">Skip to end</button>
@@ -94,9 +97,11 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   const matte = find<HTMLCanvasElement>('.rv-matte').getContext('2d')!;
   const ink = find<HTMLCanvasElement>('.rv-ink').getContext('2d')!;
   const segs = Array.from(stage.querySelectorAll<HTMLElement>('.rv-seg'));
-  const intro = stage.querySelector<HTMLElement>('.rv-intro');
+  const seek = find<HTMLInputElement>('.rv-seek');
+  const scrub = find('.rv-scrub');
   const voice = voiceUrl ? new Audio(voiceUrl) : undefined;
   let finished = false;
+  let dragging = false;  // the seek bar is held, so the playback does not move its thumb
   let skipped = false;
   let started = false;   // the animation and signature have begun
   let movieDone = false;
@@ -112,7 +117,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     sign.volume = level;
     if (voice) voice.volume = level;
   };
-  const stopVolume = onVolume(applyVolume);
+  let stopVolume = onVolume(applyVolume);
   applyVolume();
 
   const drawSign = (): void => paintSign(sign, ink, matte);
@@ -135,11 +140,14 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     set(segs[0], 0, share(v), spoken);
     set(segs[1], share(lead), share(a), a ? movie.currentTime / a : 0);
     set(segs[2], share(lead), share(b), b ? sign.currentTime / b : 0);
-    intro?.style.setProperty('--p', String(skipped ? 1 : spoken));
     const at = skipped || finished ? total
       : started ? lead + Math.max(movie.currentTime, sign.currentTime)
         : voice?.currentTime ?? 0;
     find('.rv-time').textContent = `${clock(at)} / ${clock(total)}`;
+    if (total) seek.max = String(total);
+    if (!dragging) seek.value = String(at);
+    seek.setAttribute('aria-valuetext', `${clock(Number(seek.value))} of ${clock(total)}`);
+    scrub.style.setProperty('--at', String(share(Number(seek.value))));
   }
 
   function loop(): void {
@@ -224,7 +232,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     voice.onerror = begin;
   }
 
-  find('[data-rv="skip"]').onclick = () => {
+  const skip = (): void => {
     skipped = true;
     movie.pause();
     sign.pause();
@@ -232,6 +240,71 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     // The signature's frame before its fade is what is left over the art.
     if (length(sign)) sign.currentTime = length(sign) - FADE;
     finish();
+  };
+  find('[data-rv="skip"]').onclick = skip;
+
+  // Plays on from `t` seconds into the whole, finished or not: in the line, in the hold after
+  // it, or in the animation and the signature, each put where it is at that moment.
+  function jump(t: number): void {
+    const a = length(movie);
+    const b = length(sign);
+    const v = length(voice);
+    const lead = voice ? v + HOLD : 0;
+    const total = lead + Math.max(a, b);
+    if (!total) return;
+    if (t >= total) {
+      skip();
+      return;
+    }
+    clearTimeout(hold);
+    skipped = false;
+    if (finished) {
+      finished = false;
+      stopVolume = onVolume(applyVolume);
+      find('[data-reveal]').hidden = true;
+      find('[data-rv="skip"]').hidden = false;
+      frame = requestAnimationFrame(loop);
+    }
+    claimAudio(halt);
+    const into = Math.max(0, t) - lead;
+    started = into >= 0;
+    movieDone = into >= a;
+    signDone = into >= b;
+    if (voice) {
+      voice.currentTime = Math.min(Math.max(0, t), v);
+      if (t < v) void voice.play().catch(begin);
+      else voice.pause();
+    }
+    if (!started) {
+      movie.pause();
+      sign.pause();
+      movie.currentTime = 0;
+      sign.currentTime = 0;
+      stage.dataset.ph = 'voice';
+      if (t >= v) hold = window.setTimeout(begin, (lead - t) * 1000);
+      return;
+    }
+    stage.dataset.ph = movieDone ? 'end' : 'play';
+    movie.currentTime = Math.min(into, a);
+    if (movieDone) movie.pause();
+    else void movie.play().catch(endMovie);
+    // A signature that is over stays on its frame before the fade, as at its end.
+    sign.currentTime = signDone ? b - FADE : into;
+    if (signDone) sign.pause();
+    else void sign.play().catch(endSign);
+  }
+
+  seek.oninput = () => jump(Number(seek.value));
+  seek.onpointerdown = () => {
+    dragging = true;
+    document.addEventListener('pointerup', () => { dragging = false; }, { once: true });
+  };
+  // A second a press of an arrow key, which a bar with no step does not have.
+  seek.onkeydown = (e) => {
+    const by = ({ ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 } as Record<string, number>)[e.key];
+    if (!by) return;
+    e.preventDefault();
+    jump(Number(seek.value) + by);
   };
 
   claimAudio(halt);

@@ -13,6 +13,16 @@ export function focusSelector(el: HTMLElement): string | null {
   return attrs ? `button${attrs}` : null;
 }
 
+// A filter control's answer to a press. The panel is rebuilt on every change, so the control
+// pressed is gone by the release: its replacement settles from the press (styles.scss holds it
+// down while pressed) with a small overshoot.
+export function settlePress(control: HTMLElement): void {
+  control.animate(
+    [{ transform: 'scale(0.92)' }, { transform: 'scale(1.04)', offset: 0.6 }, { transform: 'none' }],
+    { duration: 220, easing: 'ease-out' },
+  );
+}
+
 // Watches the two sizes the filter panel's shape is drawn from (.filter-blob in styles.scss):
 // how wide the buttons' part of the search box is, which is the tab's width, and how tall
 // the box is, which is the tab's height. The first changes with the Filters label and all the

@@ -394,6 +394,8 @@ export interface OperatorIndexEntry extends OperatorSlim {
   collabLogo?: string;
   // Set on operators the global server doesn't have yet, absent on everyone else.
   cnOnly?: boolean;
+  // Set on a welfare operator (the payload's `welfare`), absent on everyone else.
+  welfare?: boolean;
   // Set on an operator only a game mode lends, absent on everyone else.
   mode?: OperatorMode;
   // CN release date, 'YYYY-MM-DD'. null for operators with no dateable event (some

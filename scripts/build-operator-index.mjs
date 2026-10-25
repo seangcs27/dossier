@@ -1096,6 +1096,8 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // badge the detail page's header shows, and the card back's when there is no nation.
   const factions = new Map();
   const collabs = new Map();
+  // The welfare operators, for the grid's filter: the flag is worked out on the payload.
+  const welfares = new Set();
   // Same reasoning: the raw character_table only has subProfessionId, not the resolved
   // subProfessionName buildPayload's uniequip join produces — harvested here instead of
   // re-fetching uniequip_table a second time just for the slim index.
@@ -1153,6 +1155,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
       if (faction) factions.set(entry.id, faction);
 
       if (collab) collabs.set(entry.id, collab);
+      if (finalOp.welfare) welfares.add(entry.id);
 
       if (base.archetype) archetypes.set(entry.id, base.archetype);
 
@@ -1182,7 +1185,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
   // accumulated across every operator and would otherwise get flushed here even when
   // `written` collapses to near-zero, silently overwriting a good popup.json before that
   // check ever runs.
-  return { written, nations, nationIds, factions, collabs, archetypes, traitByName, popup, itemIds };
+  return { written, nations, nationIds, factions, collabs, welfares, archetypes, traitByName, popup, itemIds };
 }
 
 // Operators only ever sold on limited banners, for the detail page's LIMITED tag. The CN
@@ -1397,7 +1400,7 @@ function releaseDateFor(name) {
   return parts.length === 2 ? releaseDates.get(`${parts[1]} ${parts[0]}`) ?? null : null;
 }
 
-const { written: detailsWritten, nations, nationIds, factions, collabs, archetypes, traitByName, popup, itemIds } = await buildOperatorDetails(
+const { written: detailsWritten, nations, nationIds, factions, collabs, welfares, archetypes, traitByName, popup, itemIds } = await buildOperatorDetails(
   roster.map(r => ({ id: r.id, appellation: r.data.appellation, mode: r.mode })),
   cnSupplement,
 );
@@ -1505,6 +1508,8 @@ for (const c of cnSupplement) {
 for (const entry of entries) {
   const collabLogo = collabLogoFor(entry.collab);
   if (collabLogo) entry.collabLogo = collabLogo;
+  // Free to obtain (an event, an anniversary, Integrated Strategies). Absent for everyone else.
+  if (welfares.has(entry.id)) entry.welfare = true;
 }
 
 // RECENT_UNDATED entries are placeholder-dated, not genuinely dated — don't let them

@@ -1,6 +1,6 @@
 import { escHtml } from './format';
 import { mountCardSpin } from './card-spin';
-import { focusSelector, watchFilterTab } from './filter-box';
+import { focusSelector, settlePress, watchFilterTab } from './filter-box';
 
 /**
  * One card on the roster of a game that is not Arknights or Endfield: the plate the
@@ -398,7 +398,11 @@ function wireFinder<T>(container: HTMLElement, roster: Roster<T>): void {
     const focused = document.activeElement as HTMLElement | null;
     const refocus = focused && panel.contains(focused) ? focusSelector(focused) : null;
     panel.innerHTML = filters.map(f => groupHtml(f, state)).join('');
-    if (refocus) panel.querySelector<HTMLElement>(refocus)?.focus();
+    const target = refocus ? panel.querySelector<HTMLElement>(refocus) : null;
+    if (target) {
+      target.focus();
+      settlePress(target);
+    }
   };
   // The cards are rebuilt only by what changes which items match; opening or closing the
   // panel, or a group in it, leaves them alone.

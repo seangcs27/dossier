@@ -714,6 +714,10 @@ body {
 // The content arrives once the blob has mostly landed.
 .filters-open #more-filters { opacity: 1; transition: opacity 0.2s 0.26s; }
 
+// A filter control held down while pressed; its replacement settles from here (settlePress
+// in filter-box.ts), since the panel is rebuilt on every change.
+#more-filters button:active:not(:disabled) { transform: scale(0.92); }
+
 .filter-close {
   display: flex;
   align-items: center;

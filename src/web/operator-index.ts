@@ -30,7 +30,13 @@ export interface OperatorFilter {
   collabs: ReadonlySet<string>; // collab display names, empty for no restriction
   servers: ReadonlySet<Server>; // empty for no restriction
   games: ReadonlySet<GameMode>; // empty for no restriction
+  obtains: ReadonlySet<Obtain>; // empty for no restriction
 }
+
+// How an operator is got: free (an event, an anniversary, Integrated Strategies), or otherwise.
+export type Obtain = 'welfare' | 'other';
+
+export const obtainOf = (op: OperatorIndexEntry): Obtain => (op.welfare ? 'welfare' : 'other');
 
 // Where an operator comes from: the ordinary roster, or one of the two game modes that lend
 // operators of their own (Integrated Strategies, Stronghold Protocol).
@@ -58,6 +64,7 @@ export function filterOps(ops: OperatorIndexEntry[], f: OperatorFilter): Operato
     if (f.collabs.size && !f.collabs.has(op.collab)) return false;
     if (f.servers.size && !f.servers.has(serverOf(op))) return false;
     if (f.games.size && !f.games.has(gameModeOf(op))) return false;
+    if (f.obtains.size && !f.obtains.has(obtainOf(op))) return false;
     if (f.tags.size) {
       const hit = [...f.tags].filter(t => op.tags.includes(t)).length;
       if (f.tagMode === 'all' ? hit < f.tags.size : hit === 0) return false;

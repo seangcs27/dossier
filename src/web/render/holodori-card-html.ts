@@ -7,7 +7,7 @@ import { skillHtml, starsHtml } from './holodori-cards-html';
 import { faceHtml } from './holodori-songs-html';
 
 // A hololive Dreams card's own page (#/holodori/card/<id>), after holodori.best's: its
-// illustration (and a 5-star card's animation and signature, which Reveal plays as the game
+// illustration (and a 5-star card's animation and signature, which Play plays as the game
 // does when a card is won), its stats at the level and bloom picked, its skills as that bloom
 // has them, its voice lines and its live dialogues as bubbles with a player. Everything under
 // the head is the card's payload. In the album's world (_holodori.scss). No DOM and no window:
@@ -64,7 +64,7 @@ export function stageHtml(card: HolodoriCard, shown: Shown, reveal = ''): string
       ? `<button class="hc-art" type="button" aria-label="Open the illustration full size">
            ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
          </button>
-         ${card.movie ? '<button class="rv-go" type="button" data-reveal>Reveal</button>' : ''}`
+         ${card.movie ? '<button class="rv-go" type="button" data-reveal>Play</button>' : ''}`
       : shown === 'sign'
         // The signature's video is its writing over a matte of it, one above the other: shown
         // as it is, the box showed the foot of the one over the head of the other. It is drawn
@@ -77,7 +77,7 @@ export function stageHtml(card: HolodoriCard, shown: Shown, reveal = ''): string
            </div>`
         : `<video src="${escHtml(cardMovieUrl(card.asset))}" poster="${escHtml(poster)}"
                 autoplay muted loop playsinline controls></video>`;
-  const tabs: [Shown, string][] = [['reveal', 'Reveal'], ['art', 'Illustration'], ['movie', 'Animation'], ['sign', 'Signature']];
+  const tabs: [Shown, string][] = [['reveal', 'Play'], ['art', 'Illustration'], ['movie', 'Animation'], ['sign', 'Signature']];
   return `
     <figure class="hc-stage${shown === 'reveal' ? ' hc-reveal' : ''}">
       ${media}
@@ -295,7 +295,7 @@ function lineHtml(card: HolodoriCard, line: HolodoriLine): string {
 }
 
 /** The voice lines and live dialogues with the dock they share, drawn with the volume at `volume`. */
-export function voicesHtml(card: HolodoriCard, d: HolodoriCardDetail, volume = 0.5): string {
+export function voicesHtml(card: HolodoriCard, d: HolodoriCardDetail, volume = 0.25): string {
   if (!d.voices.length && !d.dialogues.length) return '';
   return `
     ${d.voices.length ? `
@@ -327,7 +327,7 @@ export function voicesHtml(card: HolodoriCard, d: HolodoriCardDetail, volume = 0
  * With `d` it is the whole page, the voices included.
  */
 export function cardHtml(
-  id: string, d: HolodoriCardDetail | null = null, level: number | 'max' = 'max', bloom = 0, volume = 0.5,
+  id: string, d: HolodoriCardDetail | null = null, level: number | 'max' = 'max', bloom = 0, volume = 0.25,
 ): string {
   const i = cards.findIndex(k => k.id === id);
   const card = cards[i];

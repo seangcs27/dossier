@@ -1,7 +1,7 @@
 import { endfieldIconUrl, endfieldPortraitUrl, endfieldSplashUrl } from '../../shared/api/hella-api';
 import { getEndfieldOperators, type EndfieldOperator } from '../endfield-index';
 import { escHtml } from '../format';
-import { focusSelector, watchFilterTab } from '../filter-box';
+import { focusSelector, settlePress, watchFilterTab } from '../filter-box';
 
 // This page's own search and picks. The box in the topbar and the panel under it are the
 // Arknights grid's too, and whichever grid mounted last has them; each keeps its state to
@@ -247,7 +247,11 @@ function renderMore(): void {
     </div>
   `;
 
-  if (refocus) panel.querySelector<HTMLElement>(refocus)?.focus();
+  const target = refocus ? panel.querySelector<HTMLElement>(refocus) : null;
+  if (target) {
+    target.focus();
+    settlePress(target);
+  }
 }
 
 // The Filters button's label and lit state, the open panel's class on the cluster, and

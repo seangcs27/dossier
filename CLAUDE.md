@@ -219,8 +219,8 @@ src/
                       the date and clock formatters with no data of their own
     fresh.ts        ← sets the clock-dependent text of a page built at build time from the
                       reader's clock (freshen)
-    filter-box.ts   ← focusSelector and watchFilterTab, the search box's and filter tab's
-                      handling every roster shares
+    filter-box.ts   ← focusSelector, settlePress and watchFilterTab, the search box's and filter
+                      tab's handling every roster shares
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
                       #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
@@ -488,9 +488,9 @@ mode's first CN run: Integrated Strategies' first operators after the batch of 2
 after the batch of 2024-10-31 (it opened 2024-11-15) and after that of 2025-10-31 (Alliance,
 2025-11-14). Recorded rather than fetched each build because they do not change and the
 fetch was one more thing to fail. A mode-only operator the record lacks sorts last, with a
-build warning that names it. Payloads also carry `welfare`: true where
+build warning that names it. Payloads and index entries also carry `welfare`: true where
 `itemObtainApproach` is an event reward, an anniversary reward or an Integrated Strategies
-reward (81 operators).
+reward (82 operators; the grid's Obtain filter reads it).
 
 **Four collabs have a logo of their own**, kept in the repo (`scripts/collab-logos/`, named
 for the collab: `persona-3.svg`, `monster-hunter.svg`, `ave-mujica.svg`,
@@ -815,11 +815,15 @@ Caster is every Supporter plus the Mech-accord Casters), and a branch that would
 under the other filters dims; a six-segment rarity group tinted by rarity; collab
 chips; a Server button split in two, GLOBAL and CN (the CN-only operators), each half with its count;
 a Game mode button split in three the same way, ROSTER, IS and SP (the operators only
-Integrated Strategies or Stronghold Protocol lends); and an Advanced options disclosure
+Integrated Strategies or Stronghold Protocol lends); an Obtain button split in two, WELFARE
+and OTHER (the operators an event, an anniversary or Integrated Strategies gives free, the
+index's `welfare`; 25 October 2026); and an Advanced options disclosure
 holding Sort (Release order / Name — clicking the
 active one reverses it) and multi-select recruitment tags with an any/all mode.
 `renderMore()` rebuilds the panel on every change and restores focus to the equivalent
-control afterwards. Operators without a `releaseDate` sort last in both release directions.
+control afterwards. A pressed control is held down at 0.92 (`:active` in `styles.scss`), and
+its replacement after the rebuild settles from there with a small overshoot (`settlePress` in
+`filter-box.ts`, 220 ms; the Endfield and `card.ts` panels do the same). Operators without a `releaseDate` sort last in both release directions.
 
 ### Detail view (`src/web/views/detail.ts`)
 
@@ -1657,12 +1661,13 @@ illustration in its rarity's frame (opening the art viewer on the CDN's full-siz
 with an Animation and a Signature beside it on a 5-star card (84 of 192), played from the
 CDN (the Signature drawn over the art as the reveal draws it, `loopSign`: played as it is,
 its two halves, below, showed as the writing doubled and off its place; 25 October 2026,
-checked against a recording of the game), and **Reveal** (`holodori-reveal.ts`, 20 October 2026), which plays the two and the
+checked against a recording of the game), and **Play** (Reveal until 25 October 2026; `holodori-reveal.ts`, 20 October 2026), which plays the two and the
 card-get line as the game does for a card won, from one tap (a browser lets a page play
 sound only after one). **The order is read off a recording of a real 5-star pull** (a
 YouTube video, 21 October 2026; frames sampled and its audio's loudness measured in the
 browser, nothing downloaded): the line is said first, on a white screen with its words
-(here the line's karaoke fill, in the holomem's colour; the audio is loud for about 1.5 s
+(here the line in the holomem's colour, whole from the start, with no label over it: the
+karaoke fill and the "Card get" label went on 25 October 2026, the owner's ask; the audio is loud for about 1.5 s
 there and silent for the rest; the words are what she says, so a holomem of the hololive or
 DEV_IS branch has the game's own Japanese, from the dump's Japanese edition
 (`holodori-db-jpn-diff`, `LangCharacterVoice_Jpn`, a voice line's `ja`; 25 October 2026), and
@@ -1681,7 +1686,11 @@ the matte inverted and multiplied in and the colour screened in, which is the al
 composite. The writing fades out in the video's last half-second, so the frame before the
 fade is the one that stays (`FADE`). Under the screen three tracks (the line, the
 animation, the signature) run along the whole (10 s, 9 s and 5 s, and 0.4 s held after the
-line, on the card checked), with Skip, Replay and the volume; the
+line, on the card checked), with Skip, Replay and the volume. **A seek bar lies over the
+tracks** (25 October 2026, the owner's ask): an unseen range input over their column, with
+a playhead drawn beside it; a press, a drag or an arrow key (a second a press) plays on from
+that place, finished or not, with each of the three put where it is at that moment (`jump`);
+past the end is Skip. Beside the stage are the
 name, the holomem (a link to her page) and a fact list; then **Stats**, a level
 slider and blooms 0 to 5 over the three stats and their total, with the limit breaks the
 level needs; **Skills**, passive, active, special, connect effect (none on a 3-star) and
@@ -1695,8 +1704,8 @@ from the audio). A dialogue has Play conversation, and one dock, pinned to the w
 while the voices are on screen, has previous, next, play, the line's waveform, its time, a
 volume and a speed. **The volume** (a speaker that mutes and a slider, `volumeHtml()` in
 `holodori-audio.ts`, the owner's "make voice adjustable") is one for the voice lines, a
-reveal's three parts and a song's clip, starting at 50% (the owner's pick, 21 October,
-confirmed 25 October), kept in `localStorage` and the same wherever it stands on the page.
+reveal's three parts and a song's clip, starting at 25% (the owner's pick, 25 October 2026;
+it was 50%), kept in `localStorage` and the same wherever it stands on the page.
 One sound plays at a time across
 the site (a reveal, a line or a chorus stops the one before), and a change of page stops it. The page keeps its stage
 and voices when a bloom or the payload redraws the rest, so that nothing playing is cut.
