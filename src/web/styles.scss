@@ -335,6 +335,21 @@ body {
   border-color: var(--border);
 }
 
+// After the label, turned over while the panel is open.
+.filter-chev {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.filters-open .filter-chev { transform: rotate(180deg); }
+
 // The box's leading icon, and its clear button: a magnifier while the box is empty, turning
 // into a cross once there is something to clear. Disabled it is decoration, and lets a click
 // through to the input underneath.
@@ -657,31 +672,32 @@ body {
   height: calc(var(--box-h, 38px) - 1px);
 }
 
-// Scale is the whole animation, with no fade: the filter cuts on opacity, so a block at
-// half strength would not look faint, it would vanish. Opening, the ease is the card's: a
-// fast start and a long settle with no rebound, the way something thick pours. Closing
-// takes its time too; a quick ease-in was over before it read as anything but the panel
-// vanishing. What makes it move like a liquid is the filter, rounding the join as the body
-// runs out from under the tab.
+// The clip is the whole animation, with no fade: the filter cuts on opacity, so a block at
+// half strength would not look faint, it would vanish. Opening, the ease is an even one:
+// the card's (a fast start and a long settle) had the circle past the panel's far corner in
+// a tenth of a second, too soon to see it grow. Closing takes its time too; a quick ease-in
+// was over before it read as anything but the panel vanishing.
 //
 // It starts at the box's lower edge, not up behind the box, so the shape turns round the
 // end of the field: the turn that shows is the field's own bottom right corner, with the
 // tab and the body solid behind it.
+//
+// The iris: a circle grown from under the middle of the tab, where the Filters button is,
+// to the farthest corner (142% of a circle's reference length is the box's diagonal).
+// The filter rounds its moving edge as it does every corner.
 .blob-body {
   top: var(--box-h, 38px);
   left: 1px;
   bottom: 1px;
-  transform: scale(0.4, 0);
-  // Under the middle of the tab, which is where it pours from.
-  transform-origin: calc(100% - var(--tab-w, 92px) / 2) 0;
-  transition: transform 0.38s ease-in-out;
+  clip-path: circle(0 at calc(100% - var(--tab-w, 92px) / 2) 0);
+  transition: clip-path 0.38s ease-in-out;
 }
 
 // The body's top left corner would come out round as well, and pinch in under the field's.
 // A stub standing up from that corner, behind the field, takes the rounding up out of
 // sight with it, so the left edge that shows runs straight down from the field's; the round
 // corner seen beside it is the field's hollow again (.search-field::after). It is part of
-// the body and scales with it: nothing of it is left once the body has run back up.
+// the body and the iris clips it with the rest: nothing of it is left once the iris has closed.
 .blob-body::before {
   content: '';
   position: absolute;
@@ -692,7 +708,10 @@ body {
   background: inherit;
 }
 
-.filters-open .blob-body { transform: none; transition: transform 0.52s cubic-bezier(0.2, 0.9, 0.2, 1) 0.06s; }
+.filters-open .blob-body {
+  clip-path: circle(142% at calc(100% - var(--tab-w, 92px) / 2) 0);
+  transition: clip-path 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.06s;
+}
 
 // No box of its own: the blob behind it is the panel. Hidden, it keeps its place in the
 // layout, since the blob takes its height from it and still has to run back up.
@@ -711,8 +730,9 @@ body {
   &::-webkit-scrollbar-track { margin-bottom: var(--sp-4); }
 }
 
-// The content arrives once the blob has mostly landed.
-.filters-open #more-filters { opacity: 1; transition: opacity 0.2s 0.26s; }
+// The content is there at once; its groups rise in one after another as the iris opens
+// (riseGroups in filter-box.ts).
+.filters-open #more-filters { opacity: 1; transition: none; }
 
 // A filter control held down while pressed; its replacement settles from here (settlePress
 // in filter-box.ts), since the panel is rebuilt on every change.

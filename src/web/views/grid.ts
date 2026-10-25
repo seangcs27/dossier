@@ -21,7 +21,7 @@ import {
 } from '../operator-index';
 import { MODE_LABEL, PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 import { mountCardSpin } from '../card-spin';
-import { focusSelector, settlePress, watchFilterTab } from '../filter-box';
+import { focusSelector, riseGroups, settlePress, watchFilterTab } from '../filter-box';
 
 const state = {
   query: '',
@@ -522,6 +522,7 @@ export function mountGrid(container: HTMLElement): void {
       // The close button only closes.
       state.moreOpen = el.id === 'more-toggle' && !state.moreOpen;
       refreshChrome();
+      if (state.moreOpen) riseGroups();
     }
     // Clear has just disabled itself and the close button has folded away, and neither can
     // hold the focus then, so it goes to the toggle.

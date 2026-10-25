@@ -23,6 +23,18 @@ export function settlePress(control: HTMLElement): void {
   );
 }
 
+// The panel's groups rising into place one after another as it opens, once the shape behind
+// them has mostly grown (styles.scss). Played from the press that opens it, not from CSS:
+// the panel is rebuilt on every change, and a CSS animation would play again on each.
+export function riseGroups(): void {
+  Array.from(document.getElementById('more-filters')!.children).forEach((group, i) => {
+    group.animate(
+      [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }],
+      { duration: 260, delay: 220 + i * 45, easing: 'ease-out', fill: 'backwards' },
+    );
+  });
+}
+
 // Watches the two sizes the filter panel's shape is drawn from (.filter-blob in styles.scss):
 // how wide the buttons' part of the search box is, which is the tab's width, and how tall
 // the box is, which is the tab's height. The first changes with the Filters label and all the
