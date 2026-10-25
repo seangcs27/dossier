@@ -21,7 +21,7 @@ import {
 } from '../operator-index';
 import { MODE_LABEL, PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 import { mountCardSpin } from '../card-spin';
-import { focusSelector, riseLines, settlePress, watchFilterTab } from '../filter-box';
+import { focusSelector, riseLines, settlePress, sinkLines, unsink, watchFilterTab } from '../filter-box';
 
 const state = {
   query: '',
@@ -518,11 +518,17 @@ export function mountGrid(container: HTMLElement): void {
     if (el.id === 'clear-filters') {
       clearAll();
       refresh();
-    } else {
-      // The close button only closes.
-      state.moreOpen = el.id === 'more-toggle' && !state.moreOpen;
+    } else if (el.id === 'more-toggle' && !state.moreOpen) {
+      state.moreOpen = true;
       refreshChrome();
-      if (state.moreOpen) riseLines();
+      riseLines();
+    } else if (!(el.id === 'more-toggle' && unsink())) {
+      // The close button only closes; the toggle pressed again while the panel shuts keeps
+      // it open.
+      sinkLines(() => {
+        state.moreOpen = false;
+        refreshChrome();
+      });
     }
     // Clear has just disabled itself and the close button has folded away, and neither can
     // hold the focus then, so it goes to the toggle.
@@ -594,8 +600,10 @@ export function mountGrid(container: HTMLElement): void {
     if (!state.moreOpen || panel.hidden) return;
     const target = ev.target as Element;
     if (target.closest('.topbar-actions')) return;
-    state.moreOpen = false;
-    refreshChrome();
+    sinkLines(() => {
+      state.moreOpen = false;
+      refreshChrome();
+    });
   };
 
   // Escape acts only while the panel is actually on screen — the detail page hides it
@@ -609,8 +617,10 @@ export function mountGrid(container: HTMLElement): void {
     const target = ev.target as HTMLElement;
     if (target.id === 'search') return;
     const fromPanel = !!target.closest('#more-filters');
-    state.moreOpen = false;
-    refreshChrome();
+    sinkLines(() => {
+      state.moreOpen = false;
+      refreshChrome();
+    });
     if (fromPanel) document.getElementById('more-toggle')?.focus();
   };
 }

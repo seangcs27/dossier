@@ -219,8 +219,8 @@ src/
                       the date and clock formatters with no data of their own
     fresh.ts        ← sets the clock-dependent text of a page built at build time from the
                       reader's clock (freshen)
-    filter-box.ts   ← focusSelector, settlePress, riseLines and watchFilterTab, the search box's
-                      and filter tab's handling every roster shares
+    filter-box.ts   ← focusSelector, settlePress, riseLines, sinkLines and watchFilterTab, the
+                      search box's and filter tab's handling every roster shares
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
                       #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
@@ -806,8 +806,13 @@ opacity. Once it is open out, **the panel's lines rise into place one after anot
 (`riseLines` in `filter-box.ts`, 16px over 380 ms, up to 70 ms apart): a line is the largest
 boxes standing at one height, so a frame of buttons moves with its frame and tiles that
 wrap move as two lines. It is played from the press that opens the panel, not from CSS,
-since the panel is rebuilt on every change. A chevron after the Filters label turns over
-while the panel is open. `#more-filters[hidden]`
+since the panel is rebuilt on every change. **Shutting is the same backwards** (the owner's
+ask): the lines sink out from the last up (`sinkLines`, 12px over 220 ms, up to 40 ms apart),
+and only then does the view close and the folder fold in, about 1 s in all. The view's state
+stays open while they sink, so every way to shut (the toggle, the close button, a press
+outside, Escape) goes through `sinkLines`; the toggle pressed again meanwhile reverses them
+and keeps the panel open (`unsink`). A chevron after the Filters label turns over while the
+panel is open. `#more-filters[hidden]`
 keeps its layout: the shape takes its height from the panel and still has to run back up.
 
 **It animates whatever `prefers-reduced-motion` says, on purpose** (the comment on
