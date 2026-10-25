@@ -4,9 +4,12 @@
 
 // A song the dump has no music video for, and the official upload of the game's own version
 // (hololive Dreams' channel; the same length as the game's: 124 s against 123, 105 against
-// 105). Amaryllis and CORE//UNBREAKABLE are dated 23 and 25 October and have none yet.
+// 105, 117 against 119). Amaryllis' is 115 s against 109, the 6 s more being silence after
+// the song (measured 25 October 2026), so the game's window lands where it should.
 export const MV_FOR = {
   m0365: 'ylpBsZ0jHZc',   // Shallow Shadow
+  m0366: 'BtpR74RBESc',   // Amaryllis
+  m0367: '7CM4ZbyrafQ',   // CORE//UNBREAKABLE
   m0368: '8On-I5qQeLw',   // Forge My Soul
 };
 

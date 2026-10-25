@@ -992,6 +992,14 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     }
   }
 
+  // The site's volume (holodori-audio.ts), always in view: YouTube's own needs a hover the
+  // pointer loses on the way to its slider.
+  .sc-vol {
+    margin: var(--sp-6) 40px 0 2px;
+
+    .vol-range { width: 120px; }
+  }
+
   .sc-close {
     position: absolute;
     right: 12px;
@@ -1098,8 +1106,10 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     letter-spacing: 0.04em;
   }
 
+  // Two lines held for every title, so a row's singers and levels line up whatever wraps.
   .song-title {
     display: -webkit-box;
+    min-height: 2.5em;
     margin: var(--sp-8) 0 0;
     overflow: hidden;
     font-size: var(--fs-base);
@@ -1974,7 +1984,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     appearance: auto;
   }
 
-  .vd .vol-range { accent-color: $sky; }
+  .vd .vol-range,
+  .sc-vol .vol-range { accent-color: $sky; }
 
   .hc-voices { position: relative; }
 
