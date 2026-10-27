@@ -35,6 +35,7 @@ import { bakeImages } from './lib/bake-images.mjs';
 import { fetchJson, timedFetch } from './lib/fetch.mjs';
 import { CLIP_AT, MV_FOR } from './lib/holodori-clips.mjs';
 import { GACHAS } from './lib/holodori-gachas.mjs';
+import { buildAnnouncements } from './lib/holodori-news.mjs';
 
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated', 'holodori',
@@ -48,6 +49,7 @@ const SONGS_FILE = path.join(outDir, 'songs.json');
 const CARDS_FILE = path.join(outDir, 'cards.json');
 const GACHAS_FILE = path.join(outDir, 'gachas.json');
 const UPCOMING_FILE = path.join(outDir, 'upcoming.json');
+const ANNOUNCEMENTS_FILE = path.join(outDir, 'announcements.json');
 const JACKET_DIR = path.join(outDir, 'jackets');
 const JACKET_PATH = 'holodori/jackets';
 // A song's jacket, as the Songs page shows it at up to 120px, at twice that.
@@ -580,3 +582,4 @@ await writeOrKeep(SONGS_FILE, 'songs', async () => {
 await writeOrKeep(CARDS_FILE, 'cards', buildCards);
 await writeOrKeep(GACHAS_FILE, 'gachas', buildGachas);
 await writeOrKeep(UPCOMING_FILE, 'upcoming ★5 previews', buildUpcoming);
+await writeOrKeep(ANNOUNCEMENTS_FILE, 'announcements', buildAnnouncements);

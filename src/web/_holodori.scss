@@ -2545,6 +2545,55 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .hh-bday-name { margin-top: var(--sp-6); font-size: var(--fs-lg); font-weight: 900; }
   .hh-bday-when { color: $ink-soft; font-size: var(--fs-sm); font-weight: 700; }
 
+  // The game's announcements, a line each on a sheet of paper: the day in Japan, the headline
+  // as a link to the official post, and which of the two sources it came from.
+  .hh-news {
+    @include paper;
+
+    margin: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template: 'when title from' / 4.5rem minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: var(--sp-12);
+      padding: var(--sp-8) 0;
+    }
+
+    li + li { border-top: 2px dotted $slot; }
+
+    time {
+      grid-area: when;
+      color: $ink-soft;
+      font-size: var(--fs-sm);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    a {
+      grid-area: title;
+      color: $ink;
+      font-weight: 800;
+      line-height: 1.4;
+      text-decoration: none;
+
+      &:hover { text-decoration: underline; text-underline-offset: 2px; }
+      &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 3px; border-radius: 4px; }
+    }
+  }
+
+  .hh-news-from {
+    grid-area: from;
+    padding: 0 var(--sp-8);
+    border-radius: var(--radius-pill);
+    background: $panel;
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+  }
+
   // ── Gachas ──
   // A banner to a sheet of paper: its logo on the sky, its name and dates, and the cards it
   // features on the same sheet. One running now is edged in the sun.
@@ -2687,6 +2736,17 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .hh-pics.icons img { height: 48px; }
     .hh-pics.logos img { height: 52px; }
     .hh-icon { width: 72px; }
+    // The day and its source on a line, the headline under them.
+    .hh-news {
+      padding: var(--sp-12) var(--sp-12) var(--sp-16);
+
+      li {
+        grid-template: 'when from' 'title title' / auto 1fr;
+        gap: var(--sp-4) var(--sp-8);
+      }
+
+      .hh-news-from { justify-self: start; }
+    }
     .hh-bdays,
     .hm-stickers {
       grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));

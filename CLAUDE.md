@@ -94,9 +94,12 @@ scripts/
   build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/sinner-details/
   build-holodori-index.mjs   ← holodori/characters.json + figures/ + stickers/ + icons/ + songs.json +
                                jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json +
-                               upcoming.json
+                               upcoming.json + announcements.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
+  lib/holodori-news.mjs      ← hololive Dreams' announcements, from hololive Dreams Lab's Game updates
+                               page and Steam's news for the game: a headline, its day and the
+                               official post's link each
   lib/holodori-clips.mjs     ← where each song's clip plays in its music video where the game's window is
                                not right for it, and the videos of two songs the dump has none for,
                                recorded by hand from YouTube
@@ -182,6 +185,7 @@ src/
       holodori/card-details/<id>.json  ← 192 card payloads: stats by level, blooms, skills, voice lines, dialogues
       holodori/gachas.json       ← the gacha record (15 entries), bundled into the web target
       holodori/upcoming.json     ← the ★5s announced for a gacha the record lacks, from hololive Dreams Lab, bundled
+      holodori/announcements.json  ← its 40 newest announcements (headline, day, official link), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
       fgo/figures/<id>.webp      ← its card art (470), 148x296, copied as static files
     types/
@@ -272,6 +276,8 @@ src/
                          the roster entry's and the payload's types
     ptn-index.ts / holodori-index.ts / fgo-index.ts  ← each of those games' data store and entry
                       type; PtN's also has the dossier payload's types and fetchPtnSinner
+    holodori-news.ts  ← hololive Dreams' announcements, getHolodoriAnnouncements and its entry type; a
+                      module of its own so that the index does not carry them to every page
     ptn-lang.ts     ← Path to Nowhere's two languages: which is on (kept in localStorage), this
                       site's own words in each (t), and a Sinner's name, tags and code in it
     styles.scss     ← full-page layout, sidebar, topbar, chips, grid, detail, events; loads
@@ -1780,6 +1786,27 @@ The page shows them under **Announced**, a card to each opening time, until the 
 a banner opening within the hour of it. A preview names no banner, so the card reads "New
 ★5 Members"; not every ★5 is previewed there (Kaela was not, for Blissful Seaside Days).
 **That is why the deploy runs daily**: a preview is up for about a day before its gacha.
+
+**Announcements** (28 October 2026, the owner's ask, on the front page and nowhere else):
+the 8 newest of the game's notices, between the gachas running and the birthdays, each a day,
+a headline linking its official post, and a "Lab" or "Steam" tag, under "Japan time". Two
+sources, read by `scripts/lib/holodori-news.mjs` into `holodori/announcements.json` (the 40
+newest, newest day first): the same Game updates page as above, whose `<h3>` is the headline
+and whose "Source:" line is searched for an official link, and Steam's news for the game
+(app 4282500, no key; its own posts only, linked at their page on the store). **A day is
+Japan's**, the Lab's own for its headings and Steam's time put on it, and is not converted
+to the reader's clock. **The links are an allowlist**, the game's two X accounts (the English
+one before the Japanese), `hololive-dreams.com`, `qualiarts.jp` and `cover-corp.com`: a Lab
+item whose line links none of them (a YouTube or hololivepro.com link alone) is left out, with
+a count in a warning (9 of 195 today), since the owner's rule is a link to the official post.
+Only the headline, day and link are kept: **the headlines are the Lab's wording, a third
+party's**, and the page credits it, so no summary is kept. A Steam patch and the Lab's item
+about the same version both show. Either source failing, or a Lab page that yields nothing
+(its markup has changed), throws, and `writeOrKeep` keeps the last whole file, so the section
+goes stale rather than half-fresh; with no file it is written empty and the section and its
+credit are left out. A Steam post is kept only while it is among the 40 newest: the Lab gives
+a few items a day (the 40 reach back to 17 October today), so the last patch, of 2 October,
+is out of it.
 
 The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
