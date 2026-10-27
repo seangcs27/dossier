@@ -2,7 +2,8 @@ import { escHtml } from '../format';
 import {
   gachaLogoUrl, getHolodoriCards, getHolodoriCharacters, getHolodoriGachas, getHolodoriSongs, type HolodoriSong,
 } from '../holodori-index';
-import { birthdayText, daysAway, daysToBirthday, today } from './holodori-format';
+import { getHolodoriAnnouncements, type HolodoriAnnouncement } from '../holodori-news';
+import { birthdayText, daysAway, daysToBirthday, MONTHS, today } from './holodori-format';
 import { bannerHtml, isLive } from './holodori-gachas-html';
 import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
@@ -11,14 +12,41 @@ import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 // birthdays coming) and its newest songs. In the game's world (_holodori.scss). No DOM and
 // no window: the view and the pages built at build time (site/) draw from this.
 
-// How many birthdays, and how many of the newest songs, it shows.
+// How many birthdays, how many of the newest songs and how many announcements it shows.
 const BIRTHDAYS = 6;
 const NEWEST = 6;
+const ANNOUNCED = 8;
 
 const cast = getHolodoriCharacters();
 const songs = getHolodoriSongs();
 const cards = getHolodoriCards();
 const gachas = getHolodoriGachas();
+const announced = getHolodoriAnnouncements().slice(0, ANNOUNCED);
+
+const SOURCE_NAME = { lab: 'Lab', steam: 'Steam' };
+
+// An announcement's day in Japan, '2026-10-27', as "27 Oct". It is the same on every reader's
+// clock, so it carries no hook for freshen().
+function announcedDay(date: string): string {
+  const [, month, day] = date.split('-').map(Number);
+  return `${day} ${MONTHS[month - 1].slice(0, 3)}`;
+}
+
+// What the game has announced lately: each a headline linking its official post.
+function newsHtml(list: HolodoriAnnouncement[]): string {
+  if (!list.length) return '';
+  return `
+      <section class="hm-section">
+        <h3 class="hm-head">Announcements <small>Japan time</small></h3>
+        <ul class="hh-news">${list.map(a => `
+          <li>
+            <time datetime="${a.date}">${announcedDay(a.date)}</time>
+            <a href="${escHtml(a.url)}" target="_blank" rel="noopener">${escHtml(a.title)}</a>
+            <span class="hh-news-from">${SOURCE_NAME[a.from]}</span>
+          </li>`).join('')}
+        </ul>
+      </section>`;
+}
 
 // A tile into one of the game's pages: its count and name over a few of its pictures, of
 // one kind (icons, jackets, cards or logos), which sets how they are framed.
@@ -63,7 +91,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <section class="hm-section">
           <h3 class="hm-head">Gachas running now <small>${live.length}</small></h3>
           <div class="gacha-list">${live.map(g => bannerHtml(g, now)).join('')}</div>
-        </section>` : ''}
+        </section>` : ''}${newsHtml(announced)}
       <section class="hm-section">
         <h3 class="hm-head">Birthdays coming</h3>
         <ul class="hh-bdays">${soon.map((c) => {
@@ -82,7 +110,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <ul class="song-grid">${newest.map(s => songTileHtml(s, disc)).join('')}</ul>
         <p class="hm-note"><a href="#/holodori/songs">Every song</a></p>
       </section>
-      <p class="hd-credit">Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Gachas: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a></p>
+      <p class="hd-credit">Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Gachas: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>${announced.length ? ' · Announcements: <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a>, <a href="https://store.steampowered.com/news/app/4282500" target="_blank" rel="noopener">Steam</a>' : ''}</p>
       ${backs ? songBackTemplatesHtml(newest) : ''}
     </div>
   `;
