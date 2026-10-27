@@ -1797,8 +1797,9 @@ and whose "Source:" line is searched for an official link, and Steam's news for 
 Japan's**, the Lab's own for its headings and Steam's time put on it, and is not converted
 to the reader's clock. **The links are an allowlist**, the game's two X accounts (the English
 one before the Japanese), `hololive-dreams.com`, `qualiarts.jp` and `cover-corp.com`: a Lab
-item whose line links none of them (a YouTube or hololivepro.com link alone) is left out, with
-a count in a warning (9 of 195 today), since the owner's rule is a link to the official post.
+item whose line links none of them is left out, with a count in a warning (9 of 195 today:
+seven from the launch week with no link at all, a press release on einpresswire.com and a
+page on konami.com), since the owner's rule is a link to the official post.
 Only the headline, day and link are kept: **the headlines are the Lab's wording, a third
 party's**, and the page credits it, so no summary is kept. A Steam patch and the Lab's item
 about the same version both show. Either source failing, or a Lab page that yields nothing
