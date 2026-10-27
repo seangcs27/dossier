@@ -1792,10 +1792,15 @@ before it opens). The game previews each new ★5 about a day ahead on its Engli
 (the dump learns of the gacha only once it is open, within the hour), and X cannot be read
 by a build. **hololive Dreams Lab** (`dreams.wf-calc.net/wiki/game-updates?lang=en`), a fan
 site whose robots.txt allows a crawl, collects those posts by date on a server-rendered
-page, each an `<h3>` "★5 [Card] Holomem previewed" with "from Monday, October 19 at 11:00
-AM (JST)" under it and the official post linked. `buildUpcoming` reads them into
-`holodori/upcoming.json` (card, holomem, opening time in UTC, the post), keeping those that
-open no more than 14 days before the build, and warns if the page names no preview at all.
+page, each an `<h3>` with a paragraph under it that names the card as "★5 [Card] Holomem" and
+the opening as "gacha … from Monday, October 19 at 11:00 AM (JST)" (or "… start on Thursday,
+October 29, at 11:00 JST", 24-hour) and the official posts linked. `buildUpcoming` reads the
+paragraph and not the headline, which went from "★5 [Card] Holomem previewed" to "New ★5
+Vestia Zeta and Nerissa Ravencroft previews" on 27 October 2026, when it began to miss the
+new banner: one post may reveal several cards, each with a link of its own, matched to the
+holomem by her name in the link's label. It writes `holodori/upcoming.json` (card, holomem,
+opening time in UTC, the post), keeping those that open no more than 14 days before the
+build, and warns if the page names no ★5 card at all.
 The page shows them under **Announced**, a card to each opening time, until the record has
 a banner opening within the hour of it. A preview names no banner, so the card reads "New
 ★5 Members"; not every ★5 is previewed there (Kaela was not, for Blissful Seaside Days).
