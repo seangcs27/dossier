@@ -15,7 +15,7 @@
 // an empty one written: the Endfield page then has nothing to list, and the build goes on.
 // The images and the per-operator payloads fail one at a time: each set's summary line names
 // what could not be had, and whatever is on disk for it stays.
-import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -62,6 +62,11 @@ async function wiki(params) {
 const fileTitle = file => file.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
 
 const SPLASH_WIDTH = 1024;
+// An operator the wiki has no bust of is cut from their splash art instead: a box on the
+// splash as baked at SPLASH_WIDTH, its height twice its width as a bust's is, set by eye as
+// holodori's FACE_X are. Si's file is named in the table and was never uploaded (checked 28
+// October 2026), and the wiki's own is fetched on the build after it has one.
+const BUST_FROM_SPLASH = { chr_0036_jsspsi: { left: 320, top: 250, width: 220 } };
 // The glyphs are shown at 11 to 28px.
 const GLYPH_SIZE = 64;
 
@@ -169,6 +174,9 @@ async function buildRoster() {
   await bakeDetails(rows);
 
   const art = field => rows.map(r => ({ file: r[field], name: r.Id, label: r.Operator }));
+  // A bust cut from the splash on an earlier build goes first, or the wiki's own, once it has
+  // one, would be kept out by it.
+  await Promise.all(Object.keys(BUST_FROM_SPLASH).map(id => rm(path.join(portraitDir, `${id}.webp`), { force: true })));
   // The originals are PNGs of about 150 KB, wanted by one card each.
   await bakeImages(
     'portraits', portraitDir, art('Portrait'), pipeline => pipeline.webp({ quality: 80, effort: 4 }),
@@ -178,6 +186,19 @@ async function buildRoster() {
   await bakeImages(
     'splash art', splashDir, art('Splash'), pipeline => pipeline.webp({ quality: 82, effort: 4 }), SPLASH_WIDTH,
   );
+  for (const [id, { left, top, width }] of Object.entries(BUST_FROM_SPLASH)) {
+    if (portraits.has(`${id}.webp`)) continue;
+    try {
+      await sharp(path.join(splashDir, `${id}.webp`))
+        .extract({ left, top, width, height: width * 2 })
+        .resize(180, 360)
+        .webp({ quality: 80, effort: 4 })
+        .toFile(path.join(portraitDir, `${id}.webp`));
+      portraits.add(`${id}.webp`);
+    } catch (err) {
+      console.warn(`endfield portraits: no bust of ${id} cut from its splash art (${err.message})`);
+    }
+  }
   // A glyph for each class, element and weapon type the roster has, named as
   // endfieldIconUrl() asks for it. The wiki files one under the value's own name
   // ('Guard.png', 'Great Sword.png') and draws it beside the word on its own pages: white on
@@ -217,8 +238,8 @@ async function buildRoster() {
     mainAttr: r.MainAttr,
     subAttr: r.SubAttr,
     headhunting: r.Headhunting,
-    // An operator the wiki has no bust of (Si, today) is marked, so the page does not ask for
-    // a file that is not there.
+    // An operator with no bust baked, the wiki's or one cut from their splash, is marked, so
+    // the page does not ask for a file that is not there.
     ...(portraits.has(`${r.Id}.webp`) ? {} : { noPortrait: true }),
   }));
 }

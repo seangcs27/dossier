@@ -1111,8 +1111,12 @@ Images already on disk are kept; the payloads are written again every build. Non
 load-bearing: with the wiki unreachable the last roster is kept, or an empty one written,
 and the page says it has no operators; a single image or page that cannot be had is named
 in that set's summary line and whatever is on disk for it stays. An operator whose bust the
-wiki has no file of (Si, today) is marked `noPortrait` in the roster, so the filmstrip shows
-its first letter without asking for a file that is not there.
+wiki has no file of is cut from their splash art instead (`BUST_FROM_SPLASH` in the script:
+a box on the 1024px splash, set by eye, 180x360 out; Si's, 28 October 2026, the owner's pick
+of two crops: her table row names a `Si tooltip.png` the wiki never had). It is dropped at the
+start of every build, so the wiki's own bust is fetched the build after it has one. One with
+neither is marked `noPortrait` in the roster, so the filmstrip shows its first letter
+without asking for a file that is not there.
 
 Not built: the dossier's sections from the payload, what anything costs, a release order.
 
@@ -1718,7 +1722,10 @@ outfit skill, each at the level the bloom gives it; **Voice lines** (card get, c
 live skill, bloom 1 to 5: 5-star cards only) and **Live dialogues** (her line and another
 holomem's answer, 390 across the cards), each with its audio from the CDN, as bubbles
 (`holodori-voice.ts`): in the speaker's colour with her face, the card's own holomem on the
-left and whoever answers on the right, filling with its words as it plays and with a
+left and whoever answers on the right, filling with its words as it plays (one row after
+another, each as far as its words are long: a hard-stop gradient clipped to the text, since
+an inline box's background runs along its rows end to end; a clip of the whole block filled
+every row at once until 28 October 2026) and with a
 waveform to press for a place in it (a shape for the eye, from the line's name, not read
 from the audio). A dialogue has Play conversation, and one dock, pinned to the window's foot
 while the voices are on screen, has previous, next, play, the line's waveform, its time, a

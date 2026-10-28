@@ -1975,7 +1975,10 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     text-transform: uppercase;
   }
 
-  // The words twice, the second clipped to what has been said (`--p`, 0 to 1).
+  // The words twice, the second filled with what has been said (`--p`, 0 to 1). An inline
+  // box's background runs along its rows end to end, so the fill's hard stop fills one row
+  // after another, each as far as its words are long. A clip of the whole block did every
+  // row at once.
   .vl-text {
     position: relative;
     margin: 0;
@@ -1988,8 +1991,13 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .vl-fill {
     position: absolute;
     inset: 0;
-    color: var(--deep);
-    clip-path: inset(0 calc(100% - var(--p, 0) * 100%) 0 0);
+
+    > span {
+      background: linear-gradient(90deg, var(--deep) calc(var(--p, 0) * 100%), transparent 0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
   }
 
   .vl-seek { display: block; margin-top: var(--sp-6); cursor: pointer; }
