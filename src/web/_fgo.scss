@@ -83,7 +83,10 @@ body[data-view='fgo'] {
     text-transform: uppercase;
   }
 
-  // The order switch, engraved, at the head of the list's column.
+  // The order switch, engraved, on the line of the list's first heading (placed below),
+  // where on a row of its own it pushed the list's head under the circle's.
+  #view { position: relative; }
+
   .roster-bar .seg-btn {
     font-family: var(--fg-engraved);
     font-weight: 600;
@@ -110,6 +113,10 @@ body[data-view='fgo'] {
 .fg-throne {
   position: sticky;
   top: 96px;
+  // As wide as the column, and no taller than the window has room for under the topbar,
+  // so that the outer ring's foot is never off a short screen (720px cut Alter Ego).
+  width: min(100%, max(340px, calc(100vh - 200px)));
+  justify-self: center;
 }
 
 .fg-kicker {
@@ -138,6 +145,16 @@ body[data-view='fgo'] {
 
 .fg-ring-outer { inset: 4%; border: 1px solid rgb(217 184 102 / 35%); }
 .fg-ring-dash { inset: 13%; border: 1px dashed rgb(217 184 102 / 45%); }
+
+// The summoning ring drifts, a turn every two minutes, for a reader whose system allows
+// motion: it is the page's one motion that nothing asked for.
+@media (prefers-reduced-motion: no-preference) {
+  .fg-ring-dash { animation: fg-turn 120s linear infinite; }
+}
+
+@keyframes fg-turn {
+  to { transform: rotate(1turn); }
+}
 
 .fg-ring-inner {
   inset: 30%;
@@ -252,9 +269,38 @@ body[data-view='fgo'] {
   opacity: 0.8;
 }
 
+// On a circle a phone's width, the buttons and their type grow into the room between them,
+// which at the desktop's proportions left a class's name at 8px.
+@container (max-width: 460px) {
+  .fg-knight { width: 18cqw; height: 18cqw; }
+  .fg-extra { width: 19.5cqw; height: 9.6cqw; }
+  .fg-class-name { font-size: 2.4cqw; letter-spacing: 0.04em; }
+  .fg-extra .fg-class-name { font-size: 2.2cqw; letter-spacing: 0.02em; }
+  .fg-class-count { font-size: 2.9cqw; }
+}
+
 // ── The list ──
 
-.fg-list { min-width: 0; padding-top: var(--sp-12); }
+.fg-list {
+  min-width: 0;
+  padding-top: var(--sp-12);
+  scroll-margin-top: 96px;
+}
+
+// On a desktop the order switch stands at the right end of the first heading's line, and
+// that heading's rule stops short of it.
+@media (min-width: 901px) {
+  body[data-view='fgo'] .roster-bar {
+    position: absolute;
+    top: 24px;
+    right: var(--sp-24);
+    z-index: 1;
+    padding: 0;
+  }
+
+  .fg-list > .fg-heading:first-of-type,
+  .fg-list > .fg-section:first-of-type > .fg-heading { padding-right: 270px; }
+}
 .fg-section + .fg-section { margin-top: 36px; }
 
 .fg-heading {

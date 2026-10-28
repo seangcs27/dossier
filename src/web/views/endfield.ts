@@ -34,6 +34,23 @@ type Group = keyof typeof state.picks;
 
 const pad = (n: number): string => String(n).padStart(2, '0');
 
+// The rest of the operator's profile, under the three specs, where a tall window would
+// otherwise leave the plate a gap: what the roster index has, a row for each it is not
+// silent on. A short window drops it (_endfield-grid.scss) for the strip's sake.
+function factsHtml(op: EndfieldOperator): string {
+  const facts: [string, string | undefined][] = [
+    ['Gender', op.gender],
+    ['Birthday', op.birthday],
+    ['Main attribute', op.mainAttr],
+    ['Secondary attribute', op.subAttr],
+    // The table names the pool in lower case ('chartered').
+    ['Headhunting', op.headhunting && op.headhunting[0].toUpperCase() + op.headhunting.slice(1)],
+  ];
+  const rows = facts.filter(([, value]) => value)
+    .map(([label, value]) => `<div><dt>${escHtml(label)}</dt><dd>${escHtml(value!)}</dd></div>`).join('');
+  return rows ? `<dl class="ef-facts">${rows}</dl>` : '';
+}
+
 function featureHtml(op: EndfieldOperator, at: number, of: number): string {
   const href = `#/endfield/op/${encodeURIComponent(op.id)}`;
   const index = `${pad(at + 1)} / ${pad(of)}`;
@@ -47,10 +64,9 @@ function featureHtml(op: EndfieldOperator, at: number, of: number): string {
   return `
     <div class="ef-feature" data-element="${escHtml(op.element.toLowerCase())}">
       <div class="ef-stage">
-        <span class="ef-ghost" aria-hidden="true">${escHtml(op.element)}</span>
+        <span class="ef-ghost" aria-hidden="true" style="--len: ${op.element.length}">${escHtml(op.element)}</span>
         <span class="ef-ruler" aria-hidden="true"></span>
         <span class="ef-code" aria-hidden="true">EF-${escHtml(file)} · ${escHtml(op.class)} · ${escHtml(op.element)}</span>
-        <span class="ef-index" aria-hidden="true">${index}</span>
         <a class="ef-splash-link" href="${href}" tabindex="-1">
           <img class="ef-splash" src="${endfieldSplashUrl(op.id)}" alt="${escHtml(op.name)}"
                onerror="this.src='${endfieldPortraitUrl(op.id)}'; this.onerror=null">
@@ -70,6 +86,7 @@ function featureHtml(op: EndfieldOperator, at: number, of: number): string {
           <div class="ef-faction">${escHtml(op.faction)}</div>
         </div>
         <dl class="ef-specs">${specs}</dl>
+        ${factsHtml(op)}
         ${op.quote ? `<blockquote class="ef-quote">${escHtml(op.quote)}</blockquote>` : ''}
         ${op.tags.length ? `<div class="ef-tags">${op.tags.map(t => `<span>${escHtml(t)}</span>`).join('')}</div>` : ''}
         <a class="ef-open" href="${href}">Open dossier<span aria-hidden="true">→</span></a>
@@ -118,9 +135,24 @@ function render(container: HTMLElement): void {
   document.getElementById('search-count')!.textContent = String(ops.length);
   if (ops.length === 0) {
     // With no roster at all it is the build that came back empty, not the filters.
+    // A file that turned up nothing, in the plate's own terms, and a way back out of it: the
+    // button empties the box and the panel through their own handlers (mountEndfield).
     container.innerHTML = getEndfieldOperators().length
-      ? `<div class="state-msg"><div class="label">No results</div>Try a different name or filter.</div>`
+      ? `<div class="ef-empty">
+           <div class="ef-empty-code">Query · 00 / ${pad(getEndfieldOperators().length)}</div>
+           <div class="ef-empty-title">No operator on file</div>
+           <p>Nobody matches that name and those filters.</p>
+           <button type="button" class="ef-open ef-empty-reset">Clear search and filters<span aria-hidden="true">→</span></button>
+         </div>`
       : `<div class="state-msg"><div class="label">No operators</div>The last build could not reach the Endfield wiki.</div>`;
+    container.querySelector<HTMLButtonElement>('.ef-empty-reset')?.addEventListener('click', () => {
+      const clearPicks = document.getElementById('clear-filters') as HTMLButtonElement;
+      if (!clearPicks.disabled) clearPicks.click();
+      const search = document.getElementById('search') as HTMLInputElement;
+      search.value = '';
+      search.dispatchEvent(new Event('input'));
+      search.focus();
+    });
     return;
   }
   // The operator up stays up through a search that keeps them, and across visits.
@@ -134,6 +166,25 @@ function render(container: HTMLElement): void {
   `;
   const show = container.querySelector<HTMLElement>('.ef-show')!;
   const slot = show.querySelector<HTMLElement>('.ef-feature-slot')!;
+  const strip = show.querySelector<HTMLElement>('.ef-strip')!;
+
+  // The strip fades at an edge it has more past, which is the only sign there is: at 1440px
+  // the 5★ and 4★ groups start off the right.
+  const edges = (): void => {
+    strip.toggleAttribute('data-more-left', strip.scrollLeft > 2);
+    strip.toggleAttribute('data-more-right', strip.scrollLeft < strip.scrollWidth - strip.clientWidth - 2);
+  };
+  strip.onscroll = edges;
+  new ResizeObserver(edges).observe(strip);
+  // A mouse's wheel turned over it moves it sideways; at either end the turn is the page's
+  // again, as the Path to Nowhere wall does it.
+  strip.onwheel = (ev) => {
+    if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) return;
+    const max = strip.scrollWidth - strip.clientWidth;
+    if ((ev.deltaY < 0 && strip.scrollLeft <= 0) || (ev.deltaY > 0 && strip.scrollLeft >= max)) return;
+    ev.preventDefault();
+    strip.scrollLeft += ev.deltaY;
+  };
 
   const feature = (next: number, focusStep?: string): void => {
     at = (next + ops.length) % ops.length;

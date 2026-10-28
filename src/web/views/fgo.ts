@@ -124,9 +124,12 @@ function drawFgo(page: HTMLElement, items: FgoServant[]): void {
     picked = el.dataset.class!;
     drawFgo(page, items);
     page.querySelector<HTMLElement>(`[data-class="${CSS.escape(picked)}"]`)?.focus();
-    // The list's head into view, where a long list had been scrolled past the circle.
+    // The list's head into view: where a long list had been scrolled past the circle, and on
+    // a narrow screen, where the list is under the circle and a pick would otherwise change
+    // nothing in sight. Its scroll margin clears the sticky topbar (_fgo.scss).
     const list = page.querySelector<HTMLElement>('.fg-list')!;
-    if (list.getBoundingClientRect().top < 0) list.scrollIntoView({ block: 'start' });
+    const top = list.getBoundingClientRect().top;
+    if (top < 0 || top > window.innerHeight * 0.75) list.scrollIntoView({ block: 'start' });
   };
 }
 
