@@ -77,6 +77,17 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   .sections-drop { background: $ef-ink; }
   .section-link.active { color: $ef-yellow; }
 
+  // The game's glyphs are drawn light, for its dark screens; on this paper they are turned
+  // to ink (and the soft shadow three of them carry to a glow the paper hides).
+  .class-btn img,
+  .hdr-icon { filter: invert(1); opacity: 0.85; }
+
+  // The rarity row's labels, unpicked, in the ticks' colours taken down to read on paper:
+  // the site's own violet and gold were all but white on it.
+  @each $tier, $colour in (4: #6a3fd0, 5: #8f5f00, 6: #c9400f) {
+    .rarity-btn.r#{$tier}:not(.on) { color: $colour; }
+  }
+
   #more-label {
     font-family: var(--ef-mono);
     letter-spacing: 0.06em;
@@ -96,6 +107,9 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   --ef-el: #{map.get($ef-elements, physical)};
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
+  // What the window has under the topbar (77px) and over the strip (about 180px), so that
+  // the strip stands at the foot of a desktop window; a plate taller than that wins.
+  min-height: clamp(440px, calc(100vh - 258px), 880px);
   border-bottom: var(--ef-line);
 
   @each $name, $colour in $ef-elements {
@@ -105,10 +119,13 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
 
 // The art's side: a drafting grid, a ruler down its edge, the file's code at the top and its
 // place in the strip at the foot, and the element's name written out huge behind the art in
-// its colour. The stage is as tall as the window has left over the strip, within reason.
+// its colour. The stage is as tall as its row: as a size container its own content asks
+// for no height, so the plate and the row's floor above decide it, and the art never
+// leaves a band of bare concrete under itself beside a taller plate.
 .ef-stage {
+  container-type: size;
   position: relative;
-  height: clamp(420px, calc(100vh - 300px), 760px);
+  min-height: 0;
   display: grid;
   place-items: center;
   padding: var(--sp-24) var(--sp-24) var(--sp-24) 56px;
@@ -122,12 +139,16 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
 
 .ef-ghost {
   position: absolute;
-  left: -6px;
+  left: 40px;
   top: 50%;
   transform: translateY(-50%);
   font-weight: 900;
   font-stretch: 125%;
-  font-size: clamp(120px, 17vw, 240px);
+  // As large as the whole word fits the stage at, from its letter count (--len, set by the
+  // view): an Archivo capital at this width is 0.72em (Physical) to 0.81em (Cryo) across,
+  // measured, so the widest is what it is sized for; a word cut off
+  // mid-letter read as noise. A short word ('Heat') stops at about half the stage's height.
+  font-size: min(calc((100cqw - 64px) / (var(--len) * 0.84)), 46cqh);
   line-height: 0.8;
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -148,8 +169,7 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   background: repeating-linear-gradient($ef-ink 0 1px, transparent 1px 16px);
 }
 
-.ef-code,
-.ef-index {
+.ef-code {
   position: absolute;
   font-family: var(--ef-mono);
   font-size: var(--fs-xs);
@@ -158,7 +178,6 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
 }
 
 .ef-code { left: 48px; top: 22px; }
-.ef-index { right: 18px; bottom: 16px; }
 
 .ef-splash-link {
   position: relative;
@@ -289,7 +308,28 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
     text-overflow: ellipsis;
   }
 
-  img { width: 22px; height: 22px; flex: none; }
+  img { width: 22px; height: 22px; flex: none; filter: invert(1); }
+}
+
+// The rest of the profile, the specs' labels over plain values.
+.ef-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--sp-12) var(--sp-20);
+
+  dt {
+    font-family: var(--ef-mono);
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: $ef-ink-soft;
+  }
+
+  dd {
+    margin-top: var(--sp-2);
+    font-weight: 600;
+    font-size: var(--fs-base);
+  }
 }
 
 .ef-quote {
@@ -336,10 +376,18 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
 
 // The filmstrip: a group to each rarity, its count over it in its colour.
 .ef-strip {
+  --fade-l: 0px;
+  --fade-r: 0px;
   display: flex;
   gap: 18px;
   padding: 18px 32px 22px;
   overflow-x: auto;
+  // An edge with more past it fades out (the view marks which); the fade is a mask, so it
+  // takes the art with it and not just a colour laid over the paper.
+  mask-image: linear-gradient(90deg, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+
+  &[data-more-left] { --fade-l: 56px; }
+  &[data-more-right] { --fade-r: 56px; }
 }
 
 .ef-strip-group { flex: none; }
@@ -403,9 +451,66 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   color: #8a8a84;
 }
 
+// A search that leaves nobody: the plate's own terms, and the way out of it.
+.ef-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-12);
+  max-width: 520px;
+  margin: 72px auto;
+  padding: 36px;
+  border: 1px solid #{$ef-ink};
+  background:
+    linear-gradient($ef-rule 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, $ef-rule 1px, transparent 1px) 0 0 / 32px 32px,
+    $ef-paper;
+  color: $ef-ink;
+  font-family: var(--ef-wide);
+
+  p { font-size: var(--fs-lg); }
+
+  .ef-open {
+    width: 100%;
+    margin-top: var(--sp-8);
+    border: 0;
+    cursor: pointer;
+    font-family: var(--ef-wide);
+  }
+}
+
+.ef-empty-code {
+  font-family: var(--ef-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $ef-ink-soft;
+}
+
+.ef-empty-title {
+  font-weight: 900;
+  font-stretch: 125%;
+  font-size: 34px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+// A short desktop window (720 to 820px) keeps the strip in view: the plate tightens and the
+// profile under the specs gives way first.
+@media (max-height: 820px) and (min-width: 901px) {
+  .ef-plate { gap: var(--sp-12); padding-block: var(--sp-24); }
+  .ef-name { font-size: clamp(36px, 7.5vh, 64px); }
+  .ef-quote { font-size: var(--fs-base); }
+  .ef-facts { display: none; }
+  .ef-strip { padding-block: var(--sp-12) var(--sp-16); }
+  .ef-thumb { width: 46px; height: 92px; }
+}
+
 // Under 900px the art goes over the file, a little under a phone's width tall.
 @media (max-width: 900px) {
   .ef-feature { grid-template-columns: 1fr; }
+
+  .ef-feature { min-height: 0; }
 
   .ef-stage {
     height: min(88vw, 520px);

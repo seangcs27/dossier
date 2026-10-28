@@ -1052,7 +1052,22 @@ the search and the picks leave, in a group to each rarity; a frame, the plate's 
 the arrow keys anywhere in the showcase put an operator up (only the feature is redrawn, so
 the strip keeps its scroll), and the operator up is kept across visits and through a search
 that keeps them. There are 34, the Endministrator's two forms as two. Under 900px the art
-goes over the plate. The element colours are ours (Electric is violet so it never reads as
+goes over the plate.
+
+A design pass of 28 October 2026 (the owner's "further improve them") fitted it to the
+window. **The feature is the window's height less the topbar and the strip**, and the stage
+is a size container that asks for no height of its own, so it stretches with the plate and
+never leaves concrete under the art; a window under 820px tall tightens the plate and drops
+the profile so the strip stays in sight. **The element's word is sized to fit the stage
+whole**, from its letter count (`--len`) and the widest capitals measured (Cryo's, 0.81em);
+cut off mid-letter it read as noise. The plate carries the rest of the profile under the
+specs (gender, birthday, the two attributes, headhunting), which filled the gap a tall
+window left. The strip moves sideways under a mouse's wheel (the page's again at either
+end) and fades at an edge it has more past. The game's glyphs, drawn light for its dark
+screens, are inverted to ink wherever they sit on the paper (the plate, the panel's tiles,
+the dossier's header), and the panel's 4★ and 5★ labels are taken darker to read on it. A
+search that leaves nobody is the plate's own empty file with a button that clears the box
+and the panel. The element colours are ours (Electric is violet so it never reads as
 the yellow); the game's own were not checked. The Events section link is Arknights' and is
 hidden; Operators links here.
 
@@ -1867,7 +1882,12 @@ as the game's own (bronze for one and two stars, silver for three, gold for four
 the class over the figure and the stars under it, then `No. 002` (and "JP"), the name, and a
 bracketed variant ("Alter") or the name they are first summoned under on a line of its own.
 The search looks in the name, that first name and the number; the filters are rarity,
-attribute, alignment and server; the order switch is Number, Rarity or Name. The class
+attribute, alignment and server; the order switch is Number, Rarity or Name, on the line of
+the list's first heading on a desktop. The circle is no taller than the window has room
+for under the topbar (720px cut its foot off), its buttons and type grow on a circle a
+phone's width, its dashed ring turns once in two minutes where the system allows motion,
+and a pick on a phone, where the list is under the circle, scrolls the list's head into
+view. The class
 picked is kept across visits, and a search that empties it goes back to every class. The
 world is Chaldea's navy and gold, Cinzel for what is engraved and EB Garamond for the rest
 (self-hosted, approved with Endfield's). The art sits 18% of its overhang down, which puts
