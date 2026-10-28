@@ -255,7 +255,7 @@ function bubbleHtml(line: HolodoriLine, who: Speaker, label: string): string {
         <button class="vl-play" type="button" aria-pressed="false" aria-label="Play: ${escHtml(label)}">${PLAY}${PAUSE}</button>
         <div class="vl-body">
           <span class="vl-lab">${escHtml(label)}</span>
-          <p class="vl-text"><span>${text}</span><span class="vl-fill" aria-hidden="true">${text}</span></p>
+          <p class="vl-text"><span>${text}</span><span class="vl-fill" aria-hidden="true"><span>${text}</span></span></p>
           <span class="vl-seek" data-seek>${waveHtml(line.audio)}</span>
         </div>
       </div>
