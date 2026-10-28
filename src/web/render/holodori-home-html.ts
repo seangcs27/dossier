@@ -21,7 +21,15 @@ const cast = getHolodoriCharacters();
 const songs = getHolodoriSongs();
 const cards = getHolodoriCards();
 const gachas = getHolodoriGachas();
-const announced = getHolodoriAnnouncements().slice(0, ANNOUNCED);
+// The newest ANNOUNCED, but never without the newest Steam post: the Lab's days would push a
+// patch off the page. A patch is older than them, so it takes the last place.
+function shownAnnouncements(): HolodoriAnnouncement[] {
+  const all = getHolodoriAnnouncements();
+  const shown = all.slice(0, ANNOUNCED);
+  const patch = all.find(a => a.from === 'steam');
+  return patch && !shown.includes(patch) ? [...shown.slice(0, ANNOUNCED - 1), patch] : shown;
+}
+const announced = shownAnnouncements();
 
 const SOURCE_NAME = { lab: 'Lab', steam: 'Steam' };
 

@@ -23,6 +23,8 @@ const STEAM_OWN_FEED = 'steam_community_announcements';
 
 // How many, newest first, the file keeps.
 const KEEP = 40;
+// How many of them are Steam's newest, kept in any case.
+const STEAM_KEPT = 3;
 const JST_MS = 9 * 3_600_000;
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august',
   'september', 'october', 'november', 'december'];
@@ -93,5 +95,9 @@ export async function buildAnnouncements() {
   if (!res.ok) throw new Error(`hololive Dreams Lab ${res.status}`);
   const lab = parseLab(await res.text());
   if (!lab.length) throw new Error('hololive Dreams Lab names no announcement; has its page changed?');
-  return [...lab, ...parseSteam(steam)].sort((a, b) => b.date.localeCompare(a.date)).slice(0, KEEP);
+  const byDay = (a, b) => b.date.localeCompare(a.date);
+  const posts = parseSteam(steam).sort(byDay);
+  // The newest patch notes stay whatever the Lab's days push out of the 40: they come far less often.
+  const rest = [...lab, ...posts.slice(STEAM_KEPT)].sort(byDay).slice(0, KEEP - STEAM_KEPT);
+  return [...posts.slice(0, STEAM_KEPT), ...rest].sort(byDay);
 }

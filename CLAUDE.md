@@ -78,7 +78,7 @@ fetch is correct and the flag would only add an experimental-warning banner to e
 
 **Deploying the web SPA:** Push to `master` on GitHub — `.github/workflows/deploy-pages.yml`
 builds `dist/web/` and publishes to GitHub Pages at https://seangcs27.github.io/dossier/.
-A daily cron (00:00 UTC) rebuilds so newly released operators appear without a manual push;
+A daily cron (20:00 UTC, 05:00 in Japan) rebuilds so newly released operators appear without a manual push;
 it was weekly until 20 October 2026, when hololive Dreams' ★5 previews, up for about a day
 before their gacha, made the owner pick daily over the Chinese wiki's 567s.
 Requires repo Settings → Pages → Source = "GitHub Actions" (one-time).
@@ -1824,9 +1824,10 @@ party's**, and the page credits it, so no summary is kept. A Steam patch and the
 about the same version both show. Either source failing, or a Lab page that yields nothing
 (its markup has changed), throws, and `writeOrKeep` keeps the last whole file, so the section
 goes stale rather than half-fresh; with no file it is written empty and the section and its
-credit are left out. A Steam post is kept only while it is among the 40 newest: the Lab gives
-a few items a day (the 40 reach back to 17 October today), so the last patch, of 2 October,
-is out of it.
+credit are left out. **Steam's 3 newest posts are kept in any case** (the Lab gives a few items
+a day, and the 40 reach back to 17 October today, so the last patch, of 2 October, would be
+out of them), and **the newest of them is always shown**: it takes the 8th place when the
+Lab's days fill the rest (`shownAnnouncements` in `holodori-home-html.ts`).
 
 The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
 restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
