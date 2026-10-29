@@ -134,6 +134,12 @@ export const cardMovieUrl = (asset: string): string =>
   `${CDN}/resources/mov_card_full_0_${asset}.usm/mov_card_full_0_${asset}/mov_card_full_0_${asset}.mp4`;
 export const cardSignUrl = (asset: string): string =>
   `${CDN}/resources/mov_card_sign_${asset}.usm/mov_card_sign_${asset}/mov_card_sign_${asset}.h264.mp4`;
+// A holomem's motif sigil, 256x256 white on transparency (her `assetId`, the character id
+// without its 'chr-'). The reveal's voice-line screen stands it behind the line in place of
+// her fan mark, which the game shows there and the CDN has no file of that could be found
+// (28 October 2026: the FanMark table names 04015 for Nerissa, and some 300 names were asked).
+export const motifUrl = (asset: string): string =>
+  `${CDN}/assetbundles/img_chr_motif_icon_default_main_${asset}/img_chr_motif_icon_default_main_${asset}.webp`;
 // A gacha's logo, 205x128 on transparency; the ★4 ticket gacha has none.
 export const gachaLogoUrl = (id: string): string =>
   `${CDN}/assetbundles/img_gacha_logo_${id}_lang-eng/img_gacha_logo_${id}_lang-eng_unsquished.webp`;

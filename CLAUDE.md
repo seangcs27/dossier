@@ -1710,7 +1710,18 @@ karaoke fill and the "Card get" label went on 25 October 2026, the owner's ask; 
 there and silent for the rest; the words are what she says, so a holomem of the hololive or
 DEV_IS branch has the game's own Japanese, from the dump's Japanese edition
 (`holodori-db-jpn-diff`, `LangCharacterVoice_Jpn`, a voice line's `ja`; 25 October 2026), and
-an EN or ID holomem the English), then the animation plays and the signature is written
+an EN or ID holomem the English). **Behind the line stands her emblem, with sparkles over
+the white** (29 October 2026, the owner's recording of the game): the game stands her fan
+mark there, a large outline in a gradient (the `FanMark` table names one per holomem, by her
+asset id), and since no file of it could be found on HolodoriDB's CDN (some 300 names asked),
+her motif sigil stands in (`img_chr_motif_icon_default_main_<asset>`, `motifUrl`; all 54 have
+one): drawn on a canvas as an outline in her first colour and the first of her later ones that
+shows on white (`markEnd`; Fubuki's fifth is white), by spreading the picture, laying the
+gradient over it and cutting the picture back out of the middle (`paintMark`). A canvas,
+because the CDN sends no CORS headers and a CSS mask, fetched in CORS mode, came out empty.
+Four-pointed sparkles twinkle over the white at places drawn from the card, and the words open
+out from their middle as the screen comes up, as the recording shows. Then the animation
+plays and the signature is written
 over it from the same instant. The animation is silent, begins on a white burst (which is
 why the white screen leads into it) and ends on a flash, after which the card's own art
 comes up under the signature, which stays. The owner's asks that led here: "can they all

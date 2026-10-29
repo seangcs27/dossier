@@ -1,7 +1,7 @@
 import { openArtViewer } from '../art-viewer';
 import { getVolume, paintVolume, stopAudio } from '../holodori-audio';
 import {
-  cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, voiceUrl,
+  cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, motifUrl, voiceUrl,
   type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
 import { loopSign, playReveal, revealHtml } from '../holodori-reveal';
@@ -30,6 +30,17 @@ const cardGet = (d: HolodoriCardDetail): HolodoriLine | undefined => d.voices.fi
 // The branches whose holomems speak Japanese in the game. Their reveal shows the line as they
 // say it, not the English subtitle; EN and ID holomems say the English line.
 const JAPANESE = new Set(['hololive', 'DEV_IS']);
+// Where the emblem's gradient goes to: the first of her later colours, from the fifth back,
+// that shows on the white screen. Fubuki's fifth is white, and an outline fading into the
+// white behind it was lost at that end.
+function markEnd(colors: string[]): string {
+  const light = (hex: string): boolean => {
+    const n = parseInt(hex.replace('#', ''), 16);
+    return (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255 > 0.82;
+  };
+  return [colors[4], colors[3], colors[2], colors[0]].find(c => c && !light(c)) ?? '#18c9f0';
+}
+
 const speaksJapanese = (holomem: string): boolean =>
   JAPANESE.has(getHolodoriCharacters().find(h => h.id === holomem)?.branch ?? '');
 
@@ -73,6 +84,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
   // The reveal's screen and bar are drawn here, since they hold the player's volume.
   const drawStage = (): void => {
     const line = detail ? cardGet(detail) : undefined;
+    const who = getHolodoriCharacters().find(h => h.id === card.holomem);
     page()!.querySelector('.hc-stage')!.outerHTML = stageHtml(card, shown, shown === 'reveal'
       ? revealHtml({
         poster: card.full ?? '',
@@ -81,6 +93,11 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
         voice: line && (line.ja && speaksJapanese(card.holomem)
           ? { text: line.ja, lang: 'ja' }
           : { text: line.text }),
+        mark: who && {
+          url: motifUrl(card.holomem.replace(/^chr-/, '')),
+          from: who.colors[0] ?? '#18c9f0',
+          to: markEnd(who.colors),
+        },
       })
       : '');
   };
