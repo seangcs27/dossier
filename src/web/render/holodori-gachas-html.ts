@@ -16,21 +16,22 @@ const HOUR_MS = 3_600_000;
 const gachas = getHolodoriGachas();
 const cardById = new Map(getHolodoriCards().map(c => [c.id, c]));
 
-export const dated = (g: HolodoriGacha): boolean => Boolean(g.from && g.to);
+// A banner with a start; the newest read from the dump has no end yet, and runs until it has.
+export const dated = (g: HolodoriGacha): boolean => Boolean(g.from) && !g.standing && !g.beginner;
 /** A dated banner the reader's clock has not yet seen end: running, or still to start. */
-export const isLive = (g: HolodoriGacha, now: number): boolean => dated(g) && now <= Date.parse(g.to!);
+export const isLive = (g: HolodoriGacha, now: number): boolean => dated(g) && (!g.to || now <= Date.parse(g.to));
 
 const whenHtml = (iso: string): string => `<time data-when="${iso}">${whenText(iso)}</time>`;
 
 function statusText(g: HolodoriGacha, now: number): string {
   if (g.standing) return 'Always on';
   if (g.beginner) return 'Once per player';
-  return windowText(Date.parse(g.from!), Date.parse(g.to!), now);
+  return windowText(Date.parse(g.from!), g.to ? Date.parse(g.to) : undefined, now);
 }
 
 // A status that follows the clock says its window, for fresh.ts.
 const statusAttrs = (g: HolodoriGacha): string =>
-  g.standing || g.beginner ? '' : ` data-gacha-from="${g.from}" data-gacha-to="${g.to}"`;
+  g.standing || g.beginner ? '' : ` data-gacha-from="${g.from}"${g.to ? ` data-gacha-to="${g.to}"` : ''}`;
 
 /** One banner: its logo, name, status and dates, and the cards it features. */
 export function bannerHtml(g: HolodoriGacha, now: number): string {
@@ -45,7 +46,7 @@ export function bannerHtml(g: HolodoriGacha, now: number): string {
         <div class="gacha-info">
           <p class="gacha-status"${statusAttrs(g)}>${escHtml(statusText(g, now))}</p>
           <h3 class="gacha-name">${escHtml(g.name)}</h3>
-          ${dated(g) ? `<p class="gacha-dates">${whenHtml(g.from!)} – ${whenHtml(g.to!)}</p>` : ''}
+          ${dated(g) ? `<p class="gacha-dates">${whenHtml(g.from!)} – ${g.to ? whenHtml(g.to) : 'end to be announced'}</p>` : ''}
           ${g.gachas.length > 1 ? '<p class="gacha-note">Also as a “Take your pick!” gacha, on the same cards</p>' : ''}
         </div>
       </div>
@@ -112,7 +113,7 @@ export function gachasPageHtml(now: number): string {
         ${groupHtml('Always on', gachas.filter(g => !dated(g)), now)}
         ${groupHtml('Past banners', gachas.filter(g => dated(g) && !isLive(g, now)), now)}
       ` : '<div class="state-msg"><div class="label">No gachas</div>The last build had no record of them.</div>'}
-      <p class="hd-credit">Names, dates and cards: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>, recorded by hand · Announced ★5s: the official posts, as <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a> collects them · Logos: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN</p>
+      <p class="hd-credit">Names, dates and cards: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>, recorded by hand, and the game's own data (<a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s dump) for a banner newer than that record · Announced ★5s: the official posts, as <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a> collects them · Logos: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN</p>
     </div>
   `;
 }

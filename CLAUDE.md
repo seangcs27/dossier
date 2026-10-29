@@ -1814,9 +1814,19 @@ dump names a gacha by its id alone** (`Gacha`, 23 rows), so the names, dates and
 as the Path to Nowhere release record is from S1N: one entry a banner, its two gachas (the
 usual one and its "Take your pick!" twin, which share name, dates and cards) as one, times
 in UTC. Read on 18 October 2026; holodori.best does not load three (the launch banner's
-pair, `pickup-*-260728`, and the ★5 ticket gacha), so they are left out, and the build
-warns of any gacha the dump has and the record has not, and of a featured card the Card
-table lacks. **A new banner is one entry added at the top.** The logos are asked of the
+pair, `pickup-*-260728`, and the ★5 ticket gacha), so they are left out. **A pickup banner
+newer than the record is read from the dump itself** (29 October 2026, when the record had
+fallen a banner behind and the owner asked why the newest cards were in and their banner
+was not): its gacha points are named for it ("Free-Style Cosplay Night Gacha Pt",
+`LangGachaPoint_Eng`), its id carries the day it opens (`pickup-normal-261029`), and its ★5s
+are the new ones, numbered on from every earlier banner's (`uniq-0096` to `-0100`, as each
+recorded banner's run on from the one before). It opens at 11:00 JST, as every recorded
+pickup but the area celebration did; it ends the minute before the next banner opens, and
+the newest has no end until then (the page says "Running · end not announced" and "end to
+be announced"). Its usual, free and "Take your pick!" gachas are one entry, marked `auto`.
+What the dump does not name (a "fixed" gacha, the ★5 ticket) is left out with a warning, as
+is any gacha neither has, and a featured card the Card table lacks. An entry in the record
+is still the word on a banner, and is how one the dump reads wrong is put right. The logos are asked of the
 CDN by the page (`img_gacha_logo_<id>_lang-eng`, 205x128), not baked; the ★4 ticket gacha
 has none.
 

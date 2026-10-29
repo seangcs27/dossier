@@ -40,10 +40,11 @@ export interface HolodoriGacha {
   name: string;
   gachas: string[];     // its gachas' ids without 'gacha-': the usual one, and its "Take your pick!" twin
   from?: string;
-  to?: string;
+  to?: string;          // none on the newest banner read from the dump, until the next one opens
   standing?: boolean;   // always on
   beginner?: boolean;   // each player's own, until used
   pickup: string[];     // the card ids it features
+  auto?: boolean;       // read from the dump by the build, not from the record kept by hand
 }
 
 // Baked in at build time, in the game's own order — no runtime fetch. Empty when the build
