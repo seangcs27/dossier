@@ -184,7 +184,7 @@ src/
       holodori/card-art/<id>.webp   ← each card's portrait, 256x512 (192), copied as static files
       holodori/card-full/<id>.webp  ← each card's illustration at 1024 wide (192), copied as static files
       holodori/card-details/<id>.json  ← 192 card payloads: stats by level, blooms, skills, voice lines, dialogues
-      holodori/gachas.json       ← the gacha record (15 entries), bundled into the web target
+      holodori/gachas.json       ← the gacha record (17 entries), bundled into the web target
       holodori/upcoming.json     ← the ★5s announced for a gacha the record lacks, from hololive Dreams Lab, bundled
       holodori/announcements.json  ← its 40 newest announcements (headline, day, official link), bundled into the web target
       fgo/servants.json          ← Fate/Grand Order's roster (470), bundled into the web target
@@ -1822,7 +1822,7 @@ next holomem in the game's order are at the trail's right.
 banner, running now first (edged in the sun, with "Ends in 22h 36m"), then the standing and
 beginner's gachas two or three to a line, then the past banners; each is its logo, name,
 dates in the reader's own clock and the cards it features, opening their pages. **The
-dump names a gacha by its id alone** (`Gacha`, 23 rows), so the names, dates and cards are
+dump names a gacha by its id alone** (`Gacha`, 29 rows), so the names, dates and cards are
 **recorded by hand** in `scripts/lib/holodori-gachas.mjs` from holodori.best's gacha pages,
 as the Path to Nowhere release record is from S1N: one entry a banner, its two gachas (the
 usual one and its "Take your pick!" twin, which share name, dates and cards) as one, times

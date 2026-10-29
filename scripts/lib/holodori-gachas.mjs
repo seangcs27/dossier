@@ -18,6 +18,16 @@
 
 export const GACHAS = [
   {
+    // Read on 30 October 2026. A third twin, its first ten pulls free, shares the rest.
+    name: 'Free-Style Cosplay Night', gachas: ['pickup-normal-261029', 'pickup-select-261029', 'pickup-normal-261029-free'],
+    from: '2026-10-29T02:00Z', to: '2026-11-06T01:59Z',
+    pickup: ['card-00007-5-uniq-0096-00', 'card-03007-5-uniq-0100-00', 'card-04015-5-uniq-0099-00', 'card-06004-5-uniq-0098-00', 'card-06005-5-uniq-0097-00'],
+  },
+  {
+    name: 'One ★5 Member Guaranteed', gachas: ['fixed-261029'],
+    from: '2026-10-29T02:00Z', to: '2026-11-08T01:59Z', pickup: [],
+  },
+  {
     name: 'Blissful Seaside Days', gachas: ['pickup-normal-261019', 'pickup-select-261019'],
     from: '2026-10-19T02:00Z', to: '2026-10-29T01:59Z',
     pickup: ['card-00027-5-uniq-0092-00', 'card-00032-5-uniq-0093-00', 'card-03008-5-uniq-0095-00', 'card-04014-5-uniq-0094-00'],
