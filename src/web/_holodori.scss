@@ -1579,7 +1579,48 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     pointer-events: none;
     transition: opacity 0.35s;
 
+    // Her emblem, large and faint behind the words, as the game stands her fan mark there
+    // (a canvas, painted by holodori-reveal.ts). Its height is the screen's share the
+    // recording shows, so it is the same at any stage size.
+    .rv-mark {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      height: 62%;
+      width: auto;
+      aspect-ratio: 1;
+      translate: -50% -50%;
+      opacity: 0.75;
+    }
+
+    // Four-pointed sparkles over the white, each twinkling on a cycle of its own (--t, --d
+    // from the view): white with a soft grey edge, which is all a white star on white shows.
+    .rv-sparks {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .rv-spark {
+      position: absolute;
+      width: var(--s);
+      height: var(--s);
+      translate: -50% -50%;
+      // On a wrapper, since a filter on the masked star itself would be masked away with it.
+      filter: drop-shadow(0 0 1px rgb(110 120 150 / 70%)) drop-shadow(0 1px 3px rgb(110 120 150 / 35%));
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: #fff;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 0C53 38 62 47 100 50C62 53 53 62 50 100C47 62 38 53 0 50C38 47 47 38 50 0Z'/%3E%3C/svg%3E") center / contain no-repeat;
+        animation: rv-twinkle var(--t) ease-in-out var(--d) infinite;
+      }
+    }
+
     .rv-line {
+      position: relative;
       max-width: 34em;
       color: var(--deep);
       font-size: clamp(16px, 2.2vw, 26px);
@@ -1590,6 +1631,12 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   .hc-reveal[data-ph='voice'] .rv-intro { opacity: 1; }
+
+  // As the screen comes up, the words open out from their middle and the emblem rises into
+  // place, as the recording shows (about 0.4 s); the sparkles rest while it is hidden.
+  .hc-reveal[data-ph='voice'] .rv-line { animation: rv-open 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .hc-reveal[data-ph='voice'] .rv-mark { animation: rv-mark-in 0.5s ease-out both; }
+  .hc-reveal:not([data-ph='voice']) .rv-spark::before { animation-play-state: paused; }
 
   .rv-bar {
     padding: var(--sp-12) var(--sp-16);
@@ -2761,4 +2808,21 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       padding: var(--sp-12) var(--sp-12) var(--sp-16);
     }
   }
+}
+
+// The reveal's voice-line screen (above): the line opening from its middle, the emblem coming
+// up and the sparkles twinkling, rising a little as they go.
+@keyframes rv-open {
+  from { clip-path: inset(0 50%); }
+  to { clip-path: inset(0 0); }
+}
+
+@keyframes rv-mark-in {
+  from { opacity: 0; scale: 0.92; }
+}
+
+@keyframes rv-twinkle {
+  0%, 100% { opacity: 0; scale: 0.3; translate: 0 5px; }
+  30%, 70% { opacity: 1; scale: 1; }
+  100% { translate: 0 -5px; }
 }

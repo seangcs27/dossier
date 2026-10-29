@@ -21,6 +21,29 @@ export interface Reveal {
   movie: string;
   sign: string;
   voice?: { text: string; lang?: string };
+  // The emblem behind the line, a white-on-transparency picture painted in a gradient of two
+  // of her colours: her motif sigil, standing in for the fan mark the game shows there.
+  mark?: { url: string; from: string; to: string };
+}
+
+// The line's screen, as a recording of the game shows it (29 October 2026, the owner's): her
+// emblem large and faint behind the words, and four-pointed sparkles twinkling over the white
+// at places of their own. Where they stand is drawn from the card (a seed from its animation's
+// address), so a card's screen is the same each time and two cards' are not.
+const SPARKS = 48;
+
+function sparksHtml(seed: string): string {
+  let h = 2166136261;
+  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  const next = (): number => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+  return Array.from({ length: SPARKS }, () => {
+    const size = 14 + next() * next() * 30;
+    return `<i class="rv-spark" style="left: ${(next() * 100).toFixed(1)}%; top: ${(next() * 100).toFixed(1)}%;`
+      + ` --s: ${size.toFixed(1)}px; --t: ${(1.4 + next() * 1.6).toFixed(2)}s; --d: -${(next() * 3).toFixed(2)}s"></i>`;
+  }).join('');
 }
 
 // Seconds the white screen is held after the line ends, before the animation.
@@ -43,6 +66,9 @@ export function revealHtml(r: Reveal): string {
       <canvas class="rv-ink" width="1280" height="720"></canvas>
       ${r.voice ? `
         <div class="rv-intro">
+          <div class="rv-sparks" aria-hidden="true">${sparksHtml(r.movie)}</div>
+          ${r.mark ? `<canvas class="rv-mark" width="512" height="512" aria-hidden="true"
+                    data-src="${escHtml(r.mark.url)}" data-from="${escHtml(r.mark.from)}" data-to="${escHtml(r.mark.to)}"></canvas>` : ''}
           <p class="vl-text rv-line"${r.voice.lang ? ` lang="${r.voice.lang}"` : ''}>${text}</p>
         </div>` : ''}
     </div>
@@ -87,6 +113,41 @@ export function loopSign(stage: HTMLElement): void {
     requestAnimationFrame(loop);
   };
   loop();
+}
+
+// The emblem, onto its canvas, as an outline in her gradient with the white showing inside it,
+// which is how the game draws the fan mark there: the picture is spread outwards (drawn round a
+// small circle), the gradient is laid over that (source-in), and the picture itself is cut back
+// out of the middle (destination-out). It is drawn at 80% of the canvas, so that the spread
+// stays inside it. A canvas, because the CDN sends no CORS headers and a CSS mask is fetched in
+// CORS mode, so a masked element came out empty; a canvas shows a picture from another host
+// and is only kept from being read back, which this never does.
+const LINE = 13;  // the outline's width, on the 512px canvas
+
+function paintMark(stage: HTMLElement): void {
+  const canvas = stage.querySelector<HTMLCanvasElement>('.rv-mark');
+  if (!canvas || canvas.dataset.painted) return;
+  canvas.dataset.painted = '1';
+  const picture = new Image();
+  picture.onload = () => {
+    const ctx = canvas.getContext('2d')!;
+    const { width: w, height: h } = canvas;
+    const size = w * 0.8;
+    const at = (w - size) / 2;
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * 2 * Math.PI;
+      ctx.drawImage(picture, at + LINE * Math.cos(a), at + LINE * Math.sin(a), size, size);
+    }
+    ctx.globalCompositeOperation = 'source-in';
+    const gradient = ctx.createLinearGradient(0, 0, w * 0.6, h);
+    gradient.addColorStop(0, canvas.dataset.from!);
+    gradient.addColorStop(1, canvas.dataset.to!);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.drawImage(picture, at, at, size, size);
+  };
+  picture.src = canvas.dataset.src!;
 }
 
 /** Plays the reveal laid out by `revealHtml` in `stage`, from a press. */
@@ -307,6 +368,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     jump(Number(seek.value) + by);
   };
 
+  paintMark(stage);
   claimAudio(halt);
   unlock(movie);
   unlock(sign);
