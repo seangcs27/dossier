@@ -136,6 +136,7 @@ icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size (
                      extension and the fallback markup use
   games/<game>.webp  ← the sidebar's five game emblems, white on transparency (tracked)
   ptn/<kind>-<name>.webp  ← Path to Nowhere's 25 rank, tendency and libram badges, 72px (tracked)
+  holodori/type-<type>.webp  ← hololive Dreams' three card type icons, 64px, from Gamerch (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
 site/              ← the Astro site (an npm workspace), built beside the SPA until the cut-over
@@ -1674,14 +1675,18 @@ YouTube's own slider drops below its speaker, and the owner found the pointer lo
 way. A new song's link comes from the dump,
 and its game window is used as it is until someone checks its length. Filters: Original /
 Cover, branch, singer; orders: Newest, Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
-of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy),
-opening the card's page. Filters: rarity, type, branch, holomem; orders: Newest, Holomem,
+of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy)
+and the type's icon, opening the card's page. The three type icons are the game's, as
+Gamerch's wiki has them (64px PNGs, `cdn.gamerch.com/contents/wiki/6026/entry/…`), baked once
+by hand to lossless WebP in `icons/holodori/type-<type>.webp` (tracked), the owner's approval
+of 29 October 2026; they stand on the card, the card page and the Type filter's badges. Filters: rarity, type, branch, holomem; orders: Newest, Holomem,
 Rarity.
 
 The build reads them from the same dump: `Music`, `MusicDifficulty` and `LangMusic_Eng`
 for the songs (tutorial rows dropped), and for the cards `Card`, `CardLevel`,
 `CardLevelLimit`, `CardPotential`, the three skill level tables, `SkillTreeConnectEffect`,
-`Costume`, `LiveLeaderSkill`, `CharacterVoice`, `LiveDialogueVoice` and their language
+`Costume`, `LiveLeaderSkill`, `LivePassiveSkillEffect`, `LiveActiveSkillEffect`,
+`CharacterVoice`, `LiveDialogueVoice` and their language
 tables. A card's type is not named in `Card`; it is read from the skill-target text its
 `attributeType` points at ("[attribute=cute]Cute Type[/attribute]"). 54 cards have no
 outfit and so no outfit skill. **The jackets are the
@@ -1697,12 +1702,15 @@ cannot be had.
 **A card has a page of its own** (`#/holodori/card/<id>`, `views/holodori-card.ts`, 17
 October 2026, the owner's "card pages first"), after holodori.best's card page: its
 illustration in its rarity's frame (opening the art viewer on the CDN's full-size file),
-with an Animation and a Signature beside it on a 5-star card (84 of 192), played from the
-CDN (the Signature drawn over the art as the reveal draws it, `loopSign`: played as it is,
-its two halves, below, showed as the writing doubled and off its place; 25 October 2026,
-checked against a recording of the game), and **Play** (Reveal until 25 October 2026; `holodori-reveal.ts`, 20 October 2026), which plays the two and the
-card-get line as the game does for a card won, from one tap (a browser lets a page play
-sound only after one). **The order is read off a recording of a real 5-star pull** (a
+still until a 5-star card's (84 of 192) **Play** is pressed (Reveal until 25 October 2026;
+`holodori-reveal.ts`, 20 October 2026), which plays the animation, the signature and the
+card-get line from the CDN as the game does for a card won, from one tap (a browser lets a
+page play sound only after one). **Play is a round icon in the stage's top left corner with
+two toggles beside it, Sound and Signature** (29 October 2026, the owner's ask, in place of
+the Illustration, Animation and Signature tabs): Sound off plays it all muted, Signature off
+hides the writing (its video still runs for time); both apply at once mid-play and are kept
+from card to card. The icon is pause while it plays and replay once it is over; it, or a
+press on the screen, pauses and goes on from the same place. **The order is read off a recording of a real 5-star pull** (a
 YouTube video, 21 October 2026; frames sampled and its audio's loudness measured in the
 browser, nothing downloaded): the line is said first, on a white screen with its words
 (here the line in the holomem's colour, whole from the start, with no label over it: the
@@ -1743,8 +1751,13 @@ that place, finished or not, with each of the three put where it is at that mome
 past the end is Skip. Beside the stage are the
 name, the holomem (a link to her page) and a fact list; then **Stats**, a level
 slider and blooms 0 to 5 over the three stats and their total, with the limit breaks the
-level needs; **Skills**, passive, active, special, connect effect (none on a 3-star) and
-outfit skill, each at the level the bloom gives it; **Voice lines** (card get, conversation,
+level needs (each stat led by a tile of its letter, P, T or S, ours: no file of the game's
+stat icons could be had); **Skills**, passive, active, special, connect effect (none on a 3-star) and
+outfit skill, each at the level the bloom gives it, the first three with the game's icon
+for what the skill does (the CDN's `img_skill_icon_<passive|active>_<effect type>`, white on
+transparency, set on a tile in the skill's colour; the effect is its level-1 row's in
+`LivePassiveSkillEffect` / `LiveActiveSkillEffect`, the payload's `icons`; 29 October 2026;
+the connect effect and the outfit skill have no file there); **Voice lines** (card get, conversation,
 live skill, bloom 1 to 5: 5-star cards only) and **Live dialogues** (her line and another
 holomem's answer, 390 across the cards), each with its audio from the CDN, as bubbles
 (`holodori-voice.ts`): in the speaker's colour with her face, the card's own holomem on the

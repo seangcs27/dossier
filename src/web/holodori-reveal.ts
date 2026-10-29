@@ -101,20 +101,6 @@ function paintSign(sign: HTMLVideoElement, ink: CanvasRenderingContext2D, matte:
   matte.drawImage(sign, 0, half, sign.videoWidth, half, 0, 0, 1280, 720);
 }
 
-/** Draws the stage's looping signature (the card page's Signature) over its art, for as long as it is on the page. */
-export function loopSign(stage: HTMLElement): void {
-  const sign = stage.querySelector<HTMLVideoElement>('.rv-sign');
-  if (!sign) return;
-  const ink = stage.querySelector<HTMLCanvasElement>('.rv-ink')!.getContext('2d')!;
-  const matte = stage.querySelector<HTMLCanvasElement>('.rv-matte')!.getContext('2d')!;
-  const loop = (): void => {
-    if (!sign.isConnected) return;
-    paintSign(sign, ink, matte);
-    requestAnimationFrame(loop);
-  };
-  loop();
-}
-
 // The emblem, onto its canvas, as an outline in her gradient with the white showing inside it,
 // which is how the game draws the fan mark there: the picture is spread outwards (drawn round a
 // small circle), the gradient is laid over that (source-in), and the picture itself is cut back
@@ -160,8 +146,11 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   const segs = Array.from(stage.querySelectorAll<HTMLElement>('.rv-seg'));
   const seek = find<HTMLInputElement>('.rv-seek');
   const scrub = find('.rv-scrub');
+  const corner = find('.hc-play');
   const voice = voiceUrl ? new Audio(voiceUrl) : undefined;
   let finished = false;
+  let paused = false;
+  let shownAt = 0;       // seconds into the whole, as last painted: where a pause resumes from
   let dragging = false;  // the seek bar is held, so the playback does not move its thumb
   let skipped = false;
   let started = false;   // the animation and signature have begun
@@ -204,6 +193,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     const at = skipped || finished ? total
       : started ? lead + Math.max(movie.currentTime, sign.currentTime)
         : voice?.currentTime ?? 0;
+    shownAt = at;
     find('.rv-time').textContent = `${clock(at)} / ${clock(total)}`;
     if (total) seek.max = String(total);
     if (!dragging) seek.value = String(at);
@@ -212,6 +202,11 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   }
 
   function loop(): void {
+    // The Sound toggle beside Play mutes all three at once, playing or not.
+    const mute = stage.dataset.sound === 'off';
+    movie.muted = mute;
+    sign.muted = mute;
+    if (voice) voice.muted = mute;
     if (started) drawSign();
     paint();
     if (!finished) frame = requestAnimationFrame(loop);
@@ -226,8 +221,9 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     stopVolume();
     releaseAudio(halt);
     drawSign();
-    find('[data-reveal]').hidden = false;
+    find('.rv-ctl [data-reveal]').hidden = false;
     find('[data-rv="skip"]').hidden = true;
+    corner.setAttribute('aria-label', 'Replay');
     paint();
   }
 
@@ -319,10 +315,13 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     }
     clearTimeout(hold);
     skipped = false;
+    paused = false;
+    delete stage.dataset.paused;
+    corner.setAttribute('aria-label', 'Pause');
     if (finished) {
       finished = false;
       stopVolume = onVolume(applyVolume);
-      find('[data-reveal]').hidden = true;
+      find('.rv-ctl [data-reveal]').hidden = true;
       find('[data-rv="skip"]').hidden = false;
       frame = requestAnimationFrame(loop);
     }
@@ -355,6 +354,29 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     else void sign.play().catch(endSign);
   }
 
+  // Stops all three where they are, to go on from there (`jump`) on the next press. A pause in
+  // the hold after the line goes on from the line's end, the hold whole.
+  function pause(): void {
+    paused = true;
+    stage.dataset.paused = '';
+    clearTimeout(hold);
+    movie.pause();
+    sign.pause();
+    voice?.pause();
+    corner.setAttribute('aria-label', 'Play');
+  }
+  const toggle = (): void => (paused ? jump(shownAt) : pause());
+  // The play button in the corner and a press on the screen pause and go on; once the reveal is
+  // over, the button's press goes on to the view, which plays it again.
+  corner.onclick = (e) => {
+    if (finished) return;
+    e.stopPropagation();
+    toggle();
+  };
+  find('.rv-screen').onclick = () => {
+    if (!finished) toggle();
+  };
+
   seek.oninput = () => jump(Number(seek.value));
   seek.onpointerdown = () => {
     dragging = true;
@@ -369,6 +391,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   };
 
   paintMark(stage);
+  corner.setAttribute('aria-label', 'Pause');
   claimAudio(halt);
   unlock(movie);
   unlock(sign);

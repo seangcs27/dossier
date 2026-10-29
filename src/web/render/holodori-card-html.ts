@@ -1,9 +1,9 @@
 import { crumbsHtml, escHtml } from '../format';
 import {
-  cardMovieUrl, cardSignUrl, getHolodoriCards, getHolodoriCharacters,
+  getHolodoriCards, getHolodoriCharacters, skillIconUrl,
   type HolodoriCard, type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
-import { skillHtml, starsHtml } from './holodori-cards-html';
+import { skillHtml, starsHtml, typeHtml } from './holodori-cards-html';
 import { faceHtml } from './holodori-songs-html';
 
 // A hololive Dreams card's own page (#/holodori/card/<id>), after holodori.best's: its
@@ -21,7 +21,7 @@ const SKILLS = [
   { key: 'special', label: 'Special skill' },
   { key: 'connect', label: 'Connect effect' },
 ] as const;
-export type Shown = 'art' | 'movie' | 'sign' | 'reveal';
+export type Shown = 'art' | 'reveal';
 
 const cards = getHolodoriCards();
 const cast = getHolodoriCharacters();
@@ -51,39 +51,33 @@ function stepHtml(card: HolodoriCard, rel: 'prev' | 'next'): string {
   `;
 }
 
+// The play button's three faces; the stage's state picks which shows (_holodori.scss).
+const PLAY_ICONS = `
+  <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z"></path></svg>
+  <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z"></path></svg>
+  <svg class="i-again" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3a5 5 0 1 0 5 5h-2a3 3 0 1 1-3-3v2.5L11.5 4 8 .5z"></path></svg>`;
+
 /**
  * The stage is the card list's alone, so it is whole before the payload comes, or without it.
  * `reveal` is the reveal's screen and bar, which the view draws (they hold the player's volume)
- * and is only needed when `shown` is 'reveal'.
+ * and is only needed when `shown` is 'reveal'. Until Play is pressed it is the illustration,
+ * still; `sound` and `sign` are what Play plays with, toggled beside it in one corner.
  */
-export function stageHtml(card: HolodoriCard, shown: Shown, reveal = ''): string {
+export function stageHtml(card: HolodoriCard, shown: Shown, reveal = '', sound = true, sign = true): string {
   const poster = card.full ?? '';
   const media = shown === 'reveal'
     ? reveal
-    : shown === 'art'
-      ? `<button class="hc-art" type="button" aria-label="Open the illustration full size">
-           ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
-         </button>
-         ${card.movie ? '<button class="rv-go" type="button" data-reveal>Play</button>' : ''}`
-      : shown === 'sign'
-        // The signature's video is its writing over a matte of it, one above the other: shown
-        // as it is, the box showed the foot of the one over the head of the other. It is drawn
-        // over the art as the reveal draws it (holodori-reveal.ts, loopSign).
-        ? `<div class="rv-screen hc-sign">
-             ${poster ? `<img class="rv-art" src="${escHtml(poster)}" alt="">` : ''}
-             <video class="rv-sign" src="${escHtml(cardSignUrl(card.asset))}" autoplay muted loop playsinline></video>
-             <canvas class="rv-matte" width="1280" height="720"></canvas>
-             <canvas class="rv-ink" width="1280" height="720"></canvas>
-           </div>`
-        : `<video src="${escHtml(cardMovieUrl(card.asset))}" poster="${escHtml(poster)}"
-                autoplay muted loop playsinline controls></video>`;
-  const tabs: [Shown, string][] = [['reveal', 'Play'], ['art', 'Illustration'], ['movie', 'Animation'], ['sign', 'Signature']];
+    : `<button class="hc-art" type="button" aria-label="Open the illustration full size">
+         ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
+       </button>`;
   return `
-    <figure class="hc-stage${shown === 'reveal' ? ' hc-reveal' : ''}">
+    <figure class="hc-stage${shown === 'reveal' ? ' hc-reveal' : ''}"${sound ? '' : ' data-sound="off"'}${sign ? '' : ' data-sign="off"'}>
       ${media}
       ${card.movie ? `
-        <div class="hc-shows" role="group" aria-label="Show">
-          ${tabs.map(([id, label]) => `<button type="button" data-show="${id}" aria-pressed="${id === shown}">${label}</button>`).join('')}
+        <div class="hc-plays" role="group" aria-label="Play the card's reveal">
+          <button class="hc-play" type="button" data-reveal aria-label="Play">${PLAY_ICONS}</button>
+          <button type="button" data-opt="sound" aria-pressed="${sound}">Sound</button>
+          <button type="button" data-opt="sign" aria-pressed="${sign}">Signature</button>
         </div>` : ''}
     </figure>
   `;
@@ -103,7 +97,7 @@ export function headHtml(card: HolodoriCard, d: HolodoriCardDetail | null): stri
     <div class="hc-head">
       <p class="hc-meta">
         <span class="hcard-stars" aria-label="${card.rarity} stars">${starsHtml(card.rarity)}</span>
-        ${card.type ? `<em class="hcard-type type-${card.type.toLowerCase()}">${escHtml(card.type)}</em>` : ''}
+        ${card.type ? typeHtml(card.type) : ''}
       </p>
       <h2 class="lettered hc-name">${escHtml(card.name)}</h2>
       ${c ? `
@@ -134,7 +128,7 @@ export function readoutHtml(d: HolodoriCardDetail, level: number | 'max', bloom:
       <dl class="hc-values">
         ${values.map((v, i) => `
           <div>
-            <dt>${STATS[i]}${i === main ? ' <small>Main</small>' : ''}</dt>
+            <dt><b class="hc-stat-icon stat-${i}" aria-hidden="true">${STATS[i][0]}</b>${STATS[i]}${i === main ? ' <small>Main</small>' : ''}</dt>
             <dd><i style="--v: ${(v / best) * 100}%"></i><span>${v.toLocaleString('en')}</span></dd>
           </div>`).join('')}
         <div class="hc-total"><dt>Total</dt><dd><span>${values.reduce((a, b) => a + b, 0).toLocaleString('en')}</span></dd></div>
@@ -166,8 +160,12 @@ function skillsHtml(d: HolodoriCardDetail, bloom: number): string {
   const entries = SKILLS.filter(s => d[s.key].length).map((s) => {
     const at = raisedAt(d, s.key);
     const up = at > 0 && bloom >= at;
+    const icon = s.key === 'connect' ? '' : d.icons[s.key];
     return `
-      <div class="hc-skill">
+      <div class="hc-skill${icon ? ' has-icon' : ''}">
+        ${icon ? `<span class="hc-skill-icon icon-${s.key}" aria-hidden="true">
+                    <img src="${escHtml(skillIconUrl(icon))}" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.remove()">
+                  </span>` : ''}
         <h4>${s.label}<small>${up ? 'Lv 2' : at ? `Lv 1 · Lv 2 at bloom ${at}` : 'Lv 1'}</small></h4>
         <p>${skillHtml(d[s.key][up ? 1 : 0] ?? d[s.key][0])}</p>
       </div>

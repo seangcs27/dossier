@@ -1361,13 +1361,18 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     position: absolute;
     right: 10px;
     bottom: 10px;
-    padding: 1px var(--sp-8);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px var(--sp-8) 1px 2px;
     border-radius: var(--radius-pill);
     color: $ink;
     font-size: var(--fs-2xs);
     font-style: normal;
     font-weight: 900;
     box-shadow: 0 0 0 2px #fff;
+
+    img { width: 16px; height: 16px; }
   }
 
   // The three types, in the colours a type's word takes in a skill too.
@@ -1436,20 +1441,55 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
   }
 
-  // Illustration, animation and signature, a 5-star card's three, over the stage's foot.
-  .hc-shows {
+  // A 5-star card's Play and the two toggles it plays with, Sound and Signature, in the
+  // stage's top left corner whether the illustration or the reveal is up.
+  .hc-plays {
     position: absolute;
-    bottom: 16px;
+    top: 16px;
     left: 16px;
+    z-index: 1;
     display: flex;
     gap: 2px;
+    align-items: center;
     padding: 3px;
     border-radius: var(--radius-pill);
     background: #fff;
     box-shadow: 0 3px 6px rgb(16 60 110 / 25%);
   }
 
-  .hc-shows button,
+  // Play, pause while the reveal plays, replay once it is over.
+  .hc-play {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: $sun;
+    color: $ink;
+    cursor: pointer;
+    transition: transform 0.15s;
+
+    svg { grid-area: 1 / 1; width: 14px; height: 14px; fill: currentcolor; }
+    .i-pause,
+    .i-again { display: none; }
+
+    &:hover { transform: scale(1.08); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+  }
+
+  .hc-reveal:not([data-ph='done'], [data-paused]) .hc-play {
+    .i-play { display: none; }
+    .i-pause { display: block; }
+  }
+
+  .hc-reveal[data-ph='done'] .hc-play {
+    .i-play { display: none; }
+    .i-again { display: block; }
+  }
+
+  .hc-plays [data-opt],
   .hc-blooms button {
     padding: var(--sp-4) var(--sp-12);
     border: 0;
@@ -1468,34 +1508,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   // The reveal, a 5-star card's: the animation, the signature over it, and the card-get line
   // in a bubble on the screen's foot. Under the screen are three tracks, laid along the time
-  // the two videos take together and filling as each plays, and the buttons. The big button
-  // that starts it is on the illustration.
-  .rv-go {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    padding: var(--sp-8) 28px;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: $sun;
-    color: $ink;
-    font: inherit;
-    font-size: var(--fs-lg);
-    font-weight: 900;
-    cursor: pointer;
-    box-shadow: 0 6px 14px rgb(16 60 110 / 35%);
-    transform: translate(-50%, -50%);
-    transition: transform 0.15s;
-
-    &:hover { transform: translate(-50%, -50%) scale(1.06); }
-    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
-  }
-
-  .hc-reveal .hc-shows {
-    top: 16px;
-    bottom: auto;
-  }
-
+  // the two videos take together and filling as each plays, and the buttons. A press on the
+  // screen pauses it and goes on.
   .rv-screen {
     position: relative;
     aspect-ratio: 1820 / 1024;
@@ -1528,13 +1542,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .hc-reveal:is([data-ph='end'], [data-ph='done']) .rv-art { opacity: 1; }
 
-  // The card page's Signature: the reveal's screen with the art under the writing throughout,
-  // and no bar under it.
-  .hc-sign {
-    border-radius: 17px;
-
-    .rv-art { opacity: 1; }
-  }
+  .hc-reveal .rv-screen { cursor: pointer; }
+  .hc-reveal[data-ph='done'] .rv-screen { cursor: default; }
 
   // The signature's video only feeds the two canvases that show it: the matte, inverted and
   // multiplied in to clear the strokes' place, then the writing screened in over it.
@@ -1561,6 +1570,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   .rv-ink { mix-blend-mode: screen; }
+
+  // The Signature toggle off: the writing is not drawn, though its video still runs for time.
+  .hc-stage[data-sign='off'] :is(.rv-matte, .rv-ink) { visibility: hidden; }
 
   .rv-intro {
     --tint: #fff;
@@ -1636,7 +1648,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   // place, as the recording shows (about 0.4 s); the sparkles rest while it is hidden.
   .hc-reveal[data-ph='voice'] .rv-line { animation: rv-open 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
   .hc-reveal[data-ph='voice'] .rv-mark { animation: rv-mark-in 0.5s ease-out both; }
-  .hc-reveal:not([data-ph='voice']) .rv-spark::before { animation-play-state: paused; }
+  .hc-reveal:is(:not([data-ph='voice']), [data-paused]) .rv-spark::before { animation-play-state: paused; }
 
   .rv-bar {
     padding: var(--sp-12) var(--sp-16);
@@ -1859,7 +1871,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
     div {
       display: grid;
-      grid-template-columns: 112px 1fr 56px;
+      grid-template-columns: 136px 1fr 56px;
       align-items: center;
       gap: var(--sp-12);
     }
@@ -1875,6 +1887,25 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
         font-size: var(--fs-2xs);
         font-weight: 900;
       }
+    }
+
+    // Our own: no file of the game's stat icons could be had. Its letter, as the game's
+    // stat skill icons have it, on a tile.
+    .hc-stat-icon {
+      display: inline-grid;
+      place-items: center;
+      width: 18px;
+      height: 18px;
+      margin-right: 6px;
+      border-radius: 5px;
+      color: #fff;
+      font-size: var(--fs-2xs);
+      font-weight: 900;
+      vertical-align: -3px;
+
+      &.stat-0 { background: linear-gradient(160deg, #ff8fc4, #f0418e); }
+      &.stat-1 { background: linear-gradient(160deg, #86e0ff, #2f9fe0); }
+      &.stat-2 { background: linear-gradient(160deg, #ffc95c, #f08a10); }
     }
 
     dd {
@@ -1934,6 +1965,32 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     }
 
     .hl { color: $cover-deep; font-weight: 900; }
+
+    // The game's icon for what the skill does, beside its name and text.
+    &.has-icon {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      column-gap: var(--sp-12);
+      align-items: start;
+    }
+  }
+
+  // The glyph is white on transparency; the game sets it on a tile in the skill's colour.
+  .hc-skill-icon {
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 2px solid #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgb(16 60 110 / 25%);
+
+    img { width: 32px; height: 32px; }
+
+    &.icon-passive { background: linear-gradient(160deg, #ffc95c, #ff9d1f); }
+    &.icon-active { background: linear-gradient(160deg, #86e0ff, #3ab0ee); }
+    &.icon-special { background: linear-gradient(135deg, #f58bd0, #6c8dff); }
   }
 
   // ── Voice lines ──

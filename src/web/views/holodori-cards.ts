@@ -1,6 +1,6 @@
 import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { getHolodoriCards, getHolodoriCharacters, type HolodoriCard, type HolodoriCharacter } from '../holodori-index';
-import { cardTileHtml } from '../render/holodori-cards-html';
+import { cardTileHtml, typeIconUrl } from '../render/holodori-cards-html';
 
 // hololive Dreams' cards (#/holodori/cards): every card the game has, three or four to a
 // holomem, as its portrait in a frame of its rarity with its name and type. A card opens
@@ -33,7 +33,7 @@ const holomemOf = (card: HolodoriCard): HolodoriCharacter | undefined => byId.ge
 export function mountHolodoriCards(container: HTMLElement): void {
   const filters: RosterFilter<HolodoriCard>[] = [
     { key: 'rarity', label: 'Rarity', values: ['5', '4', '3'], look: 'chips', text: v => `${v} stars`, of: card => String(card.rarity) },
-    { key: 'type', label: 'Type', values: types, look: 'chips', of: card => card.type },
+    { key: 'type', label: 'Type', values: types, look: 'badges', icon: typeIconUrl, of: card => card.type },
     { key: 'branch', label: 'Branch', values: branches, look: 'chips', of: card => holomemOf(card)?.branch ?? '' },
     {
       key: 'holomem', label: 'Holomem', values: cast.map(c => c.shortName), look: 'chips', folded: true,

@@ -117,6 +117,9 @@ export interface HolodoriCardDetail {
   active: string[];
   special: string[];
   connect: string[];
+  // Each of the first three's icon on the CDN, by what it does ('active_scoreuppermilup'); see
+  // skillIconUrl(). The connect effect and the outfit skill have no file there.
+  icons: { passive: string; active: string; special: string };
   outfit: string;
   outfitSkill: string;
   voices: HolodoriLine[];   // empty below 5 stars
@@ -140,6 +143,9 @@ export const cardSignUrl = (asset: string): string =>
 // (28 October 2026: the FanMark table names 04015 for Nerissa, and some 300 names were asked).
 export const motifUrl = (asset: string): string =>
   `${CDN}/assetbundles/img_chr_motif_icon_default_main_${asset}/img_chr_motif_icon_default_main_${asset}.webp`;
+// A skill's icon, 128x128, named for what the skill does (the payload's `icons`).
+export const skillIconUrl = (icon: string): string =>
+  `${CDN}/assetbundles/img_skill_icon_${icon}/img_skill_icon_${icon}.webp`;
 // A gacha's logo, 205x128 on transparency; the ★4 ticket gacha has none.
 export const gachaLogoUrl = (id: string): string =>
   `${CDN}/assetbundles/img_gacha_logo_${id}_lang-eng/img_gacha_logo_${id}_lang-eng_unsquished.webp`;

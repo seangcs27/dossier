@@ -1,10 +1,10 @@
 import { openArtViewer } from '../art-viewer';
-import { getVolume, paintVolume, stopAudio } from '../holodori-audio';
+import { getVolume, paintVolume } from '../holodori-audio';
 import {
   cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, motifUrl, voiceUrl,
   type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
-import { loopSign, playReveal, revealHtml } from '../holodori-reveal';
+import { playReveal, revealHtml } from '../holodori-reveal';
 import { voiceClick } from '../holodori-voice';
 import {
   bodyHtml, cardHtml, headHtml, readoutHtml, stageHtml, voicesHtml, type Shown,
@@ -12,7 +12,7 @@ import {
 
 // A hololive Dreams card's own page (#/holodori/card/<id>), after holodori.best's: its
 // illustration (and a 5-star card's animation and signature, which Play plays as the game
-// does when a card is won), its stats at the level and bloom picked, its skills as that bloom
+// does when a card is won, with the sound and the signature toggled beside it), its stats at the level and bloom picked, its skills as that bloom
 // has them, its voice lines and its live dialogues as bubbles with a player. Everything under
 // the head is the card's payload, fetched when the page opens. In the album's world
 // (_holodori.scss). The page is drawn by render/holodori-card-html.ts.
@@ -23,6 +23,10 @@ const cards = getHolodoriCards();
 // its elite and potential. 'max' follows each card's own top level.
 let level: number | 'max' = 'max';
 let bloom = 0;
+// What Play plays with, toggled beside it and kept from one card to the next: the sound (the
+// line and its audio; off, it all plays muted) and the signature written over the animation.
+let sound = true;
+let sign = true;
 
 // The line a card's reveal plays with its signature, which a 5-star card has first.
 const cardGet = (d: HolodoriCardDetail): HolodoriLine | undefined => d.voices.find(v => v.label === 'Card get') ?? d.voices[0];
@@ -99,7 +103,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
           to: markEnd(who.colors),
         },
       })
-      : '');
+      : '', sound, sign);
   };
 
   // Plays the reveal on the stage, from a press. The card-get line is in the payload, which
@@ -112,7 +116,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
     drawStage();
     const line = d ? cardGet(d) : undefined;
     playReveal(page()!.querySelector<HTMLElement>('.hc-stage')!, line && voiceUrl(line.audio));
-    page()!.querySelector<HTMLElement>('[data-show="reveal"]')?.focus();
+    page()!.querySelector<HTMLElement>('.hc-play')?.focus();
   };
 
   // Handlers are assigned to the container, since the page is drawn again on every change.
@@ -127,19 +131,23 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
     if (voiceClick(e, container)) return;
     const target = e.target as HTMLElement;
     const b = target.closest<HTMLElement>('[data-bloom]');
-    const show = target.closest<HTMLElement>('[data-show]');
+    const opt = target.closest<HTMLElement>('[data-opt]');
     if (b) {
       bloom = Number(b.dataset.bloom);
       render();
       page()?.querySelector<HTMLElement>(`[data-bloom="${bloom}"]`)?.focus();
-    } else if (target.closest('[data-reveal]') || show?.dataset.show === 'reveal') {
+    } else if (target.closest('[data-reveal]')) {
       void reveal();
-    } else if (show) {
-      stopAudio();
-      shown = show.dataset.show as Shown;
-      drawStage();
-      if (shown === 'sign') loopSign(page()!.querySelector<HTMLElement>('.hc-stage')!);
-      page()?.querySelector<HTMLElement>(`[data-show="${shown}"]`)?.focus();
+    } else if (opt) {
+      // A toggle takes effect at once on a reveal that is playing (holodori-reveal.ts reads
+      // the stage's data-sound; the stylesheet hides the signature on data-sign).
+      const on = opt.getAttribute('aria-pressed') !== 'true';
+      if (opt.dataset.opt === 'sound') sound = on;
+      else sign = on;
+      opt.setAttribute('aria-pressed', String(on));
+      const stage = opt.closest<HTMLElement>('.hc-stage')!;
+      if (on) delete stage.dataset[opt.dataset.opt!];
+      else stage.dataset[opt.dataset.opt!] = 'off';
     } else if (target.closest('.hc-art')) {
       openArtViewer(
         card.id, [{ suffix: 'full', label: card.name, artist: null, url: cardArtUrl(card.asset) }], 0,
@@ -152,6 +160,7 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
     // site keeps a visit's across its pages, so a later card is drawn again at those.
     paintVolume();
     if (level !== 'max' || bloom !== 0) render();
+    if (!sound || !sign) drawStage();
     return;
   }
   render();
