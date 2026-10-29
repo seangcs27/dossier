@@ -381,11 +381,11 @@ async function buildCards() {
   });
   const [
     cards, levels, limits, potentials, passives, actives, specials, connects, costumes, leaders, targets,
-    voices, dialogues, ...texts
+    voices, dialogues, passiveEffects, activeEffects, ...texts
   ] = await Promise.all([
     'Card', 'CardLevel', 'CardLevelLimit', 'CardPotential', 'LivePassiveSkillLevel', 'LiveActiveSkillLevel',
     'LiveSpecialSkillLevel', 'SkillTreeConnectEffect', 'Costume', 'LiveLeaderSkill', 'LiveSkillEffectTarget',
-    'CharacterVoice', 'LiveDialogueVoice',
+    'CharacterVoice', 'LiveDialogueVoice', 'LivePassiveSkillEffect', 'LiveActiveSkillEffect',
     'LangCard_Eng', 'LangGeneratedLivePassiveSkillLevel_Eng', 'LangGeneratedLiveActiveSkillLevel_Eng',
     'LangGeneratedLiveSpecialSkillLevel_Eng', 'LangGeneratedSkillTreeConnectEffect_Eng', 'LangCostume_Eng',
     'LangGeneratedLiveLeaderSkill_Eng', 'LangGeneratedLiveSkillEffectTarget_Eng', 'LangCharacterVoice_Eng',
@@ -417,6 +417,21 @@ async function buildCards() {
   const active = skillTexts(actives, 'liveActiveSkillId');
   const special = skillTexts(specials, 'liveSpecialSkillId');
   const connect = skillTexts(connects, 'id');
+  // A skill's icon is named for what its first effect does, as the CDN files it
+  // ('img_skill_icon_active_scoreuppermilup'); a special skill's effects are an active one's.
+  const effectIcon = new Map();
+  for (const [kind, rows] of [['passive', passiveEffects], ['active', activeEffects]]) {
+    for (const e of rows.filter(r => r.number === 1)) {
+      effectIcon.set(e.groupId, `${kind}_${e.type.replace(/.*_EFFECT_TYPE_/, '').replace(/_/g, '').toLowerCase()}`);
+    }
+  }
+  const skillIcon = (rows, key, group) => {
+    const groupOf = new Map(rows.filter(r => r.level === 1).map(r => [r[key], r[group]]));
+    return id => effectIcon.get(groupOf.get(id)) ?? '';
+  };
+  const passiveIcon = skillIcon(passives, 'livePassiveSkillId', 'livePassiveSkillEffectGroupId');
+  const activeIcon = skillIcon(actives, 'liveActiveSkillId', 'liveActiveSkillEffectGroupId');
+  const specialIcon = skillIcon(specials, 'liveSpecialSkillId', 'liveActiveSkillEffectGroupId');
 
   const list = [];
   const details = [];
@@ -453,6 +468,11 @@ async function buildCards() {
       active: active(c.liveActiveSkillId),
       special: special(c.liveSpecialSkillId),
       connect: connect(c.skillTreeConnectEffectId),
+      icons: {
+        passive: passiveIcon(c.livePassiveSkillId),
+        active: activeIcon(c.liveActiveSkillId),
+        special: specialIcon(c.liveSpecialSkillId),
+      },
       outfit,
       outfitSkill: leader ? text.get(leader.descriptionLangId) ?? '' : '',
       voices: VOICES.flatMap(([key, label]) => {

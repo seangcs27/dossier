@@ -18,6 +18,15 @@ export function skillHtml(text: string): string {
 
 export const starsHtml = (n: number): string => STAR.repeat(n);
 
+// A type's icon, the game's own (Gamerch's copy, 64px, baked once by hand into icons/holodori/).
+export const typeIconUrl = (type: string): string => `icons/holodori/type-${type.toLowerCase()}.webp`;
+
+/** A card's type as a pill: its icon and its word. */
+export const typeHtml = (type: string, hidden = false): string => `
+  <em class="hcard-type type-${type.toLowerCase()}"${hidden ? ' aria-hidden="true"' : ''}>
+    <img src="${escHtml(typeIconUrl(type))}" alt="" width="16" height="16" onerror="this.remove()">${escHtml(type)}
+  </em>`;
+
 export function cardTileHtml(card: HolodoriCard): string {
   const c = byId.get(card.holomem);
   return `
@@ -30,7 +39,7 @@ export function cardTileHtml(card: HolodoriCard): string {
           ${card.art ? `<img src="${escHtml(card.art)}" alt="" width="256" height="363" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
         </span>
         <span class="hcard-stars" aria-hidden="true">${starsHtml(card.rarity)}</span>
-        ${card.type ? `<em class="hcard-type type-${card.type.toLowerCase()}" aria-hidden="true">${escHtml(card.type)}</em>` : ''}
+        ${card.type ? typeHtml(card.type, true) : ''}
       </a>
       <p class="hcard-name">${escHtml(card.name)}</p>
       <p class="hcard-who">${escHtml(c?.shortName ?? '')}</p>
