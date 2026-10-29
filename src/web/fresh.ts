@@ -15,7 +15,7 @@ export function freshen(root: ParentNode = document, at = Date.now()): void {
     root.querySelectorAll<HTMLElement>(selector).forEach((el) => { el.textContent = set(el); });
   };
   each('[data-when]', el => whenText(el.dataset.when!));
-  each('[data-gacha-from]', el => windowText(Date.parse(el.dataset.gachaFrom!), Date.parse(el.dataset.gachaTo!), at));
+  each('[data-gacha-from]', el => windowText(Date.parse(el.dataset.gachaFrom!), el.dataset.gachaTo ? Date.parse(el.dataset.gachaTo) : undefined, at));
   each('[data-preview-from]', el => previewText(Date.parse(el.dataset.previewFrom!), at));
   each('[data-bday]', el => daysAway(daysToBirthday({ birthday: el.dataset.bday! }, day)));
   each('[data-debut]', el => debutYears(el.dataset.debut!, day));

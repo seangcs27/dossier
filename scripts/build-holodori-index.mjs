@@ -496,17 +496,70 @@ async function addCardArt(list) {
 }
 
 // ── Gachas ──
-// The record kept by hand (lib/holodori-gachas.mjs), checked against the dump's Gacha table
-// (which has ids alone) and its cards. Its logos are asked of the CDN by the page.
+// The record kept by hand (lib/holodori-gachas.mjs), and after it every pickup banner the dump
+// has and the record has not, read from the dump itself (29 October 2026, when the record had
+// fallen a banner behind): the Gacha table has ids alone, but a pickup banner's gacha points
+// are named for it ("Free-Style Cosplay Night Gacha Pt", LangGachaPoint_Eng), its id carries
+// the day it opens (pickup-normal-261029), and the ★5 cards it features are the new ones,
+// numbered on from every earlier banner's (uniq-0096 to -0100 for that one, as each recorded
+// banner's run on from the one before). It opens at 11:00 JST, as every recorded pickup but
+// the area celebration did, and runs until the minute before the next banner opens; the
+// newest has no end until then, which the page says. A banner's usual gacha, its free one
+// and its "Take your pick!" twin are one entry. What the dump does not name (a "fixed"
+// gacha, the ★5 ticket) is left out with a warning, as before. Its logos are asked of the CDN
+// by the page.
+const OPENS_UTC = 'T02:00Z';  // 11:00 JST
+const uniqOf = id => Number(/uniq-(\d+)/.exec(id)?.[1] ?? 0);
+
 async function buildGachas() {
-  const [rows, cards] = await Promise.all([table('Gacha'), readFile(CARDS_FILE, 'utf8').then(JSON.parse)]);
+  const [rows, points, cards] = await Promise.all([
+    table('Gacha'), table('LangGachaPoint_Eng'), readFile(CARDS_FILE, 'utf8').then(JSON.parse),
+  ]);
   const recorded = new Set(GACHAS.flatMap(g => g.gachas));
-  const missing = rows.map(r => r.id.replace(/^gacha-/, '')).filter(id => !recorded.has(id));
-  if (missing.length) console.warn(`holodori: gachas not in lib/holodori-gachas.mjs: ${missing.join(', ')}`);
+  const ids = rows.map(r => r.id.replace(/^gacha-/, ''));
+  const pointName = new Map(points.map(p => [p.id, p.text]));
+  const fives = cards.filter(c => c.rarity === 5);
+
+  // The dump's pickup banners the record lacks, by the day in their ids: newer ones only, since
+  // the record is the word on the past (it leaves the launch banner out on purpose, and the
+  // run of numbers would hand that one the standard pool's 58).
+  const newest = GACHAS.filter(g => g.from).map(g => g.from.slice(2, 10).replaceAll('-', '')).sort().pop() ?? '';
+  const days = new Map();
+  for (const id of ids) {
+    const m = /^pickup-(?:normal|select)-(\d{6})(?:-free)?$/.exec(id);
+    if (!m || recorded.has(id) || m[1] <= newest) continue;
+    days.set(m[1], [...(days.get(m[1]) ?? []), id]);
+  }
+  const found = [...days].flatMap(([day, gachas]) => {
+    const name = pointName.get(`la-gacha_point-pickup-${day}`)?.replace(/\s*Gacha Pts?$/, '');
+    if (!name) return [];
+    // The usual gacha first: its logo is the one shown.
+    gachas.sort((a, b) => Number(b.startsWith('pickup-normal')) - Number(a.startsWith('pickup-normal')) || a.length - b.length);
+    return [{ name, gachas, from: `20${day.slice(0, 2)}-${day.slice(2, 4)}-${day.slice(4)}${OPENS_UTC}`, pickup: [], auto: true }];
+  });
+
+  const all = [...GACHAS, ...found];
+  const pickups = all.filter(g => g.from && !g.standing && !g.beginner && g.gachas.some(id => id.startsWith('pickup-')));
+  for (const g of found.sort((a, b) => a.from.localeCompare(b.from))) {
+    const before = pickups.filter(o => o !== g && o.from < g.from);
+    const after = pickups.filter(o => o !== g && o.from > g.from);
+    const floor = Math.max(0, ...before.flatMap(o => o.pickup.map(uniqOf)));
+    const ceiling = Math.min(Infinity, ...after.filter(o => o.pickup.length).flatMap(o => o.pickup.map(uniqOf)));
+    g.pickup = fives.filter(c => uniqOf(c.id) > floor && uniqOf(c.id) < ceiling)
+      .sort((a, b) => uniqOf(a.id) - uniqOf(b.id)).map(c => c.id);
+    const next = after.map(o => o.from).sort()[0];
+    if (next) g.to = new Date(Date.parse(next) - 60_000).toISOString().replace(':00.000Z', 'Z');
+    console.log(`holodori: from the dump, "${g.name}" (${g.gachas.join(', ')}), ${g.pickup.length} ★5s${g.to ? '' : ', end not announced'}`);
+  }
+  if (found.filter(g => !g.to).length > 1) console.warn('holodori: two banners from the dump with no end; their ★5s may be split wrong');
+
+  const missing = ids.filter(id => !all.some(g => g.gachas.includes(id)));
+  if (missing.length) console.warn(`holodori: gachas neither in lib/holodori-gachas.mjs nor named in the dump: ${missing.join(', ')}`);
   const known = new Set(cards.map(c => c.id));
   const unknown = GACHAS.flatMap(g => g.pickup).filter(id => !known.has(id));
   if (unknown.length) console.warn(`holodori: gacha cards the Card table lacks: ${unknown.join(', ')}`);
-  return GACHAS;
+  // Newest first, as the record is.
+  return [...found.reverse(), ...GACHAS];
 }
 
 // ── Upcoming ★5s ──

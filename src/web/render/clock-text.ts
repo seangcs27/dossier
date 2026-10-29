@@ -20,8 +20,10 @@ export function spanText(ms: number): string {
 }
 
 /** Where a dated banner is: still to start, running, or over. */
-export function windowText(from: number, to: number, now: number): string {
+export function windowText(from: number, to: number | undefined, now: number): string {
   if (now < from) return `Starts in ${spanText(from - now)}`;
+  // A banner whose end is not known yet (the newest one the build read from the dump).
+  if (to === undefined || Number.isNaN(to)) return 'Running · end not announced';
   return now <= to ? `Ends in ${spanText(to - now)}` : 'Ended';
 }
 
