@@ -46,6 +46,10 @@ function sparksHtml(seed: string): string {
   }).join('');
 }
 
+// The tracks folded away, leaving the buttons: kept from one reveal to the next while the
+// page is open.
+let folded = false;
+
 // Seconds the white screen is held after the line ends, before the animation.
 const HOLD = 0.4;
 
@@ -53,7 +57,7 @@ const HOLD = 0.4;
 // the frame this many seconds before the end is the one that stays over the art.
 const FADE = 0.6;
 
-/** The reveal's screen, its three tracks with the seek bar over them and its buttons, in place of a stage's picture. */
+/** The reveal's screen, and its three tracks with the seek bar over them and its buttons floating over the screen's foot, in place of a stage's picture. */
 export function revealHtml(r: Reveal): string {
   const text = r.voice ? escHtml(r.voice.text).replace(/\n/g, '<br>') : '';
   const rows = [['Voice line', !!r.voice], ['Animation', true], ['Signature', true]] as const;
@@ -83,6 +87,9 @@ export function revealHtml(r: Reveal): string {
         </div>
       </div>
       <div class="rv-ctl">
+        <button class="rv-fold" type="button" data-rv="fold" aria-pressed="${folded}" aria-label="Hide the tracks">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5l4 4 4-4"></path></svg>
+        </button>
         <button type="button" data-rv="skip">Skip to end</button>
         <button type="button" data-reveal hidden>Replay</button>
         ${volumeHtml()}
@@ -300,6 +307,18 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   };
   find('[data-rv="skip"]').onclick = skip;
 
+  const fold = find('[data-rv="fold"]');
+  const showFold = (): void => {
+    stage.toggleAttribute('data-fold', folded);
+    fold.setAttribute('aria-pressed', String(folded));
+    fold.setAttribute('aria-label', folded ? 'Show the tracks' : 'Hide the tracks');
+  };
+  fold.onclick = () => {
+    folded = !folded;
+    showFold();
+  };
+  showFold();
+
   // Plays on from `t` seconds into the whole, finished or not: in the line, in the hold after
   // it, or in the animation and the signature, each put where it is at that moment.
   function jump(t: number): void {
@@ -389,6 +408,22 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     e.preventDefault();
     jump(Number(seek.value) + by);
   };
+
+  // The floating bar shows while the pointer moves over the stage, and goes 1 s after it
+  // stops or at once when it leaves (the stylesheet keeps it while paused or over).
+  let idle = 0;
+  const wake = (): void => {
+    delete stage.dataset.idle;
+    clearTimeout(idle);
+    idle = window.setTimeout(() => { stage.dataset.idle = ''; }, 1000);
+  };
+  stage.onpointermove = wake;
+  stage.onpointerdown = wake;
+  stage.onpointerleave = () => {
+    clearTimeout(idle);
+    stage.dataset.idle = '';
+  };
+  wake();
 
   paintMark(stage);
   corner.setAttribute('aria-label', 'Pause');

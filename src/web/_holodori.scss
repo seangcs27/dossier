@@ -30,10 +30,6 @@ $lift: rgb(16 60 110 / 22%);
   }
 }
 
-// The words "Dream Park" outlined in white, tiled at a tilt over the sky as the game's
-// screens have them. A picture cannot load a font, so this is the reader's own round face.
-$dream-park: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='190'%3E%3Cg font-family='Arial Rounded MT Bold,Segoe UI Black,sans-serif' font-weight='900' font-size='58' fill='none' stroke='white' stroke-width='5' stroke-linejoin='round'%3E%3Ctext x='10' y='70'%3EDream%3C/text%3E%3Ctext x='170' y='160'%3EPark%3C/text%3E%3C/g%3E%3C/svg%3E";
-
 // The roster, the game's two pages of its own, its songs and its cards, and a holomem's page.
 $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view='holodori-gachas'], [data-view='holodori-songs'], [data-view='holodori-cards'], [data-view='holodori-holomem'], [data-view='holodori-card'])";
 
@@ -71,17 +67,6 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   *:not(.is-scrolling) { --thumb: var(--muted); }
 
   ::selection { background: $sun; color: $ink; }
-
-  &::before {
-    content: '';
-    position: fixed;
-    inset: -40%;
-    z-index: -1;
-    background: url($dream-park) 0 0 / 360px 190px;
-    opacity: 0.16;
-    transform: rotate(-10deg);
-    pointer-events: none;
-  }
 
   .side-game.active .side-mark { background: rgb(42 114 219 / 8%); }
 
@@ -1436,18 +1421,21 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     border: 0;
     cursor: zoom-in;
 
+    &.plays { cursor: pointer; }
+
     img { display: block; width: 100%; height: 100%; object-fit: cover; }
 
     &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
   }
 
-  // A 5-star card's Play and the two toggles it plays with, Sound and Signature, in the
-  // stage's top left corner whether the illustration or the reveal is up.
+  // A 5-star card's two toggles that Play plays with, Sound and Signature, in the stage's
+  // bottom left corner whether the illustration or the reveal is up. Over the reveal they sit
+  // on the floating bar's button row, and come and go with it.
   .hc-plays {
     position: absolute;
-    top: 16px;
-    left: 16px;
-    z-index: 1;
+    bottom: 17px;
+    left: 21px;
+    z-index: 2;
     display: flex;
     gap: 2px;
     align-items: center;
@@ -1455,38 +1443,83 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     border-radius: var(--radius-pill);
     background: #fff;
     box-shadow: 0 3px 6px rgb(16 60 110 / 25%);
+    transition: opacity 0.25s;
   }
 
-  // Play, pause while the reveal plays, replay once it is over.
+  // Play, in the middle of the stage as a video's is: on the still card, while paused (as
+  // play) and once it is over (as replay). It is gone while the reveal plays, unless the
+  // keyboard is on it; a press on the screen pauses.
   .hc-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
     display: grid;
     place-items: center;
-    width: 30px;
-    height: 30px;
+    width: 72px;
+    height: 72px;
     padding: 0;
-    border: 0;
+    border: 4px solid #fff;
     border-radius: 50%;
     background: $sun;
     color: $ink;
     cursor: pointer;
-    transition: transform 0.15s;
+    box-shadow: 0 6px 18px rgb(16 60 110 / 35%);
+    translate: -50% -50%;
+    transition: transform 0.15s, opacity 0.2s;
 
-    svg { grid-area: 1 / 1; width: 14px; height: 14px; fill: currentcolor; }
+    svg { grid-area: 1 / 1; width: 28px; height: 28px; fill: currentcolor; }
+    .i-play { translate: 2px 0; }
     .i-pause,
     .i-again { display: none; }
 
     &:hover { transform: scale(1.08); }
-    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
   }
 
   .hc-reveal:not([data-ph='done'], [data-paused]) .hc-play {
     .i-play { display: none; }
     .i-pause { display: block; }
+
+    &:not(:focus-visible) { opacity: 0; pointer-events: none; }
   }
 
   .hc-reveal[data-ph='done'] .hc-play {
     .i-play { display: none; }
     .i-again { display: block; }
+  }
+
+  // Opens the art viewer on the illustration at full size, in the stage's top right corner.
+  .hc-gallery {
+    position: absolute;
+    top: 17px;
+    right: 17px;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: $ink;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgb(16 60 110 / 25%);
+    transition: transform 0.15s;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentcolor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    &:hover { transform: scale(1.08); }
+    &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
   }
 
   .hc-plays [data-opt],
@@ -1506,15 +1539,23 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     &:focus-visible { outline: 3px solid $ink; outline-offset: 1px; }
   }
 
+  // The two toggles as one segmented pair: round on the outside, square where they meet,
+  // the pill's white showing between; a toggle that is off has its word struck through.
+  .hc-plays [data-opt] {
+    &[data-opt='sound'] { border-radius: 20rem 0 0 20rem; }
+    &[data-opt='sign'] { border-radius: 0 20rem 20rem 0; }
+    &[aria-pressed='false'] { text-decoration: line-through 2px; }
+  }
+
   // The reveal, a 5-star card's: the animation, the signature over it, and the card-get line
-  // in a bubble on the screen's foot. Under the screen are three tracks, laid along the time
-  // the two videos take together and filling as each plays, and the buttons. A press on the
-  // screen pauses it and goes on.
+  // in a bubble on the screen's foot. Over the screen's foot, as a video player's are, float
+  // three tracks, laid along the time the two videos take together and filling as each plays,
+  // and the buttons. A press on the screen pauses it and goes on.
   .rv-screen {
     position: relative;
     aspect-ratio: 1820 / 1024;
     overflow: hidden;
-    border-radius: 17px 17px 0 0;
+    border-radius: 17px;
     background: #0b1b3a;
     isolation: isolate;
 
@@ -1650,11 +1691,50 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .hc-reveal[data-ph='voice'] .rv-mark { animation: rv-mark-in 0.5s ease-out both; }
   .hc-reveal:is(:not([data-ph='voice']), [data-paused]) .rv-spark::before { animation-play-state: paused; }
 
+  // The bar floats over the screen's foot on a shade, and goes after 2.5 s with the pointer
+  // still while the reveal plays (data-idle, holodori-reveal.ts); paused, over, or with the
+  // keyboard in it, it stays. The toggles in the corner go with it.
   .rv-bar {
-    padding: var(--sp-12) var(--sp-16);
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    left: 5px;
+    z-index: 1;
+    padding: 40px var(--sp-16) var(--sp-12);
     border-radius: 0 0 17px 17px;
-    background: $paper;
-    color: $ink;
+    background: linear-gradient(rgb(8 20 46 / 0%), rgb(8 20 46 / 78%) 55%);
+    color: #fff;
+    transition: opacity 0.25s;
+  }
+
+  // Folded (the chevron on the button row), the tracks go and the bar is its buttons alone.
+  .hc-reveal[data-fold] {
+    .rv-tracks { display: none; }
+    .rv-bar { padding-top: var(--sp-20); }
+    .rv-ctl { margin-top: 0; }
+    .rv-fold svg { rotate: 180deg; }
+  }
+
+  .rv-ctl .rv-fold {
+    display: grid;
+    place-items: center;
+    padding: var(--sp-4) var(--sp-8);
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentcolor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: rotate 0.2s;
+    }
+  }
+
+  .hc-reveal[data-idle]:not([data-paused], [data-ph='done'], :has(:focus-visible)) {
+    :is(.rv-bar, .hc-plays) { opacity: 0; pointer-events: none; }
+    .rv-screen { cursor: none; }
   }
 
   .rv-tracks {
@@ -1673,9 +1753,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .rv-track {
     position: relative;
-    height: 8px;
-    border-radius: 4px;
-    background: $line;
+    height: 6px;
+    border-radius: 3px;
+    background: rgb(255 255 255 / 22%);
   }
 
   .rv-seg {
@@ -1685,8 +1765,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     left: calc(var(--l, 0) * 100%);
     width: calc(var(--w, 0) * 100%);
     overflow: hidden;
-    border-radius: 4px;
-    background: #b8d9ea;
+    border-radius: 3px;
+    background: rgb(255 255 255 / 45%);
 
     &::after {
       content: '';
@@ -1731,7 +1811,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     width: 2px;
     margin-left: -1px;
     border-radius: 1px;
-    background: $ink;
+    background: #fff;
     pointer-events: none;
 
     &::before {
@@ -1742,42 +1822,48 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: $ink;
+      background: #fff;
       transition: transform 0.15s;
     }
   }
 
   .rv-scrub:hover .rv-head::before { transform: scale(1.3); }
   .rv-seek:active + .rv-head::before { transform: scale(1.5); }
-  .rv-seek:focus-visible + .rv-head::before { outline: 3px solid $ink; outline-offset: 2px; }
+  .rv-seek:focus-visible + .rv-head::before { outline: 3px solid #fff; outline-offset: 2px; }
 
+  // The buttons keep to the right: the toggles stand on the row's left (.hc-plays).
   .rv-ctl {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--sp-8);
     align-items: center;
+    justify-content: flex-end;
+    min-height: 34px;
     margin-top: var(--sp-12);
+    padding-left: 196px;
 
     button {
       padding: var(--sp-4) var(--sp-12);
       border: 0;
       border-radius: var(--radius-pill);
-      background: $panel;
-      color: $ink;
+      background: rgb(255 255 255 / 18%);
+      color: #fff;
       font: inherit;
       font-size: var(--fs-xs);
       font-weight: 900;
       cursor: pointer;
 
-      &:hover { background: $line; }
-      &:focus-visible { outline: 3px solid $ink; outline-offset: 2px; }
+      &:hover { background: rgb(255 255 255 / 30%); }
+      &:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
       &[hidden] { display: none; }
     }
+
+    .vol-mute { background: transparent; }
+    .vol-range { accent-color: $sky; }
   }
 
-  .rv-ctl .vol { margin-left: auto; }
-
   .rv-time {
-    color: $ink-soft;
+    color: rgb(255 255 255 / 85%);
     font-size: var(--fs-xs);
     font-variant-numeric: tabular-nums;
   }
@@ -1864,21 +1950,28 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   // Each stat beside a bar against the card's highest, then their total.
+  // The rows share the columns (subgrid), so the names' column is as wide as the widest with
+  // its Main badge on its line.
   .hc-values {
     display: grid;
-    gap: var(--sp-8);
+    grid-template-columns: max-content minmax(0, 1fr) auto;
+    gap: var(--sp-8) var(--sp-12);
     margin: 0;
 
     div {
       display: grid;
-      grid-template-columns: 136px 1fr 56px;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
       align-items: center;
-      gap: var(--sp-12);
     }
 
     dt {
+      display: flex;
+      gap: 6px;
+      align-items: center;
       font-size: var(--fs-sm);
       font-weight: 800;
+      white-space: nowrap;
 
       small {
         padding: 0 5px;
@@ -1896,12 +1989,10 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       place-items: center;
       width: 18px;
       height: 18px;
-      margin-right: 6px;
       border-radius: 5px;
       color: #fff;
       font-size: var(--fs-2xs);
       font-weight: 900;
-      vertical-align: -3px;
 
       &.stat-0 { background: linear-gradient(160deg, #ff8fc4, #f0418e); }
       &.stat-1 { background: linear-gradient(160deg, #86e0ff, #2f9fe0); }
@@ -1991,6 +2082,19 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     &.icon-passive { background: linear-gradient(160deg, #ffc95c, #ff9d1f); }
     &.icon-active { background: linear-gradient(160deg, #86e0ff, #3ab0ee); }
     &.icon-special { background: linear-gradient(135deg, #f58bd0, #6c8dff); }
+    // Ours: the game has no file for these two.
+    &.icon-connect { background: linear-gradient(160deg, #7be0a8, #1fae6e); }
+    &.icon-outfit { background: linear-gradient(160deg, #c3a6ff, #7a5cf0); }
+
+    svg {
+      width: 26px;
+      height: 26px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
   }
 
   // ── Voice lines ──
@@ -2350,16 +2454,46 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     gap: var(--sp-12);
     margin-bottom: var(--sp-16);
 
-    .crumbs { min-width: 0; }
+    // The trail keeps its margin off, so that it centres on the steps' line, and its pill is
+    // as tall as theirs.
+    // Set as the steps are, in the world's face, rather than the dossiers' small capitals.
+    .crumbs {
+      min-width: 0;
+      margin-bottom: 0;
+      font-size: var(--fs-lg);
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    .crumb-back {
+      box-sizing: border-box;
+      min-height: 40px;
+      padding: var(--sp-4) var(--sp-16) var(--sp-4) var(--sp-12);
+      border: 0;
+      background: #fff;
+      color: $ink;
+      font-size: var(--fs-md);
+      font-weight: 900;
+      box-shadow: 0 3px 6px rgb(16 92 140 / 22%);
+
+      svg { stroke-width: 2.2; }
+    }
+
+    .crumb-current { color: $ink; }
   }
 
-  .hm-steps { display: flex; flex: none; gap: var(--sp-8); }
+  // Previous and Next at one size: two equal columns, each as wide as the wider of them.
+  .hm-steps { display: grid; flex: none; grid-auto-columns: 1fr; grid-auto-flow: column; gap: var(--sp-8); }
 
   .hm-step {
     display: flex;
     align-items: center;
     gap: var(--sp-6);
-    padding: var(--sp-6) var(--sp-12);
+    box-sizing: border-box;
+    min-height: 40px;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-12);
     border-radius: var(--radius-pill);
     background: #fff;
     color: $ink;
@@ -2864,6 +2998,18 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
       padding: var(--sp-12) var(--sp-12) var(--sp-16);
     }
+
+    // The reveal's floating bar kept low over a screen this small: the tracks without their
+    // names, the volume as its mute alone and no time, so the buttons fit beside the toggles.
+    .hc-play { width: 56px; height: 56px; }
+    .hc-play svg { width: 22px; height: 22px; }
+    .hc-plays [data-opt] { padding: var(--sp-4) var(--sp-8); }
+    .rv-bar { padding-top: var(--sp-20); }
+    .rv-tracks { --lab: 0px; gap: var(--sp-4) 0; }
+    .rv-tracks > span:not(.rv-track) { display: none; }
+    .rv-scrub { left: 0; }
+    .rv-ctl { margin-top: var(--sp-8); padding-left: 156px; }
+    .rv-ctl :is(.vol-range, .rv-time) { display: none; }
   }
 }
 

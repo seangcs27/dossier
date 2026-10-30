@@ -57,25 +57,30 @@ const PLAY_ICONS = `
   <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z"></path></svg>
   <svg class="i-again" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3a5 5 0 1 0 5 5h-2a3 3 0 1 1-3-3v2.5L11.5 4 8 .5z"></path></svg>`;
 
+const GALLERY_ICON = `
+  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9"></path></svg>`;
+
 /**
  * The stage is the card list's alone, so it is whole before the payload comes, or without it.
  * `reveal` is the reveal's screen and bar, which the view draws (they hold the player's volume)
  * and is only needed when `shown` is 'reveal'. Until Play is pressed it is the illustration,
- * still; `sound` and `sign` are what Play plays with, toggled beside it in one corner.
+ * still. Play stands in the middle of the stage, the gallery button in its top right corner,
+ * and `sound` and `sign`, what Play plays with, are toggled in its bottom left one.
  */
 export function stageHtml(card: HolodoriCard, shown: Shown, reveal = '', sound = true, sign = true): string {
   const poster = card.full ?? '';
   const media = shown === 'reveal'
     ? reveal
-    : `<button class="hc-art" type="button" aria-label="Open the illustration full size">
+    : `<button class="hc-art${card.movie ? ' plays' : ''}" type="button" aria-label="${card.movie ? 'Play the reveal' : 'Open the illustration full size'}">
          ${poster ? `<img src="${escHtml(poster)}" alt="${escHtml(card.name)}" decoding="async">` : ''}
        </button>`;
   return `
     <figure class="hc-stage${shown === 'reveal' ? ' hc-reveal' : ''}"${sound ? '' : ' data-sound="off"'}${sign ? '' : ' data-sign="off"'}>
       ${media}
+      <button class="hc-gallery" type="button" data-gallery aria-label="Open the illustration full size">${GALLERY_ICON}</button>
       ${card.movie ? `
-        <div class="hc-plays" role="group" aria-label="Play the card's reveal">
-          <button class="hc-play" type="button" data-reveal aria-label="Play">${PLAY_ICONS}</button>
+        <button class="hc-play" type="button" data-reveal aria-label="Play">${PLAY_ICONS}</button>
+        <div class="hc-plays" role="group" aria-label="Play with">
           <button type="button" data-opt="sound" aria-pressed="${sound}">Sound</button>
           <button type="button" data-opt="sign" aria-pressed="${sign}">Signature</button>
         </div>` : ''}
@@ -156,16 +161,28 @@ function statsHtml(d: HolodoriCardDetail, level: number | 'max', bloom: number):
   `;
 }
 
+// Our own glyphs for the two skills the game has no icon file for (none on HolodoriDB's CDN,
+// and the guides show both as text, 31 October 2026): the connect effect's linked tiles and
+// the outfit skill's hanger, white strokes on the tile as the game's icons are.
+const OWN_ICONS = {
+  connect: '<circle cx="6" cy="17" r="2.6"></circle><circle cx="12" cy="7" r="2.6"></circle><circle cx="18" cy="17" r="2.6"></circle>'
+    + '<path d="M7.4 14.7l3.2-5.4M13.4 9.3l3.2 5.4M8.6 17h6.8"></path>',
+  outfit: '<path d="M10 6a2 2 0 1 1 2 2v1.6l8.1 5.8a1.1 1.1 0 0 1-.64 2H4.54a1.1 1.1 0 0 1-.64-2L12 9.6"></path>',
+};
+
+const ownIconHtml = (key: keyof typeof OWN_ICONS): string => `
+  <span class="hc-skill-icon icon-${key}" aria-hidden="true"><svg viewBox="0 0 24 24">${OWN_ICONS[key]}</svg></span>`;
+
 function skillsHtml(d: HolodoriCardDetail, bloom: number): string {
   const entries = SKILLS.filter(s => d[s.key].length).map((s) => {
     const at = raisedAt(d, s.key);
     const up = at > 0 && bloom >= at;
     const icon = s.key === 'connect' ? '' : d.icons[s.key];
     return `
-      <div class="hc-skill${icon ? ' has-icon' : ''}">
-        ${icon ? `<span class="hc-skill-icon icon-${s.key}" aria-hidden="true">
-                    <img src="${escHtml(skillIconUrl(icon))}" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.remove()">
-                  </span>` : ''}
+      <div class="hc-skill has-icon">
+        ${s.key === 'connect' ? ownIconHtml('connect') : `<span class="hc-skill-icon icon-${s.key}" aria-hidden="true">
+                    ${icon ? `<img src="${escHtml(skillIconUrl(icon))}" alt="" width="32" height="32" loading="lazy" decoding="async" onerror="this.remove()">` : ''}
+                  </span>`}
         <h4>${s.label}<small>${up ? 'Lv 2' : at ? `Lv 1 · Lv 2 at bloom ${at}` : 'Lv 1'}</small></h4>
         <p>${skillHtml(d[s.key][up ? 1 : 0] ?? d[s.key][0])}</p>
       </div>
@@ -173,7 +190,8 @@ function skillsHtml(d: HolodoriCardDetail, bloom: number): string {
   });
   if (d.outfitSkill) {
     entries.push(`
-      <div class="hc-skill">
+      <div class="hc-skill has-icon">
+        ${ownIconHtml('outfit')}
         <h4>Outfit skill<small>${escHtml(d.outfit)}</small></h4>
         <p>${skillHtml(d.outfitSkill)}</p>
       </div>
@@ -332,7 +350,7 @@ export function cardHtml(
   if (!card) {
     return `
       <div class="roster-page hc-page">
-        ${crumbsHtml(undefined, '#/holodori/cards', 'Cards')}
+        ${crumbsHtml(undefined, '#/holodori/cards', 'Return')}
         <div class="state-msg"><div class="label">Unknown card</div>No card in the game is <code>${escHtml(id)}</code>.</div>
       </div>
     `;
@@ -341,7 +359,7 @@ export function cardHtml(
   return `
       <div class="roster-page hc-page r${card.rarity}" style="--a: ${escHtml(c?.colors[0] ?? '#18c9f0')}">
         <div class="hm-trail">
-          ${crumbsHtml(card.name, '#/holodori/cards', 'Cards')}
+          ${crumbsHtml(card.name, '#/holodori/cards', 'Return')}
           <nav class="hm-steps" aria-label="Other cards">
             ${stepHtml(cards[(i - 1 + cards.length) % cards.length], 'prev')}
             ${stepHtml(cards[(i + 1) % cards.length], 'next')}

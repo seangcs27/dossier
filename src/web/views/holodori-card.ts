@@ -148,7 +148,10 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
       const stage = opt.closest<HTMLElement>('.hc-stage')!;
       if (on) delete stage.dataset[opt.dataset.opt!];
       else stage.dataset[opt.dataset.opt!] = 'off';
-    } else if (target.closest('.hc-art')) {
+    } else if (target.closest('.hc-art') && card.movie) {
+      // A 5-star card's still illustration plays the reveal; the gallery button opens it.
+      void reveal();
+    } else if (target.closest('.hc-art, [data-gallery]')) {
       openArtViewer(
         card.id, [{ suffix: 'full', label: card.name, artist: null, url: cardArtUrl(card.asset) }], 0,
         () => undefined, () => card.art ?? '',

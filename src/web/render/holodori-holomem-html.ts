@@ -50,7 +50,7 @@ export function holomemHtml(id: string, now: number, { disc, backs }: HolomemOpt
   if (!c) {
     return `
       <div class="roster-page hm-page">
-        ${crumbsHtml(undefined, '#/holodori/holomems', 'Holomems')}
+        ${crumbsHtml(undefined, '#/holodori/holomems', 'Return')}
         <div class="state-msg"><div class="label">Unknown holomem</div>Nobody in the album is <code>${escHtml(id)}</code>.</div>
       </div>
     `;
@@ -68,7 +68,7 @@ export function holomemHtml(id: string, now: number, { disc, backs }: HolomemOpt
   return `
     <div class="roster-page hm-page" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}; --b: ${escHtml(c.colors[1] ?? c.colors[0] ?? '#2e7be6')}">
       <div class="hm-trail">
-        ${crumbsHtml(c.name, '#/holodori/holomems', 'Holomems')}
+        ${crumbsHtml(c.name, '#/holodori/holomems', 'Return')}
         <nav class="hm-steps" aria-label="Other holomems">
           ${stepHtml(cast[(i - 1 + cast.length) % cast.length], 'prev')}
           ${stepHtml(cast[(i + 1) % cast.length], 'next')}

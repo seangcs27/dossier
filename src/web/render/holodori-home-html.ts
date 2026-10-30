@@ -90,10 +90,10 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <p class="hd-sub">Cover's rhythm game · its holomems, songs, cards and gachas</p>
       </header>
       <nav class="hh-links" aria-label="hololive Dreams">
-        ${linkHtml('#/holodori/holomems', cast.length, 'Holomems', cast.slice(0, 4).flatMap(c => c.icon ?? []), 'icons')}
+        ${linkHtml('#/holodori/holomems', cast.length, 'Talent', cast.slice(0, 4).flatMap(c => c.icon ?? []), 'icons')}
         ${linkHtml('#/holodori/songs', songs.length, 'Songs', newest.slice(0, 3).flatMap(s => s.jacket ?? []), 'jackets')}
-        ${linkHtml('#/holodori/cards', cards.length, 'Cards', newCards.flatMap(c => c.art ?? []), 'cards')}
-        ${linkHtml('#/holodori/gachas', banners.length, 'Gachas', banners.slice(0, 2).map(g => gachaLogoUrl(g.gachas[0])), 'logos')}
+        ${linkHtml('#/holodori/cards', cards.length, 'Characters', newCards.flatMap(c => c.art ?? []), 'cards')}
+        ${linkHtml('#/holodori/gachas', banners.length, 'Gacha Banners', banners.slice(0, 2).map(g => gachaLogoUrl(g.gachas[0])), 'logos')}
       </nav>
       ${live.length ? `
         <section class="hm-section">

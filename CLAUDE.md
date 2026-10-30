@@ -78,9 +78,9 @@ fetch is correct and the flag would only add an experimental-warning banner to e
 
 **Deploying the web SPA:** Push to `master` on GitHub — `.github/workflows/deploy-pages.yml`
 builds `dist/web/` and publishes to GitHub Pages at https://seangcs27.github.io/dossier/.
-A daily cron (20:00 UTC, 05:00 in Japan) rebuilds so newly released operators appear without a manual push;
+A cron every 6 hours (02:30, 08:30, 14:30 and 20:30 UTC; 31 October 2026) rebuilds so newly released operators appear without a manual push;
 it was weekly until 20 October 2026, when hololive Dreams' ★5 previews, up for about a day
-before their gacha, made the owner pick daily over the Chinese wiki's 567s.
+before their gacha, made the owner pick daily over the Chinese wiki's 567s; on 31 October the owner made it 6-hourly, the first run of the four half an hour after a gacha opens at 11:00 in Japan.
 Requires repo Settings → Pages → Source = "GitHub Actions" (one-time).
 
 ## Repository Layout
@@ -703,10 +703,9 @@ own pages as a segmented pair: Operators and Events, the one showing filled in �
 replaced a lone Events link, from which the only way back was the wordmark. The first goes
 to the roster of whichever game is showing and is named for that game's cast (Operators,
 Sinners, Holomems, Servants: `GAMES` in `shell.ts`); it stays lit on a dossier. Events is
-Arknights' alone and hides on the other games. hololive Dreams has three of its own, Songs,
+Arknights' alone and hides on the other games. hololive Dreams names its four Talent, Songs, Characters and Gacha Banner (31 October 2026, the owner's names; the routes keep holomems, cards and gachas), led by its logo (`#nav-home`, `icons/logo-holodori.webp`) as a link to its front page, which lights it; it has three of its own, Songs,
 Cards and Gachas, which show on its pages alone; its front page (`#/holodori`, where its
-tile lands) is none of the four and lights none, so the fill is hidden there
-(`markSection()` with no link). On a phone they drop their glyphs, and hololive Dreams' four
+tile lands) lights the logo. On a phone they drop their glyphs, and hololive Dreams' four
 take a row of their own under the wordmark, with the search box under them on its rosters.
 
 **The fill travels between the two as a drop of water** (`sections.ts`; the owner's ask:
@@ -865,7 +864,10 @@ set and information architecture all follow theirs, so read
   left and its "2 / 3" count at the right, in the popup's bottom-right corner. The
   stage sets `touch-action: none` and reads every gesture itself from pointer and wheel
   events (a trackpad pinch is a wheel with ctrl held; Safari's is its own `gesturechange`).
-  The page takes whichever piece was showing when it closed.
+  The page takes whichever piece was showing when it closed. A single piece (a hololive Dreams card's
+  illustration; 31 October 2026) opens as a frame of the picture's own shape with no arrows or
+  bar: the close button floats on its top-right corner and the zoom (minus, slider, plus, and
+  the percent, which fits again) in its bottom-right one. Zoomed out below fit, any piece is dragged where it is wanted and stays there.
 - **Skin rail** — renders each outfit's **55 KB square avatar**, not its illustration.
   Pointing 64px thumbnails at full art meant SilverAsh pulled 16.4 MB before the page
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
@@ -1744,7 +1746,10 @@ the matte inverted and multiplied in and the colour screened in, which is the al
 composite. The writing fades out in the video's last half-second, so the frame before the
 fade is the one that stays (`FADE`). Under the screen three tracks (the line, the
 animation, the signature) run along the whole (10 s, 9 s and 5 s, and 0.4 s held after the
-line, on the card checked), with Skip, Replay and the volume. **A seek bar lies over the
+line, on the card checked), with Skip, Replay and the volume. **They float over the screen's foot** (31 October
+2026), hiding 1 s after the pointer stops while it plays, and a chevron folds the tracks away
+(kept while the page is open); a click on a 5-star card's still illustration plays it, and the
+gallery button in the stage's corner opens the art viewer. **A seek bar lies over the
 tracks** (25 October 2026, the owner's ask): an unseen range input over their column, with
 a playhead drawn beside it; a press, a drag or an arrow key (a second a press) plays on from
 that place, finished or not, with each of the three put where it is at that moment (`jump`);
@@ -1886,8 +1891,8 @@ out of them), and **the newest of them is always shown**: it takes the 8th place
 Lab's days fill the rest (`shownAnnouncements` in `holodori-home-html.ts`).
 
 The world is scoped under `body[data-view='holodori']` and each of its other pages' views: the shell's surface variables
-restated in white and the game's ink, a sky ground with the game's "Dream Park" lettering
-as a pattern, and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
+restated in white and the game's ink, a plain sky ground (its "Dream Park" lettering, tiled
+over it, was taken off on 31 October 2026, the owner's ask), and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
 site it animates whatever `prefers-reduced-motion` says. Its handlers are assigned to its
 own page element, since `card.ts`'s finder takes `document`'s.
 
