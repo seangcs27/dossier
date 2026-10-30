@@ -137,6 +137,7 @@ icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size (
   games/<game>.webp  ← the sidebar's five game emblems, white on transparency (tracked)
   ptn/<kind>-<name>.webp  ← Path to Nowhere's 25 rank, tendency and libram badges, 72px (tracked)
   holodori/type-<type>.webp  ← hololive Dreams' three card type icons, 64px, from Gamerch (tracked)
+  holodori/motif/<asset>.webp  ← each holomem's mascot as line art, 256px, from the game's asset catalog (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
 site/              ← the Astro site (an npm workspace), built beside the SPA until the cut-over
@@ -1721,14 +1722,16 @@ there and silent for the rest; the words are what she says, so a holomem of the 
 DEV_IS branch has the game's own Japanese, from the dump's Japanese edition
 (`holodori-db-jpn-diff`, `LangCharacterVoice_Jpn`, a voice line's `ja`; 25 October 2026), and
 an EN or ID holomem the English). **Behind the line stands her emblem, with sparkles over
-the white** (29 October 2026, the owner's recording of the game): the game stands her fan
-mark there, a large outline in a gradient (the `FanMark` table names one per holomem, by her
-asset id), and since no file of it could be found on HolodoriDB's CDN (some 300 names asked),
-her motif sigil stands in (`img_chr_motif_icon_default_main_<asset>`, `motifUrl`; all 54 have
-one): drawn on a canvas as an outline in her first colour and the first of her later ones that
-shows on white (`markEnd`; Fubuki's fifth is white), by spreading the picture, laying the
-gradient over it and cutting the picture back out of the middle (`paintMark`). A canvas,
-because the CDN sends no CORS headers and a CSS mask, fetched in CORS mode, came out empty.
+the white** (29 October 2026, the owner's recording of the game): the game stands her mascot
+there as line art in a gradient. The mascot is the game's `img_chr_motif_main_<asset>` (Nerissa's
+owl, Kronii's clock; all 54 have one), which HolodoriDB's CDN does not serve: it was taken from
+the game's own asset catalog with HolodoriDB's `holodori-asset-tools` on 31 October 2026 (its
+server refuses a VPN's address) and baked once by hand to its line art alone, black on
+transparency, in `icons/holodori/motif/<asset>.webp` (55 files, 347 KB, tracked; `motifUrl`): the
+stroke's colour, read just inside the keychain's cream border, and every pixel near it or
+darker, less the keychain's shadow. A new holomem's mascot is the same bake by hand. The page
+draws it on a canvas, thickened a little, with her first colour and the first of her later ones
+that shows on white laid over it (`markEnd`; Fubuki's fifth is white; `paintMark`).
 Four-pointed sparkles twinkle over the white at places drawn from the card, and the words open
 out from their middle as the screen comes up, as the recording shows. Then the animation
 plays and the signature is written

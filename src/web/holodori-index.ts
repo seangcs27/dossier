@@ -138,12 +138,14 @@ export const cardMovieUrl = (asset: string): string =>
   `${CDN}/resources/mov_card_full_0_${asset}.usm/mov_card_full_0_${asset}/mov_card_full_0_${asset}.mp4`;
 export const cardSignUrl = (asset: string): string =>
   `${CDN}/resources/mov_card_sign_${asset}.usm/mov_card_sign_${asset}/mov_card_sign_${asset}.h264.mp4`;
-// A holomem's motif sigil, 256x256 white on transparency (her `assetId`, the character id
-// without its 'chr-'). The reveal's voice-line screen stands it behind the line in place of
-// her fan mark, which the game shows there and the CDN has no file of that could be found
-// (28 October 2026: the FanMark table names 04015 for Nerissa, and some 300 names were asked).
-export const motifUrl = (asset: string): string =>
-  `${CDN}/assetbundles/img_chr_motif_icon_default_main_${asset}/img_chr_motif_icon_default_main_${asset}.webp`;
+// A holomem's mascot (her `assetId`, the character id without its 'chr-'), the shape the
+// reveal's voice-line screen outlines behind the line as the game does. The game's own
+// `img_chr_motif_main_<asset>`, which HolodoriDB's CDN does not serve: taken from the game's
+// asset catalog with holodori-asset-tools on 31 October 2026 and baked once by hand to its line
+// art alone, black on transparency, 256px lossless WebP in icons/holodori/motif/ (55 files,
+// 347 KB; the owner's "save those medias"): the stroke's colour, read just inside the
+// keychain's cream border, and every pixel near it or darker, less the keychain's shadow.
+export const motifUrl = (asset: string): string => `icons/holodori/motif/${asset}.webp`;
 // A skill's icon, 128x128, named for what the skill does (the payload's `icons`).
 export const skillIconUrl = (icon: string): string =>
   `${CDN}/assetbundles/img_skill_icon_${icon}/img_skill_icon_${icon}.webp`;

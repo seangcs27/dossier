@@ -22,7 +22,7 @@ export interface Reveal {
   sign: string;
   voice?: { text: string; lang?: string };
   // The emblem behind the line, a white-on-transparency picture painted in a gradient of two
-  // of her colours: her motif sigil, standing in for the fan mark the game shows there.
+  // of her colours: her mascot, as the game shows there.
   mark?: { url: string; from: string; to: string };
 }
 
@@ -108,14 +108,11 @@ function paintSign(sign: HTMLVideoElement, ink: CanvasRenderingContext2D, matte:
   matte.drawImage(sign, 0, half, sign.videoWidth, half, 0, 0, 1280, 720);
 }
 
-// The emblem, onto its canvas, as an outline in her gradient with the white showing inside it,
-// which is how the game draws the fan mark there: the picture is spread outwards (drawn round a
-// small circle), the gradient is laid over that (source-in), and the picture itself is cut back
-// out of the middle (destination-out). It is drawn at 80% of the canvas, so that the spread
-// stays inside it. A canvas, because the CDN sends no CORS headers and a CSS mask is fetched in
-// CORS mode, so a masked element came out empty; a canvas shows a picture from another host
-// and is only kept from being read back, which this never does.
-const LINE = 13;  // the outline's width, on the 512px canvas
+// The emblem, onto its canvas, as the game draws it there: her mascot's line art in her
+// gradient. The picture is the line art alone (baked by hand from the game's mascot, motifUrl),
+// thickened a little by drawing it round a small circle, then the gradient is laid over what
+// was drawn (source-in). It is drawn at 80% of the canvas.
+const LINE = 3;  // how far the lines are thickened, on the 512px canvas
 
 function paintMark(stage: HTMLElement): void {
   const canvas = stage.querySelector<HTMLCanvasElement>('.rv-mark');
@@ -127,8 +124,8 @@ function paintMark(stage: HTMLElement): void {
     const { width: w, height: h } = canvas;
     const size = w * 0.8;
     const at = (w - size) / 2;
-    for (let i = 0; i < 24; i++) {
-      const a = (i / 24) * 2 * Math.PI;
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * 2 * Math.PI;
       ctx.drawImage(picture, at + LINE * Math.cos(a), at + LINE * Math.sin(a), size, size);
     }
     ctx.globalCompositeOperation = 'source-in';
@@ -137,8 +134,6 @@ function paintMark(stage: HTMLElement): void {
     gradient.addColorStop(1, canvas.dataset.to!);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.drawImage(picture, at, at, size, size);
   };
   picture.src = canvas.dataset.src!;
 }
