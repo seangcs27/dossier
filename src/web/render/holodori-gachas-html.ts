@@ -104,7 +104,7 @@ export function gachasPageHtml(now: number): string {
   return `
     <div class="roster-page">
       <header class="hd-head">
-        <h2 class="hd-title">Gachas</h2>
+        <h2 class="hd-title">Gacha Banner</h2>
         <p class="hd-sub">Every banner since August 2026, with the cards it features · times are your own clock's</p>
       </header>
       ${upcomingHtml(now)}

@@ -38,9 +38,13 @@ export function openArtViewer(
 ): void {
   let index = start;
   let zoom = ZOOM_FIT;
+  let shift = { x: 0, y: 0 };
 
+  // A single piece (a hololive Dreams card's illustration) has nothing to go through: it fills
+  // the window with no arrows or bar, and the zoom and the way out float at its corners.
+  const single = arts.length === 1;
   const dialog = document.createElement('dialog');
-  dialog.className = 'art-viewer';
+  dialog.className = `art-viewer${single ? ' single' : ''}`;
   dialog.setAttribute('aria-label', 'Artwork viewer');
   dialog.innerHTML = `
     <div class="av-stage">
@@ -55,10 +59,14 @@ export function openArtViewer(
     <div class="av-bar">
       <span class="av-label"></span>
       <div class="av-zoom">
-        <button data-av="out" aria-label="Zoom out">−</button>
+        <button data-av="out" aria-label="Zoom out">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9"></path></svg>
+        </button>
         <input type="range" min="${ZOOM_MIN}" max="${ZOOM_MAX}" step="${ZOOM_STEP}" aria-label="Zoom">
-        <button data-av="in" aria-label="Zoom in">+</button>
-        <output class="av-percent"></output>
+        <button data-av="in" aria-label="Zoom in">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9"></path></svg>
+        </button>
+        <button class="av-percent" data-av="fit" aria-label="Fit to the window"></button>
       </div>
       <div class="av-thumbs" role="tablist" aria-label="Artwork">
         ${arts.map((a, i) => `
@@ -84,18 +92,30 @@ export function openArtViewer(
   const count = dialog.querySelector<HTMLElement>('.av-count')!;
   const thumbs = dialog.querySelectorAll<HTMLElement>('.av-thumb');
 
-  // The art is square, so "fits the stage" is the stage's shorter side. Zooming keeps
+  // "Fits the stage" is the picture's own shape inside the stage: the shorter side for square
+  // art, the width for a wide illustration (square until the picture has loaded). Zooming keeps
   // whatever was at the middle of the stage at the middle. A pinch lands between the steps
   // the buttons take, so the zoom is any number in range, rounded only where it is printed.
   const setZoom = (next: number): void => {
     const cx = (stage.scrollLeft + stage.clientWidth / 2) / Math.max(1, stage.scrollWidth);
     const cy = (stage.scrollTop + stage.clientHeight / 2) / Math.max(1, stage.scrollHeight);
     zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next));
+    // Where a drag below fit left the art; from fit up the stage scrolls instead.
+    if (zoom >= ZOOM_FIT) {
+      shift = { x: 0, y: 0 };
+      img.style.translate = '';
+    }
+    const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
+    // A single piece's frame takes the picture's own shape (styles.scss, `.single`), so it is
+    // set before the stage is measured.
+    dialog.style.setProperty('--ratio', String(ratio));
     // The stage's whole box, scrollbars included: an image already in the cache is here at
     // its full size before this runs, and the scrollbars it raises would shrink the fit.
-    const side = Math.min(stage.offsetWidth, stage.offsetHeight) * zoom / 100;
-    img.style.width = img.style.height = `${side}px`;
+    const wide = Math.floor(Math.min(stage.offsetWidth, stage.offsetHeight * ratio) * zoom / 100);
+    img.style.width = `${wide}px`;
+    img.style.height = `${wide / ratio}px`;
     slider.value = String(zoom);
+    slider.style.setProperty('--fill', `${((zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
     percent.textContent = `${Math.round(zoom)}%`;
     stage.scrollLeft = cx * stage.scrollWidth - stage.clientWidth / 2;
     stage.scrollTop = cy * stage.scrollHeight - stage.clientHeight / 2;
@@ -124,8 +144,9 @@ export function openArtViewer(
   dialog.addEventListener('pointerdown', (ev) => { pressedOn = ev.target; });
 
   dialog.addEventListener('click', (ev) => {
-    if (ev.target === dialog) {
-      if (pressedOn === dialog) finish();
+    // A single piece's stage is the whole window, so the dark round the art closes it too.
+    if (ev.target === dialog || (single && ev.target === stage)) {
+      if (pressedOn === ev.target) finish();
       return;
     }
     const control = (ev.target as Element).closest<HTMLElement>('[data-av]');
@@ -135,6 +156,7 @@ export function openArtViewer(
       case 'pick':  showArt(Number(control.dataset.value)); break;
       case 'in':    setZoom(zoom + ZOOM_STEP); break;
       case 'out':   setZoom(zoom - ZOOM_STEP); break;
+      case 'fit':   setZoom(ZOOM_FIT); break;
       case 'close': finish(); break;
     }
   });
@@ -197,7 +219,7 @@ export function openArtViewer(
     } else {
       // A second finger makes it a pinch, and whatever the first had dragged is put back.
       drag = null;
-      img.style.translate = '';
+      img.style.translate = zoom < ZOOM_FIT ? `${shift.x}px ${shift.y}px` : '';
       pinch = { spread: spread(), zoom };
     }
   });
@@ -210,6 +232,9 @@ export function openArtViewer(
     } else if (drag && zoom > ZOOM_FIT) {
       stage.scrollLeft = drag.left - (ev.clientX - drag.x);
       stage.scrollTop = drag.top - (ev.clientY - drag.y);
+    } else if (drag && zoom < ZOOM_FIT) {
+      // Smaller than the stage there is nothing to scroll, so the art itself moves, and stays.
+      img.style.translate = `${shift.x + ev.clientX - drag.x}px ${shift.y + ev.clientY - drag.y}px`;
     } else if (drag) {
       // Nothing to pan while the art fits, so it follows the pointer sideways: far enough
       // and letting go turns to the next piece.
@@ -222,6 +247,11 @@ export function openArtViewer(
     pinch = null;
     if (!drag) return;
     const travel = ev.clientX - drag.x;
+    if (zoom < ZOOM_FIT) {
+      shift = { x: shift.x + travel, y: shift.y + ev.clientY - drag.y };
+      drag = null;
+      return;
+    }
     drag = null;
     img.style.translate = '';
     // Dragging the art left brings the next one in from the right.
@@ -243,6 +273,7 @@ export function openArtViewer(
 
   const refit = (): void => setZoom(zoom);
   window.addEventListener('resize', refit);
+  img.addEventListener('load', refit);
 
   // Takes the viewer out of the page. On its own this is the way out for a route change —
   // the phone's Back button, a link — where the page the viewer belonged to has already

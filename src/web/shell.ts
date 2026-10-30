@@ -15,7 +15,7 @@ const GAMES = {
   arknights: { roster: '#/', cast: 'Operators' },
   endfield: { roster: '#/endfield', cast: 'Operators' },
   ptn: { roster: '#/ptn', cast: 'Sinners' },
-  holodori: { roster: '#/holodori/holomems', cast: 'Holomems' },
+  holodori: { roster: '#/holodori/holomems', cast: 'Talent' },
   fgo: { roster: '#/fgo', cast: 'Servants' },
 };
 type Game = keyof typeof GAMES;
@@ -63,6 +63,7 @@ export function showShell(page: Route['view']): void {
   const songsLink = document.getElementById('nav-songs')!;
   const cardsLink = document.getElementById('nav-cards')!;
   const gachasLink = document.getElementById('nav-gachas')!;
+  const homeLink = document.getElementById('nav-home')!;
 
   const game = gameOf(page);
   // Which page is showing, for the few rules that differ by it (the phone's count).
@@ -95,11 +96,13 @@ export function showShell(page: Route['view']): void {
   setCurrent(songsLink, own === songsLink);
   setCurrent(cardsLink, own === cardsLink);
   setCurrent(gachasLink, own === gachasLink);
+  setCurrent(homeLink, front);
   eventsLink.hidden = game !== 'arknights';
   songsLink.hidden = game !== 'holodori';
   cardsLink.hidden = game !== 'holodori';
   gachasLink.hidden = game !== 'holodori';
-  markSection(front ? undefined : own ?? operatorsLink);
+  homeLink.hidden = game !== 'holodori';
+  markSection(front ? homeLink : own ?? operatorsLink);
 }
 
 function setCurrent(link: HTMLElement, on: boolean): void {

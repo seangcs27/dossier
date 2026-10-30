@@ -5,7 +5,7 @@ on:
     branches: [master]
   workflow_dispatch:
   schedule:
-    - cron: '0 20 * * *' # daily, 20:00 UTC (05:00 in Japan) — refresh bundled data, and catch hololive Dreams' ★5 previews, which are up about a day
+    - cron: '30 2,8,14,20 * * *' # every 6 hours (02:30 UTC is 11:30 in Japan, half an hour after hololive Dreams' gachas open) — refresh bundled data and catch its ★5 previews, which are up about a day
 
 permissions:
   contents: write # the image backup's release

@@ -65,29 +65,68 @@ independent sources, then writes:
 `event-banners/`, the Global schedule, from arknights.wiki.gg's event and banner tables and
 the game's own activity and gacha tables.
 
-All generated output is gitignored and rebuilt from scratch each time. A weekly cron in
-the deploy workflow keeps the published site current as new operators release.
+All generated output is gitignored and rebuilt from scratch each time. A cron every 6 hours in the
+deploy workflow (02:30, 08:30, 14:30 and 20:30 UTC) keeps the published site current as new
+operators, Sinners, cards and gachas release.
+
+**Arknights**
 
 | Source | Used for |
 |---|---|
-| [HellaAPI](https://awedtan.ca/api) | Primary operator data. Its `/cn/operator` endpoint backfills operators with no global release yet |
-| [Kengxxiao/ArknightsGameData](https://github.com/Kengxxiao/ArknightsGameData) | Raw CN `character_table.json` — covers HellaAPI's ~1-patch lag (~20 operators) |
-| [arknights.wiki.gg](https://arknights.wiki.gg) | CN release dates; English trait + bio for CN-only operators (Cargo API); branch/archetype icons, downloaded into the bundle |
-| [sanitygone.help](https://sanitygone.help) | `releaseOrder`, a PRTS-scraped ordinal — the preferred sort signal |
-| [PuppiizSunniiz/AN-EN-Tags](https://github.com/PuppiizSunniiz/AN-EN-Tags) | Community English translations: skills, talents, RIIC buffs, potentials, recruitment tags |
-| [PuppiizSunniiz/Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images) | Avatars, class icons, skill icons, full illustrations |
-| [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) | 180×360 bust portraits for grid cards |
-| [Wikimedia Commons](https://commons.wikimedia.org) | The four crossover logos kept in `scripts/collab-logos/` (Persona 3 Reload, Monster Hunter, Ave Mujica, Delicious in Dungeon), and hololive's triangle for the hololive Dreams tile |
-| [Fate/Grand Order Wiki](https://fategrandorder.fandom.com) | Chaldea's emblem, for the Fate/Grand Order tile |
-| [无期迷途WIKI](https://wiki.biligame.com/wqmt) (BWIKI) | The model for Path to Nowhere's roster filter and Sinner page, and a source for the build (`scripts/lib/ptn-bili.mjs`, its Semantic MediaWiki API): every Sinner's Chinese name and tags, whether they are limited or a collab's, whether they deal core damage, every Sinner's page and exclusive crimebrand there (the Chinese side's text under a Sinner's tabs; for the 11 Sinners only the CN server has, their whole file and pictures), and the illustration, phase-up art or mugshot of any Sinner the English wiki has none of. Because it rate-limits, a copy of what the build last read from it whole is kept in `scripts/lib/ptn-bili-snapshot.json` for the builds it will not answer. The 25 rank, tendency and libram badges in `icons/ptn/` are its files, baked once |
-| [S1N](https://s1n.gg) | When each Path to Nowhere Sinner was released (its banner archive and release order), and the head of the file of five Sinners the wiki has no page for yet; written down by hand in `scripts/lib/ptn-record.mjs`, not fetched |
-| [endfield.wiki.gg](https://endfield.wiki.gg) | Arknights: Endfield's roster, card art, splash art, glyphs and each operator's page (Cargo and MediaWiki APIs), read by `scripts/build-endfield-index.mjs` |
-| [pathtonowhere.wiki.gg](https://pathtonowhere.wiki.gg) | Path to Nowhere's roster and each Sinner's dossier, from the Sinner's page (MediaWiki API), the mugshots and original illustrations its roster stands against its wall, and the game's logo for its sidebar tile, read by `scripts/build-ptn-index.mjs`. A Sinner's other pictures (the original, the phase-up art, interrogation pictures, attires) are listed by the build and loaded by the page from the wiki, resized through [wsrv.nl](https://wsrv.nl) |
-| [HolodoriDB](https://github.com/HolodoriDB/holodori-db-eng-diff) | hololive Dreams' roster, from a community dump of the game's master data, read by `scripts/build-holodori-index.mjs`; text only, no artwork |
-| [Atlas Academy](https://atlasacademy.io) | Fate/Grand Order's roster, from its export API (data under [ODC-BY 1.0](https://opendatacommons.org/licenses/by/1-0/)), and the party figures its cards show, from its file host, read by `scripts/build-fgo-index.mjs` |
+| [ArknightsAssets/ArknightsGamedata](https://github.com/ArknightsAssets/ArknightsGamedata) | The game's own excel tables, EN and CN (`character_table`, skills, modules, base skills, handbook, ranges, skins, items, activity and gacha tables): every operator's payload, the CN-only operators, costs and the schedule's pools. The one load-bearing source |
+| [arknights.wiki.gg](https://arknights.wiki.gg) | CN release dates (Cargo API); CN-only operators' English text and files; the Global event schedule and its banners; branch icons, downloaded into the bundle |
+| [sanitygone.help](https://sanitygone.help) | `releaseOrder`, a PRTS-scraped ordinal, the preferred sort signal; the model for the operator page |
+| [PuppiizSunniiz/AN-EN-Tags](https://github.com/PuppiizSunniiz/AN-EN-Tags) | Community English translations: skills, talents, RIIC buffs, potentials |
+| [PuppiizSunniiz/Arknight-Images](https://github.com/PuppiizSunniiz/Arknight-Images) | Avatars, outfit avatars, class, skill and module icons, full illustrations; loaded by the page, with [jsDelivr](https://www.jsdelivr.com) as the fallback host |
+| [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) | 180×360 bust portraits for grid cards, baked to WebP |
+| [Wikimedia Commons](https://commons.wikimedia.org) | The four crossover logos in `scripts/collab-logos/` |
+| [Arkpedia](https://arkpedia.net/schedule) | The model for the Events page; not fetched |
 
-Every source except HellaAPI is supplemental: if one is unreachable the build logs a
-warning and degrades rather than failing. All network calls carry a 20 s timeout.
+**Arknights: Endfield**
+
+| Source | Used for |
+|---|---|
+| [endfield.wiki.gg](https://endfield.wiki.gg) | Roster, card art, splash art, glyphs and each operator's page (Cargo and MediaWiki APIs), read by `scripts/build-endfield-index.mjs` |
+
+**Path to Nowhere**
+
+| Source | Used for |
+|---|---|
+| [pathtonowhere.wiki.gg](https://pathtonowhere.wiki.gg) | Roster and each Sinner's dossier, mugshots and original illustrations (baked), and the other prints, loaded by the page; read by `scripts/build-ptn-index.mjs` |
+| [无期迷途WIKI](https://wiki.biligame.com/wqmt) (BWIKI) | The model for the roster filter and Sinner page, and a source (`scripts/lib/ptn-bili.mjs`, its Semantic MediaWiki API): Chinese names and tags, limited and core-damage flags, every Sinner's page and crimebrand, terms, voice lines, skill ranges, and the 11 CN-only Sinners whole. Kept in `scripts/lib/ptn-bili-snapshot.json` for the builds it will not answer. The 25 badges in `icons/ptn/` are its files, baked once |
+| [S1N](https://s1n.gg) | When each Sinner was released, and five Sinners the wiki has no page for; written down by hand in `scripts/lib/ptn-record.mjs`, not fetched |
+
+**hololive Dreams**
+
+| Source | Used for |
+|---|---|
+| [HolodoriDB](https://github.com/HolodoriDB) master data dumps (`holodori-db-eng-diff`, `holodori-db-jpn-diff`) | The cast, songs, cards, skills, voice lines and their Japanese text, read by `scripts/build-holodori-index.mjs` |
+| HolodoriDB's CDN (`cdn.holodori.dev`) | Card portraits and illustrations, stickers, round icons, skill icons and jackets for the newer songs (baked); animations, signatures, voice lines, motif sigils and gacha logos (loaded by the page). Backed up by hand to the `media-backup` release |
+| [hololive Dreams official site](https://www.hololive-dreams.com/en) | Each holomem's key art and the song jackets it lists |
+| [Gamerch](https://gamerch.com/hololive-dreams/) | The three card type icons in `icons/holodori/`, baked once |
+| [holodori.best](https://holodori.best) | The gacha record (names, dates, featured cards), written down by hand in `scripts/lib/holodori-gachas.mjs`; the model for the card page |
+| [hololive Dreams Lab](https://dreams.wf-calc.net/wiki/game-updates?lang=en) | Announced ★5 previews and the announcements' headlines |
+| [Steam news](https://store.steampowered.com/news/app/4282500) | The game's own announcements on Steam |
+| [YouTube](https://www.youtube.com) | Each song's chorus, played from its official music video in YouTube's embedded player; where it plays recorded by hand in `scripts/lib/holodori-clips.mjs` |
+| [Wikimedia Commons](https://commons.wikimedia.org) | hololive's triangle, for the sidebar tile |
+
+**Fate/Grand Order**
+
+| Source | Used for |
+|---|---|
+| [Atlas Academy](https://atlasacademy.io) | The roster, from its export API (data under [ODC-BY 1.0](https://opendatacommons.org/licenses/by/1-0/)), and the party figures its cards show, read by `scripts/build-fgo-index.mjs` |
+| [Fate/Grand Order Wiki](https://fategrandorder.fandom.com) | Chaldea's emblem, for the sidebar tile |
+
+**Every game**
+
+| Source | Used for |
+|---|---|
+| [wsrv.nl](https://wsrv.nl) | Resizes the full illustrations and prints the pages load at the size shown |
+| [Google Fonts](https://fonts.google.com) | Poppins, Archivo, JetBrains Mono, Cinzel, EB Garamond, Barlow Condensed and Noto Sans SC, self-hosted under the SIL Open Font License |
+
+Only the Arknights excel tables are load-bearing: any other source that is unreachable makes
+the build log a warning and keep the last build's data rather than fail. All network calls
+carry a 20 s timeout.
 
 Some newly-released CN operators are only partly translated — the community translation
 project works in release order and hasn't reached the newest yet. Those fall back to the
