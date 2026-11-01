@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import assets from './integrations/assets.mjs';
+import preload from './integrations/preload.mjs';
 
 // Written to dist/astro, beside the webpack build's dist/web, until the cut-over (Phase 7).
 // DOSSIER_BASE moves it: the deploy builds it for /dossier/next/ to stand beside the SPA.
@@ -10,7 +11,7 @@ export default defineConfig({
   base: process.env.DOSSIER_BASE ?? '/dossier',
   trailingSlash: 'always',
   outDir: '../dist/astro',
-  integrations: [assets()],
+  integrations: [assets(), preload()],
   vite: {
     resolve: {
       // The SPA's own modules, which the pages import: '@web/render/…', '@web/shell'.

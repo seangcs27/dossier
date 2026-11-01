@@ -7,15 +7,21 @@ import { portedPath } from './ported';
 // it mounts it mounts on every `astro:page-load` that is its page's. The shell is started once.
 initShell();
 
-// A '#/…' link (the views' own, and the static pages', drawn from the same renderers) is given
-// its page's path as it is pressed, so that the router takes it as a link to that page. Changed
-// as late as that, and not undone, because a view may still cancel the press (the Path to
-// Nowhere wall swallows the click that ends a drag), and then nothing happens, as before.
-document.addEventListener('click', (e) => {
-  const link = (e.target as Element).closest?.('a[href^="#/"]');
-  const page = link && portedPath(link.getAttribute('href')!);
-  if (page) link.setAttribute('href', page);
-}, true);
+// A '#/…' link a view draws in the browser (the build wrote the static pages' as paths) is
+// given its page's path as soon as it is in the page, so that a hover prefetches that page and
+// the router takes a press as a link to it. A view that writes one back (card-spin.ts puts a
+// card's href back after a spin, shell.ts sets the roster link's) has it changed again. The
+// whole document is watched: the router swaps the body for the next page's.
+const portLinks = (): void => {
+  for (const link of document.querySelectorAll('a[href^="#/"]')) {
+    const page = portedPath(link.getAttribute('href')!);
+    if (page) link.setAttribute('href', page);
+  }
+};
+portLinks();
+new MutationObserver(portLinks).observe(document.documentElement, {
+  subtree: true, childList: true, attributes: true, attributeFilter: ['href'],
+});
 
 document.addEventListener('astro:before-swap', (e) => {
   const next = e.newDocument.body;

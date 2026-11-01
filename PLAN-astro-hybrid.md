@@ -364,6 +364,11 @@ on each `astro:page-load` whose body has that `data-view`.
   cancels the press (the Path to Nowhere wall after a drag) still cancels it. Not rewritten at
   build time: one handler covers both kinds. A middle-click or a copied link keeps the `#/…`
   address, which the root sends on (the legacy shim, `location.replace`, since Phase 4).
+  **Replaced 1 November 2026**: hover prefetch read those links against `<base>` and fetched
+  the grid. The static pages' links are now written as paths at build time (`portedLinks` in
+  `Shell.astro`), and a `MutationObserver` in `page.ts` rewrites those a view draws as they are
+  added. A cancelled press is still cancelled: the wall calls `preventDefault`, which the router
+  respects.
 - **Sound and the overlays**: `stopAudio`, the clip player's `shut`, the art viewer's `dispose`
   and the tooltip's `hide` listen to `astro:before-swap` beside `hashchange`. The tooltip
   element is carried into the next body; the drawer's body class too, so that `showShell`
