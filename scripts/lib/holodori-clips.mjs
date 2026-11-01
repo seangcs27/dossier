@@ -11,6 +11,7 @@ export const MV_FOR = {
   m0366: 'BtpR74RBESc',   // Amaryllis
   m0367: '7CM4ZbyrafQ',   // CORE//UNBREAKABLE
   m0368: '8On-I5qQeLw',   // Forge My Soul
+  m0369: 'R-ChvjRIKdk',   // KaienSpectacle (117 s against 116; added 2 November 2026)
 };
 
 // The game plays a short cut of most songs (about 2 minutes) and its dump links the full
