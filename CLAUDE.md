@@ -1669,8 +1669,9 @@ graph where the game's chorus could be in the full version, 3 s before it, for t
 the game's chorus. It is an estimate, which the song carries as `estimated` and the player
 words "Highlight" instead of "Chorus"; the same pick on the 32 songs whose lengths line up
 fell within 8 s of the game's own window 29 times in 32, over a narrow range. The same file
-gives four songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
-channel, the game's length; Amaryllis and CORE//UNBREAKABLE added 25 October); 10 songs
+gives five songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
+channel, the game's length; Amaryllis and CORE//UNBREAKABLE added 25 October, KaienSpectacle 2
+November); 10 songs
 still have no disc, older ones whose only uploads are the full-length audio or a different
 version. **The clip plays at the site's volume** (25 October 2026), from a speaker and
 slider under the video that set YouTube's volume over `postMessage`: in a player that small
