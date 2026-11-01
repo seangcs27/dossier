@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { ClientRouter } from 'astro:transitions';
 import '../../../src/web/styles.scss';
 import ported from '../ported-routes.json';
+import { portedLinks } from '../lib/ported';
 
 interface Props {
   view: string;
@@ -42,6 +43,11 @@ bottom = keep(bottom, '<svg class="svg-defs"', 'svg-defs');
 // 'holodori/jackets/…'). Under /holodori/ that would be one folder too deep, so the pages
 // resolve them from the site's root, as the SPA does.
 const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+// The page drawn at build time links its own way ('#/holodori/songs', from the renderers the
+// SPA shares): written as the pages' paths here, so that prefetch and a new tab find the page.
+// A page its view fills in the browser has nothing here.
+const page = Astro.slots.has('default') ? portedLinks(await Astro.slots.render('default')) : '';
 ---
 <!doctype html>
 <html lang="en" transition:animate="none">
@@ -55,7 +61,7 @@ const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
   </head>
   <body data-view={view}>
     <Fragment set:html={top} />
-    <main id="view" {...dataAttrs}><slot /></main>
+    <main id="view" {...dataAttrs}><Fragment set:html={page} /></main>
     <Fragment set:html={bottom} />
   </body>
 </html>

@@ -11,3 +11,11 @@ export function portedPath(hash: string): string | undefined {
   const prefix = Object.keys(routes).find(key => key !== '#/' && key.endsWith('/') && hash.startsWith(key));
   return prefix && `${routes[prefix]}${hash.slice(prefix.length)}/`;
 }
+
+/** The markup with every `href="#/…"` Astro has a page for written as that page's path. */
+export function portedLinks(html: string): string {
+  return html.replace(/href="(#\/[^"]*)"/g, (attr, hash: string) => {
+    const page = portedPath(hash);
+    return page ? `href="${page}"` : attr;
+  });
+}

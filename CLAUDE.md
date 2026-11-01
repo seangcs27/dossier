@@ -1964,6 +1964,11 @@ the SPA is untouched but for `shell.ts`, split out of `index.ts`. `npm run build
   not the page. From `_astro/` it would 404.
 - `site/integrations/assets.mjs` copies the files webpack's CopyPlugin copies (it reads that
   list from `webpack.web.js`) into the build, and serves them under `astro dev`.
+- `site/integrations/preload.mjs` writes a `<link rel="modulepreload">` into each page's head
+  after the build for every chunk its scripts import (1 November 2026): the imports run 3 to 4
+  levels deep, and without them a phone fetched each level one round trip after the last.
+  Only on the pages a view fills in the browser (and the calendar), after the stylesheet: on a
+  page drawn at build time the chunks took bandwidth from the stylesheet and delayed its paint.
 
 **What the Astro site serves** (Phase 3, 24 October 2026; `npm run build:site` writes 449 pages):
 hololive Dreams' front page, gachas, a page per holomem (54) and per card (196), the three Events
@@ -2002,7 +2007,10 @@ bloom) lives for the visit. The sidebar, scrim, topbar and SVG filters persist a
 **A page's script runs once**, the first time its page is shown, so every page mounts through
 `onPage(view, mount)` in `site/src/lib/page.ts`, which runs `mount` on each `astro:page-load`
 whose body has that `data-view`; a new page uses it too. `page.ts` also starts the shell once,
-gives a pressed `#/…` link its page's path (`ported.ts`), and carries the tooltip and the
+gives every `#/…` link a view draws its page's path as soon as it is in the page (a
+`MutationObserver`; `Shell.astro` does the same at build time for the pages drawn then, with
+`portedLinks`), so that hover prefetch fetches the right page (1 November 2026; until then a link
+was changed only when pressed, and prefetch fetched the grid), and carries the tooltip and the
 drawer's body class into the next page. What the SPA undoes on `hashchange` (sound, the clip
 player, the art viewer, the tooltip) also listens to `astro:before-swap`; a timer of a page's
 own stops once its `#view` is not connected.
