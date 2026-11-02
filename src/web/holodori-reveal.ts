@@ -53,6 +53,9 @@ let folded = false;
 // Seconds the white screen is held after the line ends, before the animation.
 const HOLD = 0.4;
 
+// Seconds the white screen waits at most, after the hold, for the videos to be loaded.
+const WAIT = 6;
+
 // The signature fades out in the last half-second of its video (9 s on every card checked);
 // the frame this many seconds before the end is the one that stays over the art.
 const FADE = 0.6;
@@ -160,6 +163,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   let signDone = false;
   let frame = 0;
   let hold = 0;
+  let turn = 0;          // bumped by a seek, so that a begin still waiting on the videos stands down
 
   const length = (media?: HTMLMediaElement): number => (media && Number.isFinite(media.duration) ? media.duration : 0);
 
@@ -258,13 +262,32 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   };
 
   // The animation and the signature start together, the white screen goes and the
-  // animation's own white burst takes its place.
+  // animation's own white burst takes its place. The CDN does not cache the videos and is slow
+  // at times, so the white screen is held until both can play through without stopping (for
+  // WAIT seconds at most, for a browser that stops loading a paused video), and goes only once
+  // the animation's first frame is up under it: otherwise the card's art (the poster) showed
+  // between the line and the burst, or the animation stalled while the signature wrote on.
   function begin(): void {
     if (started || finished) return;
     started = true;
-    stage.dataset.ph = 'play';
-    void movie.play().catch(endMovie);
-    void sign.play().catch(endSign);
+    const ready = (media: HTMLVideoElement): Promise<unknown> => (media.readyState >= 4 ? Promise.resolve()
+      : new Promise((ok) => {
+        media.addEventListener('canplaythrough', ok, { once: true });
+        media.addEventListener('error', ok, { once: true });
+      }));
+    const mine = ++turn;
+    const late = new Promise((ok) => { setTimeout(ok, WAIT * 1000); });
+    void Promise.race([Promise.all([ready(movie), ready(sign)]), late]).then(() => {
+      // A pause, a seek or the end while waiting has taken over.
+      if (mine !== turn || finished || paused) return;
+      const shown = (): void => {
+        if (mine === turn && !finished) stage.dataset.ph = 'play';
+      };
+      if (movie.requestVideoFrameCallback) movie.requestVideoFrameCallback(shown);
+      else movie.addEventListener('playing', shown, { once: true });
+      void movie.play().catch(endMovie);
+      void sign.play().catch(endSign);
+    });
   }
 
   // A browser that unlocks sound per element wants each one started by the press, so the two
@@ -328,6 +351,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
       return;
     }
     clearTimeout(hold);
+    turn++;
     skipped = false;
     paused = false;
     delete stage.dataset.paused;

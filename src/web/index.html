@@ -12,6 +12,8 @@
        DNS + TLS round trip, measured at about 220 ms. -->
   <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
   <link rel="stylesheet" href="styles.css">
+  <!-- The reader's light or dark choice, before the first paint (theme.ts keeps it after). -->
+  <script>try { var theme = localStorage.getItem('dossier-theme'); if (theme) document.documentElement.dataset.theme = theme; } catch (e) {}</script>
 </head>
 <body>
   <!-- The games, down the window's left edge. On a phone it is a drawer instead, pulled out
@@ -46,6 +48,13 @@
       <span class="side-mark" aria-hidden="true"><span class="side-logo" style="--logo:url('icons/games/fgo.webp')"></span></span>
       <span class="side-name">FGO</span>
     </a>
+    <!-- The dark theme's switch: pressed while it is on (theme.ts). -->
+    <button type="button" class="side-game side-theme" id="theme-toggle" aria-pressed="false">
+      <span class="side-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+      </span>
+      <span class="side-name">Dark</span>
+    </button>
   </nav>
   <div class="side-scrim" id="side-scrim" aria-hidden="true"></div>
   <div class="topbar">

@@ -1,0 +1,9 @@
+// The dark theme: on when the system asks for dark and the reader has not chosen light, or
+// when the reader has chosen dark (theme.ts puts the choice on <html> as data-theme). Used
+// inside a rule, it restates that rule for the dark theme.
+@mixin dark {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) & { @content; }
+  }
+  :root[data-theme='dark'] & { @content; }
+}

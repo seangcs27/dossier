@@ -2,6 +2,7 @@ import { applyRandomLogo, setLogoGame } from './logo';
 import type { Route } from './router';
 import { markSection } from './sections';
 import { mountScrollbars } from './scrollbar';
+import { mountThemeSwitch } from './theme';
 import { mountTooltips } from './tooltip';
 import { bindImageMirror } from '../shared/api/hella-api';
 
@@ -30,12 +31,13 @@ function gameOf(page: Route['view']): Game {
   return 'arknights';
 }
 
-/** What happens once, when the page loads: the logo, the image mirror, tooltips, scrollbars and the drawer. */
+/** What happens once, when the page loads: the logo, the image mirror, tooltips, scrollbars, the theme switch and the drawer. */
 export function initShell(): void {
   applyRandomLogo();
   bindImageMirror(document);
   mountTooltips();
   mountScrollbars();
+  mountThemeSwitch();
 
   const sideToggle = document.getElementById('side-toggle')!;
   sideToggle.addEventListener('click', () => setDrawer(true));

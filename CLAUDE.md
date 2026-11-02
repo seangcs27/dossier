@@ -268,6 +268,7 @@ src/
     holodori-reveal.ts  ← a 5-star card's reveal: the card-get line, then the animation with the signature over it
     holodori-clip.ts  ← a song's chorus, played from its music video in a YouTube embed
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
+    theme.ts / _theme.scss  ← the dark theme's switch and choice, and the `dark` mixin (see "Styles")
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers,
@@ -357,6 +358,23 @@ inherit, since easing an inherited property on the page would restyle every elem
 each frame; the thumb reads its own box's value with `--thumb: inherit`. **The page's
 scrollbar is styled from `<body>`, not `<html>`**: lit on `<html>`, the colour changed in
 the computed style and never in the pixels, so the page's scroll events light the body.
+
+**The dark theme** (3 November 2026, the owner's ask: every game, the system's choice with a
+switch to override it). It is on when the system asks for dark and the reader has not chosen
+light, or when they have chosen dark: `theme.ts` keeps the choice in `localStorage`
+(`dossier-theme`) and puts it on `<html>` as `data-theme`, an inline script in
+`index.html`'s head sets it before the first paint, and it is put on the next page's `<html>`
+on `astro:before-swap`, since Astro's router swaps the root's attributes. The switch is a tile
+at the sidebar's foot (`#theme-toggle`, pressed while dark is on); a press that lands on the
+system's own theme forgets the choice, so the system is followed again. In SCSS, `@include
+dark { … }` (`_theme.scss`) inside a rule restates it for the dark theme. Arknights and
+Fate/Grand Order were drawn dark and are the same in both. The three light worlds keep their
+palette as custom properties that the dark theme restates: Endfield's graphite with the same
+yellow (`--ef-ink`, `--ef-paper`…; `--ef-on-ink` is what stands on an ink fill), Path to
+Nowhere's wall with the lights down (`--ptn-wall`, `--ptn-wall-ink`…; the placards, the rail
+and a Sinner's file stay ink), hololive Dreams at night (`--hd-*`; a sticker's die-cut edge,
+a ring round a face and the reveal's white screen stay `#fff`, and ink printed on a pastel or
+the sun is `$ink-print`, which no theme changes).
 
 The scales emit `--fs-*` (11 steps, 10→36px), `--sp-*` (9 steps, named by value — `--sp-8`
 is 8px), and `--radius-*` (6 steps). They were read off the shipped stylesheet rather than
@@ -1738,7 +1756,10 @@ Four-pointed sparkles twinkle over the white at places drawn from the card, and 
 out from their middle as the screen comes up, as the recording shows. Then the animation
 plays and the signature is written
 over it from the same instant. The animation is silent, begins on a white burst (which is
-why the white screen leads into it) and ends on a flash, after which the card's own art
+why the white screen leads into it; the white screen stays until both videos can play through,
+6 s at most, and goes only on the animation's first frame, since the CDN does not cache them
+and is slow at times: the poster, the card's art, showed through in between, or the animation
+stalled under a signature that wrote on; measured over all 93 by a throttled run) and ends on a flash, after which the card's own art
 comes up under the signature, which stays. The owner's asks that led here: "can they all
 be play tgt" (all three at once, the first version after the animation-then-signature
 one), then "check YouTube for some reference so the timing would look impeccable".
