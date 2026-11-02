@@ -2,9 +2,10 @@
 // change that is meant to leave the site as it was can show that it did (the Astro plan,
 // PLAN-astro-hybrid.md, runs this before and after each phase).
 //
-//   node scripts/shots.mjs capture <site-dir> <out-dir> [name] [--astro]
+//   node scripts/shots.mjs capture <site-dir> <out-dir> [name] [--astro] [--dark]
 //        shoot a built site (dist/web), over http; with a name, only the pages it is part of;
-//        with --astro the site is the Astro build (dist/astro) and only the routes it has
+//        with --astro the site is the Astro build (dist/astro) and only the routes it has;
+//        in the light theme, or with --dark the dark one, whatever the system's is
 //   node scripts/shots.mjs compare <dir-a> <dir-b>        pixel diff; changed ones go to <dir-b>/diff/
 //
 // Capture is also the smoke run: it exits 1 if a page throws, logs a console error or asks its
@@ -27,6 +28,9 @@ import { routeInventory } from './route-inventory.mjs';
 const BASE = '/dossier';
 
 const WIDTHS = [1400, 800, 390];
+// The theme the pages are shot in: the site follows the system's, which would otherwise move
+// every pixel between two machines (or one machine's day and night).
+const SCHEME = process.argv.includes('--dark') ? 'dark' : 'light';
 const VIEWPORT_HEIGHT = 900;
 const MAX_HEIGHT = 6000;
 const NOW = Date.UTC(2026, 9, 23, 12);
@@ -126,6 +130,7 @@ async function shoot(browser, origin, outDir, { name, url }, width) {
   const page = await browser.newPage();
   try {
     await page.setViewport({ width, height: VIEWPORT_HEIGHT });
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: SCHEME }]);
     await page.evaluateOnNewDocument(holdStill, NOW);
     await page.setRequestInterception(true);
     page.on('request', req => (req.url().startsWith(origin) ? req.continue() : req.abort()));
@@ -243,10 +248,10 @@ async function compare(dirA, dirB) {
 
 const args = process.argv.slice(2);
 const astro = args.includes('--astro');
-const [command, first, second, third] = args.filter(arg => arg !== '--astro');
+const [command, first, second, third] = args.filter(arg => !arg.startsWith('--'));
 if (command === 'capture' && first && second) await capture(first, second, third, astro);
 else if (command === 'compare' && first && second) await compare(first, second);
 else {
-  console.error('usage: shots.mjs capture <site-dir> <out-dir> [name] [--astro] | shots.mjs compare <dir-a> <dir-b>');
+  console.error('usage: shots.mjs capture <site-dir> <out-dir> [name] [--astro] [--dark] | shots.mjs compare <dir-a> <dir-b>');
   process.exitCode = 1;
 }

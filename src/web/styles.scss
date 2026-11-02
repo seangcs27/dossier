@@ -93,6 +93,21 @@ body {
   color: var(--accent);
 }
 
+// The theme switch, a tile like a game's at the rail's foot, lit while the dark theme is on.
+.side-theme {
+  margin-top: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+
+  svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+
+  &[aria-pressed='true'] .side-mark { color: var(--text); }
+  &[aria-pressed='true'] svg { fill: currentColor; }
+}
+
 // The menu button that pulls the drawer out, and the dimmed page behind it: a phone's
 // alone (see the phone rules at the foot of the file).
 .side-toggle,

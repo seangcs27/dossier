@@ -3,17 +3,21 @@
 // which loads this file last. Classes of its own start `ef-`.
 
 @use 'sass:map';
+@use 'theme' as *;
 
 // ── The world ──
 // The game's own interface: off-white and concrete, ink, and one signal yellow, with type
 // that is wide capitals for names and a monospace for codes. The owner picked it from three
 // directions on 22 October 2026 (the showcase).
 
-$ef-ink: #121212;
-$ef-ink-soft: #55554f;
-$ef-paper: #ececE8;
-$ef-concrete: #dadad5;
-$ef-rule: #c9c9c3;
+// Ink, paper, concrete and the rules are the world's custom properties (below), so that the
+// dark theme can restate them; what stands on the yellow is ink in either.
+$ef-ink: var(--ef-ink);
+$ef-ink-soft: var(--ef-ink-soft);
+$ef-paper: var(--ef-paper);
+$ef-concrete: var(--ef-concrete);
+$ef-rule: var(--ef-rule);
+$ef-black: #121212;
 $ef-yellow: #ffe100;
 // Rarity as the game colours it, ticks and labels only: 6★ orange, 5★ gold, 4★ violet.
 $ef-rarity: (6: #ff6b1a, 5: #e0a400, 4: #8b5cf6);
@@ -44,6 +48,14 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
 // the sidebar, the topbar and the filter panel paper and ink, as Path to Nowhere's turn ink
 // and bone.
 #{$ef-world} {
+  --ef-ink: #121212;
+  --ef-ink-soft: #55554f;
+  --ef-paper: #ececE8;
+  --ef-concrete: #dadad5;
+  --ef-rule: #c9c9c3;
+  // What stands on an ink fill: the yellow on paper, ink on the dark theme's light fill.
+  --ef-on-ink: #{$ef-yellow};
+
   --bg: #{$ef-concrete};
   --surface: #{$ef-paper};
   --surface2: #e2e2dd;
@@ -58,10 +70,27 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   --ef-wide: 'Archivo', 'Bahnschrift', 'Arial Narrow', sans-serif;
   --ef-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
+  // The dark theme: the game's own night screens, graphite with the same yellow, and the ink
+  // turned to the paper's off-white.
+  @include dark {
+    --ef-ink: #e6e6e0;
+    --ef-ink-soft: #a2a29a;
+    --ef-paper: #1d1e21;
+    --ef-concrete: #141518;
+    --ef-rule: #2b2c30;
+    --ef-on-ink: #{$ef-black};
+
+    --surface2: #232428;
+    --border: #3d3e43;
+    --chip: #2e2f34;
+    --edge: #75766f;
+    --dim: #c9c9c2;
+  }
+
   --thumb: #{$ef-ink-soft};
   &.is-scrolling { --thumb: #{$ef-ink}; }
 
-  ::selection { background: $ef-yellow; color: $ef-ink; }
+  ::selection { background: $ef-yellow; color: $ef-black; }
 
   .topbar header { border-bottom-color: $ef-ink; }
 
@@ -69,23 +98,34 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   .side-game.active .side-mark {
     border-color: $ef-ink;
     background: $ef-yellow;
-    color: $ef-ink;
+    color: $ef-black;
   }
 
   // The section link being shown: ink with the yellow on it.
   .sections-blob,
   .sections-drop { background: $ef-ink; }
-  .section-link.active { color: $ef-yellow; }
+  .section-link.active { color: var(--ef-on-ink); }
 
   // The game's glyphs are drawn light, for its dark screens; on this paper they are turned
-  // to ink (and the soft shadow three of them carry to a glow the paper hides).
+  // to ink (and the soft shadow three of them carry to a glow the paper hides). The dark
+  // theme shows them as drawn.
   .class-btn img,
   .hdr-icon { filter: invert(1); opacity: 0.85; }
+  @include dark {
+    .class-btn img,
+    .hdr-icon { filter: none; }
+  }
 
   // The rarity row's labels, unpicked, in the ticks' colours taken down to read on paper:
-  // the site's own violet and gold were all but white on it.
+  // the site's own violet and gold were all but white on it. On the dark theme the ticks'
+  // own, the violet lifted to read on graphite.
   @each $tier, $colour in (4: #6a3fd0, 5: #8f5f00, 6: #c9400f) {
     .rarity-btn.r#{$tier}:not(.on) { color: $colour; }
+  }
+  @include dark {
+    @each $tier, $colour in (4: #a78bfa, 5: map.get($ef-rarity, 5), 6: map.get($ef-rarity, 6)) {
+      .rarity-btn.r#{$tier}:not(.on) { color: $colour; }
+    }
   }
 
   #more-label {
@@ -229,7 +269,7 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   font-size: var(--fs-xl);
   cursor: pointer;
 
-  &:hover { background: $ef-ink; color: $ef-yellow; }
+  &:hover { background: $ef-ink; color: var(--ef-on-ink); }
   &:focus-visible { outline: 3px solid $ef-yellow; outline-offset: 2px; }
 }
 
@@ -361,7 +401,7 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   margin-top: auto;
   padding: 0 var(--sp-20);
   background: $ef-yellow;
-  color: $ef-ink;
+  color: $ef-black;
   text-decoration: none;
   font-weight: 900;
   font-stretch: 115%;
@@ -370,7 +410,7 @@ $ef-world: "body:is([data-view='endfield'], [data-view='endfield-detail'])";
   text-transform: uppercase;
   transition: background-color 0.16s, color 0.16s;
 
-  &:hover { background: $ef-ink; color: $ef-yellow; }
+  &:hover { background: $ef-ink; color: var(--ef-on-ink); }
   &:focus-visible { outline: 3px solid $ef-ink; outline-offset: 3px; }
 }
 

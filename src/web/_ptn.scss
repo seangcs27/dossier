@@ -3,6 +3,7 @@
 // dossier's parts still, and has only what it needs beyond the rules it shares with it.
 @use 'sass:math';
 @use 'sass:string';
+@use 'theme' as *;
 
 // ── The roster's world ──
 // A wall under flat light, ruled for height; ink for its rules, its type and the shell;
@@ -14,6 +15,11 @@ $floor: #5d6059;
 $ink: #17181a;
 $ink-soft: #2e2f2b;   // secondary text on the wall, 5.6:1 on it
 $bone: #ecebe3;
+// The wall under the dark theme: the same room with the lights down. What is drawn on the
+// wall (its rules, its numerals, the switches) turns bone; what is printed on ink (the
+// placards, the rail, a Sinner's file) stays as it is.
+$wall-dark: #3a3c37;
+$floor-dark: #262724;
 $bone-dim: #b4b3a8;
 $red: #b8141c;
 
@@ -135,12 +141,26 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   // as it is told to be; Barlow Condensed has the one width).
   --ptn-placard: 'Barlow Condensed', 'Noto Sans SC', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
 
-  background: $wall;
+  // The wall, its floor, and what is drawn on the wall, in either theme.
+  --ptn-wall: #{$wall};
+  --ptn-floor: #{$floor};
+  --ptn-wall-ink: #{$ink};
+  --ptn-wall-ink-soft: #{$ink-soft};
+  --ptn-wall-on: #{$bone};
+  @include dark {
+    --ptn-wall: #{$wall-dark};
+    --ptn-floor: #{$floor-dark};
+    --ptn-wall-ink: #{$bone};
+    --ptn-wall-ink-soft: #b4b3a8;
+    --ptn-wall-on: #{$ink};
+  }
+
+  background: var(--ptn-wall);
 
   // The page's scrollbar is on the wall, where the site's blue and the shell's bone are
   // both lost: ink at rest, the red while it is being scrolled. Every other scroller here
   // is on ink, and rests in the shell's grey.
-  --thumb: #{$ink};
+  --thumb: var(--ptn-wall-ink);
   &.is-scrolling { --thumb: #{$red}; }
   *:not(.is-scrolling) { --thumb: var(--muted); }
 
@@ -183,23 +203,30 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
 }
 
 #{$world} #view {
-  --bg: #{$wall};
+  --bg: var(--ptn-wall);
   --surface: #b2b4a7;
   --surface2: #bcbeb1;
-  --border: #{$ink};
-  --chip: #{$ink};
-  --edge: #{$ink-soft};
-  --text: #{$ink};
-  --muted: #{$ink-soft};
-  --dim: #{$ink-soft};
-  --accent: #{$ink};
-  --link: #{$ink};
+  --border: var(--ptn-wall-ink);
+  --chip: var(--ptn-wall-ink);
+  --edge: var(--ptn-wall-ink-soft);
+  --text: var(--ptn-wall-ink);
+  --muted: var(--ptn-wall-ink-soft);
+  --dim: var(--ptn-wall-ink-soft);
+  --accent: var(--ptn-wall-ink);
+  --link: var(--ptn-wall-ink);
 
   --ptn-rule: rgb(23 24 26 / 24%);
   --ptn-rule-strong: rgb(23 24 26 / 52%);
   --ptn-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  color: $ink;
+  @include dark {
+    --surface: #45473f;
+    --surface2: #4d4f47;
+    --ptn-rule: rgb(236 235 227 / 16%);
+    --ptn-rule-strong: rgb(236 235 227 / 38%);
+  }
+
+  color: var(--ptn-wall-ink);
 }
 
 // The roster is one wall, a window tall: what the window has left under the topbar
@@ -225,14 +252,14 @@ body[data-view='ptn'] #view {
 [data-view='ptn'] .roster-bar,
 .ptn-trail {
   .seg {
-    border: 1.5px solid $ink;
+    border: 1.5px solid var(--ptn-wall-ink);
     border-radius: 0;
   }
 
   .seg-btn {
     padding: var(--sp-6) var(--sp-12);
     background: transparent;
-    color: $ink;
+    color: var(--ptn-wall-ink);
     font-family: var(--ptn-placard);
     font-stretch: 85%;
     font-weight: 700; // the shell's 600, which the face does not ship
@@ -240,13 +267,13 @@ body[data-view='ptn'] #view {
     letter-spacing: 0.08em;
     transition: background-color 0.15s var(--ptn-ease), color 0.15s var(--ptn-ease);
 
-    & + .seg-btn { border-left: 1.5px solid $ink; }
-    &:hover { background: rgb(23 24 26 / 10%); color: $ink; }
+    & + .seg-btn { border-left: 1.5px solid var(--ptn-wall-ink); }
+    &:hover { background: color-mix(in srgb, var(--ptn-wall-ink) 10%, transparent); color: var(--ptn-wall-ink); }
     // English on a CN-only Sinner's page, which has no English text.
     &[aria-disabled='true'] { opacity: 0.35; cursor: not-allowed; }
     &[aria-disabled='true']:hover { background: transparent; }
-    &:focus-visible { outline: 2px solid $ink; outline-offset: 2px; }
-    &.on { background: $ink; color: $bone; }
+    &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: 2px; }
+    &.on { background: var(--ptn-wall-ink); color: var(--ptn-wall-on); }
   }
 }
 
@@ -272,7 +299,7 @@ body[data-view='ptn'] #view {
       left: -48px;
       z-index: -1;
       height: var(--ptn-head);
-      background: linear-gradient(to right, transparent, #{$wall} 48px);
+      background: linear-gradient(to right, transparent, var(--ptn-wall) 48px);
     }
   }
 }
@@ -282,8 +309,8 @@ body[data-view='ptn'] #view {
 @mixin wall-surface {
   background:
     wall-rules(),
-    linear-gradient(to bottom, #{$wall} calc(#{$band * 100%} - 1.5px), #{$ink-soft} calc(#{$band * 100%} - 1.5px), #{$ink-soft} #{$band * 100%}, #{$floor} #{$band * 100%});
-  background-color: $wall;
+    linear-gradient(to bottom, var(--ptn-wall) calc(#{$band * 100%} - 1.5px), var(--ptn-wall-ink-soft) calc(#{$band * 100%} - 1.5px), var(--ptn-wall-ink-soft) #{$band * 100%}, var(--ptn-floor) #{$band * 100%});
+  background-color: var(--ptn-wall);
   background-position: 0 var(--ptn-head);
   background-size: 100% var(--ptn-row);
   background-repeat: no-repeat;
@@ -342,7 +369,7 @@ body[data-view='ptn'] #view {
     position: absolute;
     inset: var(--ptn-head) auto 0 0;
     width: var(--ptn-gutter);
-    background: $ink;
+    background: var(--ptn-wall-ink);
     -webkit-mask: wall-numerals() left top / auto var(--ptn-row) no-repeat;
             mask: wall-numerals() left top / auto var(--ptn-row) no-repeat;
   }
@@ -385,7 +412,7 @@ body[data-view='ptn'] #view {
 }
 
 .lineup-count {
-  color: $ink-soft;
+  color: var(--ptn-wall-ink-soft);
   font-family: var(--ptn-placard);
   font-stretch: 85%;
   font-weight: 500;
@@ -432,7 +459,7 @@ body[data-view='ptn'] #view {
   &.next svg { transform: scaleX(-1); }
 
   &:hover { background: $bone; color: $ink; }
-  &:focus-visible { outline: 2px solid $ink; outline-offset: 2px; }
+  &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: 2px; }
 
   &:disabled {
     opacity: 0;
@@ -505,7 +532,7 @@ body[data-view='ptn'] #view {
 
   &:hover,
   &:focus-visible { z-index: 2; }
-  &:focus-visible { outline: 2px solid $ink; outline-offset: -4px; }
+  &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: -4px; }
 }
 
 // The figure's place, held at its height from the first: outlined until its picture has
@@ -582,7 +609,7 @@ body[data-view='ptn'] #view {
     padding: var(--sp-8);
     opacity: 1;
     filter: none;
-    color: $ink-soft;
+    color: var(--ptn-wall-ink-soft);
     font-size: var(--fs-xs);
     text-align: center;
   }
@@ -723,7 +750,7 @@ body[data-view='ptn'] #view {
   height: var(--cell-h);
   overflow: hidden;
   container-type: inline-size;
-  background: linear-gradient(to top, $floor var(--floor-h), $ink-soft var(--floor-h), $ink-soft calc(var(--floor-h) + 1.5px), transparent calc(var(--floor-h) + 1.5px));
+  background: linear-gradient(to top, var(--ptn-floor) var(--floor-h), var(--ptn-wall-ink-soft) var(--floor-h), var(--ptn-wall-ink-soft) calc(var(--floor-h) + 1.5px), transparent calc(var(--floor-h) + 1.5px));
 }
 
 // A rule, at its height up the wall, with its numeral standing on its left end.
@@ -795,7 +822,7 @@ body[data-view='ptn'] #view {
   cursor: zoom-in;
 
   &:disabled { cursor: default; }
-  &:focus-visible { outline: 2px solid $ink; outline-offset: 4px; }
+  &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: 4px; }
 }
 
 .cell-stand {
@@ -848,7 +875,7 @@ body[data-view='ptn'] #view {
     aspect-ratio: 0.4;
     padding: var(--sp-12);
     filter: none;
-    color: $ink-soft;
+    color: var(--ptn-wall-ink-soft);
     font-size: var(--fs-base);
     text-align: center;
   }
@@ -953,8 +980,8 @@ body[data-view='ptn'] #view {
   width: 52px;
   height: 68px;
   padding: 0;
-  border: 2px solid $ink;
-  background: $wall;
+  border: 2px solid var(--ptn-wall-ink);
+  background: var(--ptn-wall);
   cursor: pointer;
   transition: border-color 0.15s var(--ptn-ease);
 
