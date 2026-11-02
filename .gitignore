@@ -63,3 +63,6 @@ PRODUCT.md
 
 # Screenshot sets for scripts/shots.mjs (baselines to compare a build against)
 .shots/
+
+# Types Astro generates on every build and dev run
+site/.astro/
