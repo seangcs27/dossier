@@ -420,6 +420,22 @@ failure leaves `/next/` out of that deploy and cannot hold the SPA back.
 - **To flip** after about a week: `build:web` becomes the Astro build at `/dossier`, the step
   loses `continue-on-error`, and the SPA build leaves the artifact (or moves to `/old/`).
 
+**Flipped 3 November 2026**, the owner's choice after the two sites were measured live on the
+phone and desktop profiles (Lighthouse's throttling, 5 runs, GitHub Pages over HTTP/2). First
+loads: Astro was 0.6–1.0 s faster on the phone on the pages drawn at build time and within
+150 ms on the client-mounted ones (songs +152, the Path to Nowhere dossier +108, the grid +42,
+the Arknights dossier −55), and faster on every page on desktop. A move between two kinds of
+page stayed the SPA's: about 1.3 s faster on the phone, 0.1 s on desktop.
+- The workflow runs `build:index` where it ran `build:web`, builds the site at `/dossier`
+  (no `DOSSIER_BASE`), and publishes `dist/astro`; the step has no `continue-on-error`; the
+  SPA leaves the artifact, and `/next/` with it. No `/old/`: the rollback is a revert.
+- **Not as written above:** `build:web` is still the webpack build, since `npm run design`
+  inlines its `styles.css` and `shots` takes it as the baseline. Phase 8 settles both.
+- **Checked locally** before merge: both `tsc` runs, the build (924 pages), `site-check.mjs
+  dist/astro /dossier` (924 pages for 924 routes, 30,898 addresses, every view in budget), the
+  `shots --astro` smoke run (63 of 63, no errors), and ten old SPA addresses under `/dossier/#/…`,
+  each on its page with its view drawn (one no page has lands on the grid, as before).
+
 ### Phase 8 — Cleanup · S
 Delete `webpack.web.js`, the CopyPlugin lists, `src/web/index.html`, `router.ts` and
 `index.ts`'s dispatch. Keep `webpack.ext.js`. Rewrite the router, sidebar and build sections

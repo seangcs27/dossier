@@ -45,7 +45,7 @@ jobs:
           gh release download image-backup -p images.tar -O - | tar -x -C src/shared/generated || echo "No image backup to restore"
         env:
           GH_TOKEN: ${{ github.token }}
-      - run: npm run build:web
+      - run: npm run build:index
       # Every image the build has baked, as one asset of the image-backup release (made on the
       # first run). The payloads are left out: they are rebuilt from their sources each run.
       - run: |
@@ -55,23 +55,18 @@ jobs:
           gh release upload image-backup images.tar --clobber
         env:
           GH_TOKEN: ${{ github.token }}
-      # The Astro build (PLAN-astro-hybrid.md, Phase 7), deployed beside the SPA at /dossier/next/
-      # for a trial before it takes the SPA's place. Until then it cannot hold the SPA's deploy
-      # back: a failed check leaves /next/ out of this deploy and marks the step failed.
-      - name: Astro build at /dossier/next/
-        continue-on-error: true
+      # The Astro build is the site (PLAN-astro-hybrid.md, Phase 7: the SPA's place since
+      # 3 November 2026). A failed check fails the deploy, and the last one stays live.
+      - name: Astro build at /dossier/
         run: |
           npx tsc --noEmit
           npx tsc --noEmit -p site
           npm run build -w site
-          node scripts/site-check.mjs dist/astro "$DOSSIER_BASE"
-          cp -r dist/astro dist/web/next
-        env:
-          DOSSIER_BASE: /dossier/next
+          node scripts/site-check.mjs dist/astro /dossier
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/web
+          path: dist/astro
   deploy:
     needs: build
     runs-on: ubuntu-latest
