@@ -799,6 +799,55 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   // A jacket to each song with its title, its singers' faces and its charts' levels under
   // it, on the album's paper.
 
+  // What songs give, once above the jackets: folded away until it is wanted, then four short
+  // lists side by side.
+  .song-rewards {
+    @include paper;
+
+    margin: 0 0 var(--sp-16);
+    padding-block: var(--sp-12);
+
+    summary {
+      display: flex;
+      gap: var(--sp-8);
+      align-items: baseline;
+      color: $ink;
+      font-size: var(--fs-lg);
+      font-weight: 900;
+      cursor: pointer;
+
+      small { color: $ink-soft; font-size: var(--fs-sm); font-weight: 700; }
+
+      &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 4px; border-radius: 6px; }
+    }
+  }
+
+  .rewards-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: var(--sp-16);
+    margin-top: var(--sp-12);
+  }
+
+  .rewards-group {
+    h4 { margin: 0 0 var(--sp-6); color: $ink; font-size: var(--fs-md); font-weight: 900; }
+
+    ul { margin: 0; padding: 0; list-style: none; }
+
+    li {
+      display: flex;
+      gap: var(--sp-8);
+      justify-content: space-between;
+      padding: var(--sp-4) 0;
+      border-top: 1px solid $line;
+      font-size: var(--fs-sm);
+      font-weight: 700;
+
+      span { color: $ink-soft; }
+      b { color: $ink; font-weight: 900; text-align: right; }
+    }
+  }
+
   .song-grid {
     @include paper;
 
@@ -2648,6 +2697,24 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     margin: 0 0 var(--sp-12);
     color: $ink;
     font-size: var(--fs-2xl);
+    font-weight: 900;
+
+    small {
+      padding: 0 var(--sp-8);
+      border-radius: var(--radius-pill);
+      background: #fff;
+      font-size: var(--fs-sm);
+    }
+  }
+
+  // A group of lines under a section's head: System, Members, Live, Others.
+  .hm-sub {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-8);
+    margin: var(--sp-16) 0 var(--sp-8);
+    color: $ink;
+    font-size: var(--fs-lg);
     font-weight: 900;
 
     small {

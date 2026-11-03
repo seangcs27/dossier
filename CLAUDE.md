@@ -93,8 +93,9 @@ scripts/
   build-endfield-index.mjs   ← endfield/operators.json + portraits/, splash/, icons/, operator-details/
   build-ptn-index.mjs        ← ptn/sinners.json + ptn/figures/ + ptn/sinner-details/
   build-holodori-index.mjs   ← holodori/characters.json + figures/ + stickers/ + icons/ + songs.json +
-                               jackets/ + cards.json + card-art/ + card-full/ + card-details/ + gachas.json +
-                               upcoming.json + announcements.json
+                               jackets/ + song-rewards.json + cards.json + card-art/ + card-full/ +
+                               card-details/ + holomem-details/ + gachas.json + upcoming.json +
+                               announcements.json
   lib/holodori-gachas.mjs    ← hololive Dreams' gacha banners: names, dates and featured cards,
                                recorded by hand from holodori.best, one entry a banner
   lib/holodori-news.mjs      ← hololive Dreams' announcements, from hololive Dreams Lab's Game updates
@@ -181,10 +182,12 @@ src/
       holodori/stickers/<asset>.webp  ← each holomem's six membership stickers, 256px (318), copied as static files
       holodori/songs.json        ← its songs (215) with their four charts' levels and credits, bundled into the web target
       holodori/jackets/<id>.webp ← every song's jacket (215: 157 from the game's site, 58 from HolodoriDB's CDN), 240px
+      holodori/song-rewards.json ← what songs give (4 groups: best rank, clears, max combo, full combo), the same for every song, bundled into the web target
       holodori/cards.json        ← its cards (192): name, holomem, rarity, type, outfit, bundled into the web target
       holodori/card-art/<id>.webp   ← each card's portrait, 256x512 (192), copied as static files
       holodori/card-full/<id>.webp  ← each card's illustration at 1024 wide (192), copied as static files
       holodori/card-details/<id>.json  ← 192 card payloads: stats by level, blooms, skills, voice lines, dialogues
+      holodori/holomem-details/<id>.json  ← 54 holomem payloads: her voice lines by the game's groups (2,960 in all), copied as static files
       holodori/gachas.json       ← the gacha record (17 entries), bundled into the web target
       holodori/upcoming.json     ← the ★5s announced for a gacha the record lacks, from hololive Dreams Lab, bundled
       holodori/announcements.json  ← its 40 newest announcements (headline, day, official link), bundled into the web target
@@ -263,6 +266,7 @@ src/
                       link to the other as a drop with a tail (markSection)
     holodori-flip.ts  ← turning a hololive Dreams song's jacket over to its back
     holodori-audio.ts  ← one sound at a time across hololive Dreams' pages, their volume, and the waveform strip
+    holodori-cdn.ts  ← HolodoriDB's CDN's address and a voice line's, apart from the data holodori-index.ts bundles
     holodori-voice.ts  ← a card page's voice lines as bubbles, with the one dock they share
     holodori-reveal.ts  ← a 5-star card's reveal: the card-get line, then the animation with the signature over it
     holodori-clip.ts  ← a song's chorus, played from its music video in a YouTube embed
@@ -320,7 +324,7 @@ src/
 Three config files:
 - **`webpack.base.js`** — shared TS loader, SCSS loader chain (`MiniCssExtractPlugin.loader` → `css-loader` → `sass-loader`), resolve settings
 - **`webpack.ext.js`** — extension entry (popup); copies `manifest.json`, `popup.html`, the four unsuffixed icon sizes, and `operator-details/` → `dist/ext/`
-- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `holodori/figures/`, `holodori/jackets/`, `holodori/card-art/`, `holodori/card-full/`, `holodori/card-details/`, `holodori/stickers/`, `holodori/icons/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
+- **`webpack.web.js`** — SPA entry (app); copies `index.html`, all of `icons/`, `operator-details/`, `branch-icons/`, `portraits/`, `faction-logos/`, `endfield/portraits/`, `endfield/splash/`, `endfield/icons/`, `endfield/operator-details/`, `ptn/figures/`, `ptn/sinner-details/`, `holodori/figures/`, `holodori/jackets/`, `holodori/card-art/`, `holodori/card-full/`, `holodori/card-details/`, `holodori/holomem-details/`, `holodori/stickers/`, `holodori/icons/`, `fgo/figures/`, `item-icons/`, `elite-icons/`, `potential-icons/` and `event-banners/` → `dist/web/`
 
 `operator-details/` is ~32 MB, so both `dist/` folders are large. That's a known, accepted
 trade (see TODO.md, "Extension bundle size").
@@ -1678,7 +1682,14 @@ slider under the video that set YouTube's volume over `postMessage`: in a player
 YouTube's own slider drops below its speaker, and the owner found the pointer lost it on the
 way. A new song's link comes from the dump,
 and its game window is used as it is until someone checks its length. Filters: Original /
-Cover, branch, singer; orders: Newest, Game order, Title, Expert. **Cards**: the card's own portrait (the game's, 1:2) in a frame
+Cover, branch, singer; orders: Newest, Game order, Title, Expert. **A "Song rewards" panel
+sits above the jackets** (4 November 2026, after holodori.best, which lists them on every song's
+page): folded away, then four short lists: the best score rank (Red Diamonds), clears, a max combo
+and a full combo (Hologold). The four `LiveMusic*Reward` tables have no song in them, so the
+rewards are the same for every song and are shown once, not on each back. It stays as it was left
+across a search or a pick (module state, the page being drawn again). holodori.best also lists a
+combo to reach for each difficulty's max-combo reward (200, 300, 600, 800); no table the build
+reads has them, so they are left out. **Cards**: the card's own portrait (the game's, 1:2) in a frame
 of its rarity (sky ★3, lilac ★4, a sun-to-pink foil ★5) with its type (Cute, Pure, Happy)
 and the type's icon, opening the card's page. The three type icons are the game's, as
 Gamerch's wiki has them (64px PNGs, `cdn.gamerch.com/contents/wiki/6026/entry/…`), baked once
@@ -1687,7 +1698,10 @@ of 29 October 2026; they stand on the card, the card page and the Type filter's 
 Rarity.
 
 The build reads them from the same dump: `Music`, `MusicDifficulty` and `LangMusic_Eng`
-for the songs (tutorial rows dropped), and for the cards `Card`, `CardLevel`,
+for the songs (tutorial rows dropped), `LiveMusicHighestScoreEvaluationRankReward`,
+`LiveMusicClearCountReward`, `LiveMusicDifficultyMaxComboCountReward` and
+`LiveMusicFullComboReward` with `Item` and `ResourceTypeDetail` (and their language tables) for
+the rewards, and for the cards `Card`, `CardLevel`,
 `CardLevelLimit`, `CardPotential`, the three skill level tables, `SkillTreeConnectEffect`,
 `Costume`, `LiveLeaderSkill`, `LivePassiveSkillEffect`, `LiveActiveSkillEffect`,
 `CharacterVoice`, `LiveDialogueVoice` and their language
@@ -1803,8 +1817,8 @@ file is the same squeezed to 2048 wide) baked at 1024 wide: 384 files, about 74 
 22 MB baked, approved by the owner on 17 October 2026. The animations, signatures, voice
 lines and the full-size illustration are asked of the CDN by the page and never downloaded
 by the build. **The audio and video are backed up by hand** (the owner's ask, 18 October
-2026): `node scripts/backup-holodori-media.mjs` after a build fetches every voice line,
-live dialogue, animation, signature and full-size illustration the payloads name that
+2026): `node scripts/backup-holodori-media.mjs` after a build fetches every voice line (a
+card's and a holomem's), live dialogue, animation, signature and full-size illustration the payloads name that
 `backup/holodori-media/` (gitignored) lacks, about 440 MB the first time, and uploads the folder as
 `holodori-media.tar` on the `media-backup` release. With the folder empty it starts from
 that tar, so a run with the CDN gone never uploads less than the release had.
@@ -1826,6 +1840,25 @@ October 2026: 6.9 MB and 0.45 MB baked. The game's 11 common stickers are no one
 left out. The picture is not baked: the entry's `figure` is its address on the site's
 image host, which the page asks for at 720px; without it the bust stands in. Previous and
 next holomem in the game's order are at the trail's right.
+
+**Her voice lines close the page** (4 November 2026, after holodori.best's holomem page, which
+has them): 2,960 lines across the 54, in the groups the game files them under in
+`CharacterVoice`'s category column, System (rank up, profile, ten comments, login bonus,
+membership), Members (level up, train, blooms), Live (start, skill, SP skill, end, result) and
+Others (the Harmony Garden announcement), each group in the game's order, and after her own
+the lines of each outfit she has a card for, named for it. Sora's 16, 13, 18 and 1 match that
+page's. They are bubbles in her colour with the dock the card page has, drawn by
+`render/holodori-holomem-html.ts` from `bubbleHtml` and `dockHtml` in the card page's renderer,
+and played by the same `voiceClick`, at the same volume. The payload,
+`holomem-details/<id>.json` (about 9 KB), is fetched by the SPA when her page opens and read at
+build time by the Astro page (`site/src/pages/holodori/holomem/[id].astro`), which draws the
+lines into the HTML (183 KB a page, before compression) so that the page needs no payload at run
+time and ships only the player, which costs it about 1.5 KB of JavaScript. That player imports
+`voiceUrl` from `holodori-cdn.ts` and not from `holodori-index.ts`, whose bundled data it would
+otherwise carry to the page (58.6 KB). The category is on the row beside its
+`data`, not in it, so the build reads `CharacterVoice` itself where `table()` would drop it. The
+table's other rows (a minigame's cries, quest and park talk) are in no category and are left
+out, as on holodori.best. The voices' audio is played from the CDN and is in the media backup.
 
 **Gachas** (`#/holodori/gachas`, `views/holodori-gachas.ts`, 18 October 2026): every
 banner, running now first (edged in the sun, with "Ends in 22h 36m"), then the standing and

@@ -16,15 +16,17 @@ const movie = a => `resources/mov_card_full_0_${a}.usm/mov_card_full_0_${a}/mov_
 const sign = a => `resources/mov_card_sign_${a}.usm/mov_card_sign_${a}/mov_card_sign_${a}.h264.mp4`;
 
 // Every file the pages play: each card's full-size illustration, the animations of the cards
-// that have one, and every `audio` anywhere in a card's payload (voice lines, both sides of
-// a live dialogue).
+// that have one, and every `audio` anywhere in a card's or a holomem's payload (voice lines,
+// both sides of a live dialogue).
 const cards = JSON.parse(await readFile(`${GEN}/cards.json`, 'utf8'));
 const paths = new Set(cards.flatMap(c => [art(c.asset), ...(c.movie ? [movie(c.asset), sign(c.asset)] : [])]));
-for (const name of await readdir(`${GEN}/card-details`)) {
-  JSON.parse(await readFile(`${GEN}/card-details/${name}`, 'utf8'), (key, value) => {
-    if (key === 'audio' && value) paths.add(voice(value));
-    return value;
-  });
+for (const dir of ['card-details', 'holomem-details']) {
+  for (const name of await readdir(`${GEN}/${dir}`)) {
+    JSON.parse(await readFile(`${GEN}/${dir}/${name}`, 'utf8'), (key, value) => {
+      if (key === 'audio' && value) paths.add(voice(value));
+      return value;
+    });
+  }
 }
 
 await backupToRelease({

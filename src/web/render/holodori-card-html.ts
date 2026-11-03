@@ -262,7 +262,7 @@ function volumeHtml(volume: number): string {
 }
 
 /** One line as a bubble: `label` is what it is called, a kind of line or who says it. */
-function bubbleHtml(line: HolodoriLine, who: Speaker, label: string): string {
+export function bubbleHtml(line: HolodoriLine, who: Speaker, label: string): string {
   const text = escHtml(line.text).replace(/\n/g, '<br>');
   return `
     <li class="vl${who.mine ? '' : ' them'}" data-audio="${escHtml(line.audio)}" style="--who: ${escHtml(who.colour)}">
@@ -280,7 +280,7 @@ function bubbleHtml(line: HolodoriLine, who: Speaker, label: string): string {
 }
 
 /** The dock the page's bubbles share. */
-function dockHtml(volume: number): string {
+export function dockHtml(volume: number): string {
   const skip = (to: 'prev' | 'next', path: string): string => `
     <button class="vd-step" type="button" data-vd="${to}" aria-label="${to === 'prev' ? 'Previous' : 'Next'} line">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="${path}"></path></svg>

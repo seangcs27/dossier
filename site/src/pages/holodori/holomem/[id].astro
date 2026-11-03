@@ -1,6 +1,7 @@
 ---
+import { existsSync, readFileSync } from 'node:fs';
 import Shell from '../../../layouts/Shell.astro';
-import { getHolodoriCharacters } from '@web/holodori-index';
+import { getHolodoriCharacters, type HolodoriHolomemDetail } from '@web/holodori-index';
 import { holomemHtml } from '@web/render/holodori-holomem-html';
 import { buildNow } from '../../../lib/now';
 
@@ -10,18 +11,24 @@ export function getStaticPaths() {
 
 const { id } = Astro.params;
 const { name, branch } = Astro.props;
+// Her payload is the file the SPA fetches, read at build time so her voice lines are drawn
+// without a request. A build that baked none draws the page without them.
+const file = `../src/shared/generated/holodori/holomem-details/${id}.json`;
+const voices: HolodoriHolomemDetail | undefined = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : undefined;
 ---
 <Shell
   view="holodori-holomem"
   title={`${name} — hololive Dreams — Dossier`}
-  description={`${name} (${branch}) in hololive Dreams: profile, cards, songs and membership stickers.`}
+  description={`${name} (${branch}) in hololive Dreams: profile, cards, songs, membership stickers and voice lines.`}
 >
-  <Fragment set:html={holomemHtml(id!, buildNow(), { backs: true })} />
+  <Fragment set:html={holomemHtml(id!, buildNow(), { backs: true, voices })} />
 </Shell>
 
 <script>
   import { backsInPage, wireTurns } from '@web/holodori-flip';
   import { freshen } from '@web/fresh';
+  import { paintVolume } from '@web/holodori-audio';
+  import { voiceClick } from '@web/holodori-voice';
   import { hideSearch } from '@web/shell';
   import '@web/holodori-clip';
   import { onPage } from '../../../lib/page';
@@ -31,5 +38,7 @@ const { name, branch } = Astro.props;
     freshen();
     const page = document.querySelector<HTMLElement>('.hm-page')!;
     wireTurns(page, backsInPage(page));
+    page.addEventListener('click', (ev) => { voiceClick(ev, page); });
+    paintVolume();
   });
 </script>
