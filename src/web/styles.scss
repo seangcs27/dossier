@@ -5,6 +5,7 @@
 @use 'sass:meta';
 @use '../styles/base';
 @use '../styles/tokens' as *;
+@use 'theme' as *;
 
 body {
   // The sidebar's width down the left edge, which the page is padded to clear, so nothing
@@ -91,21 +92,6 @@ body {
   border-color: var(--accent);
   background: rgb(232 200 112 / 8%);
   color: var(--accent);
-}
-
-// The theme switch, a tile like a game's at the rail's foot, lit while the dark theme is on.
-.side-theme {
-  margin-top: auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-family: inherit;
-  cursor: pointer;
-
-  svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
-
-  &[aria-pressed='true'] .side-mark { color: var(--text); }
-  &[aria-pressed='true'] svg { fill: currentColor; }
 }
 
 // The menu button that pulls the drawer out, and the dimmed page behind it: a phone's
@@ -517,11 +503,131 @@ body {
   position: relative; // the fill's layer is laid out against it
   display: flex;
   flex-shrink: 0;
-  margin-left: auto;
   padding: 3px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--bg);
+}
+
+// The light and dark theme's switch, just before the section links and as tall: a track whose
+// knob is the sun or the moon. A light runs round its rim, and the same light blurred is a
+// halo under it that brightens under the pointer, where a glow inside the track follows the
+// pointer too (theme.ts sets --mx and --my). After the glowing button of a YouTube short the
+// owner pointed to. Where the knob stands is the dark mixin's, not aria-pressed, so a page
+// that opens dark has it there from the first paint rather than sliding it over.
+@property --rim-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rim-spin { to { --rim-angle: 360deg; } }
+
+.theme-toggle {
+  --w: 58px;
+  --h: 32px;
+  --knob: 24px;
+  --ease-knob: cubic-bezier(0.34, 1.56, 0.64, 1); // a small overshoot
+
+  position: relative;
+  flex-shrink: 0;
+  margin-left: auto;
+  width: var(--w);
+  height: var(--h);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  cursor: pointer;
+  isolation: isolate; // the rim and the halo stay under the face, not under the bar
+
+  // The rim (the border's colour with the light running over it), and the halo.
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: conic-gradient(from var(--rim-angle), transparent 50%, var(--accent) 85%, transparent);
+    animation: rim-spin 4s linear infinite;
+  }
+
+  &::before {
+    background:
+      conic-gradient(from var(--rim-angle), transparent 50%, var(--accent) 85%, transparent),
+      var(--border);
+  }
+
+  &::after {
+    filter: blur(8px);
+    opacity: 0.35;
+    transition: opacity 0.3s;
+  }
+
+  &:hover::after,
+  &:focus-visible::after { opacity: 0.9; }
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+}
+
+.theme-face {
+  position: absolute;
+  inset: 1.5px;
+  border-radius: inherit;
+  background: var(--bg);
+  overflow: hidden;
+
+  // The glow that follows the pointer.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(36px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 40%, transparent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .theme-toggle:hover &::before { opacity: 1; }
+}
+
+.theme-knob {
+  position: absolute;
+  top: calc((var(--h) - var(--knob)) / 2);
+  left: calc((var(--h) - var(--knob)) / 2);
+  width: var(--knob);
+  height: var(--knob);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: transform 0.4s var(--ease-knob);
+
+  svg {
+    position: absolute;
+    inset: 15%;
+    width: 70%;
+    height: 70%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: opacity 0.25s, transform 0.4s var(--ease-knob);
+  }
+
+  .theme-moon {
+    fill: currentColor;
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.4);
+  }
+
+  @include dark {
+    transform: translateX(calc(var(--w) - var(--h)));
+
+    .theme-sun { opacity: 0; transform: rotate(90deg) scale(0.4); }
+    .theme-moon { opacity: 1; transform: none; }
+  }
 }
 
 // The fill: a blob under the link being shown, and the tail it trails when it travels to
@@ -600,7 +706,7 @@ body {
 @container topbar (max-width: 960px) {
   .topbar header {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto auto auto;
     row-gap: var(--sp-10);
 
     h1 { grid-area: 1 / 1; }
@@ -614,9 +720,25 @@ body {
     justify-self: end;
   }
 
-  .sections {
+  .theme-toggle {
     grid-area: 1 / 3;
     align-self: center;
+  }
+
+  .sections {
+    grid-area: 1 / 4;
+    align-self: center;
+  }
+}
+
+// hololive Dreams' four section links and the theme switch are wider than row 1 has under
+// about 780px: the links take row 2, as on a phone, and the search box (on its rosters) row 3.
+@container topbar (max-width: 780px) {
+  body[data-view^='holodori'] {
+    .theme-toggle { grid-area: 1 / 3 / 2 / -1; justify-self: end; }
+    .sections { grid-area: 2 / 1 / 3 / -1; }
+    .section-link { flex: 1; justify-content: center; }
+    .topbar-actions { grid-area: 3 / 1 / 4 / -1; }
   }
 }
 
@@ -3967,7 +4089,7 @@ a.pool-op:hover { text-decoration: underline; }
   // links. Row 2: the search box at the bar's full width, on the grid only.
   .topbar header {
     display: grid;
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr auto auto auto;
     gap: var(--sp-10);
     padding: var(--sp-10) var(--sp-12);
 
@@ -4015,10 +4137,19 @@ a.pool-op:hover { text-decoration: underline; }
     &:empty { display: none; }
   }
 
+  // The theme switch before them, a size down.
+  .theme-toggle {
+    grid-area: 1 / 4;
+    align-self: center;
+    --w: 46px;
+    --h: 26px;
+    --knob: 20px;
+  }
+
   // The section links end row 1, at the count's size and without their glyphs, which the
   // row has no room for beside the wordmark.
   .sections {
-    grid-area: 1 / 4;
+    grid-area: 1 / 5;
     align-self: center;
     padding: 2px;
   }
@@ -4033,6 +4164,7 @@ a.pool-op:hover { text-decoration: underline; }
   // hololive Dreams' four section links have no room in row 1 beside the wordmark: they take
   // row 2 at the bar's full width, sharing it, and the search box (on its rosters) row 3.
   body[data-view^='holodori'] {
+    .theme-toggle { grid-area: 1 / 4 / 2 / -1; justify-self: end; }
     .sections { grid-area: 2 / 1 / 3 / -1; margin-left: 0; }
     .section-link { flex: 1; justify-content: center; }
     .topbar-actions { grid-area: 3 / 1 / 4 / -1; }

@@ -1,5 +1,5 @@
-// The light or dark theme. It follows the system until the reader presses the switch at the
-// sidebar's foot; their choice is kept in localStorage and put on <html> as data-theme, which
+// The light or dark theme. It follows the system until the reader presses the switch in the
+// topbar; their choice is kept in localStorage and put on <html> as data-theme, which
 // the stylesheet's dark rules key on (_theme.scss). index.html's head sets it before the first
 // paint; this keeps it from there.
 
@@ -22,7 +22,7 @@ function apply(doc: Document): void {
   else delete doc.documentElement.dataset.theme;
 }
 
-/** Wires the sidebar's theme switch. */
+/** Wires the topbar's theme switch. */
 export function mountThemeSwitch(): void {
   const button = document.getElementById('theme-toggle')!;
   const show = (): void => button.setAttribute('aria-pressed', String(isDark()));
@@ -40,6 +40,12 @@ export function mountThemeSwitch(): void {
     }
     apply(document);
     show();
+  });
+  // The glow inside the track follows the pointer.
+  button.addEventListener('pointermove', (e) => {
+    const box = button.getBoundingClientRect();
+    button.style.setProperty('--mx', `${e.clientX - box.left}px`);
+    button.style.setProperty('--my', `${e.clientY - box.top}px`);
   });
   system.addEventListener('change', show);
   // Astro's router gives <html> the next page's attributes: put the choice on that page first.
