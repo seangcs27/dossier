@@ -276,5 +276,6 @@
  "“你这人……甚至没意识到自己的恶……”\n“这是最黑暗的恶！”": "\"You... don't even realise your own evil...\"\n\"That is the darkest evil of all!\"",
  "新增专属必杀【狂风骤雨】，每场战斗最多使用1次。": "Adds the exclusive Ultimate [Raging Storm], usable up to 1 time per battle.",
  "天气预报创造彩虹令敌人陷入变成蜗牛的幻觉，使全场所有敌人【眩晕】，持续2秒，持续时间结束后，使敌人移动速度降低<@ba.vup>40%</>/<@ba.vup>50%</>/<@ba.vup>60%</>，持续<@ba.vup>3</>/<@ba.vup>4</>/<@ba.vup>5</>秒。": "Weather Forecast makes a rainbow that leaves enemies under the illusion that they are turning into snails, inflicting [Stun] on all enemies on the field for 2 seconds; when it ends, their Movement Speed decreases by <@ba.vup>40%</>/<@ba.vup>50%</>/<@ba.vup>60%</> for <@ba.vup>3</>/<@ba.vup>4</>/<@ba.vup>5</> seconds.",
- "一种特殊的印记，最多叠加<@ba.vup>3</>层。天气预报每<@ba.vup>8</>秒获得<@ba.vup>1</>层【风压】印记。": "A special mark that stacks up to <@ba.vup>3</> times. Weather Forecast gains <@ba.vup>1</> stack of the [Wind Pressure] mark every <@ba.vup>8</> seconds."
+ "一种特殊的印记，最多叠加<@ba.vup>3</>层。天气预报每<@ba.vup>8</>秒获得<@ba.vup>1</>层【风压】印记。": "A special mark that stacks up to <@ba.vup>3</> times. Weather Forecast gains <@ba.vup>1</> stack of the [Wind Pressure] mark every <@ba.vup>8</> seconds.",
+ "全体友方禁闭者获得<@ba.vup>10%</>的能量恢复速度提升。": "All allied Sinners gain <@ba.vup>10%</> Energy Recovery Speed."
 }
