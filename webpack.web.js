@@ -43,6 +43,7 @@ module.exports = {
         { from: 'src/shared/generated/holodori/card-art', to: 'holodori/card-art', noErrorOnMissing: true },
         { from: 'src/shared/generated/holodori/card-full', to: 'holodori/card-full', noErrorOnMissing: true },
         { from: 'src/shared/generated/holodori/card-details', to: 'holodori/card-details', noErrorOnMissing: true },
+        { from: 'src/shared/generated/holodori/holomem-details', to: 'holodori/holomem-details', noErrorOnMissing: true },
         { from: 'src/shared/generated/holodori/stickers', to: 'holodori/stickers', noErrorOnMissing: true },
         { from: 'src/shared/generated/holodori/icons', to: 'holodori/icons', noErrorOnMissing: true },
         { from: 'src/shared/generated/fgo/figures', to: 'fgo/figures', noErrorOnMissing: true },

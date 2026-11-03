@@ -1,8 +1,8 @@
 import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { clipHtml } from '../holodori-clip';
 import { wireTurns } from '../holodori-flip';
-import { getHolodoriCharacters, getHolodoriSongs, type HolodoriSong } from '../holodori-index';
-import { singersOf, songBackHtml, songTileHtml } from '../render/holodori-songs-html';
+import { getHolodoriCharacters, getHolodoriSongRewards, getHolodoriSongs, type HolodoriSong } from '../holodori-index';
+import { singersOf, songBackHtml, songRewardsHtml, songTileHtml } from '../render/holodori-songs-html';
 
 // hololive Dreams' songs (#/holodori/songs): every song the game has, as its jacket over its
 // title, its singers' faces and its four charts' levels. Pressed, a jacket turns over to the
@@ -15,6 +15,9 @@ const cast = getHolodoriCharacters();
 const place = new Map(songs.map((s, i) => [s.id, i]));
 const branches = [...new Set(cast.map(c => c.branch))];
 const state = newRosterState();
+// Whether the rewards panel is open. The page is drawn again on every search and pick, and
+// the panel stays as it was left.
+let rewardsOpen = false;
 
 function draw(page: HTMLElement, items: HolodoriSong[]): void {
   page.innerHTML = `
@@ -22,9 +25,13 @@ function draw(page: HTMLElement, items: HolodoriSong[]): void {
       <h2 class="hd-title">Songs</h2>
       <p class="hd-sub">Every song in the game, with its four charts' levels · press a jacket for its credits, or its disc for the chorus</p>
     </header>
+    ${songRewardsHtml(getHolodoriSongRewards(), rewardsOpen)}
     <ul class="song-grid">${items.map(s => songTileHtml(s, clipHtml)).join('')}</ul>
     <p class="hd-credit">Choruses play from the songs' official music videos on YouTube · Jackets:<a href="https://www.hololive-dreams.com/en/music" target="_blank" rel="noopener">hololive Dreams official site</a>, and HolodoriDB's CDN for the newer songs · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
   `;
+  page.querySelector<HTMLDetailsElement>('.song-rewards')?.addEventListener('toggle', (ev) => {
+    rewardsOpen = (ev.target as HTMLDetailsElement).open;
+  });
   wireTurns(page, songBackHtml);
 }
 

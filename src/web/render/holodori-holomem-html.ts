@@ -1,12 +1,14 @@
 import { crumbsHtml, escHtml } from '../format';
 import {
-  getHolodoriCards, getHolodoriCharacters, getHolodoriSongs, type HolodoriCharacter, type HolodoriSong,
+  getHolodoriCards, getHolodoriCharacters, getHolodoriSongs, type HolodoriCharacter, type HolodoriHolomemDetail,
+  type HolodoriSong,
 } from '../holodori-index';
+import { bubbleHtml, dockHtml } from './holodori-card-html';
 import { cardTileHtml } from './holodori-cards-html';
 import {
   birthdayText, daysAway, daysToBirthday, debutText, debutYears, groupsOf, no, today,
 } from './holodori-format';
-import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
+import { faceHtml, songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
 // A holomem's own page (#/holodori/holomem/<id>): her whole key art on her colours beside
 // her profile, then her cards, each opening its own page, the songs she sings, each
@@ -37,14 +39,39 @@ function stepHtml(c: HolodoriCharacter, rel: 'prev' | 'next'): string {
 /** Whether the album has her. */
 export const knowsHolomem = (id: string): boolean => cast.some(c => c.id === id);
 
-/** How the page is drawn: `disc` as songTileHtml takes it, and `backs` to carry the songs' backs in `<template>`s. */
+/**
+ * How the page is drawn: `disc` as songTileHtml takes it, `backs` to carry the songs' backs in
+ * `<template>`s, and `voices` (her payload) to draw her voice lines, which a page without it
+ * leaves for its view to fill in.
+ */
 export interface HolomemOptions {
   disc?: (song: HolodoriSong) => string;
   backs?: boolean;
+  voices?: HolodoriHolomemDetail;
+}
+
+/**
+ * Her voice lines in the groups the game files them under, with the dock they share, drawn
+ * with the player's volume at `volume`. Every bubble is hers, in her colour. Nothing for a
+ * holomem with no lines.
+ */
+export function holomemVoicesHtml(c: HolodoriCharacter, d: HolodoriHolomemDetail, volume = 0.25): string {
+  const total = d.voices.reduce((n, g) => n + g.lines.length, 0);
+  if (!total) return '';
+  const who = { colour: c.colors[0] ?? '#18c9f0', face: faceHtml(c), mine: true };
+  return `
+    <section class="hm-section" aria-labelledby="hm-voices">
+      <h3 class="hm-head" id="hm-voices">Voice lines <small>${total}</small></h3>
+      ${d.voices.map(g => `
+        <h4 class="hm-sub">${escHtml(g.group)} <small>${g.lines.length}</small></h4>
+        <ul class="vl-list">${g.lines.map(line => bubbleHtml(line, who, line.label ?? '')).join('')}</ul>`).join('')}
+    </section>
+    ${dockHtml(volume)}
+  `;
 }
 
 /** Her page's body as of `now` (ms), or the page that says nobody has this id. */
-export function holomemHtml(id: string, now: number, { disc, backs }: HolomemOptions = {}): string {
+export function holomemHtml(id: string, now: number, { disc, backs, voices }: HolomemOptions = {}): string {
   const i = cast.findIndex(c => c.id === id);
   const c = cast[i];
   if (!c) {
@@ -106,7 +133,8 @@ export function holomemHtml(id: string, now: number, { disc, backs }: HolomemOpt
           <li><img src="${escHtml(s.art)}" alt="" width="256" height="256" loading="lazy" decoding="async" onerror="this.remove()"><span>${escHtml(s.name)}</span></li>`).join('')}
         </ul>
       </section>` : ''}
-      <p class="hd-credit">Picture: <a href="https://www.hololive-dreams.com/en/holomem" target="_blank" rel="noopener">hololive Dreams official site</a> · Stickers: HolodoriDB's CDN · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
+      <div class="hc-voices">${voices ? holomemVoicesHtml(c, voices) : ''}</div>
+      <p class="hd-credit">Picture: <a href="https://www.hololive-dreams.com/en/holomem" target="_blank" rel="noopener">hololive Dreams official site</a> · Stickers and voices: HolodoriDB's CDN · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
       ${backs ? songBackTemplatesHtml(sung) : ''}
     </div>
   `;

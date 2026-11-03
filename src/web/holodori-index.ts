@@ -1,8 +1,10 @@
 import bundled from '../shared/generated/holodori/characters.json';
 import bundledCards from '../shared/generated/holodori/cards.json';
 import bundledGachas from '../shared/generated/holodori/gachas.json';
+import bundledSongRewards from '../shared/generated/holodori/song-rewards.json';
 import bundledSongs from '../shared/generated/holodori/songs.json';
 import bundledUpcoming from '../shared/generated/holodori/upcoming.json';
+import { CDN, voiceUrl } from './holodori-cdn';
 
 /**
  * One hololive Dreams character, a hololive talent the game makes playable, baked by
@@ -77,6 +79,15 @@ export interface HolodoriSong {
   jacket?: string;      // 'holodori/jackets/<id>.webp'; absent where the game's site has none
 }
 
+/**
+ * What songs give, as the game's reward tables have it: a group of rewards, each a label and
+ * what it is for ('Rank S', '50 Red Diamonds'). The same for every song.
+ */
+export interface HolodoriSongRewardGroup {
+  title: string;
+  rows: { label: string; reward: string }[];
+}
+
 /** One card of the game, from its Card table, in the order the game added them. */
 export interface HolodoriCard {
   id: string;
@@ -127,11 +138,17 @@ export interface HolodoriCardDetail {
   dialogues: { title: string; lines: HolodoriLine[] }[];
 }
 
-// HolodoriDB's CDN, which serves the game's files unpacked. Only what is played from it,
-// rather than baked, is asked of it at runtime: voices, the animations and the full-size art.
-const CDN = 'https://cdn.holodori.dev/assets';
+/**
+ * One holomem's payload, holodori/holomem-details/<id>.json, fetched by her page: her voice
+ * lines in the groups the game files them under ('System', 'Members', 'Live', 'Others').
+ */
+export interface HolodoriHolomemDetail {
+  id: string;
+  voices: { group: string; lines: HolodoriLine[] }[];
+}
 
-export const voiceUrl = (audio: string): string => `${CDN}/resources/${audio}.acb/${audio}.mp3`;
+// The CDN's addresses: see holodori-cdn.ts, which has the voice lines'.
+export { voiceUrl };
 export const cardArtUrl = (asset: string): string =>
   `${CDN}/assetbundles/img_card_full_${asset}/img_card_full_${asset}_unsquished.webp`;
 export const cardMovieUrl = (asset: string): string =>
@@ -170,11 +187,34 @@ export function fetchHolodoriCard(id: string): Promise<HolodoriCardDetail> {
   return detail;
 }
 
-const songs = bundledSongs as unknown as HolodoriSong[];
+const askedHolomems = new Map<string, Promise<HolodoriHolomemDetail>>();
+
+/** A holomem's payload, asked for once per visit to the site. */
+export function fetchHolodoriHolomem(id: string): Promise<HolodoriHolomemDetail> {
+  let detail = askedHolomems.get(id);
+  if (!detail) {
+    detail = fetch(`holodori/holomem-details/${encodeURIComponent(id)}.json`).then((res) => {
+      if (!res.ok) throw new Error(`no baked payload for ${id}`);
+      return res.json() as Promise<HolodoriHolomemDetail>;
+    });
+    // A failure is not kept: the next visit asks again.
+    detail.catch(() => askedHolomems.delete(id));
+    askedHolomems.set(id, detail);
+  }
+  return detail;
+}
+
+const songs =bundledSongs as unknown as HolodoriSong[];
 const cards = bundledCards as unknown as HolodoriCard[];
+const songRewards = bundledSongRewards as unknown as HolodoriSongRewardGroup[];
 
 export function getHolodoriSongs(): HolodoriSong[] {
   return songs;
+}
+
+/** What songs give; empty when the build could not read the game's tables. */
+export function getHolodoriSongRewards(): HolodoriSongRewardGroup[] {
+  return songRewards;
 }
 
 export function getHolodoriCards(): HolodoriCard[] {

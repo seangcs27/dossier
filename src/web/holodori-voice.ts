@@ -1,5 +1,5 @@
 import { claimAudio, clock, getVolume, onVolume, waveHtml } from './holodori-audio';
-import { voiceUrl } from './holodori-index';
+import { voiceUrl } from './holodori-cdn';
 
 // A card page's voice lines and live dialogues as speech bubbles (views/holodori-card.ts): a
 // bubble in the speaker's colour that fills with its own words as the line goes and shows a

@@ -1,6 +1,6 @@
 import { escHtml } from '../format';
 import {
-  getHolodoriCharacters, getHolodoriSongs, type HolodoriCharacter, type HolodoriSong,
+  getHolodoriCharacters, getHolodoriSongs, type HolodoriCharacter, type HolodoriSong, type HolodoriSongRewardGroup,
 } from '../holodori-index';
 import { clipButtonHtml } from './holodori-clip-html';
 
@@ -82,6 +82,27 @@ export function songTileHtml(s: HolodoriSong, disc: (song: HolodoriSong) => stri
       <p class="song-by">${faces}${more}<span>${escHtml(s.singers || 'Everyone')}</span></p>
       ${levelsHtml(s)}
     </li>
+  `;
+}
+
+/**
+ * What songs give, once for all of them: the game's reward tables have no song in them. A
+ * panel folded away unless `open`, which a page that draws the songs again passes to keep it as
+ * the reader left it. Nothing when the build has no tables.
+ */
+export function songRewardsHtml(groups: HolodoriSongRewardGroup[], open = false): string {
+  if (!groups.length) return '';
+  return `
+    <details class="song-rewards"${open ? ' open' : ''}>
+      <summary>Song rewards <small>the same for every song</small></summary>
+      <div class="rewards-groups">
+        ${groups.map(g => `
+          <section class="rewards-group">
+            <h4>${escHtml(g.title)}</h4>
+            <ul>${g.rows.map(r => `<li><span>${escHtml(r.label)}</span><b>${escHtml(r.reward)}</b></li>`).join('')}</ul>
+          </section>`).join('')}
+      </div>
+    </details>
   `;
 }
 

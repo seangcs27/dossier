@@ -46,6 +46,7 @@ const FIGURE_DIR = path.join(outDir, 'figures');
 const FIGURE_PATH = 'holodori/figures';
 
 const SONGS_FILE = path.join(outDir, 'songs.json');
+const SONG_REWARDS_FILE = path.join(outDir, 'song-rewards.json');
 const CARDS_FILE = path.join(outDir, 'cards.json');
 const GACHAS_FILE = path.join(outDir, 'gachas.json');
 const UPCOMING_FILE = path.join(outDir, 'upcoming.json');
@@ -326,6 +327,47 @@ async function addJackets(songs) {
   for (const s of songs) if (onDisk.has(`${s.id}.webp`)) s.jacket = `${JACKET_PATH}/${s.id}.webp`;
 }
 
+// ── Song rewards ──
+// What a song gives for the best rank on it, for being cleared so many times, for a max combo
+// and for a full combo (4 November 2026, after holodori.best's song pages, which list them).
+// The four tables have no song in them: the rewards are the same for every song, so the Songs
+// page shows them once. An item's name is its own, anything else the resource type's
+// (STONE_TOTAL is "Red Diamonds"). holodori.best also shows a combo to reach for each
+// difficulty's max-combo reward (200, 300, 600, 800); no table has them, so they are left out.
+
+const RANKS = ['C', 'B', 'A', 'S'];
+const capital = s => s[0] + s.slice(1).toLowerCase();
+
+async function buildSongRewards() {
+  const [clears, combos, fulls, ranks, items, resources, ...texts] = await Promise.all([
+    'LiveMusicClearCountReward', 'LiveMusicDifficultyMaxComboCountReward', 'LiveMusicFullComboReward',
+    'LiveMusicHighestScoreEvaluationRankReward', 'Item', 'ResourceTypeDetail',
+    'LangItem_Eng', 'LangResourceTypeDetail_Eng',
+  ].map(table));
+  const text = new Map(texts.flat().map(t => [t.id, t.text]));
+  const nameOf = new Map([...items.map(i => [i.id, i.nameLangId]), ...resources.map(r => [r.type, r.nameLangId])]);
+  const reward = given => given.map(r =>
+    `${Number(r.quantity).toLocaleString('en-US')} ${text.get(nameOf.get(r.resourceId ?? r.resourceType))}`).join(' + ');
+  const perChart = (rows, key) => CHARTS.map(c => ({
+    label: capital(c), reward: reward(rows.find(r => tail(r[key]) === c).rewards),
+  }));
+  const groups = [
+    {
+      title: 'Best score rank',
+      rows: RANKS.map(k => ({ label: `Rank ${k}`, reward: reward(ranks.find(r => tail(r.evaluationRankType) === k).rewards) })),
+    },
+    {
+      title: 'Clears',
+      rows: clears.sort((a, b) => a.clearCount - b.clearCount).map(r => ({ label: `${r.clearCount} clears`, reward: reward(r.rewards) })),
+    },
+    { title: 'Max combo', rows: perChart(combos, 'difficultyType') },
+    { title: 'Full combo', rows: perChart(fulls, 'musicDifficultyType') },
+  ];
+  // A reward whose name the tables lack would read 'undefined'.
+  if (JSON.stringify(groups).includes('undefined')) throw new Error(`a song reward has no name: ${JSON.stringify(groups)}`);
+  return groups;
+}
+
 // ── Cards ──
 // The Card table's every row (192 today): cards.json, the list the Cards page shows, and a
 // payload per card (card-details/<id>.json), which its own page fetches: its base stat at
@@ -515,6 +557,43 @@ async function addCardArt(list) {
   for (const c of list) if (fulls.has(c.id)) c.full = `holodori/card-full/${c.id}.webp`;
 }
 
+// ── Holomem voice lines ──
+// A payload per holomem (holomem-details/<id>.json), which her page fetches (4 November 2026,
+// after holodori.best's holomem page): her lines in the CharacterVoice table that the game files
+// under a category (System, Members, Live, Others), each group in the game's order of
+// categories and its lines in the game's order. Besides her own lines, a group has those of each
+// outfit she has a card for, named for it. The table's other rows (a minigame's cries, a quest's
+// and the park's talk) are in no category and left out, as holodori.best leaves them. The audio
+// is played from the CDN and not downloaded; scripts/backup-holodori-media.mjs keeps it.
+
+const HOLOMEM_DETAIL_DIR = path.join(outDir, 'holomem-details');
+
+async function buildHolomemVoices() {
+  const roster = JSON.parse(await readFile(CHARACTERS_FILE, 'utf8'));
+  // A row's category is beside its data, not in it, which `table` would drop.
+  const [rows, categories, ...texts] = await Promise.all([
+    fetchJson(`${DB}/CharacterVoice.json`), table('CharacterVoiceCategory'),
+    table('LangCharacterVoice_Eng'), table('LangCharacterVoiceCategory_Eng'),
+  ]);
+  const text = new Map(texts.flat().map(t => [t.id, (t.text ?? '').trim()]));
+  categories.sort((a, b) => a.order - b.order);
+  await mkdir(HOLOMEM_DETAIL_DIR, { recursive: true });
+  let lines = 0;
+  for (const c of roster) {
+    const mine = rows.filter(r => r.character_id === c.id);
+    const voices = categories.map(g => ({
+      group: text.get(g.nameLangId),
+      lines: mine.filter(r => r.character_voice_category_id === g.id)
+        .sort((a, b) => a.data.order - b.data.order)
+        .map(r => ({ label: text.get(r.data.nameLangId) ?? '', text: text.get(r.data.textLangId) ?? '', audio: r.data.voiceAssetId })),
+    })).filter(g => g.lines.length);
+    lines += voices.reduce((n, g) => n + g.lines.length, 0);
+    await writeFile(path.join(HOLOMEM_DETAIL_DIR, `${c.id}.json`), JSON.stringify({ id: c.id, voices }));
+  }
+  if (!lines) throw new Error('the CharacterVoice table has no lines in a category');
+  console.log(`holodori: ${lines} voice lines for ${roster.length} holomems -> ${path.relative(process.cwd(), HOLOMEM_DETAIL_DIR)}`);
+}
+
 // ── Gachas ──
 // The record kept by hand (lib/holodori-gachas.mjs), and after it every pickup banner the dump
 // has and the record has not, read from the dump itself (29 October 2026, when the record had
@@ -663,7 +742,13 @@ await writeOrKeep(SONGS_FILE, 'songs', async () => {
   await addJackets(songs);
   return songs;
 });
+await writeOrKeep(SONG_REWARDS_FILE, 'song reward groups', buildSongRewards);
 await writeOrKeep(CARDS_FILE, 'cards', buildCards);
+try {
+  await buildHolomemVoices();
+} catch (err) {
+  console.warn(`holodori/holomem-details kept from the last build: ${err.message}`);
+}
 await writeOrKeep(GACHAS_FILE, 'gachas', buildGachas);
 await writeOrKeep(UPCOMING_FILE, 'upcoming ★5 previews', buildUpcoming);
 await writeOrKeep(ANNOUNCEMENTS_FILE, 'announcements', buildAnnouncements);

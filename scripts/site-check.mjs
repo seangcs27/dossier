@@ -18,10 +18,12 @@ const KB = 1024;
 // budgets: 25 KB for a page drawn at build time, 40 with an island, 120 for a roster. Two pages
 // are over theirs, accepted by the owner on 25 October 2026 at 52.8 and 42 KB before Phase 6's
 // router added 5.2 KB to every page: the budget is what they are now, rounded up. The card
-// page's was raised to 70 on 1 November 2026, by the owner, when it reached 65.6 KB.
+// page's was raised to 70 on 1 November 2026, by the owner, when it reached 65.6 KB. The
+// holomem page's was raised to 27 on 4 November 2026, by the owner, when its voice lines (the
+// player) took it to 25.2 KB.
 const BUDGET = {
-  'holodori-home': 25, 'holodori-gachas': 25, 'holodori-holomem': 25, events: 25, 'endfield-detail': 25,
-  detail: 40, 'ptn-detail': 50, 'holodori-card': 70,
+  'holodori-home': 25, 'holodori-gachas': 25, events: 25, 'endfield-detail': 25,
+  'holodori-holomem': 27, detail: 40, 'ptn-detail': 50, 'holodori-card': 70,
   grid: 120, endfield: 120, ptn: 120, holodori: 120, 'holodori-songs': 120, 'holodori-cards': 120, fgo: 120,
 };
 

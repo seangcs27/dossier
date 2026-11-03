@@ -16,7 +16,10 @@ const GENERATED = 'src/shared/generated';
 const OUT = 'dist/render-check';
 
 const json = async file => JSON.parse(await readFile(path.join(GENERATED, file), 'utf8'));
-const [songs, cards] = await Promise.all([json('holodori/songs.json'), json('holodori/cards.json')]);
+const [songs, cards, songRewards, characters] = await Promise.all([
+  json('holodori/songs.json'), json('holodori/cards.json'), json('holodori/song-rewards.json'), json('holodori/characters.json'),
+]);
+const holomemVoices = await json(`holodori/holomem-details/${characters[0].id}.json`);
 const five = cards.find(card => card.rarity === 5);
 const three = cards.find(card => card.rarity === 3);
 const [fiveDetail, threeDetail] = await Promise.all([five, three].map(card => json(`holodori/card-details/${card.id}.json`)));
@@ -35,11 +38,16 @@ const CHECKS = {
   ],
   'holodori-format': [],
   'holodori-clip-html': [['clipButtonHtml', songs.find(s => s.mv)]],
-  'holodori-songs-html': [['songTileHtml', songs[0]], ['songBackHtml', songs[0].id]],
+  'holodori-songs-html': [
+    ['songTileHtml', songs[0]], ['songBackHtml', songs[0].id], ['songRewardsHtml', songRewards], ['songRewardsHtml', songRewards, true],
+  ],
   'holodori-cards-html': [['cardTileHtml', cards[0]], ['skillHtml', '[highlight]5%[/highlight] of [attribute=cute]Cute[/attribute]']],
   'holodori-gachas-html': [['gachasPageHtml', NOW]],
   'holodori-home-html': [['homeHtml', NOW]],
-  'holodori-holomem-html': [['holomemHtml', 'chr-00001', NOW], ['holomemHtml', 'nobody', NOW]],
+  'holodori-holomem-html': [
+    ['holomemHtml', 'chr-00001', NOW], ['holomemHtml', 'chr-00001', NOW, { voices: holomemVoices }],
+    ['holomemVoicesHtml', characters[0], holomemVoices], ['holomemHtml', 'nobody', NOW],
+  ],
   'endfield-detail-html': [
     ['endfieldDetailHtml', 'chr_0032_lizhiyan'], ['endfieldDetailHtml', 'chr_0002_endminm'],
     ['endfieldDetailHtml', 'chr_0003_endminf'], ['endfieldDetailHtml', 'nobody'],
