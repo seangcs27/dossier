@@ -268,7 +268,7 @@ src/
     holodori-reveal.ts  ← a 5-star card's reveal: the card-get line, then the animation with the signature over it
     holodori-clip.ts  ← a song's chorus, played from its music video in a YouTube embed
     tooltip.ts      ← the one floating tooltip behind every [data-tip]; nothing uses `title`
-    theme.ts / _theme.scss  ← the dark theme's switch and choice, and the `dark` mixin (see "Styles")
+    theme.ts / _theme.scss  ← the topbar's light/dark switch and the choice, and the `dark` mixin (see "Styles")
     scrollbar.ts    ← lights a scrollbar gold while its box is scrolled, and eases it back
     art-viewer.ts   ← the artwork viewer popup the detail page's art opens
     format.ts       ← escHtml/cleanText, descriptionToHtml, rarity/profession/alter helpers,
@@ -364,8 +364,15 @@ switch to override it). It is on when the system asks for dark and the reader ha
 light, or when they have chosen dark: `theme.ts` keeps the choice in `localStorage`
 (`dossier-theme`) and puts it on `<html>` as `data-theme`, an inline script in
 `index.html`'s head sets it before the first paint, and it is put on the next page's `<html>`
-on `astro:before-swap`, since Astro's router swaps the root's attributes. The switch is a tile
-at the sidebar's foot (`#theme-toggle`, pressed while dark is on); a press that lands on the
+on `astro:before-swap`, since Astro's router swaps the root's attributes. The switch is in the
+topbar just before the section links (`#theme-toggle`, pressed while dark is on; 4 November
+2026, moved there from the sidebar's foot at the owner's ask): a track whose knob is the sun or
+the moon, placed by the `dark` mixin so a page that opens dark does not slide it over. A light
+runs round its rim (a conic gradient on a registered `--rim-angle`, 4 s a turn), the same light
+blurred is a halo under it, brighter under the pointer, and a glow inside follows the pointer
+(`--mx`/`--my`), after a YouTube short of a glowing button the owner pointed to. It takes the
+world's `--accent`. With the switch beside them, hololive Dreams' four section links take row 2
+under a 780px bar, as on a phone. A press that lands on the
 system's own theme forgets the choice, so the system is followed again. In SCSS, `@include
 dark { … }` (`_theme.scss`) inside a rule restates it for the dark theme. Arknights and
 Fate/Grand Order were drawn dark and are the same in both. The three light worlds keep their

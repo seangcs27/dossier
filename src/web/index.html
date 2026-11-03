@@ -48,13 +48,6 @@
       <span class="side-mark" aria-hidden="true"><span class="side-logo" style="--logo:url('icons/games/fgo.webp')"></span></span>
       <span class="side-name">FGO</span>
     </a>
-    <!-- The dark theme's switch: pressed while it is on (theme.ts). -->
-    <button type="button" class="side-game side-theme" id="theme-toggle" aria-pressed="false">
-      <span class="side-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
-      </span>
-      <span class="side-name">Dark</span>
-    </button>
   </nav>
   <div class="side-scrim" id="side-scrim" aria-hidden="true"></div>
   <div class="topbar">
@@ -111,6 +104,15 @@
         </div>
       </div>
       <span id="count"></span>
+      <!-- The light and dark theme's switch: pressed while dark is on (theme.ts). Its knob is
+           the sun or the moon, and a light runs round its rim. -->
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false" aria-label="Dark theme">
+        <span class="theme-face" aria-hidden="true"></span>
+        <span class="theme-knob" aria-hidden="true">
+          <svg class="theme-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"></path></svg>
+          <svg class="theme-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+        </span>
+      </button>
       <!-- The game's own pages. The first goes to the roster of whichever game is showing,
            under that game's word for its cast; Events is Arknights' alone and hides on the
            others, as Songs and Cards are hololive Dreams'. -->
