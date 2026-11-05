@@ -364,7 +364,9 @@ async function buildRoster() {
       rank: row.rank, ...(row.height ? { height: row.height } : {}),
       tendency: row.tendency, libram: row.libram, birthplace, tags: [], tagsCn: row.tagsCn,
       ...(row.limited ? { limited: row.limited } : {}), ...(row.core ? { core: true } : {}),
-      cnOnly: true, releasedCn: row.releasedCn, ...(page.zh ? { translated: true } : {}),
+      // One the release record has a day for is on Global already, with the English wiki yet to
+      // write their page: they keep the Chinese wiki's file and lose the CN-only mark.
+      ...(RELEASED.has(row.name) ? {} : { cnOnly: true }), releasedCn: row.releasedCn, ...(page.zh ? { translated: true } : {}),
     });
     details.push({
       id,

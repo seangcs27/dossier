@@ -1281,6 +1281,12 @@ gives, then the English name the Chinese page gives, then the number where only 
 has it; that matched all 149, and **the 11 left over are on the CN server alone**
 (`cnOnly`): five still to come to Global (Arancia, Daffodil, Famorene Eirene, Requiem,
 Helix) and the six of a JoJo collab (the owner's choice of 12 October 2026 to carry both).
+**One the release record (`ptn-record.mjs`) has a day for loses `cnOnly`**: Famorene Eirene
+and Helix came to Global on 3 November 2026 with no English wiki page (only their Attires and
+Gallery subpages), so nothing the build reads said so until the record did; they keep the
+Chinese wiki's file and stand under "Arrested 2026". The wiki's page for a new Sinner can lag
+the game by days, so **a Sinner on the Chinese roster only is a line in `RELEASES` away from
+Global**: S1N's Banners page (Archive tab) says who a banner added.
 They have a `releasedCn` and a collab's own `code` where they have no MBCC number, and
 **their whole file is that wiki's page for them, in Chinese**
 (`scripts/lib/ptn-bili-page.mjs`, 13 October 2026; the first pass left them a head and
