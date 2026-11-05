@@ -379,7 +379,8 @@ world's `--accent`. With the switch beside them, hololive Dreams' four section l
 under a 780px bar, as on a phone. A press that lands on the
 system's own theme forgets the choice, so the system is followed again. In SCSS, `@include
 dark { … }` (`_theme.scss`) inside a rule restates it for the dark theme. Arknights and
-Fate/Grand Order were drawn dark and are the same in both. The three light worlds keep their
+Fate/Grand Order were drawn dark and are the same in both, so the switch is hidden on their
+pages (`showShell`, 5 November 2026, the owner's ask). The three light worlds keep their
 palette as custom properties that the dark theme restates: Endfield's graphite with the same
 yellow (`--ef-ink`, `--ef-paper`…; `--ef-on-ink` is what stands on an ink fill), Path to
 Nowhere's wall with the lights down (`--ptn-wall`, `--ptn-wall-ink`…; the placards, the rail
