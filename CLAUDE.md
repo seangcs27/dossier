@@ -734,7 +734,7 @@ own pages as a segmented pair: Operators and Events, the one showing filled in ç
 replaced a lone Events link, from which the only way back was the wordmark. The first goes
 to the roster of whichever game is showing and is named for that game's cast (Operators,
 Sinners, Holomems, Servants: `GAMES` in `shell.ts`); it stays lit on a dossier. Events is
-Arknights' alone and hides on the other games. hololive Dreams names its four Talent, Songs, Characters and Gacha Banner (31 October 2026, the owner's names; the routes keep holomems, cards and gachas), led by its logo (`#nav-home`, `icons/logo-holodori.webp`) as a link to its front page, which lights it; it has three of its own, Songs,
+Arknights' alone and hides on the other games. hololive Dreams names its four Talent, Songs, Characters and Gacha Banner (31 October 2026, the owner's names; the routes keep holomems, cards and gachas), led by the game's own crown (`#nav-home`, `icons/holodori/home.webp`, baked on 5 November 2026 from the favicon of hololive-dreams.com; no tooltip, the owner's ask) as a link to its front page, which lights it; it has three of its own, Songs,
 Cards and Gachas, which show on its pages alone; its front page (`#/holodori`, where its
 tile lands) lights the logo. On a phone they drop their glyphs, and hololive Dreams' four
 take a row of their own under the wordmark, with the search box under them on its rosters.
