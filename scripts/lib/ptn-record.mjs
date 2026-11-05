@@ -85,6 +85,12 @@ export const RELEASES = [
   ['2026-08-07', ['Isomer', 'Pixel', 'Celine']],
   ['2026-09-10', ['Chengxiao']],
   ['2026-10-08', ['Phanuel', 'Evie']],
+  // Famorene·Eirene and Helix have no page on the English wiki yet, only their Attires and
+  // Gallery subpages, so the build reads them as CN-only unless this names them (the day,
+  // and which of the three are new, are S1N's Banners page: its 3 November event and
+  // exclusive banners; the game's official X account, @PathtoNowhereEN, pins The Dying Echo
+  // as beginning on 3 November). Requiem has a page, and is here for the day alone.
+  ['2026-11-03', ['Famorene·Eirene', 'Helix', 'Requiem']],
 ];
 
 // Sinners the game has released whom the wiki has pictures of (or, for Pixel, an icon) and

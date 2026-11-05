@@ -104,6 +104,9 @@ export function showShell(page: Route['view']): void {
   cardsLink.hidden = game !== 'holodori';
   gachasLink.hidden = game !== 'holodori';
   homeLink.hidden = game !== 'holodori';
+  // Arknights and Fate/Grand Order are drawn dark and look the same in both themes, so the
+  // switch would do nothing there.
+  document.getElementById('theme-toggle')!.hidden = game === 'arknights' || game === 'fgo';
   markSection(front ? homeLink : own ?? operatorsLink);
 }
 

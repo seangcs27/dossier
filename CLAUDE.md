@@ -379,7 +379,8 @@ world's `--accent`. With the switch beside them, hololive Dreams' four section l
 under a 780px bar, as on a phone. A press that lands on the
 system's own theme forgets the choice, so the system is followed again. In SCSS, `@include
 dark { … }` (`_theme.scss`) inside a rule restates it for the dark theme. Arknights and
-Fate/Grand Order were drawn dark and are the same in both. The three light worlds keep their
+Fate/Grand Order were drawn dark and are the same in both, so the switch is hidden on their
+pages (`showShell`, 5 November 2026, the owner's ask). The three light worlds keep their
 palette as custom properties that the dark theme restates: Endfield's graphite with the same
 yellow (`--ef-ink`, `--ef-paper`…; `--ef-on-ink` is what stands on an ink fill), Path to
 Nowhere's wall with the lights down (`--ptn-wall`, `--ptn-wall-ink`…; the placards, the rail
@@ -734,7 +735,7 @@ own pages as a segmented pair: Operators and Events, the one showing filled in �
 replaced a lone Events link, from which the only way back was the wordmark. The first goes
 to the roster of whichever game is showing and is named for that game's cast (Operators,
 Sinners, Holomems, Servants: `GAMES` in `shell.ts`); it stays lit on a dossier. Events is
-Arknights' alone and hides on the other games. hololive Dreams names its four Talent, Songs, Characters and Gacha Banner (31 October 2026, the owner's names; the routes keep holomems, cards and gachas), led by its logo (`#nav-home`, `icons/logo-holodori.webp`) as a link to its front page, which lights it; it has three of its own, Songs,
+Arknights' alone and hides on the other games. hololive Dreams names its four Talent, Songs, Characters and Gacha Banner (31 October 2026, the owner's names; the routes keep holomems, cards and gachas), led by the game's own crown (`#nav-home`, `icons/holodori/home.webp`, baked on 5 November 2026 from the favicon of hololive-dreams.com; no tooltip, the owner's ask) as a link to its front page, which lights it; it has three of its own, Songs,
 Cards and Gachas, which show on its pages alone; its front page (`#/holodori`, where its
 tile lands) lights the logo. On a phone they drop their glyphs, and hololive Dreams' four
 take a row of their own under the wordmark, with the search box under them on its rosters.
@@ -1280,6 +1281,12 @@ gives, then the English name the Chinese page gives, then the number where only 
 has it; that matched all 149, and **the 11 left over are on the CN server alone**
 (`cnOnly`): five still to come to Global (Arancia, Daffodil, Famorene Eirene, Requiem,
 Helix) and the six of a JoJo collab (the owner's choice of 12 October 2026 to carry both).
+**One the release record (`ptn-record.mjs`) has a day for loses `cnOnly`**: Famorene Eirene
+and Helix came to Global on 3 November 2026 with no English wiki page (only their Attires and
+Gallery subpages), so nothing the build reads said so until the record did; they keep the
+Chinese wiki's file and stand under "Arrested 2026". The wiki's page for a new Sinner can lag
+the game by days, so **a Sinner on the Chinese roster only is a line in `RELEASES` away from
+Global**: S1N's Banners page (Archive tab) says who a banner added.
 They have a `releasedCn` and a collab's own `code` where they have no MBCC number, and
 **their whole file is that wiki's page for them, in Chinese**
 (`scripts/lib/ptn-bili-page.mjs`, 13 October 2026; the first pass left them a head and
