@@ -51,6 +51,9 @@ export interface PtnSinner {
   // build reads dates one (scripts/lib/ptn-record.mjs). Absent for a Sinner released since
   // the record was last added to, which makes them newer than everyone with a day.
   released?: string;
+  // The day of the year, '03-17', from the file's own birthday. Absent where the file gives
+  // none ('Data Unknown': the Kisugi sisters, the JoJo collab's six).
+  birthday?: string;
 }
 
 // Baked in at build time, highest rank first and then by name: no runtime fetch. Empty when

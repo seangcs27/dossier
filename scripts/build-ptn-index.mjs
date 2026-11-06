@@ -139,6 +139,21 @@ const english = value => {
 
 const slugOf = title =>title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+
+// A birthday as the roster keeps it, '03-17', from the file's own words: 'March 17', 'Dec 27'
+// and 'December 14th' on the English wiki, '5月29日' on the Chinese. 'Data Unknown' and its
+// Chinese are nobody's.
+function birthdayOf(text = '') {
+  const en = /^([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?$/i.exec(text.trim());
+  const zh = /^(\d{1,2})月(\d{1,2})日$/.exec(text.trim());
+  // The first three letters, since a few pages write 'Dec 27'.
+  const [month, day] = en
+    ? [MONTH_NAMES.findIndex(name => name.startsWith(en[1].slice(0, 3).toLowerCase())) + 1, Number(en[2])]
+    : zh ? [Number(zh[1]), Number(zh[2])] : [0, 0];
+  return month && day ? `${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` : undefined;
+}
+
 // The day each Sinner in the record was released, by their name.
 const RELEASED = new Map([
   ...LAUNCH.map(name => [name, LAUNCH_DAY]),
@@ -269,7 +284,7 @@ async function buildRoster() {
   // The Sinners the wiki has no page for, from the record: the head of a file and nothing
   // under it, and a first paragraph that says so. One the wiki has written up since is
   // already here, and its page is the one that counts.
-  for (const { height, ...file } of UNFILED) {
+  for (const { height, birthday, ...file } of UNFILED) {
     if (sinners.some(s => s.name === file.name)) continue;
     const id = slugOf(file.name);
     sinners.push({ id, ...file, height });
@@ -277,6 +292,7 @@ async function buildRoster() {
       id,
       ...parseSinnerDetail({
         Height: `${height}cm`,
+        DOB: birthday,
         Bio: 'The wiki has not written this Sinner\'s page yet. What is here of their file (number, rank, tendency, libram, birthplace, height and tags) is as S1N has it.',
       }, file.name),
     });
@@ -530,6 +546,8 @@ async function buildRoster() {
     // One the record has no day for has been released since it was last added to, and goes
     // without: the page takes that to mean newer than everyone with one.
     if (RELEASED.has(s.name)) s.released = RELEASED.get(s.name);
+    const birthday = birthdayOf(detailOf.get(s.id).birthday);
+    if (birthday) s.birthday = birthday;
   }
   // Nothing on a page dates the Sinner's release, so the order is rank and then name.
   sinners.sort((a, b) => RANKS.indexOf(a.rank) - RANKS.indexOf(b.rank) || a.name.localeCompare(b.name));
