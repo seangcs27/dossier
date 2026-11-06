@@ -183,7 +183,7 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   }
 
   // Tracking is for the Latin capitals; Chinese is set solid.
-  :lang(zh) :is(h1, h2, .plate-name, .plate-kind, .file-kind, .cell-title, .cell-collection, .seg-btn, .op-tab, .rail-seg) {
+  :lang(zh) :is(h1, h2, .plate-name, .plate-kind, .plate-bday, .bday-spot b, .file-kind, .cell-title, .cell-collection, .seg-btn, .op-tab, .rail-seg) {
     letter-spacing: 0;
   }
 
@@ -697,6 +697,87 @@ body[data-view='ptn'] #view {
   line-height: 1;
 }
 
+// A birthday close by: the figure stands lifted, and a red tab tops the placard with the day
+// and how far off it is. Today's is bone with the red as its edge. Under the pointer the tab
+// goes ink, as the placard goes red.
+.plate-bday {
+  grid-column: 1 / -1;
+  margin: -5px -9px var(--sp-4);
+  padding: 2px 9px;
+  overflow: hidden;
+  background: $red;
+  color: $bone;
+  font-stretch: 85%;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.18s var(--ptn-ease), color 0.18s var(--ptn-ease);
+
+  .suspect.today & {
+    background: $bone;
+    box-shadow: inset 0 0 0 2px $red;
+    color: $red;
+    font-weight: 700;
+  }
+
+  .suspect:hover &,
+  .suspect:focus-visible & {
+    background: $ink;
+    box-shadow: none;
+    color: $bone;
+  }
+}
+
+.suspect.bday .stand.in .fig { transform: translateY(-6px); }
+.suspect.bday .stand.in:hover .fig,
+.suspect.bday:focus-visible .stand.in .fig { transform: translateY(-9px) scale(1.035); }
+
+// The notice in the first line-up's band: who has a birthday today and who is next, with the
+// day. A name is a link to the file.
+.lineup-spot {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-8);
+  margin-left: var(--sp-8);
+}
+
+.bday-spot {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-6);
+  padding: 1px var(--sp-8);
+  border: 1px solid var(--ptn-rule-strong);
+  font-family: var(--ptn-placard);
+  font-stretch: 85%;
+  font-size: var(--fs-base);
+  font-weight: 500;
+
+  b {
+    color: $red;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    @include dark { color: #ff6b73; }
+  }
+
+  a {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
+    &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: 2px; }
+  }
+
+  small {
+    color: var(--ptn-wall-ink-soft);
+    font-size: var(--fs-sm);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 // A phone shows two or three at a time: a smaller board under each, and less around the
 // wall, which has the switches on a line of their own over it.
 @media (max-width: 640px) {
@@ -717,6 +798,7 @@ body[data-view='ptn'] #view {
   .wall-frame { --ptn-scale: calc(var(--ptn-gutter) + var(--sp-6)); }
   .wall { padding-right: var(--sp-8); }
   .lineup-head { gap: var(--sp-8); padding-inline: var(--sp-8) var(--sp-16); }
+  .lineup-spot { display: none; }
   .lineup-row { padding-inline: var(--sp-4); }
   .wall-nav { width: 30px; height: 56px; }
   .rail-seg { font-size: var(--fs-xs); letter-spacing: 0.04em; }

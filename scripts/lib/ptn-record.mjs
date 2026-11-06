@@ -95,20 +95,21 @@ export const RELEASES = [
 
 // Sinners the game has released whom the wiki has pictures of (or, for Pixel, an icon) and
 // no page: the head of a file, as S1N's own page for each has it, in the wiki's words for
-// the same fields. Enough to stand them on the roster's wall. Their skills, shackles and
+// the same fields, and the birthday from S1N's Birthday Calendar, which the wiki would
+// print as the page's DOB. Enough to stand them on the roster's wall. Their skills, shackles and
 // documents are left for the wiki to write: once it has a Sinner's page, that page is read
 // and the entry here is not.
 export const UNFILED = [
   {
-    name: 'Norma', number: '256', rank: 'A', tendency: 'Umbra', libram: 'LOVE', birthplace: 'Eastside', height: 172,
+    name: 'Norma', number: '256', rank: 'A', tendency: 'Umbra', libram: 'LOVE', birthplace: 'Eastside', height: 172, birthday: 'September 4',
     tags: ['Core DMG', 'Invisibility Removal', 'Slow Down', 'Skill DMG', 'Physical DMG', 'Physical DMG Support'],
   },
   {
-    name: 'Isomer', number: '930', rank: 'S', tendency: 'Arcane', libram: 'DEATH', birthplace: 'Eastside', height: 174,
+    name: 'Isomer', number: '930', rank: 'S', tendency: 'Arcane', libram: 'DEATH', birthplace: 'Eastside', height: 174, birthday: 'November 7',
     tags: ['Core DMG', 'Skill DMG', 'Magic DMG'],
   },
   {
-    name: 'Pixel', number: '403', rank: 'A', tendency: 'Reticle', libram: 'PESTILENCE', birthplace: 'Eastside', height: 165,
+    name: 'Pixel', number: '403', rank: 'A', tendency: 'Reticle', libram: 'PESTILENCE', birthplace: 'Eastside', height: 165, birthday: 'April 1',
     tags: ['Skill DMG', 'Physical DMG Support', 'Physical DMG'],
   },
   {
@@ -116,7 +117,7 @@ export const UNFILED = [
     tags: ['Skill DMG Support', 'Core DMG', 'Frostbite', 'Skill DMG', 'ATK Support', 'Slow Down'],
   },
   {
-    name: 'Evie', number: '996', rank: 'A', tendency: 'Arcane', libram: 'LOVE', birthplace: 'Eastside', height: 167,
+    name: 'Evie', number: '996', rank: 'A', tendency: 'Arcane', libram: 'LOVE', birthplace: 'Eastside', height: 167, birthday: 'September 6',
     tags: ['ATK Support', 'Frostbite', 'Skill DMG', 'Magic DMG', 'Magic DMG Support'],
   },
 ];
