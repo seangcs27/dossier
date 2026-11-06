@@ -2,9 +2,10 @@ import { escHtml } from '../format';
 import { mountRoster, newRosterState, type RosterOrder } from '../card';
 import { getPtnSinners, type PtnSinner } from '../ptn-index';
 import {
-  codeOf, holdPtnLang, libramName, monthOf, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf,
-  tendencyName, type PtnLang,
+  birthdayText, birthMonthName, codeOf, daysAway, holdPtnLang, libramName, monthOf, nameOf, PTN_LANGS, ptnLang,
+  rankName, setPtnLang, t, tagsOf, tendencyName, type PtnLang,
 } from '../ptn-lang';
+import { daysToBirthday, today } from '../render/holodori-dates';
 
 // The game's three ranks, highest first: a line-up to each.
 const RANKS: PtnSinner['rank'][] = ['S', 'A', 'B'];
@@ -30,6 +31,26 @@ export const ptnRoster = newRosterState();
 // means the record has not caught up with them, or the Global server has not.
 const UNRECORDED = '9999';
 
+// A Sinner's placard wears their birthday when it is this many days off or nearer.
+const BIRTHDAY_DAYS = 14;
+
+// Whose birthdays are near, by the reader's own calendar: the days to each, who has theirs
+// today, and who is next (everyone on that one day), whoever a search leaves on show.
+interface Soon {
+  days: Map<string, number>;   // 0 is today
+  today: PtnSinner[];
+  next: PtnSinner[];
+  nextIn: number;
+}
+
+function soonOf(all: PtnSinner[]): Soon {
+  const now = today();
+  const days = new Map<string, number>();
+  for (const s of all) if (s.birthday) days.set(s.id, daysToBirthday({ birthday: s.birthday }, now));
+  const nextIn = Math.min(...[...days.values()].filter(d => d > 0));
+  return { days, today: all.filter(s => days.get(s.id) === 0), next: all.filter(s => days.get(s.id) === nextIn), nextIn };
+}
+
 // The badge the game gives a rank, a tendency or a libram (icons/ptn/, from the game's
 // Chinese wiki). A rank's has its Chinese character drawn in it, so it is the Chinese
 // side's alone: in English the rank is its letter.
@@ -51,8 +72,9 @@ function badgeOf(kind: 'rank' | 'tendency' | 'libram', value: string): string | 
 const USUAL_CM = 166;
 
 // One Sinner on the wall. `dated` is a line-up of a year's arrivals, where the placard's
-// last line gives the month in place of the tendency and libram.
-function suspectHtml(s: PtnSinner, look: string, dated: boolean): string {
+// last line gives the month in place of the tendency and libram; `byBirthday` is the
+// birthday order, where it gives the day.
+function suspectHtml(s: PtnSinner, look: string, dated: boolean, soon: Soon, byBirthday: boolean): string {
   // Whichever of the two pictures is asked for, or the other where a Sinner has only one:
   // the Sinners the Chinese wiki alone has pictures of have no mugshot.
   const figure = look === 'original' ? s.figureOriginal ?? s.figure : s.figure ?? s.figureOriginal;
@@ -66,18 +88,24 @@ function suspectHtml(s: PtnSinner, look: string, dated: boolean): string {
        </span>`
     : `<span class="stand none" data-cm="${cm}"><span class="fig">${t('noPhoto')}</span></span>`;
   let kind = `${tendencyName(s.tendency)} · ${libramName(s.libram)}`;
-  if (s.cnOnly) kind = t('cnOnly');
+  if (byBirthday && s.birthday) kind = birthdayText(s.birthday);
+  else if (s.cnOnly) kind = t('cnOnly');
   else if (dated && s.released) kind = `${t('arrived')} ${monthOf(s.released)}`;
+  // A birthday this soon lifts the figure and puts the day on a tab over the placard.
+  const away = soon.days.get(s.id);
+  const near = s.birthday !== undefined && away !== undefined && away <= BIRTHDAY_DAYS;
+  const when = near ? `${birthdayText(s.birthday!)} · ${daysAway(away)}` : '';
   return `
-    <a class="suspect" href="#/ptn/sinner/${encodeURIComponent(s.id)}" data-id="${escHtml(s.id)}"
+    <a class="suspect${near ? ' bday' : ''}${away === 0 ? ' today' : ''}" href="#/ptn/sinner/${encodeURIComponent(s.id)}" data-id="${escHtml(s.id)}"
        draggable="false" style="--cm: ${cm}">
       ${stand}
       <span class="plate">
+        ${near ? `<span class="plate-bday" aria-hidden="true">${escHtml(when)}</span>` : ''}
         <span class="plate-no">${escHtml(codeOf(s))}</span>
         <span class="plate-name">${escHtml(nameOf(s))}</span>
         <span class="plate-rank" aria-hidden="true">${s.rank}</span>
         <span class="plate-kind">${escHtml(kind)}</span>
-        <span class="visually-hidden">${escHtml(rankName(s.rank))}, ${cm} cm</span>
+        <span class="visually-hidden">${escHtml(rankName(s.rank))}, ${cm} cm${near ? `, ${t('birthday')} ${escHtml(when)}` : ''}</span>
       </span>
     </a>
   `;
@@ -94,11 +122,12 @@ interface Lineup {
 // which is the order the roster comes in. Newest first there is one to a year of arrests
 // (the game's own word for getting a Sinner), after one for the Sinners the Global server
 // does not have and one for any the record has not caught up with; 2022's is the 45 who
-// were there when the server opened and the four the year then added. `sinners` comes in
-// the order to show, so each line-up takes its own as they come.
+// were there when the server opened and the four the year then added. By birthday there is
+// one to a month, this one first, and last one for the Sinners whose file gives no day.
+// `sinners` comes in the order to show, so each line-up takes its own as they come.
 function lineupsOf(sinners: PtnSinner[], order: string): Lineup[] {
   const zh = ptnLang() === 'zh';
-  if (order !== 'newest') {
+  if (order !== 'newest' && order !== 'birthday') {
     return RANKS.map(rank => ({
       title: zh ? `${rankName(rank)}${t('lineup')}` : `${t('lineup')} ${rank}`,
       short: rankName(rank),
@@ -109,18 +138,36 @@ function lineupsOf(sinners: PtnSinner[], order: string): Lineup[] {
   for (const s of sinners) {
     let title = s.cnOnly ? t('cnOnly') : t('newArrivals');
     let short = s.cnOnly ? t('cnShort') : t('newShort');
-    if (s.released) {
+    if (order === 'birthday') {
+      title = s.birthday ? birthMonthName(s.birthday) : t('noBirthday');
+      short = !s.birthday ? '?' : zh ? title : title.slice(0, 3);
+    } else if (s.released) {
       short = s.released.slice(0, 4);
       title = zh ? `${short} 年${t('arrivals')}` : `${t('arrivals')} ${short}`;
     }
     const last = lineups[lineups.length - 1];
     if (last?.title === title) last.sinners.push(s);
-    else lineups.push({ title, short, sinners: [s], dated: !!s.released });
+    else lineups.push({ title, short, sinners: [s], dated: order !== 'birthday' && !!s.released });
   }
   return lineups;
 }
 
 const CHEVRON = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5 5 8l5.5 5.5"></path></svg>';
+
+// The MBCC's birthday notice, in the first line-up's band: who has a birthday today, and who
+// is next with the date and the days to go. Two who share a day stand together.
+function spotlightHtml(soon: Soon): string {
+  const names = (people: PtnSinner[]): string => people.map(s =>
+    `<a href="#/ptn/sinner/${encodeURIComponent(s.id)}">${escHtml(nameOf(s))}</a>`).join(', ');
+  const part = (cls: string, label: string, people: PtnSinner[], when: string): string => (people.length
+    ? `<p class="bday-spot ${cls}"><b>${label}</b><span>${names(people)}</span><small>${escHtml(when)}</small></p>`
+    : '');
+  return `
+    <div class="lineup-spot">
+      ${part('now', t('bdayNow'), soon.today, soon.today[0]?.birthday ? birthdayText(soon.today[0].birthday) : '')}
+      ${part('next', t('bdayNext'), soon.next, soon.next[0]?.birthday ? `${birthdayText(soon.next[0].birthday)} · ${daysAway(soon.nextIn)}` : '')}
+    </div>`;
+}
 
 // All of them at once, unlike the cards, which are dealt in batches: a figure is a link, a
 // picture and a placard, a tenth of a card's markup, and its picture waits until the wall
@@ -131,6 +178,8 @@ function drawWall(page: HTMLElement, sinners: PtnSinner[], look: string, order: 
   page.lang = zh ? 'zh-Hans' : 'en';
   const lineups = lineupsOf(sinners, order);
   const count = (lineup: Lineup): string => `${lineup.sinners.length} ${t('standing')}`;
+  // The next of the whole roster, whoever a search leaves on show.
+  const soon = soonOf(getPtnSinners());
   page.innerHTML = `
     <div class="wall-frame">
       <div class="wall">
@@ -140,8 +189,9 @@ function drawWall(page: HTMLElement, sinners: PtnSinner[], look: string, order: 
             <header class="lineup-head">
               <h2 id="lineup-${i}">${escHtml(lineup.title)}</h2>
               <p class="lineup-count">${count(lineup)}</p>
+              ${i === 0 ? spotlightHtml(soon) : ''}
             </header>
-            <div class="lineup-row">${lineup.sinners.map(s => suspectHtml(s, look, !!lineup.dated)).join('')}</div>
+            <div class="lineup-row">${lineup.sinners.map(s => suspectHtml(s, look, !!lineup.dated, soon, order === 'birthday')).join('')}</div>
           </section>
         `).join('')}
       </div>
@@ -312,6 +362,10 @@ export function mountPtn(container: HTMLElement): void {
   // The roster is in the reader's own choice, whatever a CN-only Sinner's page held.
   holdPtnLang(undefined);
   const sinners = getPtnSinners();
+  const thisMonth = today().getMonth() + 1;
+  const birthdayKey = (s: PtnSinner): number => (s.birthday
+    ? ((Number(s.birthday.slice(0, 2)) - thisMonth + 12) % 12) * 100 + Number(s.birthday.slice(3))
+    : 9999);
   // The section link is this roster, named in the language that is on.
   document.getElementById('nav-operators-label')!.textContent = t('Sinners');
   // For the browser to pick Chinese glyphs, and for the stylesheet's :lang(zh).
@@ -328,6 +382,13 @@ export function mountPtn(container: HTMLElement): void {
         || (b.releasedCn ?? '').localeCompare(a.releasedCn ?? ''),
     },
     { id: 'rank', label: t('rank') },
+    {
+      id: 'birthday',
+      label: t('birthday'),
+      tip: t('birthdayTip'),
+      // This month first, then the day within it; a Sinner with no day last.
+      compare: (a, b) => birthdayKey(a) - birthdayKey(b),
+    },
   ];
   mountRoster(container, {
     items: sinners,

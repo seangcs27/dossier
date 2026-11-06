@@ -57,6 +57,9 @@ const TEXT = {
     emptyNote: 'The last build could not reach the Path to Nowhere wiki.',
     newest: 'Newest', rank: 'Rank', mugshot: 'Mugshot', original: 'Original',
     newestTip: 'Newest first, by the day each Sinner was released on the Global server.',
+    birthdayTip: 'By birthday, a line-up to a month, from this one on.',
+    bdayToday: 'Today', bdayTomorrow: 'Tomorrow', bdayNow: 'Happy birthday', bdayNext: 'Next birthday',
+    noBirthday: 'No birthday on file',
     lineup: 'Line-up', arrivals: 'Arrested', newArrivals: 'Newly arrested', cnOnly: 'CN server only',
     lineups: 'Line-ups', cnShort: 'CN', newShort: 'New', scrollBack: 'Back along the wall', scrollOn: 'On along the wall',
     standing: 'standing', arrived: 'Arrested', noPhoto: 'No photograph on file', noPictures: 'No pictures',
@@ -93,6 +96,9 @@ const TEXT = {
     emptyNote: '上次构建未能连接到无期迷途 WIKI。',
     newest: '最新', rank: '评级', mugshot: '档案照', original: '立绘',
     newestTip: '按国际服上线日期排列，最新在前。',
+    birthdayTip: '按生日排列，每月一列，从本月起。',
+    bdayToday: '今天', bdayTomorrow: '明天', bdayNow: '生日快乐', bdayNext: '下一个生日',
+    noBirthday: '暂无生日',
     lineup: '列队', arrivals: '逮捕', newArrivals: '新逮捕', cnOnly: '仅国服',
     lineups: '列队', cnShort: '国服', newShort: '新', scrollBack: '向前', scrollOn: '向后',
     standing: '名', arrived: '逮捕于', noPhoto: '暂无档案照', noPictures: '暂无图片',
@@ -180,6 +186,28 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export function monthOf(day: string): string {
   const [year, month] = day.split('-');
   return ptnLang() === 'zh' ? `${year}年${Number(month)}月` : `${MONTHS[Number(month) - 1]} ${year}`;
+}
+
+/** A birthday, '11-07', as a placard prints it: '7 Nov', '11月7日'. */
+export function birthdayText(day: string): string {
+  const [month, date] = day.split('-').map(Number);
+  // Any leap year, so that 29 February is a day; in UTC, as dayOf is.
+  return new Date(Date.UTC(2000, month - 1, date)).toLocaleDateString(ptnLang() === 'zh' ? 'zh-CN' : 'en-GB', {
+    day: 'numeric', month: 'short', timeZone: 'UTC',
+  });
+}
+
+/** A line-up's name for a month, '11-07' being in 'November' or '11月'. */
+export function birthMonthName(day: string): string {
+  const month = Number(day.slice(0, 2));
+  return ptnLang() === 'zh' ? `${month}月` : new Date(Date.UTC(2000, month - 1, 1)).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' });
+}
+
+/** How far off a birthday is: 'Today', 'Tomorrow', 'in 12 days', '12天后'. */
+export function daysAway(days: number): string {
+  if (days === 0) return t('bdayToday');
+  if (days === 1) return t('bdayTomorrow');
+  return ptnLang() === 'zh' ? `${days}天后` : `in ${days} days`;
 }
 
 /** '2026-10-08' as a file prints it: '8 October 2026', '2026年10月8日'. */
