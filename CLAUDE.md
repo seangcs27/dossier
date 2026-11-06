@@ -1539,6 +1539,23 @@ line-up of their own, and named in a build warning; so is a name in the record t
 nobody's, which is a slip or a page the wiki has renamed. A Sinner's page gives the day
 among its facts.
 
+**Birthdays** (7 November 2026, the owner's "a birthday section just like hololive Dreams'"):
+a roster entry's `birthday` is the day of the year, `'03-17'`, from the file's own (`birthdayOf`
+in `build-ptn-index.mjs`: 'March 17', 'Dec 27' and 'December 14th' on the English wiki,
+'5月29日' on the Chinese). 151 of 160 have one: the Kisugi sisters and the JoJo six give "Data
+Unknown", and the four with no wiki page (`UNFILED`) have theirs recorded from S1N's Birthday
+Calendar (`/guides/birthdays`, a month at a time). The date helpers are hololive Dreams'
+(`render/holodori-dates.ts`, the same `'MM-DD'`), and like hers it all goes by the reader's own
+clock. **A birthday within 14 days lifts the figure and tops the placard with a red tab**, the
+day and how far off ("7 Nov · Tomorrow"; today's is bone edged in red), in every order. **The
+first line-up's band carries the notice**, the MBCC's own word for it: who has a birthday today
+("Happy birthday") and who is next with the day and the days to go, names linking to their
+files; it is of the whole roster whatever a search leaves, and a phone has no room for it, the
+tabs being what it shows. **The third order, Birthday**, is a line-up to a month, this one
+first (a day already gone this month stays at its head), the placard's last line the day, and
+last a line-up for the 9 with no day. Not built: a Sinner's age or debut anniversary (a file
+has no year of birth), and a front page to carry the next six as hololive Dreams' does.
+
 The first Newest order, a day earlier, was made from what the wiki does have (the day a
 Sinner's pictures were first uploaded, and the banners it dates) and kept only from 2024
 on. Against the record it had 97% of pairs right, 11 Sinners more than 60 days out
