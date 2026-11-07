@@ -20,10 +20,14 @@ const KB = 1024;
 // router added 5.2 KB to every page: the budget is what they are now, rounded up. The card
 // page's was raised to 70 on 1 November 2026, by the owner, when it reached 65.6 KB. The
 // holomem page's was raised to 27 on 4 November 2026, by the owner, when its voice lines (the
-// player) took it to 25.2 KB.
+// player) took it to 25.2 KB. The Path to Nowhere dossier's was raised to 55 on 7 November
+// 2026, by the owner, when the roster's birthday labels took it to 50.5 KB. The same day the
+// owner raised three more that bundle data a rebuild grows (the gacha record and announcements,
+// the card list, the cast), at 24.2, 67.5 and 25.6 KB: front page to 30, card page to 80,
+// holomem page to 30, so that a new banner or card does not fail the deploy.
 const BUDGET = {
-  'holodori-home': 25, 'holodori-gachas': 25, events: 25, 'endfield-detail': 25,
-  'holodori-holomem': 27, detail: 40, 'ptn-detail': 50, 'holodori-card': 70,
+  'holodori-home': 30, 'holodori-gachas': 25, events: 25, 'endfield-detail': 25,
+  'holodori-holomem': 30, detail: 40, 'ptn-detail': 55, 'holodori-card': 80,
   grid: 120, endfield: 120, ptn: 120, holodori: 120, 'holodori-songs': 120, 'holodori-cards': 120, fgo: 120,
 };
 
