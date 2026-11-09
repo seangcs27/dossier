@@ -2187,7 +2187,14 @@ tars by a workflow so that no file is in git; Pages answers with `access-control
 and range requests): the art at 1536 (~580 MB) in one, the media (~440 MB) in another. The other
 hosts looked at: Cloudflare R2 (10 GB free, free egress, but an account, a domain and a secret),
 and the release assets themselves (no stated size or bandwidth limit, 2 GiB a file, 1,000 files a
-release, so the media's ~4,500 files would need several releases). Not built; the owner decides.
+release, so the media's ~4,500 files would need several releases).
+
+**Decision (9 November 2026, the owner): serving them from anywhere else is set aside, and the
+backups continue as they are.** The owner's reasons: object storage sounded expensive (R2's
+free tier covers it on paper, but it still needs an account, a payment method I believe it
+asks for but did not check, and a token kept as a secret beside a public repo), and stacked
+Pages sites are a grey area against GitHub's limits. Revisit only if a source actually dies, or
+if a host with room turns up that needs no secret. The numbers above are for that day.
 
 ## Testing
 
