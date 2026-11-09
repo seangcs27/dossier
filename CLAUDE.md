@@ -2139,6 +2139,56 @@ state, events, timers, fetches. Three rules:
 or document, twice from a fixed clock; one that touches a global, draws two ways or has no
 entry in the script's `CHECKS` fails. A new renderer adds its entry there.
 
+## Where the pictures and media live
+
+Decided 9 November 2026, after the owner asked whether the backups' assets should just go in
+the repo, "so we can use them", and for names that say what each is. They have asked before,
+so the answer is written down.
+
+**Three kinds, three backups** (GitHub releases of this repo, one tar each):
+
+| Name | Is | Made | Read by |
+|---|---|---|---|
+| `dossier-img-backup` (`dossier-img.tar`, ~112 MB) | Dossier's own images: what the build fetches, re-encodes to WebP and serves from this site | Every deploy, by the workflow | The deploy, when its cache is gone |
+| `source-art-backup` (`source-art.tar`, ~1 GB) | Art the pages load from *other* hosts at runtime: Arknights, Path to Nowhere, hololive Dreams' key art | By hand, `scripts/backup-art.mjs` | Nothing |
+| `media-backup` (`holodori-media.tar`, ~440 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
+
+The last two are **insurance, not a fallback**: no page falls back to them, so if a source died
+its images would break until someone re-hosted the files and changed the addresses. Endfield and
+Fate/Grand Order have nothing in them: the build bakes their art into dossier-img.
+
+**Why the assets are not in the repo, and could not be served from this site:**
+- They are about 1.5 GB. GitHub recommends a repository stay near 1 GB (this one is ~6 MB), and
+  git keeps every version of every binary for good, so re-baked images would swell the history.
+- Serving them is the point, and a GitHub Pages site may be no larger than **1 GB** in all (the
+  site is ~150 to 200 MB by estimate, with 91 MB gzipped as the deploy artifact on 7 November
+  2026), so 1.4 GB more does not fit. Pages' other limits are not near: 100 GB/month soft
+  bandwidth, a 10 minute deploy timeout (ours takes ~3 minutes); builds from a workflow are
+  exempt from the 10 an hour soft limit.
+- Git LFS does not help: it has its own storage and bandwidth quota (10 GiB each on a free
+  account), and Pages cannot serve LFS files from the repo anyway.
+
+**What was measured on 9 November 2026** (for when serving them comes up again): hololive Dreams'
+media is ~437 MB by sampling the CDN: animations 228 MB (88 files, 2.6 MB each), voice lines
+132 MB+ (87 KB each), full-size art 57 MB, signatures 20 MB. The art (1,955 pieces in the local
+payloads, ~0.5 MB each) re-encoded through wsrv.nl, 8 Arknights and 8 Path to Nowhere images:
+
+| Width / quality | Share of today's size |
+|---|---|
+| 2048 / 82 (today) | 100% |
+| 1536 / 75 | 59 to 60% (~580 MB) |
+| 1024 / 75 | 35 to 37% (~350 MB) |
+| 1024 / 65 | 33 to 35%, barely better |
+
+So art at 1024 plus media as it is (~790 MB) would leave a combined site about full, and
+anything softer on the art viewer's 2048 costs quality. **The route to serving them, if it is
+wanted, is their own free Pages sites** (a repo per set, 1 GB each, deployed from the release
+tars by a workflow so that no file is in git; Pages answers with `access-control-allow-origin: *`
+and range requests): the art at 1536 (~580 MB) in one, the media (~440 MB) in another. The other
+hosts looked at: Cloudflare R2 (10 GB free, free egress, but an account, a domain and a secret),
+and the release assets themselves (no stated size or bandwidth limit, 2 GiB a file, 1,000 files a
+release, so the media's ~4,500 files would need several releases). Not built; the owner decides.
+
 ## Testing
 
 No test suite. Verification is `npx tsc --noEmit` plus both webpack builds, then manual
