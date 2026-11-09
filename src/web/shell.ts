@@ -1,3 +1,4 @@
+import { mountCalendarMenu } from './calendar-menu';
 import { applyRandomLogo, setLogoGame } from './logo';
 import type { Route } from './router';
 import { markSection } from './sections';
@@ -38,6 +39,7 @@ export function initShell(): void {
   mountTooltips();
   mountScrollbars();
   mountThemeSwitch();
+  mountCalendarMenu();
 
   const sideToggle = document.getElementById('side-toggle')!;
   sideToggle.addEventListener('click', () => setDrawer(true));
@@ -65,6 +67,7 @@ export function showShell(page: Route['view']): void {
   const songsLink = document.getElementById('nav-songs')!;
   const cardsLink = document.getElementById('nav-cards')!;
   const gachasLink = document.getElementById('nav-gachas')!;
+  const calendarLink = document.getElementById('nav-calendar')!;
   const homeLink = document.getElementById('nav-home')!;
 
   const game = gameOf(page);
@@ -89,7 +92,7 @@ export function showShell(page: Route['view']): void {
   // schedule; Cards stays lit on a card's own page. Its front page is none of them.
   const own = ({
     events: eventsLink, 'holodori-songs': songsLink, 'holodori-cards': cardsLink, 'holodori-card': cardsLink,
-    'holodori-gachas': gachasLink,
+    'holodori-gachas': gachasLink, 'holodori-calendar': calendarLink,
   } as
     Record<string, HTMLElement | undefined>)[page];
   const front = page === 'holodori-home';
@@ -98,11 +101,13 @@ export function showShell(page: Route['view']): void {
   setCurrent(songsLink, own === songsLink);
   setCurrent(cardsLink, own === cardsLink);
   setCurrent(gachasLink, own === gachasLink);
+  setCurrent(calendarLink, own === calendarLink);
   setCurrent(homeLink, front);
   eventsLink.hidden = game !== 'arknights';
   songsLink.hidden = game !== 'holodori';
   cardsLink.hidden = game !== 'holodori';
   gachasLink.hidden = game !== 'holodori';
+  calendarLink.hidden = game !== 'holodori';
   homeLink.hidden = game !== 'holodori';
   // Arknights and Fate/Grand Order are drawn dark and look the same in both themes, so the
   // switch would do nothing there.

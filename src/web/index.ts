@@ -7,6 +7,7 @@ import { mountEndfield } from './views/endfield';
 import { mountEndfieldDetail } from './views/endfield-detail';
 import { mountFgo } from './views/fgo';
 import { mountHolodori } from './views/holodori';
+import { mountHolodoriCalendar } from './views/holodori-calendar';
 import { mountHolodoriCard } from './views/holodori-card';
 import { mountHolodoriCards } from './views/holodori-cards';
 import { mountHolodoriGachas } from './views/holodori-gachas';
@@ -46,6 +47,8 @@ function dispatch(): void {
     mountHolodoriSongs(view);
   } else if (route.view === 'holodori-cards') {
     mountHolodoriCards(view);
+  } else if (route.view === 'holodori-calendar') {
+    mountHolodoriCalendar(view);
   } else if (route.view === 'holodori-holomem') {
     mountHolodoriHolomem(view, route.id);
   } else if (route.view === 'holodori-card') {

@@ -36,11 +36,13 @@ import { fetchJson, timedFetch } from './lib/fetch.mjs';
 import { CLIP_AT, MV_FOR } from './lib/holodori-clips.mjs';
 import { GACHAS } from './lib/holodori-gachas.mjs';
 import { buildAnnouncements } from './lib/holodori-news.mjs';
+import { OUTSIDE } from './lib/holodori-outside.mjs';
 
 const outDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'shared', 'generated', 'holodori',
 );
 const CHARACTERS_FILE = path.join(outDir, 'characters.json');
+const OUTSIDE_FILE = path.join(outDir, 'outside.json');
 const FIGURE_DIR = path.join(outDir, 'figures');
 // Where the page finds a bust, beside it (webpack.web.js copies the directory).
 const FIGURE_PATH = 'holodori/figures';
@@ -737,6 +739,7 @@ await writeOrKeep(CHARACTERS_FILE, 'characters', async () => {
   await addStickers(roster);
   return roster;
 });
+await writeOrKeep(OUTSIDE_FILE, 'talent outside the game', async () => OUTSIDE);
 await writeOrKeep(SONGS_FILE, 'songs', async () => {
   const songs = await buildSongs();
   await addJackets(songs);

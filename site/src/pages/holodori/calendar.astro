@@ -1,0 +1,15 @@
+---
+import Shell from '../../layouts/Shell.astro';
+---
+<Shell
+  view="holodori-calendar"
+  title="Birthday Calendar — hololive Dreams — Dossier"
+  description="A month at a time of every hololive talent's birthday and debut anniversary, the ones in hololive Dreams and the ones the game does not have yet."
+/>
+
+<script>
+  import { mountHolodoriCalendar } from '@web/views/holodori-calendar';
+  import { onPage } from '../../lib/page';
+
+  onPage('holodori-calendar', mountHolodoriCalendar);
+</script>

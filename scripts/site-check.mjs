@@ -29,6 +29,7 @@ const BUDGET = {
   'holodori-home': 30, 'holodori-gachas': 25, events: 25, 'endfield-detail': 25,
   'holodori-holomem': 30, detail: 40, 'ptn-detail': 55, 'holodori-card': 80,
   grid: 120, endfield: 120, ptn: 120, holodori: 120, 'holodori-songs': 120, 'holodori-cards': 120, fgo: 120,
+  'holodori-calendar': 120,
 };
 
 const [siteDir, base = '/dossier'] = process.argv.slice(2);

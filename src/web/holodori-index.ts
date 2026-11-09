@@ -1,6 +1,7 @@
 import bundled from '../shared/generated/holodori/characters.json';
 import bundledCards from '../shared/generated/holodori/cards.json';
 import bundledGachas from '../shared/generated/holodori/gachas.json';
+import bundledOutside from '../shared/generated/holodori/outside.json';
 import bundledSongRewards from '../shared/generated/holodori/song-rewards.json';
 import bundledSongs from '../shared/generated/holodori/songs.json';
 import bundledUpcoming from '../shared/generated/holodori/upcoming.json';
@@ -32,6 +33,10 @@ export interface HolodoriCharacter {
   icon?: string;      // the game's round icon of her, 128px: 'holodori/icons/<id>.webp'
   // Her six membership stickers, 256px: { name: 'Sign-Up Sticker No.1', art: 'holodori/stickers/…' }.
   stickers: { name: string; art: string }[];
+  // A hololive talent the game does not have yet, recorded by hand (scripts/lib/holodori-outside.mjs):
+  // she has no pictures, cards or page of her own, and `profile` is her official page.
+  outside?: true;
+  profile?: string;
 }
 
 /**
@@ -55,6 +60,13 @@ const characters = bundled as unknown as HolodoriCharacter[];
 
 export function getHolodoriCharacters(): HolodoriCharacter[] {
   return characters;
+}
+
+const talent = [...characters, ...(bundledOutside as unknown as HolodoriCharacter[])];
+
+/** The game's holomems, then the talent it does not have yet: what the sheet and the calendar list. */
+export function getHolodoriTalent(): HolodoriCharacter[] {
+  return talent;
 }
 
 /** One song of the game, from its Music table, in the game's own order. */

@@ -58,6 +58,7 @@ const PAGES = [
   { name: 'hd-songs', hash: '#/holodori/songs' },
   { name: 'hd-cards', hash: '#/holodori/cards' },
   { name: 'hd-gachas', hash: '#/holodori/gachas' },
+  { name: 'hd-calendar', hash: '#/holodori/calendar' },
   { name: 'hd-holomem', hash: '#/holodori/holomem/chr-00001' },
   { name: 'hd-card-5star', hash: '#/holodori/card/card-00001-5-uniq-0000-00' },
   { name: 'hd-card-3star', hash: '#/holodori/card/card-00001-3-nrml-0000-00' },
