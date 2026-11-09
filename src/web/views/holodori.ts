@@ -170,7 +170,7 @@ function draw(page: HTMLElement, items: HolodoriCharacter[]): void {
   page.innerHTML = `
     <header class="hd-head">
       <h2 class="hd-title">Holomem Stickers</h2>
-      <p class="hd-sub">Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days · a bare sticker: not in the game yet</p>
+      <p class="hd-sub">Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days · a channel avatar: not in the game yet</p>
     </header>
     ${spotlightHtml(soon)}
     <div class="sheet-wrap"><div class="sheet">${sheetHtml(shown, soon)}</div></div>

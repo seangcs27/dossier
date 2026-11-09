@@ -25,7 +25,7 @@ export function mountHolodoriCalendar(container: HTMLElement): void {
     const current = new Date(now).getFullYear() === year && new Date(now).getMonth() === month;
     page.innerHTML = `
       <header class="hd-head">
-        <h2 class="hd-title">Birthday Calendar</h2>
+        <h2 class="hd-title">Calendar</h2>
         <p class="hd-sub">Birthdays and debut anniversaries · every hololive talent, the game's or not yet</p>
       </header>
       <div class="hc-bar">

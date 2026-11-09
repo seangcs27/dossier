@@ -1687,10 +1687,13 @@ talent: every other one the game lacks has graduated or belongs to Holostars or 
 the game does not carry. The build writes them to `holodori/outside.json`, and
 `getHolodoriTalent()` (the game's 54, then these) is what the sheet, the calendar and the front
 page's birthdays read; every other page keeps `getHolodoriCharacters()`, the game's own. They
-have no picture, card, song or page of their own: a bare sticker with her first letter, her
-`profile` link (the official hololivepro.com page, which `holomemLinkAttrs` in
-`render/holodori-format.ts` puts in place of her page's), the sky for her colour, and a number
-that goes on from the game's. A new debut is one line in the record, and a talent the game
+have no card, song or page of their own: their picture is their **YouTube channel's avatar**
+(the owner's ask of 10 November 2026; read from each channel page's `og:image` at 256px, which the
+owner approved the download of, and baked once by hand to 128px WebP into
+`icons/holodori/outside/<slug>.webp`, 9 files, 63 KB, tracked: a build that scraped YouTube would
+fail on a consent page, and the game's own icons stay the game's holomems'), their `profile` link
+(the official hololivepro.com page, which `holomemLinkAttrs` in `render/holodori-format.ts` puts
+in place of her page's), the sky for their colour, and a number that goes on from the game's. A new debut is one line in the record, and a talent the game
 gets is dropped from it once the dump has her. Koganei Niko's birthday is 25 July as the wiki
 and the Japanese site give it; the English site printed Isaki Riona's by mistake.
 **A birthday in the next 60 days lifts her sticker**:
@@ -1710,7 +1713,8 @@ the back turning on from it) to her back: her colours as stripes, number and gro
 branch, greeting, fan name, debut, birthday, colour swatches and a link to her page; Escape,
 the close button or a press elsewhere turn it back.
 
-**The calendar** (`#/holodori/calendar`, `views/holodori-calendar.ts`, 9 November 2026, the
+**The calendar** (`#/holodori/calendar`, "Calendar" and not "Birthday Calendar" since it holds
+debut anniversaries too, 10 November 2026; `views/holodori-calendar.ts`, 9 November 2026, the
 owner's ask for a rework after hololive Fan Wiki's monthly calendar post, taken for its layout
 only and drawn in the game's own look) is one month at a time, where it was the next twelve as
 a card each and a view of the roster. A month is a grid of seven columns from Sunday, the

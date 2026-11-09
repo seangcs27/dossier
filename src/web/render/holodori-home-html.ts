@@ -106,7 +106,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
           const days = daysToBirthday(c, day);
           return `
           <li><a class="hh-bday${days === 0 ? ' today' : ''}" ${holomemLinkAttrs(c)} style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-            <span class="hh-icon">${c.icon ? `<img src="${escHtml(c.icon)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
+            <span class="hh-icon">${c.icon ?? c.art ? `<img src="${escHtml((c.icon ?? c.art)!)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
             <span class="hh-bday-name">${escHtml(c.shortName)}</span>
             <span class="hh-bday-when">${birthdayText(c)} · <span data-bday="${c.birthday}">${daysAway(days)}</span></span>
           </a></li>`;

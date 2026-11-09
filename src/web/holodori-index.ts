@@ -34,7 +34,8 @@ export interface HolodoriCharacter {
   // Her six membership stickers, 256px: { name: 'Sign-Up Sticker No.1', art: 'holodori/stickers/…' }.
   stickers: { name: string; art: string }[];
   // A hololive talent the game does not have yet, recorded by hand (scripts/lib/holodori-outside.mjs):
-  // she has no pictures, cards or page of her own, and `profile` is her official page.
+  // she has no cards, songs or page of her own, `art` is her YouTube channel's avatar and `profile`
+  // her official page.
   outside?: true;
   profile?: string;
 }

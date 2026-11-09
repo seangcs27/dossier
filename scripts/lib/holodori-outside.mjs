@@ -7,6 +7,11 @@
 // Active talent only: every other talent missing from the game has graduated or is a Holostars
 // or UPROAR!! member, a brand the game does not carry. A new debut is one line here.
 //
+// Each one's picture is her YouTube channel's avatar (the owner's ask of 10 November 2026),
+// taken from the channel page's og:image at 256px and baked once by hand to 128px WebP into
+// icons/holodori/outside/<slug>.webp, tracked: a channel can change its avatar, but a build
+// that scraped YouTube would fail on a consent page. A new debut's is the same bake by hand.
+//
 // Koganei Niko's birthday is 25 July as the wiki and the Japanese site give it; the English
 // site printed 29 May, Isaki Riona's, by mistake.
 
@@ -40,6 +45,7 @@ export const OUTSIDE = RECORD.map(([name, shortName, branch, group, birthday, de
   debut,
   greeting: '',
   colors: [],
+  art: `icons/holodori/outside/${slug(name)}.webp`,
   stickers: [],
   outside: true,
   profile: `https://hololive.hololivepro.com/en/talents/${slug(name)}/`,
