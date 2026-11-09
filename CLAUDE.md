@@ -102,6 +102,8 @@ scripts/
   lib/holodori-news.mjs      ← hololive Dreams' announcements, from hololive Dreams Lab's Game updates
                                page and Steam's news for the game: a headline, its day and the
                                official post's link each
+  lib/holodori-outside.mjs   ← the hololive talent the game lacks (FLOW GLOW, ASOBI★MAWARI-TAI!), recorded
+                               by hand from hololive.wiki; the build writes holodori/outside.json
   lib/holodori-clips.mjs     ← where each song's clip plays in its music video where the game's window is
                                not right for it, and the videos of two songs the dump has none for,
                                recorded by hand from YouTube
@@ -234,7 +236,7 @@ src/
     router.ts       ← hash routing (#/ , #/op/<id> , #/events , #/events/pools ,
                       #/events/calendar , #/endfield , #/endfield/op/<id> , #/ptn ,
                       #/ptn/sinner/<id> , #/holodori , #/holodori/holomems ,
-                      #/holodori/gachas , #/holodori/songs ,
+                      #/holodori/gachas , #/holodori/songs , #/holodori/calendar ,
                       #/holodori/cards , #/holodori/card/<id> ,
                       #/holodori/holomem/<id> , #/fgo)
     card.ts         ← the card and the roster page the games after Endfield share: RosterCard,
@@ -1663,8 +1665,8 @@ owner chose these pictures after being told that the game's guidelines bar repro
 promotional material without permission, and approved the download on 15 October 2026 (54
 pictures, about 1.6 MB, baked to 750 KB). The page credits both sources under the roster.
 
-**The roster is a sheet of stickers** (`draw` in `views/holodori.ts`, `_holodori.scss`), with
-a calendar beside it: Sheet (the one it opens in) and Calendar. It began on 15 October 2026
+**The roster is a sheet of stickers** (`draw` in `views/holodori.ts`, `_holodori.scss`); its
+calendar has a page of its own, below. It began on 15 October 2026
 as a sticker album, the owner's pick from the fifth hand of directions, with the category's
 grid beside it; the sheet came before both on 16 October, and on 17 October the owner had
 the album and the grid taken out. **The sheet** is every sticker at once, the owner's ask
@@ -1674,7 +1676,22 @@ once (Fubuki in her first group, Gen 1). The sticker's width is set from the she
 56 to 84px) so that all 54 stand on a 1280x800 or 1440x900 screen; on a phone it scrolls.
 The branches are the game's own: DEV_IS is a Japanese branch, and the game has only ReGLOSS
 of it (four; Hiodoshi Ao's row is not playable), and no FLOW GLOW at all, in its data or on
-its site (checked 17 October 2026). **A birthday in the next 60 days lifts her sticker**:
+its site (checked 17 October 2026). **The sheet lists the talent the game lacks as well**
+(9 November 2026, the owner's ask: "DEV_IS FlowGlow and newer members such as asobi
+mawaritai"): the five of FLOW GLOW and the four of ASOBI★MAWARI-TAI!, **recorded by hand** in
+`scripts/lib/holodori-outside.mjs` from hololive.wiki's infobox of each (`Debut Date`,
+`Birthday`, `Fan Name`; the owner's pick of that wiki over the official site). Only active
+talent: every other one the game lacks has graduated or belongs to Holostars or UPROAR!!, brands
+the game does not carry. The build writes them to `holodori/outside.json`, and
+`getHolodoriTalent()` (the game's 54, then these) is what the sheet, the calendar and the front
+page's birthdays read; every other page keeps `getHolodoriCharacters()`, the game's own. They
+have no picture, card, song or page of their own: a bare sticker with her first letter, her
+`profile` link (the official hololivepro.com page, which `holomemLinkAttrs` in
+`render/holodori-format.ts` puts in place of her page's), the sky for her colour, and a number
+that goes on from the game's. A new debut is one line in the record, and a talent the game
+gets is dropped from it once the dump has her. Koganei Niko's birthday is 25 July as the wiki
+and the Japanese site give it; the English site printed Isaki Riona's by mistake.
+**A birthday in the next 60 days lifts her sticker**:
 tilted, a corner peeled, a sun-yellow tab with the date ("Next" on the nearest of all 54,
 whatever a search leaves on show); on the day it lies flat in a ring of the same yellow.
 **The next birthday is spotlit** (18 October 2026, the owner's ask): a sun banner over the
@@ -1689,10 +1706,34 @@ nobody's place moves. The filters are Branch and Generation, the generations sor
 branch. **Pressing a sticker turns it over** (the Web Animations API, a turn to its edge and
 the back turning on from it) to her back: her colours as stripes, number and groups, name,
 branch, greeting, fan name, debut, birthday, colour swatches and a link to her page; Escape,
-the close button or a press elsewhere turn it back. Calendar is the next twelve months at a
-glance, a card to each: its birthdays and debut anniversaries (with the count: "5th
-anniversary") by the day, as a face beside a name; in this month what has passed fades,
-today's are on the sun, and the card is ringed in it with "Today" on its head.
+the close button or a press elsewhere turn it back.
+
+**The calendar** (`#/holodori/calendar`, `views/holodori-calendar.ts`, 9 November 2026, the
+owner's ask for a rework after hololive Fan Wiki's monthly calendar post, taken for its layout
+only and drawn in the game's own look) is one month at a time, where it was the next twelve as
+a card each and a view of the roster. A month is a grid of seven columns from Sunday, the
+album's paper with a square to each day and the round face of whoever's date it is in it; a
+**cake on a face's corner is a birthday and a flag a debut anniversary** ("2nd debut
+anniversary"). Two share a square side by side, three or four make two rows of two, and past
+four a count. Today is on the sun, what has passed this month fades. Back, forward and Today
+step the month (any month, not only the next twelve), and under the grid the month's dates
+are listed, a face and a name to each (`.month-list`, so no date rests on a picture alone).
+It covers `getHolodoriTalent()`, so FLOW GLOW's second anniversary and ASOBI★MAWARI-TAI!'s first
+(September 2027) are on it. The grid, the list and the menu are drawn by
+`render/holodori-calendar-html.ts` (`entriesIn` is the one place a month's dates are worked
+out). Its classes are `hc-`: `cal-grid`, `cal-day` and `cal-bar` are the Arknights Events
+calendar's, global in `styles.scss`, and a first pass under those names took its rules.
+
+**The calendar icon** (`#nav-calendar`, last of the topbar's section links, hololive Dreams'
+alone, with the same glyph on a phone, where the others lose theirs) opens that page when
+pressed, and **pointed at, or reached by the keyboard, drops a small calendar down**
+(`calendar-menu.ts`, `.hc-menu` under `.sections`): this month small, one face to a day and a
+count, then the next four dates from today with the days to each, and an "Open calendar" button.
+It opens 120 ms after the pointer arrives and shuts 220 ms after it leaves, so the move from the
+icon to the menu does not close it; Escape, a press, a change of address and Astro's page swap
+shut it, a finger's tap is only a press, and it is drawn again once a day. The month is
+drawn the first time it is wanted, from a chunk of its own (`import()`), so that no page carries
+the cast for a menu that is never opened; the icon is in `index.html`, which both targets read.
 
 **The game itself has two pages, Songs and Cards** (`views/holodori-songs.ts`,
 `views/holodori-cards.ts`), built on 17 October 2026 after the owner asked where the game's

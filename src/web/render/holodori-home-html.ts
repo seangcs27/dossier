@@ -1,9 +1,9 @@
 import { escHtml } from '../format';
 import {
-  gachaLogoUrl, getHolodoriCards, getHolodoriCharacters, getHolodoriGachas, getHolodoriSongs, type HolodoriSong,
+  gachaLogoUrl, getHolodoriCards, getHolodoriGachas, getHolodoriSongs, getHolodoriTalent, type HolodoriSong,
 } from '../holodori-index';
 import { getHolodoriAnnouncements, type HolodoriAnnouncement } from '../holodori-news';
-import { birthdayText, daysAway, daysToBirthday, MONTHS, today } from './holodori-format';
+import { birthdayText, daysAway, daysToBirthday, holomemLinkAttrs, MONTHS, today } from './holodori-format';
 import { bannerHtml, isLive } from './holodori-gachas-html';
 import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
@@ -17,7 +17,7 @@ const BIRTHDAYS = 6;
 const NEWEST = 6;
 const ANNOUNCED = 8;
 
-const cast = getHolodoriCharacters();
+const cast = getHolodoriTalent();
 const songs = getHolodoriSongs();
 const cards = getHolodoriCards();
 const gachas = getHolodoriGachas();
@@ -105,8 +105,8 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <ul class="hh-bdays">${soon.map((c) => {
           const days = daysToBirthday(c, day);
           return `
-          <li><a class="hh-bday${days === 0 ? ' today' : ''}" href="#/holodori/holomem/${encodeURIComponent(c.id)}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-            <span class="hh-icon">${c.icon ? `<img src="${escHtml(c.icon)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>
+          <li><a class="hh-bday${days === 0 ? ' today' : ''}" ${holomemLinkAttrs(c)} style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
+            <span class="hh-icon">${c.icon ? `<img src="${escHtml(c.icon)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
             <span class="hh-bday-name">${escHtml(c.shortName)}</span>
             <span class="hh-bday-when">${birthdayText(c)} · <span data-bday="${c.birthday}">${daysAway(days)}</span></span>
           </a></li>`;

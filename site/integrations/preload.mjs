@@ -12,7 +12,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const MOUNTED = new Set(['grid', 'detail', 'ptn-detail', 'endfield', 'ptn', 'holodori', 'holodori-songs', 'holodori-cards', 'fgo']);
+const MOUNTED = new Set(['grid', 'detail', 'ptn-detail', 'endfield', 'ptn', 'holodori', 'holodori-calendar', 'holodori-songs', 'holodori-cards', 'fgo']);
 const STYLESHEET = /<link rel="stylesheet"[^>]*>/;
 
 export default function preload() {

@@ -9,6 +9,7 @@ export type Route =
   | { view: 'holodori-gachas' }
   | { view: 'holodori-songs' }
   | { view: 'holodori-cards' }
+  | { view: 'holodori-calendar' }
   | { view: 'holodori-holomem'; id: string }
   | { view: 'holodori-card'; id: string }
   | { view: RosterGame };
@@ -39,6 +40,7 @@ export function parseHash(hash: string): Route {
   if (hash === '#/holodori/gachas') return { view: 'holodori-gachas' };
   if (hash === '#/holodori/songs') return { view: 'holodori-songs' };
   if (hash === '#/holodori/cards') return { view: 'holodori-cards' };
+  if (hash === '#/holodori/calendar') return { view: 'holodori-calendar' };
   const holomem = /^#\/holodori\/holomem\/([^/]+)$/.exec(hash);
   if (holomem) return { view: 'holodori-holomem', id: decodeURIComponent(holomem[1]) };
   const card = /^#\/holodori\/card\/([^/]+)$/.exec(hash);

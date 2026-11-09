@@ -44,6 +44,10 @@ const CHECKS = {
   'holodori-cards-html': [['cardTileHtml', cards[0]], ['skillHtml', '[highlight]5%[/highlight] of [attribute=cute]Cute[/attribute]']],
   'holodori-gachas-html': [['gachasPageHtml', NOW]],
   'holodori-home-html': [['homeHtml', NOW]],
+  'holodori-calendar-html': [
+    ['monthGridHtml', 2026, 10, NOW, 'page'], ['monthGridHtml', 2026, 10, NOW, 'menu'],
+    ['monthListHtml', 2026, 10, NOW], ['calendarMenuHtml', NOW],
+  ],
   'holodori-holomem-html': [
     ['holomemHtml', 'chr-00001', NOW], ['holomemHtml', 'chr-00001', NOW, { voices: holomemVoices }],
     ['holomemVoicesHtml', characters[0], holomemVoices], ['holomemHtml', 'nobody', NOW],

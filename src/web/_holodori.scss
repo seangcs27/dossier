@@ -43,7 +43,7 @@ $dots: var(--hd-dots);          // the paper's dots
 }
 
 // The roster, the game's two pages of its own, its songs and its cards, and a holomem's page.
-$world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view='holodori-gachas'], [data-view='holodori-songs'], [data-view='holodori-cards'], [data-view='holodori-holomem'], [data-view='holodori-card'])";
+$world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view='holodori-gachas'], [data-view='holodori-songs'], [data-view='holodori-cards'], [data-view='holodori-holomem'], [data-view='holodori-card'], [data-view='holodori-calendar'])";
 
 // A sheet of the album's paper, dotted as a sticker's back is, that a page's stickers,
 // jackets or cards are laid out on.
@@ -220,23 +220,6 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: var(--fs-sm);
     font-weight: 700;
     text-align: center;
-  }
-
-  // The calendar's two kinds of face, small.
-  .legend-face {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-right: var(--sp-6);
-    border-radius: 50%;
-    background: $panel;
-    box-shadow: 0 0 0 2px #fff, 0 0 0 3px $slot;
-    vertical-align: -1px;
-  }
-
-  .legend-anniversary {
-    margin-left: var(--sp-12);
-    box-shadow: 0 0 0 2.5px $sun;
   }
 
   // ── A generation's strip and its slots ──
@@ -513,6 +496,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
     img { display: block; width: 100%; height: auto; }
     &.icon img { width: 130%; max-width: none; margin: -15%; }
+    b { display: grid; height: 100%; place-items: center; color: $ink-print; font-size: var(--fs-3xl); font-weight: 900; }
   }
 
   .spot-name {
@@ -694,24 +678,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .slot.ghost .sheet-name { opacity: 0.4; }
 
   // ── The calendar ──
-  // The year at a glance: a card to each of the next twelve months, its birthdays and debut
-  // anniversaries by the day, each a face beside a name.
-
-  // On the sky, not a page, so in the full ink.
-  .year-legend {
-    margin: 0 0 var(--sp-12);
-    color: $ink;
-    text-align: left;
-  }
-
-  .year {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--sp-16);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
+  // A month at a time (views/holodori-calendar.ts): a grid of days with a face on each date
+  // that is a birthday or a debut anniversary, then the month's dates as a list, a face beside
+  // a name. The topbar's calendar icon drops a small one down (.hc-menu, at the foot).
 
   .month {
     padding: var(--sp-12) var(--sp-16) var(--sp-16);
@@ -719,9 +688,6 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     border-radius: 20px;
     background: $paper;
     box-shadow: 0 6px 14px rgb(16 60 110 / 18%);
-
-    // This month, ringed in the sun.
-    &.now { box-shadow: 0 0 0 3px $sun, 0 6px 14px rgb(16 60 110 / 18%); }
   }
 
   .month-head {
@@ -738,17 +704,6 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       font-size: var(--fs-sm);
       font-weight: 800;
     }
-  }
-
-  .month-today {
-    margin-left: auto;
-    padding: 2px var(--sp-8);
-    border-radius: var(--radius-pill);
-    background: $sun;
-    color: $ink-print;
-    font-size: var(--fs-xs);
-    font-style: normal;
-    font-weight: 900;
   }
 
   .month-list {
@@ -836,6 +791,403 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: var(--fs-2xs);
     font-style: normal;
     font-weight: 800;
+  }
+
+  // Talent the game has no picture of: the first letter of her name.
+  .month-face b {
+    display: grid;
+    height: 100%;
+    place-items: center;
+    color: color-mix(in srgb, var(--a) 70%, $ink);
+    font-weight: 900;
+  }
+
+  // The month's bar: back, the month, forward, and the way back to this one.
+  .hc-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-8);
+    margin: 0 0 var(--sp-12);
+  }
+
+  .hc-month {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-8);
+    margin: 0 var(--sp-8);
+
+    .lettered { font-size: var(--fs-4xl); }
+
+    small {
+      color: $ink;
+      font-size: var(--fs-sm);
+      font-weight: 800;
+    }
+  }
+
+  .hc-step,
+  .hc-today {
+    display: grid;
+    min-width: 44px;
+    height: 44px;
+    place-items: center;
+    padding: 0 var(--sp-12);
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: $white;
+    box-shadow: 0 3px 8px $lift;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    &:hover:not(:disabled) { background: $sun; color: $ink-print; }
+    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
+    &:disabled { opacity: 0.5; cursor: default; }
+  }
+
+  .hc-today { margin-left: auto; }
+
+  // The month: the album's paper with a day to each square, the face of whoever's date it is
+  // on it. A birthday has a cake on its corner, a debut anniversary a flag.
+  $pink: #ff8fbf;
+
+  .hc-sheet {
+    @include paper;
+    padding: var(--sp-12) var(--sp-12) var(--sp-16);
+  }
+
+  .hc-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hc-dow {
+    padding: var(--sp-4) 0;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .hc-day {
+    position: relative;
+    min-width: 0;
+    aspect-ratio: 1;
+    border-radius: 14px;
+    background: $panel;
+
+    &.blank { background: none; }
+    &.past .hc-faces { opacity: 0.55; }
+
+    // Today, ringed in the sun; the ink on it is the print's own, which no theme changes.
+    &.today {
+      background: #fff4cc;
+      box-shadow: 0 0 0 3px $sun;
+    }
+  }
+
+  .hc-num {
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    z-index: 1;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .hc-day.today .hc-num {
+    margin: -2px 0 0 -4px;
+    padding: 2px 6px;
+    border-radius: var(--radius-pill);
+    background: $sun;
+    color: $ink-print;
+  }
+
+  // One face fills the square; two sit side by side, three or four as two rows of two.
+  .hc-faces {
+    position: absolute;
+    inset: 18% 8% 8%;
+    display: grid;
+    gap: 3px;
+    place-content: center;
+
+    &.n1 { grid-template-columns: minmax(0, 88%); }
+    &.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    &.n3,
+    &.n4 {
+      inset: 16% 6% 6%;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px;
+    }
+  }
+
+  .hc-face {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    color: $ink;
+    text-decoration: none;
+
+    &:hover .hc-pic { transform: scale(1.06) rotate(-4deg); }
+    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
+  }
+
+  .hc-pic {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    container-type: inline-size;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--a) 28%, #fff);
+    box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
+    transition: transform 0.15s;
+
+    img { display: block; width: 100%; height: auto; }
+    &.icon img { width: 130%; max-width: none; margin: -15%; }
+
+    // Talent the game has no picture of: the first letter of her name.
+    b {
+      display: grid;
+      height: 100%;
+      place-items: center;
+      color: color-mix(in srgb, var(--a) 70%, $ink);
+      font-size: 50cqw;
+      font-weight: 900;
+    }
+  }
+
+  .hc-face.anniversary .hc-pic { box-shadow: 0 0 0 2.5px $sun, 0 1px 3px rgb(16 60 110 / 30%); }
+
+  .hc-mark {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    display: grid;
+    width: clamp(14px, 38%, 24px);
+    aspect-ratio: 1;
+    place-items: center;
+    border-radius: 50%;
+    background: $pink;
+    box-shadow: 0 0 0 2px #fff;
+    color: $ink-print;
+
+    svg {
+      width: 68%;
+      height: 68%;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  }
+
+  .hc-face.anniversary .hc-mark { background: $sun; }
+
+  // How many more share the date than the square holds.
+  .hc-more {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    padding: 1px 5px;
+    border-radius: var(--radius-pill);
+    background: $sun;
+    color: $ink-print;
+    font-size: var(--fs-2xs);
+    font-style: normal;
+    font-weight: 900;
+  }
+
+  // On the sky, not a page, so in the full ink.
+  .hc-legend {
+    margin: var(--sp-12) 0;
+    color: $ink;
+    text-align: left;
+  }
+
+  .hc-key {
+    display: inline-grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    margin-right: var(--sp-6);
+    border-radius: 50%;
+    background: $pink;
+    color: $ink-print;
+    vertical-align: middle;
+
+    svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    &.anniversary {
+      margin-left: var(--sp-16);
+      background: $sun;
+    }
+  }
+
+  .hc-list .month-list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+
+  @media (max-width: 640px) {
+    .hc-sheet {
+      padding: var(--sp-8);
+      border-width: 3px;
+    }
+
+    .hc-grid { gap: 3px; }
+    .hc-day { border-radius: 9px; }
+    .hc-num { top: 3px; left: 4px; font-size: 10px; }
+    // The squares are about 44px wide: the date stays clear of the face under it.
+    .hc-faces { inset: 28% 6% 6%; }
+    .hc-faces.n3,
+    .hc-faces.n4 { inset: 26% 3% 3%; }
+    .hc-more { top: auto; right: auto; bottom: 3px; left: 4px; }
+    .hc-today { margin-left: 0; }
+  }
+
+  // ── The calendar icon's menu ──
+  // Under the topbar's section links, where the icon is: this month small, who is next, and
+  // the way to the page (calendar-menu.ts). Its link is hololive Dreams' alone, so the icon
+  // keeps its glyph on a phone, where the other links lose theirs.
+  .section-link.section-calendar {
+    flex: 0 0 auto;
+    padding: var(--sp-4) var(--sp-8);
+
+    svg { display: block; width: 16px; height: 16px; }
+  }
+
+  .hc-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 30; // over the search box (21) and the filter panel (20) it drops across on a narrow bar
+    width: min(320px, calc(100vw - 32px));
+    padding: var(--sp-12);
+    border: 1px solid $line;
+    border-radius: 18px;
+    background: $paper;
+    box-shadow: 0 12px 28px rgb(16 60 110 / 28%);
+    animation: hc-menu-in 0.16s ease-out;
+
+    &[hidden] { display: none; }
+  }
+
+  @keyframes hc-menu-in { from { opacity: 0; transform: translateY(-6px); } }
+
+  .hc-menu-head {
+    margin: 0 0 var(--sp-6);
+    color: $ink;
+    font-size: var(--fs-lg);
+    font-weight: 800;
+
+    b { font-weight: 900; }
+  }
+
+  .hc-grid.menu {
+    gap: 2px;
+
+    .hc-day { border-radius: 8px; }
+    .hc-num { top: 2px; left: 3px; font-size: 9px; }
+    .hc-faces { inset: 26% 10% 6%; }
+    .hc-faces.n1 { grid-template-columns: minmax(0, 100%); }
+    .hc-more { top: 2px; right: 2px; padding: 0 3px; font-size: 8px; }
+    .hc-mark { right: -3px; bottom: -3px; width: 12px; box-shadow: 0 0 0 1.5px #fff; }
+    .hc-pic { box-shadow: 0 0 0 1.5px #fff; }
+    .hc-face.anniversary .hc-pic { box-shadow: 0 0 0 1.5px $sun; }
+  }
+
+  .hc-menu-label {
+    margin: var(--sp-10) 0 var(--sp-4);
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .hc-next {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .hc-next-row {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--sp-8);
+    padding: var(--sp-4) var(--sp-6);
+    border-radius: var(--radius-lg);
+    color: $ink;
+    text-decoration: none;
+
+    .hc-pic { width: 32px; height: 32px; }
+    &:hover { background: $panel; }
+    &:focus-visible { outline: 2px solid $cover-deep; outline-offset: 1px; }
+  }
+
+  .hc-next-name,
+  .hc-next-when {
+    display: grid;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    line-height: 1.2;
+
+    small {
+      color: $ink-soft;
+      font-size: var(--fs-xs);
+      font-weight: 700;
+    }
+  }
+
+  .hc-next-when { text-align: right; }
+
+  .hc-menu-open {
+    display: block;
+    margin-top: var(--sp-10);
+    padding: var(--sp-8);
+    border-radius: var(--radius-pill);
+    background: $cover-deep;
+    color: #fff;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+    text-align: center;
+    text-decoration: none;
+
+    &:hover { background: $ink-print; }
+    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
   }
 
   // ── Songs ──
@@ -2903,6 +3255,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     transition: transform 0.15s;
 
     img { display: block; width: 100%; height: 100%; }
+    // Talent the game has no picture of: the first letter of her name.
+    b { display: grid; height: 100%; place-items: center; color: $ink-print; font-size: var(--fs-4xl); font-weight: 900; }
   }
 
   .hh-bday.today .hh-icon { box-shadow: 0 0 0 4px $sun, 0 4px 10px $lift; }

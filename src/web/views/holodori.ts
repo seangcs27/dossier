@@ -1,20 +1,21 @@
 import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { escHtml } from '../format';
-import { getHolodoriCharacters, type HolodoriCharacter } from '../holodori-index';
+import { getHolodoriTalent, type HolodoriCharacter } from '../holodori-index';
 import {
-  MONTHS, birthdayIn, birthdayText, daysToBirthday, groupsOf, nextBirthday, no, ordinal, place, today,
+  MONTHS, birthdayText, daysToBirthday, groupsOf, holomemLinkAttrs, nextBirthday, no, place, today,
 } from '../render/holodori-format';
 
 // hololive Dreams' roster as the stickers the game would hand you, on the sheet they come
-// on, all 54 at once (the owner's ask of 16 October 2026). A sticker whose birthday is
-// coming stands lifted with the date on a tab; one pressed opens her page. The
-// same holomems can be had as a year of their birthdays and debut anniversaries. The album
+// on, all of them at once (the owner's ask of 16 October 2026): the game's 54 and the talent
+// it does not have yet. A sticker whose birthday is coming stands lifted with the date on a
+// tab; one pressed opens her page, or her official profile where the game has none. The
+// birthdays and debut anniversaries are the calendar's (views/holodori-calendar.ts). The album
 // and the grid beside them were taken out on 17 October 2026, at the owner's ask.
 
 // A sticker stands lifted when her birthday is this many days off or nearer.
 const LIFT_DAYS = 60;
 
-const cast = getHolodoriCharacters();
+const cast = getHolodoriTalent();
 
 const state = newRosterState();
 
@@ -74,8 +75,8 @@ function soonOf(items: HolodoriCharacter[]): Soon {
 function spotPersonHtml(c: HolodoriCharacter): string {
   const src = c.icon ?? c.art;
   return `
-    <a class="spot-who" href="#/holodori/holomem/${encodeURIComponent(c.id)}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-      <span class="spot-icon${c.icon ? ' icon' : ''}">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" decoding="async" onerror="this.remove()">` : ''}</span>
+    <a class="spot-who" ${holomemLinkAttrs(c)} style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
+      <span class="spot-icon${c.icon ? ' icon' : ''}">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
       <span class="spot-name">${escHtml(c.shortName)}<small>${birthdayText(c, true)}</small></span>
     </a>
   `;
@@ -119,7 +120,7 @@ function stickerHtml(c: HolodoriCharacter, soon: Soon, short = false): string {
     said = `, birthday ${birthdayText(c, true)}, ${days === 1 ? 'tomorrow' : `in ${days} days`}`;
   }
   return `
-    <a class="sticker${up ? ' up' : ''}${on ? ' today' : ''}${next ? ' next' : ''}" href="#/holodori/holomem/${encodeURIComponent(c.id)}"
+    <a class="sticker${up ? ' up' : ''}${on ? ' today' : ''}${next ? ' next' : ''}" ${holomemLinkAttrs(c)}
             aria-label="${escHtml(`${c.name}, No. ${no(c)}${said}`)}"
             style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}; --r: ${tilt}deg">
       <span class="sticker-face">
@@ -129,57 +130,6 @@ function stickerHtml(c: HolodoriCharacter, soon: Soon, short = false): string {
       ${tab ? `<em class="date-tab" aria-hidden="true">${escHtml(tab)}</em>` : ''}
     </a>
   `;
-}
-
-// ── The calendar ──
-
-// Twelve months, this one first.
-function months(): { y: number; m: number }[] {
-  const now = today();
-  return Array.from({ length: 12 }, (_, k) => {
-    const d = new Date(now.getFullYear(), now.getMonth() + k, 1);
-    return { y: d.getFullYear(), m: d.getMonth() };
-  });
-}
-
-// A month of the year: each birthday and each debut anniversary in it, by the day, as her
-// face beside her name. In this month what has passed fades and today is marked.
-function monthHtml(y: number, m: number, items: HolodoriCharacter[], soon: Soon): string {
-  const entries: { day: number; c: HolodoriCharacter; years?: number }[] = [];
-  for (const c of items) {
-    const b = birthdayIn(c, y);
-    if (b.getMonth() === m) entries.push({ day: b.getDate(), c });
-    const [dy, dm, dd] = c.debut.split('-').map(Number);
-    if (dm - 1 === m && y > dy) entries.push({ day: dd, c, years: y - dy });
-  }
-  // By the day, a birthday before an anniversary on the same one.
-  entries.sort((a, b) => a.day - b.day || Number(a.years !== undefined) - Number(b.years !== undefined));
-  const thisMonth = soon.now.getFullYear() === y && soon.now.getMonth() === m;
-  const list = entries.map(({ day, c, years }) => {
-    const when = thisMonth && day < soon.now.getDate() ? 'past' : thisMonth && day === soon.now.getDate() ? 'on' : '';
-    const said = years === undefined ? `birthday ${day} ${MONTHS[m]}` : `${years} year${years === 1 ? '' : 's'} since her debut, ${day} ${MONTHS[m]}`;
-    return `
-      <li${when ? ` class="${when}"` : ''}><a class="${years === undefined ? 'month-birthday' : 'month-anniversary'}" href="#/holodori/holomem/${encodeURIComponent(c.id)}"
-              aria-label="${escHtml(`${c.name}, ${said}`)}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-        <b class="month-date">${day}</b>
-        <span class="month-face${c.icon ? ' icon' : ''}">${c.icon ?? c.art ? `<img src="${escHtml((c.icon ?? c.art)!)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</span>
-        <span class="month-name">${escHtml(c.shortName)}</span>
-        ${years === undefined ? '' : `<em class="month-years">${ordinal(years)} anniversary</em>`}
-      </a></li>`;
-  });
-  return `
-    <li class="month${thisMonth ? ' now' : ''}">
-      <h3 class="month-head"><span class="lettered">${MONTHS[m]}</span><small>${y}</small>${thisMonth ? `<em class="month-today">Today · ${shortDate(soon.now)}</em>` : ''}</h3>
-      ${list.length ? `<ul class="month-list">${list.join('')}</ul>` : '<p class="month-none">Nobody this month</p>'}
-    </li>
-  `;
-}
-
-function yearSpan(): string {
-  const all = months();
-  const a = all[0];
-  const b = all[all.length - 1];
-  return `${MONTHS[a.m]} ${a.y} – ${MONTHS[b.m]} ${b.y}`;
 }
 
 // ── The sheet ──
@@ -213,34 +163,18 @@ function sheetHtml(shown: Set<string>, soon: Soon): string {
 
 // ── The page ──
 
-const HEADS: Record<string, string> = {
-  sheet: 'Holomem Stickers', calendar: 'Birthday Calendar',
-};
-const SUBS: Record<string, string> = {
-  sheet: `Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days`,
-  calendar: 'Birthdays and debut anniversaries',
-};
-
-function draw(page: HTMLElement, items: HolodoriCharacter[], look: string): void {
-  // Who is next is the next of all 54, whoever a search leaves on show.
+function draw(page: HTMLElement, items: HolodoriCharacter[]): void {
+  // Who is next is the next of everyone, whoever a search leaves on show.
   const soon = soonOf(cast);
   const shown = new Set(items.map(c => c.id));
-  let body = '';
-  if (look === 'sheet') {
-    body = `<div class="sheet-wrap"><div class="sheet">${sheetHtml(shown, soon)}</div></div>`;
-  } else {
-    body = `
-      <p class="legend year-legend"><i class="legend-face"></i>Birthday <i class="legend-face legend-anniversary"></i>Debut anniversary, with the years since</p>
-      <ol class="year">${months().map(({ y, m }) => monthHtml(y, m, items, soon)).join('')}</ol>`;
-  }
   page.innerHTML = `
     <header class="hd-head">
-      <h2 class="hd-title">${HEADS[look] ?? HEADS.sheet}</h2>
-      <p class="hd-sub">${SUBS[look] ?? SUBS.sheet}${look === 'calendar' ? ` · ${yearSpan()}` : ''}</p>
+      <h2 class="hd-title">Holomem Stickers</h2>
+      <p class="hd-sub">Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days · a bare sticker: not in the game yet</p>
     </header>
     ${spotlightHtml(soon)}
-    ${body}
-    <p class="hd-credit">Pictures: <a href="https://www.hololive-dreams.com/en/" target="_blank" rel="noopener">hololive Dreams official site</a> · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
+    <div class="sheet-wrap"><div class="sheet">${sheetHtml(shown, soon)}</div></div>
+    <p class="hd-credit">Pictures: <a href="https://www.hololive-dreams.com/en/" target="_blank" rel="noopener">hololive Dreams official site</a> · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Talent the game lacks: <a href="https://hololive.wiki" target="_blank" rel="noopener">hololive Fan Wiki</a></p>
   `;
 }
 
@@ -257,13 +191,6 @@ export function mountHolodori(container: HTMLElement): void {
   mountRoster(container, {
     items: cast,
     draw,
-    looks: {
-      state,
-      name: 'View',
-      options: [
-        { id: 'sheet', label: 'Sheet' }, { id: 'calendar', label: 'Calendar' },
-      ],
-    },
     noun: 'holomems',
     emptyNote: 'The last build could not reach the game data on GitHub.',
     find: { state, text: c => `${c.name} ${c.shortName}`, filters },
