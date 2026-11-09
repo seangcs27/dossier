@@ -2153,6 +2153,11 @@ so the answer is written down.
 | `source-art-backup` (`source-art.tar`, ~1 GB) | Art the pages load from *other* hosts at runtime: Arknights, Path to Nowhere, hololive Dreams' key art | By hand, `scripts/backup-art.mjs` | Nothing |
 | `media-backup` (`holodori-media.tar`, ~440 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
 
+All three are **pre-releases**, so the repository's "Latest release" is never a backup's tar (the
+scripts and the workflow create them so, and a by-hand run rewrites the release's notes with
+the date, the file count and the size). The tags are the names above; `gh release edit --tag`
+renames one without moving its file.
+
 The last two are **insurance, not a fallback**: no page falls back to them, so if a source died
 its images would break until someone re-hosted the files and changed the addresses. Endfield and
 Fate/Grand Order have nothing in them: the build bakes their art into dossier-img.
