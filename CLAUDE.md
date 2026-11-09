@@ -106,7 +106,7 @@ scripts/
                                not right for it, and the videos of two songs the dump has none for,
                                recorded by hand from YouTube
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
-  backup-art.mjs             ← Arknights' and Path to Nowhere's remote art onto the art-backup release, run by hand
+  backup-art.mjs             ← Arknights', Path to Nowhere's and hololive Dreams' remote art onto the source-art-backup release, run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
@@ -554,17 +554,19 @@ names keep the last build's: run against the downed wiki, the index came out ide
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
 `.github/workflows/deploy-pages.yml`). GitHub drops a cache nobody has used for 7 days, so
-each deploy also uploads every baked image (not the JSON) as `images.tar` on the
-`image-backup` release, and a run that finds no cache restores the images from it before
+each deploy also uploads every baked image (not the JSON) as `dossier-img.tar` on the
+`dossier-img-backup` release, and a run that finds no cache restores the images from it before
 building; the payloads are rebuilt from their sources. What the pages load from other hosts
 at runtime is backed up by hand to two more releases, by scripts that share
 `scripts/lib/release-backup.mjs` (fetch what `backup/<name>/` lacks, start from the
 release's tar when that folder is empty, upload only when something was fetched):
 `node scripts/backup-art.mjs` (Arknights' illustrations, outfit avatars, module
-illustrations and icons from Arknight-Images, and Path to Nowhere's prints from its wikis;
-the illustrations and prints kept as 2048px WebP, the art viewer's largest size; the
-`art-backup` release, 19 October 2026) and `node scripts/backup-holodori-media.mjs`
-(hololive Dreams, below). Run both after a build that added operators, Sinners or cards. With nothing on disk to keep, the build still
+illustrations and icons from Arknight-Images, Path to Nowhere's prints from its wikis and
+hololive Dreams' key art from the official site's image host; the illustrations and prints
+kept as 2048px WebP, the art viewer's largest size; the `source-art-backup` release, first made
+19 October 2026 as `art-backup`) and `node scripts/backup-holodori-media.mjs` (hololive Dreams,
+below). Run both after a build that added operators, Sinners, holomems or cards. **See "Where
+the pictures and media live" below for what each backup is and why none of it is in the repo.** With nothing on disk to keep, the build still
 fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
 minutes, twice, before this).
@@ -2136,6 +2138,56 @@ state, events, timers, fetches. Three rules:
 `npm run render-check` runs every module in `render/` in plain Node, where there is no window
 or document, twice from a fixed clock; one that touches a global, draws two ways or has no
 entry in the script's `CHECKS` fails. A new renderer adds its entry there.
+
+## Where the pictures and media live
+
+Decided 9 November 2026, after the owner asked whether the backups' assets should just go in
+the repo, "so we can use them", and for names that say what each is. They have asked before,
+so the answer is written down.
+
+**Three kinds, three backups** (GitHub releases of this repo, one tar each):
+
+| Name | Is | Made | Read by |
+|---|---|---|---|
+| `dossier-img-backup` (`dossier-img.tar`, ~112 MB) | Dossier's own images: what the build fetches, re-encodes to WebP and serves from this site | Every deploy, by the workflow | The deploy, when its cache is gone |
+| `source-art-backup` (`source-art.tar`, ~1 GB) | Art the pages load from *other* hosts at runtime: Arknights, Path to Nowhere, hololive Dreams' key art | By hand, `scripts/backup-art.mjs` | Nothing |
+| `media-backup` (`holodori-media.tar`, ~440 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
+
+The last two are **insurance, not a fallback**: no page falls back to them, so if a source died
+its images would break until someone re-hosted the files and changed the addresses. Endfield and
+Fate/Grand Order have nothing in them: the build bakes their art into dossier-img.
+
+**Why the assets are not in the repo, and could not be served from this site:**
+- They are about 1.5 GB. GitHub recommends a repository stay near 1 GB (this one is ~6 MB), and
+  git keeps every version of every binary for good, so re-baked images would swell the history.
+- Serving them is the point, and a GitHub Pages site may be no larger than **1 GB** in all (the
+  site is ~150 to 200 MB by estimate, with 91 MB gzipped as the deploy artifact on 7 November
+  2026), so 1.4 GB more does not fit. Pages' other limits are not near: 100 GB/month soft
+  bandwidth, a 10 minute deploy timeout (ours takes ~3 minutes); builds from a workflow are
+  exempt from the 10 an hour soft limit.
+- Git LFS does not help: it has its own storage and bandwidth quota (10 GiB each on a free
+  account), and Pages cannot serve LFS files from the repo anyway.
+
+**What was measured on 9 November 2026** (for when serving them comes up again): hololive Dreams'
+media is ~437 MB by sampling the CDN: animations 228 MB (88 files, 2.6 MB each), voice lines
+132 MB+ (87 KB each), full-size art 57 MB, signatures 20 MB. The art (1,955 pieces in the local
+payloads, ~0.5 MB each) re-encoded through wsrv.nl, 8 Arknights and 8 Path to Nowhere images:
+
+| Width / quality | Share of today's size |
+|---|---|
+| 2048 / 82 (today) | 100% |
+| 1536 / 75 | 59 to 60% (~580 MB) |
+| 1024 / 75 | 35 to 37% (~350 MB) |
+| 1024 / 65 | 33 to 35%, barely better |
+
+So art at 1024 plus media as it is (~790 MB) would leave a combined site about full, and
+anything softer on the art viewer's 2048 costs quality. **The route to serving them, if it is
+wanted, is their own free Pages sites** (a repo per set, 1 GB each, deployed from the release
+tars by a workflow so that no file is in git; Pages answers with `access-control-allow-origin: *`
+and range requests): the art at 1536 (~580 MB) in one, the media (~440 MB) in another. The other
+hosts looked at: Cloudflare R2 (10 GB free, free egress, but an account, a domain and a secret),
+and the release assets themselves (no stated size or bandwidth limit, 2 GiB a file, 1,000 files a
+release, so the media's ~4,500 files would need several releases). Not built; the owner decides.
 
 ## Testing
 

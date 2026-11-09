@@ -1,10 +1,12 @@
-// Backs up the art the dossiers load from other hosts and no build bakes: Arknights'
+// Backs up the art the pages load from other hosts and no build bakes, whichever game it is
+// of (the site's source art, as against dossier's own images the deploy backs up): Arknights'
 // illustrations, outfit avatars, module illustrations and skill, base-skill and module-type
-// icons (PuppiizSunniiz/Arknight-Images, a community mirror), and Path to Nowhere's prints
-// (its two wikis). Run by hand after a build. The illustrations and prints are kept as the
-// art viewer's largest size, 2048px wide WebP, since the originals are about 5.5 GB; the rest
-// are kept as they are. They go to backup/art/ and on to the art-backup release as one tar
-// (lib/release-backup.mjs).
+// icons (PuppiizSunniiz/Arknight-Images, a community mirror), Path to Nowhere's prints (its
+// two wikis) and hololive Dreams' key art (its site's image host). Endfield and Fate/Grand
+// Order have none: the build bakes theirs. Run by hand after a build. The illustrations and
+// prints are kept as the art viewer's largest size, 2048px wide WebP, since the originals are
+// about 5.5 GB; the rest are kept as they are. They go to backup/source-art/ and on to the
+// source-art-backup release as one tar (lib/release-backup.mjs).
 import { readdir, readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 import { backupToRelease } from './lib/release-backup.mjs';
@@ -45,12 +47,16 @@ for (const name of await readdir(`${GEN}/ptn/sinner-details`)) {
   const sinner = JSON.parse(await readFile(`${GEN}/ptn/sinner-details/${name}`, 'utf8'));
   for (const art of sinner.arts ?? []) resized('ptn', art.url);
 }
+// A holomem's key art is a picture on the official site's image host, which her page asks for.
+for (const c of JSON.parse(await readFile(`${GEN}/holodori/characters.json`, 'utf8'))) {
+  if (c.figure) resized('holodori', c.figure);
+}
 
 await backupToRelease({
-  name: 'art',
-  dir: 'backup/art',
-  release: 'art-backup',
-  title: 'Art backup',
-  notes: "The art the Arknights and Path to Nowhere dossiers load from other hosts, as scripts/backup-art.mjs last fetched it.",
+  name: 'source-art',
+  dir: 'backup/source-art',
+  release: 'source-art-backup',
+  title: 'Source art backup',
+  notes: "The art the pages load from other hosts (Arknights, Path to Nowhere, hololive Dreams), as scripts/backup-art.mjs last fetched it.",
   files,
 });
