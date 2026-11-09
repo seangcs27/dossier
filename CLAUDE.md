@@ -1874,7 +1874,7 @@ lines and the full-size illustration are asked of the CDN by the page and never 
 by the build. **The audio and video are backed up by hand** (the owner's ask, 18 October
 2026): `node scripts/backup-holodori-media.mjs` after a build fetches every voice line (a
 card's and a holomem's), live dialogue, animation, signature and full-size illustration the payloads name that
-`backup/holodori-media/` (gitignored) lacks, about 440 MB the first time, and uploads the folder as
+`backup/holodori-media/` (gitignored) lacks, about 620 MB (4,328 files, 9 November 2026), and uploads the folder as
 `holodori-media.tar` on the `media-backup` release. With the folder empty it starts from
 that tar, so a run with the CDN gone never uploads less than the release had.
 holodori.best's own API sits behind a Cloudflare check and is not read.
@@ -2151,26 +2151,39 @@ so the answer is written down.
 |---|---|---|---|
 | `dossier-img-backup` (`dossier-img.tar`, ~112 MB) | Dossier's own images: what the build fetches, re-encodes to WebP and serves from this site | Every deploy, by the workflow | The deploy, when its cache is gone |
 | `source-art-backup` (`source-art.tar`, ~1 GB) | Art the pages load from *other* hosts at runtime: Arknights, Path to Nowhere, hololive Dreams' key art | By hand, `scripts/backup-art.mjs` | Nothing |
-| `media-backup` (`holodori-media.tar`, ~440 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
+| `media-backup` (`holodori-media.tar`, ~620 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
+
+All three are **pre-releases**, so the repository's "Latest release" is never a backup's tar (the
+scripts and the workflow create them so, and a by-hand run rewrites the release's notes with
+the date, the file count and the size). The tags are the names above; `gh release edit --tag`
+renames one without moving its file.
+
+First by-hand runs under the new names, 9 November 2026: the art took 118 new files (5,579 in
+all, 992 MB) and **22 of them 404 on the Arknight-Images mirror** (12 outfit avatars with odd
+names, such as `char_298_susuro_1sus`, and 10 `uniequip_002_*` module icons), which the mirror
+has never had, so the pages already hide them on error; the media took 2,408 (4,328 in all,
+624 MB), none failing.
 
 The last two are **insurance, not a fallback**: no page falls back to them, so if a source died
 its images would break until someone re-hosted the files and changed the addresses. Endfield and
 Fate/Grand Order have nothing in them: the build bakes their art into dossier-img.
 
 **Why the assets are not in the repo, and could not be served from this site:**
-- They are about 1.5 GB. GitHub recommends a repository stay near 1 GB (this one is ~6 MB), and
+- They are about 1.7 GB (112 MB, 992 MB and 624 MB on 9 November 2026). GitHub recommends a repository stay near 1 GB (this one is ~6 MB), and
   git keeps every version of every binary for good, so re-baked images would swell the history.
 - Serving them is the point, and a GitHub Pages site may be no larger than **1 GB** in all (the
   site is ~150 to 200 MB by estimate, with 91 MB gzipped as the deploy artifact on 7 November
-  2026), so 1.4 GB more does not fit. Pages' other limits are not near: 100 GB/month soft
+  2026), so 1.6 GB more does not fit. Pages' other limits are not near: 100 GB/month soft
   bandwidth, a 10 minute deploy timeout (ours takes ~3 minutes); builds from a workflow are
   exempt from the 10 an hour soft limit.
 - Git LFS does not help: it has its own storage and bandwidth quota (10 GiB each on a free
   account), and Pages cannot serve LFS files from the repo anyway.
 
 **What was measured on 9 November 2026** (for when serving them comes up again): hololive Dreams'
-media is ~437 MB by sampling the CDN: animations 228 MB (88 files, 2.6 MB each), voice lines
-132 MB+ (87 KB each), full-size art 57 MB, signatures 20 MB. The art (1,955 pieces in the local
+media is ~437 MB by sampling the CDN for the cards' files alone: animations 228 MB (88 files,
+2.6 MB each), the cards' voice lines 132 MB (87 KB each), full-size art 57 MB, signatures 20 MB.
+The backup run the same day found 4,328 files and **624 MB**, since the sample did not count
+the holomems' own voice lines (the local data then had none). The art (1,955 pieces in the local
 payloads, ~0.5 MB each) re-encoded through wsrv.nl, 8 Arknights and 8 Path to Nowhere images:
 
 | Width / quality | Share of today's size |
@@ -2180,21 +2193,25 @@ payloads, ~0.5 MB each) re-encoded through wsrv.nl, 8 Arknights and 8 Path to No
 | 1024 / 75 | 35 to 37% (~350 MB) |
 | 1024 / 65 | 33 to 35%, barely better |
 
-So art at 1024 plus media as it is (~790 MB) would leave a combined site about full, and
-anything softer on the art viewer's 2048 costs quality. **The route to serving them, if it is
-wanted, is their own free Pages sites** (a repo per set, 1 GB each, deployed from the release
-tars by a workflow so that no file is in git; Pages answers with `access-control-allow-origin: *`
-and range requests): the art at 1536 (~580 MB) in one, the media (~440 MB) in another. The other
-hosts looked at: Cloudflare R2 (10 GB free, free egress, but an account, a domain and a secret),
-and the release assets themselves (no stated size or bandwidth limit, 2 GiB a file, 1,000 files a
-release, so the media's ~4,500 files would need several releases).
+So art at 1024 plus the media (~970 MB) would fill the one Pages site, and anything softer on the
+art viewer's 2048 costs quality. **Serving them from more Pages sites** (a repo per set, 1 GB
+each, deployed from the release tars so that no file is in git; Pages answers with
+`access-control-allow-origin: *` and range requests) would fit, and is set aside as a grey
+area. The hosts looked at are compared in `PLAN-asset-hosting.md`: Cloudflare R2 (10 GB free,
+free egress), Cloudflare Pages, Backblaze B2, and the release assets themselves (no stated size
+or bandwidth limit, 2 GiB a file, 1,000 files a release, so the media's ~4,300 files would need
+several releases).
 
-**Decision (9 November 2026, the owner): serving them from anywhere else is set aside, and the
-backups continue as they are.** The owner's reasons: object storage sounded expensive (R2's
-free tier covers it on paper, but it still needs an account, a payment method I believe it
-asks for but did not check, and a token kept as a secret beside a public repo), and stacked
-Pages sites are a grey area against GitHub's limits. Revisit only if a source actually dies, or
-if a host with room turns up that needs no secret. The numbers above are for that day.
+**Decision (9 November 2026, the owner): the backups continue, and hosting the assets
+ourselves is now a plan, not a no.** The first answer that day was to set it aside (object
+storage sounded expensive, and a token beside a public repo sounded dangerous); after the
+research the owner asked to plan the move to object storage. **`PLAN-asset-hosting.md`** has
+it: yes, it works from github.io (the site already loads from four other hosts and sets no
+content-security policy); the hosts compared (Cloudflare R2 with a custom domain, R2's
+`r2.dev` address, Cloudflare Pages, Backblaze B2, release assets); why the public repo is no
+obstacle (the upload is run by hand like the backups, so the token never leaves the owner's
+machine); and the phases. Nothing is built until the owner picks a host. Stacked GitHub Pages
+sites stay set aside: a grey area against GitHub's limits. The numbers above are for that day.
 
 ## Testing
 
