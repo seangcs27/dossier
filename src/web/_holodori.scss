@@ -802,27 +802,55 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-weight: 900;
   }
 
-  // The month's bar: back, the month, forward, and the way back to this one.
-  .hc-bar {
+  // The page: the month on the left, small enough that the whole of it is on a screen, and the
+  // month's dates beside it, where they are in view too. Under 1040px the list goes under it.
+  .hc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 620px) minmax(240px, 340px);
+    gap: var(--sp-20);
+    align-items: start;
+  }
+
+  @media (max-width: 1040px) {
+    .hc-layout { grid-template-columns: minmax(0, 640px); }
+  }
+
+  @media (max-width: 700px) {
+    .hc-layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  // The month picker, as a date picker has it: back, the months, the years, forward, and the
+  // way back to this month.
+  .hc-picker {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--sp-8);
     margin: 0 0 var(--sp-12);
   }
 
-  .hc-month {
-    display: flex;
-    align-items: baseline;
-    gap: var(--sp-8);
-    margin: 0 var(--sp-8);
+  // The chevron is a picture, which cannot take the ink from a custom property: one for each theme.
+  .hc-select {
+    height: 44px;
+    padding: 0 36px 0 var(--sp-16);
+    appearance: none;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: $white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%233d4180' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E") no-repeat right 14px center / 12px;
+    box-shadow: 0 3px 8px $lift;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-md);
+    font-weight: 800;
+    cursor: pointer;
 
-    .lettered { font-size: var(--fs-4xl); }
-
-    small {
-      color: $ink;
-      font-size: var(--fs-sm);
-      font-weight: 800;
+    @include dark {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23e2e4ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
     }
+
+    &:hover { background-color: $panel; }
+    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
+    option { background: $paper; color: $ink; }
   }
 
   .hc-step,
@@ -1089,7 +1117,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .hc-menu {
     position: absolute;
     top: calc(100% + 10px);
-    right: 0;
+    left: 0; // the icon is the second of the links, beside the logo: the menu hangs from the bar's left end
     z-index: 30; // over the search box (21) and the filter panel (20) it drops across on a narrow bar
     width: min(320px, calc(100vw - 32px));
     padding: var(--sp-12);
@@ -1104,13 +1132,21 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   @keyframes hc-menu-in { from { opacity: 0; transform: translateY(-6px); } }
 
-  .hc-menu-head {
-    margin: 0 0 var(--sp-6);
-    color: $ink;
-    font-size: var(--fs-lg);
-    font-weight: 800;
+  // The picker in the menu is a size down, and the months take what the steps leave.
+  .hc-picker.menu {
+    flex-wrap: nowrap;
+    gap: var(--sp-6);
+    margin-bottom: var(--sp-8);
 
-    b { font-weight: 900; }
+    .hc-step,
+    .hc-select {
+      min-width: 36px;
+      height: 36px;
+      font-size: var(--fs-sm);
+    }
+
+    .hc-select { padding-left: var(--sp-10); }
+    .hc-select[data-pick='month'] { flex: 1; }
   }
 
   .hc-grid.menu {
@@ -1174,20 +1210,15 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .hc-next-when { text-align: right; }
 
-  .hc-menu-open {
-    display: block;
-    margin-top: var(--sp-10);
-    padding: var(--sp-8);
-    border-radius: var(--radius-pill);
-    background: $cover-deep;
-    color: #fff;
-    font-size: var(--fs-sm);
-    font-weight: 800;
+  // How to get to the page: the icon above is the way.
+  .hc-menu-hint {
+    margin: var(--sp-10) 0 0;
+    padding-top: var(--sp-8);
+    border-top: 1px solid $line;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 700;
     text-align: center;
-    text-decoration: none;
-
-    &:hover { background: $ink-print; }
-    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
   }
 
   // ── Songs ──

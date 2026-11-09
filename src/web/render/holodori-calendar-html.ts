@@ -128,9 +128,52 @@ export function upcoming(now: number, count: number): { date: Date; entry: Calen
   return out;
 }
 
-/** What the topbar's calendar icon drops down: this month small, who is next, and the way to the page. */
-export function calendarMenuHtml(now: number): string {
+const CHEVRON = (turn: 'left' | 'right'): string =>
+  `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="${turn === 'left' ? 'M10 3 5 8l5 5' : 'M6 3l5 5-5 5'}"></path></svg>`;
+
+// The picker offers every year from the first debut to three after the one being shown or this one.
+const FIRST_YEAR = Math.min(...talent.map(c => Number(c.debut.slice(0, 4))));
+const YEARS_AHEAD = 3;
+
+/**
+ * The month picker over a grid, as a date picker has it: back, a drop-down of the months and one
+ * of the years, forward, and on the page a button back to this month. Its controls carry
+ * `data-step` ('-1', '1', 'today') and `data-pick` ('month', 'year'), which `monthMoved` reads.
+ */
+export function monthPickerHtml(y: number, m: number, now: number, variant: 'page' | 'menu'): string {
   const at = new Date(now);
+  const last = Math.max(y, at.getFullYear()) + YEARS_AHEAD;
+  const months = MONTHS.map((name, i) => `<option value="${i}"${i === m ? ' selected' : ''}>${name}</option>`).join('');
+  const years = Array.from({ length: last - FIRST_YEAR + 1 }, (_, i) => FIRST_YEAR + i)
+    .map(year => `<option value="${year}"${year === y ? ' selected' : ''}>${year}</option>`).join('');
+  const current = at.getFullYear() === y && at.getMonth() === m;
+  return `
+    <div class="hc-picker ${variant}">
+      <button type="button" class="hc-step" data-step="-1" aria-label="Previous month">${CHEVRON('left')}</button>
+      <select class="hc-select" data-pick="month" aria-label="Month">${months}</select>
+      <select class="hc-select" data-pick="year" aria-label="Year">${years}</select>
+      <button type="button" class="hc-step" data-step="1" aria-label="Next month">${CHEVRON('right')}</button>
+      ${variant === 'page' ? `<button type="button" class="hc-today" data-step="today"${current ? ' disabled' : ''}>Today</button>` : ''}
+    </div>`;
+}
+
+/** The month a press on a picker control leads to: what its `data-step` or `data-pick` and the value chosen say. */
+export function monthMoved(
+  y: number, m: number, now: number, control: { step?: string; pick?: string; value?: string },
+): { y: number; m: number } {
+  if (control.step === 'today') return { y: new Date(now).getFullYear(), m: new Date(now).getMonth() };
+  if (control.step) {
+    const to = new Date(y, m + Number(control.step), 1);
+    return { y: to.getFullYear(), m: to.getMonth() };
+  }
+  return control.pick === 'year' ? { y: Number(control.value), m } : { y, m: Number(control.value) };
+}
+
+/**
+ * What the topbar's calendar icon drops down: a month picker, the month (this one, or the one
+ * picked, `y` and `m`) small, who is next from today, and a line on how to open the page.
+ */
+export function calendarMenuHtml(now: number, y = new Date(now).getFullYear(), m = new Date(now).getMonth()): string {
   const today = midnight(now);
   const next = upcoming(now, 4).map(({ date, entry }) => {
     const { c, years } = entry;
@@ -143,10 +186,10 @@ export function calendarMenuHtml(now: number): string {
       </a></li>`;
   });
   return `
-    <p class="hc-menu-head"><b>${MONTHS[at.getMonth()]}</b> ${at.getFullYear()}</p>
-    ${monthGridHtml(at.getFullYear(), at.getMonth(), now, 'menu')}
+    ${monthPickerHtml(y, m, now, 'menu')}
+    ${monthGridHtml(y, m, now, 'menu')}
     ${next.length ? `<p class="hc-menu-label">Coming up</p><ul class="hc-next">${next.join('')}</ul>` : ''}
-    <a class="hc-menu-open" href="#/holodori/calendar">Open calendar</a>`;
+    <p class="hc-menu-hint">Click the calendar icon to open the full calendar</p>`;
 }
 
 /** The legend: what the cake and the flag on a face stand for. */

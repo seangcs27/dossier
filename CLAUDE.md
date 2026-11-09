@@ -1721,23 +1721,32 @@ a card each and a view of the roster. A month is a grid of seven columns from Su
 album's paper with a square to each day and the round face of whoever's date it is in it; a
 **cake on a face's corner is a birthday and a flag a debut anniversary** ("2nd debut
 anniversary"). Two share a square side by side, three or four make two rows of two, and past
-four a count. Today is on the sun, what has passed this month fades. Back, forward and Today
-step the month (any month, not only the next twelve), and under the grid the month's dates
-are listed, a face and a name to each (`.month-list`, so no date rests on a picture alone).
+four a count. Today is on the sun, what has passed this month fades. **The month is picked as
+a date picker has it** (10 November 2026, the owner's ask): back and forward, a drop-down of
+the months and one of the years (the first debut to three years on), and Today
+(`monthPickerHtml`; `monthMoved` is the pure step from a press to the month it leads to, which
+the page and the menu both use). **The grid is 620px at most, so that a month is on a screen
+with the dates beside it**: at full width, on a 1440px window, it was taller than the screen
+and nobody saw the list under it. Under 1040px the list goes under the grid. The dates are
+listed, a face and a name to each (`.month-list`, so no date rests on a picture alone).
 It covers `getHolodoriTalent()`, so FLOW GLOW's second anniversary and ASOBI★MAWARI-TAI!'s first
 (September 2027) are on it. The grid, the list and the menu are drawn by
 `render/holodori-calendar-html.ts` (`entriesIn` is the one place a month's dates are worked
 out). Its classes are `hc-`: `cal-grid`, `cal-day` and `cal-bar` are the Arknights Events
 calendar's, global in `styles.scss`, and a first pass under those names took its rules.
 
-**The calendar icon** (`#nav-calendar`, last of the topbar's section links, hololive Dreams'
-alone, with the same glyph on a phone, where the others lose theirs) opens that page when
-pressed, and **pointed at, or reached by the keyboard, drops a small calendar down**
-(`calendar-menu.ts`, `.hc-menu` under `.sections`): this month small, one face to a day and a
-count, then the next four dates from today with the days to each, and an "Open calendar" button.
-It opens 120 ms after the pointer arrives and shuts 220 ms after it leaves, so the move from the
-icon to the menu does not close it; Escape, a press, a change of address and Astro's page swap
-shut it, a finger's tap is only a press, and it is drawn again once a day. The month is
+**The calendar icon** (`#nav-calendar`, second of the topbar's section links, right beside the
+game's logo, hololive Dreams' alone, with the same glyph on a phone, where the others lose
+theirs) opens that page when pressed, and **pointed at, or reached by the keyboard, drops a small
+calendar down** (`calendar-menu.ts`, `.hc-menu` under `.sections`, hung from its left end): the
+month picker, the month small, one face to a day and a count, then the next four dates from
+today with the days to each, and a line saying that the icon opens the full calendar (it had an
+"Open calendar" button; the owner asked for a guide instead). The picker steps through any month
+and does not close it. It opens 120 ms after the pointer arrives and shuts 220 ms after it
+leaves, so the move from the icon to the menu does not close it, **unless a month or year list is
+open**, whose popup is the browser's and takes the pointer off the menu (`picking`); Escape, a
+press, a change of address and Astro's page swap shut it, a finger's tap is only a press, and it
+starts again from this month once a day or on leaving the page. The month is
 drawn the first time it is wanted, from a chunk of its own (`import()`), so that no page carries
 the cast for a menu that is never opened; the icon is in `index.html`, which both targets read.
 

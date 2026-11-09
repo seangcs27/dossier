@@ -46,7 +46,8 @@ const CHECKS = {
   'holodori-home-html': [['homeHtml', NOW]],
   'holodori-calendar-html': [
     ['monthGridHtml', 2026, 10, NOW, 'page'], ['monthGridHtml', 2026, 10, NOW, 'menu'],
-    ['monthListHtml', 2026, 10, NOW], ['calendarMenuHtml', NOW],
+    ['monthListHtml', 2026, 10, NOW], ['calendarMenuHtml', NOW], ['calendarMenuHtml', NOW, 2027, 8],
+    ['monthPickerHtml', 2026, 10, NOW, 'page'],
   ],
   'holodori-holomem-html': [
     ['holomemHtml', 'chr-00001', NOW], ['holomemHtml', 'chr-00001', NOW, { voices: holomemVoices }],
