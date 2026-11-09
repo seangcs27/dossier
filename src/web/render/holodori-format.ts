@@ -11,6 +11,16 @@ const cast = getHolodoriTalent();
 export const place = new Map(cast.map((c, i) => [c.id, i + 1]));
 export const no = (c: HolodoriCharacter): string => String(place.get(c.id)).padStart(3, '0');
 
+/**
+ * A holomem's round face: her YouTube avatar, else the game's icon, else her bust. `game` is set
+ * for the game's icon, which is drawn larger than its circle so that the ring with her name
+ * round it falls outside.
+ */
+export function faceOf(c: HolodoriCharacter): { src?: string; game: boolean } {
+  if (c.avatar) return { src: c.avatar, game: false };
+  return { src: c.icon ?? c.art, game: Boolean(c.icon) };
+}
+
 /** What a link to a holomem points at: her page, or for talent the game lacks her official profile. */
 export const holomemLinkAttrs = (c: HolodoriCharacter): string =>
   c.outside

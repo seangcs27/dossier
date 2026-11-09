@@ -104,6 +104,8 @@ scripts/
                                official post's link each
   lib/holodori-outside.mjs   ← the hololive talent the game lacks (FLOW GLOW, ASOBI★MAWARI-TAI!), recorded
                                by hand from hololive.wiki; the build writes holodori/outside.json
+  lib/holodori-channels.mjs  ← each hololive talent's YouTube channel (63), recorded by hand from hololive.wiki
+  bake-holodori-avatars.mjs  ← each one's avatar into icons/holodori/avatars/<id>.webp, run by hand
   lib/holodori-clips.mjs     ← where each song's clip plays in its music video where the game's window is
                                not right for it, and the videos of two songs the dump has none for,
                                recorded by hand from YouTube
@@ -141,6 +143,7 @@ icons/             ← extension + favicon PNGs; 7 Wiš'adel variants per size (
   games/<game>.webp  ← the sidebar's five game emblems, white on transparency (tracked)
   ptn/<kind>-<name>.webp  ← Path to Nowhere's 25 rank, tendency and libram badges, 72px (tracked)
   holodori/type-<type>.webp  ← hololive Dreams' three card type icons, 64px, from Gamerch (tracked)
+  holodori/avatars/<id>.webp  ← each hololive talent's YouTube avatar, 256px, the face the pages show (63, tracked)
   holodori/motif/<asset>.webp  ← each holomem's mascot as line art, 256px, from the game's asset catalog (tracked)
 docs/              ← local process docs (gitignored)
 TODO.md            ← running backlog
@@ -1687,11 +1690,27 @@ talent: every other one the game lacks has graduated or belongs to Holostars or 
 the game does not carry. The build writes them to `holodori/outside.json`, and
 `getHolodoriTalent()` (the game's 54, then these) is what the sheet, the calendar and the front
 page's birthdays read; every other page keeps `getHolodoriCharacters()`, the game's own. They
-have no picture, card, song or page of their own: a bare sticker with her first letter, her
-`profile` link (the official hololivepro.com page, which `holomemLinkAttrs` in
-`render/holodori-format.ts` puts in place of her page's), the sky for her colour, and a number
-that goes on from the game's. A new debut is one line in the record, and a talent the game
-gets is dropped from it once the dump has her. Koganei Niko's birthday is 25 July as the wiki
+have no card, song or page of their own: a sticker with their avatar (below), their `profile` link
+(the official hololivepro.com page, which `holomemLinkAttrs` in `render/holodori-format.ts` puts
+in place of her page's), the sky for their colour, and a number that goes on from the game's.
+A new debut is one line in the record, and a talent the game gets is dropped from it once the
+dump has her.
+
+**Every round face is the talent's YouTube avatar** (10 November 2026, the owner's ask: "for all
+the icons use vtuber's YouTube profile picture, keep a copy for asset"), the game's 54 and the
+9 outside it, in place of the game's own icon: the calendar, its dates list and its menu, the
+next-birthday banner, the front page's birthdays and its tile, and a song's singers. Each is
+the og:image of her channel's page at 256px (the owner approved the downloads: 63 files, about
+2.5 MB fetched) baked to **256px WebP in `icons/holodori/avatars/<id>.webp`, 1.3 MB, tracked**, the
+copy kept as an asset, by `node scripts/bake-holodori-avatars.mjs` (`--force` to take them all
+again) from `scripts/lib/holodori-channels.mjs`, which records each channel by hand from
+hololive.wiki's infobox of her (a `UC…` id or an `@handle`; FUWAMOCO have one channel for both).
+It is run by hand and not by the build, which would fail on YouTube's consent page, and the
+build only reads the folder (`addAvatars` sets `avatar` on a roster entry that has a file).
+`faceOf` in `render/holodori-format.ts` is where a face is chosen: the avatar, else the game's
+icon (drawn at 130% so that its ring falls outside the circle), else the bust. The sticker's
+picture, the cards' and the holomem page's stay the game's own art. A new debut is a line in the
+channels file and a run of the script. Koganei Niko's birthday is 25 July as the wiki
 and the Japanese site give it; the English site printed Isaki Riona's by mistake.
 **A birthday in the next 60 days lifts her sticker**:
 tilted, a corner peeled, a sun-yellow tab with the date ("Next" on the nearest of all 54,
@@ -1710,30 +1729,47 @@ the back turning on from it) to her back: her colours as stripes, number and gro
 branch, greeting, fan name, debut, birthday, colour swatches and a link to her page; Escape,
 the close button or a press elsewhere turn it back.
 
-**The calendar** (`#/holodori/calendar`, `views/holodori-calendar.ts`, 9 November 2026, the
+**The calendar** (`#/holodori/calendar`, "Calendar" and not "Birthday Calendar" since it holds
+debut anniversaries too, 10 November 2026; `views/holodori-calendar.ts`, 9 November 2026, the
 owner's ask for a rework after hololive Fan Wiki's monthly calendar post, taken for its layout
 only and drawn in the game's own look) is one month at a time, where it was the next twelve as
 a card each and a view of the roster. A month is a grid of seven columns from Sunday, the
 album's paper with a square to each day and the round face of whoever's date it is in it; a
 **cake on a face's corner is a birthday and a flag a debut anniversary** ("2nd debut
 anniversary"). Two share a square side by side, three or four make two rows of two, and past
-four a count. Today is on the sun, what has passed this month fades. Back, forward and Today
-step the month (any month, not only the next twelve), and under the grid the month's dates
-are listed, a face and a name to each (`.month-list`, so no date rests on a picture alone).
+four a count. Today is on the sun, what has passed this month fades. **The month is picked as
+a date picker has it** (10 November 2026, the owner's ask): back and forward, a drop-down of
+the months and one of the years (the first debut to three years on), and Today
+(`monthPickerHtml`; `monthMoved` is the pure step from a press to the month it leads to, which
+the page and the menu both use). **The grid is 720px at most, so that a month is on a screen
+with the dates beside it**: at full width, on a 1440px window, it was taller than the screen
+and nobody saw the list under it, and at 620px with the list in one column the right of the
+page was empty, so the list takes the room that is left in as many columns as it holds. Under
+1040px the list goes under the grid. The dates are listed, a face and a name to each
+(`.month-list`, so no date rests on a picture alone). **A day with more than four, or in the
+menu more than one, has a count (`+2`) that opens the rest when it is pointed at or focused**
+(`.dcal-rest`, a face and a name to each, a link to her page; it opens to the right in the first
+three columns and to the left in the rest, so that it never goes out over the sidebar, and
+upward on a phone, where the count is at the square's foot).
 It covers `getHolodoriTalent()`, so FLOW GLOW's second anniversary and ASOBI★MAWARI-TAI!'s first
 (September 2027) are on it. The grid, the list and the menu are drawn by
 `render/holodori-calendar-html.ts` (`entriesIn` is the one place a month's dates are worked
-out). Its classes are `hc-`: `cal-grid`, `cal-day` and `cal-bar` are the Arknights Events
-calendar's, global in `styles.scss`, and a first pass under those names took its rules.
+out). Its classes are `dcal-`: `cal-grid`, `cal-day` and `cal-bar` are the Arknights Events
+calendar's, global in `styles.scss`, and a first pass under those names took its rules, and `hc-`
+is the card page's (`.hc-page` has rules), which a second pass under it would have met.
 
-**The calendar icon** (`#nav-calendar`, last of the topbar's section links, hololive Dreams'
-alone, with the same glyph on a phone, where the others lose theirs) opens that page when
-pressed, and **pointed at, or reached by the keyboard, drops a small calendar down**
-(`calendar-menu.ts`, `.hc-menu` under `.sections`): this month small, one face to a day and a
-count, then the next four dates from today with the days to each, and an "Open calendar" button.
-It opens 120 ms after the pointer arrives and shuts 220 ms after it leaves, so the move from the
-icon to the menu does not close it; Escape, a press, a change of address and Astro's page swap
-shut it, a finger's tap is only a press, and it is drawn again once a day. The month is
+**The calendar icon** (`#nav-calendar`, second of the topbar's section links, right beside the
+game's logo, hololive Dreams' alone, with the same glyph on a phone, where the others lose
+theirs) opens that page when pressed, and **pointed at, or reached by the keyboard, drops a small
+calendar down** (`calendar-menu.ts`, `.dcal-menu` under `.sections`, hung from its left end): the
+month picker, the month small, one face to a day and a count, then the next four dates from
+today with the days to each, and a line saying that the icon opens the full calendar (it had an
+"Open calendar" button; the owner asked for a guide instead). The picker steps through any month
+and does not close it. It opens 120 ms after the pointer arrives and shuts 220 ms after it
+leaves, so the move from the icon to the menu does not close it, **unless a month or year list is
+open**, whose popup is the browser's and takes the pointer off the menu (`picking`); Escape, a
+press, a change of address and Astro's page swap shut it, a finger's tap is only a press, and it
+starts again from this month once a day or on leaving the page. The month is
 drawn the first time it is wanted, from a chunk of its own (`import()`), so that no page carries
 the cast for a menu that is never opened; the icon is in `index.html`, which both targets read.
 

@@ -124,6 +124,15 @@
         <a class="section-link section-home" id="nav-home" href="#/holodori" aria-label="hololive Dreams home" hidden>
           <img src="icons/holodori/home.webp" alt="" width="20" height="20">
         </a>
+        <!-- hololive Dreams' calendar, as an icon right beside its logo: pointed at it drops a
+             small calendar down (calendar-menu.ts), pressed it opens the page. Hidden on every
+             other game. -->
+        <a class="section-link section-calendar" id="nav-calendar" href="#/holodori/calendar" aria-label="Calendar" aria-haspopup="true" aria-expanded="false" aria-controls="cal-menu" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3M5.5 10h.01M8 10h.01M10.5 10h.01"></path>
+          </svg>
+        </a>
+        <div class="dcal-menu" id="cal-menu" aria-label="Calendar" hidden></div>
         <a class="section-link" id="nav-operators" href="#/">
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path d="M2.5 2.5h4v4h-4zM9.5 2.5h4v4h-4zM2.5 9.5h4v4h-4zM9.5 9.5h4v4h-4z"></path>
@@ -155,14 +164,6 @@
           </svg>
           Gacha Banner
         </a>
-        <!-- hololive Dreams' birthday calendar, as an icon: pointed at it drops a small month
-             down (calendar-menu.ts), pressed it opens the page. Hidden on every other game. -->
-        <a class="section-link section-calendar" id="nav-calendar" href="#/holodori/calendar" aria-label="Birthday calendar" aria-haspopup="true" aria-expanded="false" aria-controls="cal-menu" hidden>
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3M5.5 10h.01M8 10h.01M10.5 10h.01"></path>
-          </svg>
-        </a>
-        <div class="hc-menu" id="cal-menu" aria-label="This month's birthdays and debut anniversaries" hidden></div>
       </nav>
     </header>
   </div>

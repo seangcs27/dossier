@@ -2,7 +2,7 @@ import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { escHtml } from '../format';
 import { getHolodoriTalent, type HolodoriCharacter } from '../holodori-index';
 import {
-  MONTHS, birthdayText, daysToBirthday, groupsOf, holomemLinkAttrs, nextBirthday, no, place, today,
+  MONTHS, birthdayText, daysToBirthday, faceOf, groupsOf, holomemLinkAttrs, nextBirthday, no, place, today,
 } from '../render/holodori-format';
 
 // hololive Dreams' roster as the stickers the game would hand you, on the sheet they come
@@ -73,10 +73,10 @@ function soonOf(items: HolodoriCharacter[]): Soon {
 // the date and the days to go. Two who share a birthday stand side by side.
 
 function spotPersonHtml(c: HolodoriCharacter): string {
-  const src = c.icon ?? c.art;
+  const { src, game } = faceOf(c);
   return `
     <a class="spot-who" ${holomemLinkAttrs(c)} style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-      <span class="spot-icon${c.icon ? ' icon' : ''}">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
+      <span class="spot-icon${game ? ' icon' : ''}">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
       <span class="spot-name">${escHtml(c.shortName)}<small>${birthdayText(c, true)}</small></span>
     </a>
   `;
@@ -170,7 +170,7 @@ function draw(page: HTMLElement, items: HolodoriCharacter[]): void {
   page.innerHTML = `
     <header class="hd-head">
       <h2 class="hd-title">Holomem Stickers</h2>
-      <p class="hd-sub">Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days · a bare sticker: not in the game yet</p>
+      <p class="hd-sub">Every holomem on one sheet · lifted: a birthday in the next ${LIFT_DAYS} days · a channel avatar: not in the game yet</p>
     </header>
     ${spotlightHtml(soon)}
     <div class="sheet-wrap"><div class="sheet">${sheetHtml(shown, soon)}</div></div>
