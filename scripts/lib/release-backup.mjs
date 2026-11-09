@@ -5,7 +5,7 @@
 // uploads less than the release already had. It uploads only when something was fetched.
 // `gh` has to be signed in to the repository.
 import { execFileSync } from 'node:child_process';
-import { access, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { timedFetch } from './fetch.mjs';
 
@@ -57,8 +57,13 @@ export async function backupToRelease({ name, dir, release, title, notes, files 
   try {
     gh('release', 'view', release);
   } catch {
-    gh('release', 'create', release, '--latest=false', '--title', title, '--notes', notes);
+    // A pre-release, so that the repository's "Latest release" is not a backup's tar.
+    gh('release', 'create', release, '--prerelease', '--title', title, '--notes', notes);
   }
   gh('release', 'upload', release, tar, '--clobber');
+  // What the release holds as of this run, for whoever opens it.
+  const { size } = await stat(tar);
+  gh('release', 'edit', release, '--notes',
+    `${notes}\n\nLast updated ${new Date().toISOString().slice(0, 10)}: ${files.size} files, ${Math.round(size / 1048576)} MB.`);
   console.log(`${name}: uploaded ${path.basename(tar)} to the ${release} release`);
 }

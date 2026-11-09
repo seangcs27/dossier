@@ -51,7 +51,7 @@ jobs:
       # are rebuilt from their sources each run.
       - run: |
           tar -cf dossier-img.tar -C src/shared/generated --exclude='*.json' .
-          gh release view dossier-img-backup > /dev/null 2>&1 || gh release create dossier-img-backup --latest=false \
+          gh release view dossier-img-backup > /dev/null 2>&1 || gh release create dossier-img-backup --prerelease \
             --title "Dossier img backup" --notes "The images the last deploy baked, restored by the next one when its cache is gone."
           gh release upload dossier-img-backup dossier-img.tar --clobber
         env:
