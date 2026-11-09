@@ -7,7 +7,7 @@ other people's hosts.
 
 ## Goal
 
-Today the pages load ~1.4 GB of art, voice lines, animations and signatures from four hosts
+Today the pages load ~1.6 GB of art, voice lines, animations and signatures from four hosts
 nobody here controls (`raw.githubusercontent.com`'s Arknight-Images mirror, `wsrv.nl`'s source
 URLs, `cdn.holodori.dev`, hololive Dreams' image host). The backups keep copies, but no page
 serves them. Goal: the pages load from a host we control, with the old hosts as the fallback.
@@ -85,7 +85,7 @@ fallback), then decide whether to stop depending on them.
 
 ## Costs and limits
 
-- 1.5 GB is a seventh of R2's free storage. Reads: each card page is on the order of tens of
+- 1.6 GB (the art 992 MB and the media 624 MB) is under a sixth of R2's free storage. Reads: each card page is on the order of tens of
   requests, against 10 million free a month.
 - A domain is the only certain cost, about $10 a year.
 - The 6-hourly deploy is unaffected: the bucket is not part of the build.

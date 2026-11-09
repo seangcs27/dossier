@@ -214,7 +214,7 @@ copied to GitHub releases of this repo as insurance:
 | `media-backup` | hololive Dreams' voice lines, animations, signatures and full card art | By hand: `node scripts/backup-holodori-media.mjs` |
 
 Only the first is read, by the deploy. The other two are not a fallback: no page serves from
-them. The assets are not in the repo itself (about 1.5 GB, and GitHub Pages caps a site at
+them. The assets are not in the repo itself (about 1.7 GB, and GitHub Pages caps a site at
 1 GB). **Hosting them ourselves on object storage is planned, not built**
 ([PLAN-asset-hosting.md](PLAN-asset-hosting.md), 9 November 2026): until it is, the backups
 are the only copy. [CLAUDE.md](CLAUDE.md) ("Where the pictures and media live") has the
