@@ -2194,12 +2194,16 @@ hosts looked at: Cloudflare R2 (10 GB free, free egress, but an account, a domai
 and the release assets themselves (no stated size or bandwidth limit, 2 GiB a file, 1,000 files a
 release, so the media's ~4,500 files would need several releases).
 
-**Decision (9 November 2026, the owner): serving them from anywhere else is set aside, and the
-backups continue as they are.** The owner's reasons: object storage sounded expensive (R2's
-free tier covers it on paper, but it still needs an account, a payment method I believe it
-asks for but did not check, and a token kept as a secret beside a public repo), and stacked
-Pages sites are a grey area against GitHub's limits. Revisit only if a source actually dies, or
-if a host with room turns up that needs no secret. The numbers above are for that day.
+**Decision (9 November 2026, the owner): the backups continue, and hosting the assets
+ourselves is now a plan, not a no.** The first answer that day was to set it aside (object
+storage sounded expensive, and a token beside a public repo sounded dangerous); after the
+research the owner asked to plan the move to object storage. **`PLAN-asset-hosting.md`** has
+it: yes, it works from github.io (the site already loads from four other hosts and sets no
+content-security policy); the hosts compared (Cloudflare R2 with a custom domain, R2's
+`r2.dev` address, Cloudflare Pages, Backblaze B2, release assets); why the public repo is no
+obstacle (the upload is run by hand like the backups, so the token never leaves the owner's
+machine); and the phases. Nothing is built until the owner picks a host. Stacked GitHub Pages
+sites stay set aside: a grey area against GitHub's limits. The numbers above are for that day.
 
 ## Testing
 

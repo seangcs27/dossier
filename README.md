@@ -215,9 +215,10 @@ copied to GitHub releases of this repo as insurance:
 
 Only the first is read, by the deploy. The other two are not a fallback: no page serves from
 them. The assets are not in the repo itself (about 1.5 GB, and GitHub Pages caps a site at
-1 GB), and **hosting them elsewhere was considered and set aside on 9 November 2026**: the
-backups continue as they are. [CLAUDE.md](CLAUDE.md) ("Where the pictures and media live")
-has the numbers and the reasoning.
+1 GB). **Hosting them ourselves on object storage is planned, not built**
+([PLAN-asset-hosting.md](PLAN-asset-hosting.md), 9 November 2026): until it is, the backups
+are the only copy. [CLAUDE.md](CLAUDE.md) ("Where the pictures and media live") has the
+numbers and the reasoning.
 
 ---
 
@@ -251,6 +252,7 @@ dossier/
 ├── CLAUDE.md                     # The detailed notes: decisions, sources, how each page works
 ├── TODO.md                       # The running backlog
 ├── PLAN-astro-hybrid.md          # The move onto Astro, by phase
+├── PLAN-asset-hosting.md         # Hosting the source art and media ourselves (planned)
 └── src/
     ├── shared/                   # Used by both targets
     │   ├── api/hella-api.ts      # Static-first operator fetch, image URL helpers
