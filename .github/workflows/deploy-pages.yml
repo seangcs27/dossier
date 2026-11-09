@@ -42,17 +42,18 @@ jobs:
       - if: steps.cache.outputs.cache-matched-key == ''
         run: |
           mkdir -p src/shared/generated
-          gh release download image-backup -p images.tar -O - | tar -x -C src/shared/generated || echo "No image backup to restore"
+          gh release download dossier-img-backup -p dossier-img.tar -O - | tar -x -C src/shared/generated || echo "No image backup to restore"
         env:
           GH_TOKEN: ${{ github.token }}
       - run: npm run build:index
-      # Every image the build has baked, as one asset of the image-backup release (made on the
-      # first run). The payloads are left out: they are rebuilt from their sources each run.
+      # Every image the build has baked (dossier's own, served from the site), as one asset of
+      # the dossier-img-backup release (made on the first run). The payloads are left out: they
+      # are rebuilt from their sources each run.
       - run: |
-          tar -cf images.tar -C src/shared/generated --exclude='*.json' .
-          gh release view image-backup > /dev/null 2>&1 || gh release create image-backup --latest=false \
-            --title "Image backup" --notes "The images the last deploy baked, restored by the next one when its cache is gone."
-          gh release upload image-backup images.tar --clobber
+          tar -cf dossier-img.tar -C src/shared/generated --exclude='*.json' .
+          gh release view dossier-img-backup > /dev/null 2>&1 || gh release create dossier-img-backup --latest=false \
+            --title "Dossier img backup" --notes "The images the last deploy baked, restored by the next one when its cache is gone."
+          gh release upload dossier-img-backup dossier-img.tar --clobber
         env:
           GH_TOKEN: ${{ github.token }}
       # The Astro build is the site (PLAN-astro-hybrid.md, Phase 7: the SPA's place since

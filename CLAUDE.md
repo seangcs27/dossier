@@ -106,7 +106,7 @@ scripts/
                                not right for it, and the videos of two songs the dump has none for,
                                recorded by hand from YouTube
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
-  backup-art.mjs             ← Arknights' and Path to Nowhere's remote art onto the art-backup release, run by hand
+  backup-art.mjs             ← Arknights', Path to Nowhere's and hololive Dreams' remote art onto the source-art-backup release, run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
@@ -554,17 +554,19 @@ names keep the last build's: run against the downed wiki, the index came out ide
 scripts keep the previous build's `src/shared/generated/` and exit 0 rather than failing or
 overwriting it with an empty bundle; CI restores that data from the last run's cache (see
 `.github/workflows/deploy-pages.yml`). GitHub drops a cache nobody has used for 7 days, so
-each deploy also uploads every baked image (not the JSON) as `images.tar` on the
-`image-backup` release, and a run that finds no cache restores the images from it before
+each deploy also uploads every baked image (not the JSON) as `dossier-img.tar` on the
+`dossier-img-backup` release, and a run that finds no cache restores the images from it before
 building; the payloads are rebuilt from their sources. What the pages load from other hosts
 at runtime is backed up by hand to two more releases, by scripts that share
 `scripts/lib/release-backup.mjs` (fetch what `backup/<name>/` lacks, start from the
 release's tar when that folder is empty, upload only when something was fetched):
 `node scripts/backup-art.mjs` (Arknights' illustrations, outfit avatars, module
-illustrations and icons from Arknight-Images, and Path to Nowhere's prints from its wikis;
-the illustrations and prints kept as 2048px WebP, the art viewer's largest size; the
-`art-backup` release, 19 October 2026) and `node scripts/backup-holodori-media.mjs`
-(hololive Dreams, below). Run both after a build that added operators, Sinners or cards. With nothing on disk to keep, the build still
+illustrations and icons from Arknight-Images, Path to Nowhere's prints from its wikis and
+hololive Dreams' key art from the official site's image host; the illustrations and prints
+kept as 2048px WebP, the art viewer's largest size; the `source-art-backup` release, first made
+19 October 2026 as `art-backup`) and `node scripts/backup-holodori-media.mjs` (hololive Dreams,
+below). Run both after a build that added operators, Sinners, holomems or cards. **See "Where
+the pictures and media live" below for what each backup is and why none of it is in the repo.** With nothing on disk to keep, the build still
 fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
 minutes, twice, before this).

@@ -2,7 +2,10 @@
 // and nothing else keeps: every voice line and live dialogue, each 5-star card's animation
 // and signature, and each card's full-size illustration (about 440 MB). Run by hand after a
 // build. They are kept in backup/holodori-media/ under their paths on the CDN, and go on to
-// the media-backup release as one tar (lib/release-backup.mjs).
+// the media-backup release as one tar (lib/release-backup.mjs). hololive Dreams is the one
+// game with audio or video on the site (Path to Nowhere's voice lines are text, Arknights',
+// Endfield's and Fate/Grand Order's pages have none): another game's would be added here, and
+// the release keeps its name.
 import { readdir, readFile } from 'node:fs/promises';
 import { backupToRelease } from './lib/release-backup.mjs';
 
