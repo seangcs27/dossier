@@ -236,6 +236,16 @@ async function addStickers(roster) {
   }
 }
 
+// Each talent's YouTube avatar, which the pages show as her face in place of the game's icon.
+// Baked by hand into icons/holodori/avatars and tracked (scripts/bake-holodori-avatars.mjs), so
+// that a build reads a folder and never YouTube.
+const AVATAR_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'icons', 'holodori', 'avatars');
+
+async function addAvatars(roster) {
+  const have = new Set((await readdir(AVATAR_DIR).catch(() => [])).map(file => file.replace(/\.webp$/, '')));
+  for (const c of roster) if (have.has(c.id)) c.avatar = `icons/holodori/avatars/${c.id}.webp`;
+}
+
 // ── Songs ──
 // The Music table's every row (216 today, all of them released), with its four charts'
 // levels from MusicDifficulty. The jackets are the game's site's music page, which lists
@@ -737,6 +747,7 @@ await writeOrKeep(CHARACTERS_FILE, 'characters', async () => {
   const roster = await buildRoster();
   await addBusts(roster);
   await addStickers(roster);
+  await addAvatars(roster);
   return roster;
 });
 await writeOrKeep(OUTSIDE_FILE, 'talent outside the game', async () => OUTSIDE);

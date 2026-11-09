@@ -3,7 +3,7 @@ import {
   gachaLogoUrl, getHolodoriCards, getHolodoriGachas, getHolodoriSongs, getHolodoriTalent, type HolodoriSong,
 } from '../holodori-index';
 import { getHolodoriAnnouncements, type HolodoriAnnouncement } from '../holodori-news';
-import { birthdayText, daysAway, daysToBirthday, holomemLinkAttrs, MONTHS, today } from './holodori-format';
+import { birthdayText, daysAway, daysToBirthday, faceOf, holomemLinkAttrs, MONTHS, today } from './holodori-format';
 import { bannerHtml, isLive } from './holodori-gachas-html';
 import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
@@ -90,7 +90,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <p class="hd-sub">Cover's rhythm game · its holomems, songs, cards and gachas</p>
       </header>
       <nav class="hh-links" aria-label="hololive Dreams">
-        ${linkHtml('#/holodori/holomems', cast.length, 'Talent', cast.slice(0, 4).flatMap(c => c.icon ?? []), 'icons')}
+        ${linkHtml('#/holodori/holomems', cast.length, 'Talent', cast.slice(0, 4).flatMap(c => faceOf(c).src ?? []), 'icons')}
         ${linkHtml('#/holodori/songs', songs.length, 'Songs', newest.slice(0, 3).flatMap(s => s.jacket ?? []), 'jackets')}
         ${linkHtml('#/holodori/cards', cards.length, 'Characters', newCards.flatMap(c => c.art ?? []), 'cards')}
         ${linkHtml('#/holodori/gachas', banners.length, 'Gacha Banners', banners.slice(0, 2).map(g => gachaLogoUrl(g.gachas[0])), 'logos')}
@@ -104,9 +104,10 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <h3 class="hm-head">Birthdays coming</h3>
         <ul class="hh-bdays">${soon.map((c) => {
           const days = daysToBirthday(c, day);
+          const { src } = faceOf(c);
           return `
           <li><a class="hh-bday${days === 0 ? ' today' : ''}" ${holomemLinkAttrs(c)} style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-            <span class="hh-icon">${c.icon ?? c.art ? `<img src="${escHtml((c.icon ?? c.art)!)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
+            <span class="hh-icon">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
             <span class="hh-bday-name">${escHtml(c.shortName)}</span>
             <span class="hh-bday-when">${birthdayText(c)} · <span data-bday="${c.birthday}">${daysAway(days)}</span></span>
           </a></li>`;

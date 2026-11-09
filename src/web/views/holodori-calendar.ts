@@ -15,7 +15,7 @@ import { hideSearch } from '../shell';
 export function mountHolodoriCalendar(container: HTMLElement): void {
   hideSearch();
 
-  container.innerHTML = '<div class="roster-page hc-page"></div>';
+  container.innerHTML = '<div class="roster-page dcal-page"></div>';
   const page = container.firstElementChild as HTMLElement;
   const start = new Date();
   let year = start.getFullYear();
@@ -28,13 +28,13 @@ export function mountHolodoriCalendar(container: HTMLElement): void {
         <h2 class="hd-title">Calendar</h2>
         <p class="hd-sub">Birthdays and debut anniversaries · every hololive talent, the game's or not yet</p>
       </header>
-      <div class="hc-layout">
-        <div class="hc-main">
+      <div class="dcal-layout">
+        <div class="dcal-main">
           ${monthPickerHtml(year, month, now, 'page')}
-          <div class="hc-sheet">${monthGridHtml(year, month, now, 'page')}</div>
+          <div class="dcal-sheet">${monthGridHtml(year, month, now, 'page')}</div>
           ${CALENDAR_LEGEND}
         </div>
-        <section class="month hc-list">
+        <section class="month dcal-list">
           <h3 class="month-head"><span class="lettered">${MONTHS[month]}</span><small>${year}</small></h3>
           ${monthListHtml(year, month, now)}
         </section>

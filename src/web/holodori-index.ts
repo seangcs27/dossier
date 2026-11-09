@@ -31,11 +31,14 @@ export interface HolodoriCharacter {
   // Absent when the build could not read the site.
   figure?: string;
   icon?: string;      // the game's round icon of her, 128px: 'holodori/icons/<id>.webp'
+  // Her YouTube channel's avatar, 256px, which the pages show as her face before the game's icon:
+  // 'icons/holodori/avatars/<id>.webp'. Baked by hand (scripts/bake-holodori-avatars.mjs).
+  avatar?: string;
   // Her six membership stickers, 256px: { name: 'Sign-Up Sticker No.1', art: 'holodori/stickers/…' }.
   stickers: { name: string; art: string }[];
   // A hololive talent the game does not have yet, recorded by hand (scripts/lib/holodori-outside.mjs):
-  // she has no cards, songs or page of her own, `art` is her YouTube channel's avatar and `profile`
-  // her official page.
+  // she has no cards, songs or page of her own, `art` is her YouTube channel's avatar (as `avatar`
+  // is) and `profile` her official page.
   outside?: true;
   profile?: string;
 }

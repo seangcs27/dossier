@@ -3,6 +3,7 @@ import {
   getHolodoriCharacters, getHolodoriSongs, type HolodoriCharacter, type HolodoriSong, type HolodoriSongRewardGroup,
 } from '../holodori-index';
 import { clipButtonHtml } from './holodori-clip-html';
+import { faceOf } from './holodori-format';
 
 // A song as hololive Dreams' pages show it: a tile (its jacket over its title, its singers'
 // faces and its four charts' levels) and the back the jacket turns over to. No DOM and no
@@ -31,11 +32,11 @@ function addedText(s: HolodoriSong): string {
   return `${d} ${MONTHS[m - 1]} ${y}`;
 }
 
-// Her round face: the game's icon of her, or her bust (on transparency, so her colour is
-// behind it) where the build has no icon.
+// Her round face (faceOf): her YouTube avatar, or the game's icon of her, or her bust (on
+// transparency, so her colour is behind it) where the build has neither.
 export function faceHtml(c: HolodoriCharacter): string {
-  const src = c.icon ?? c.art;
-  return `<i class="song-face${c.icon ? ' icon' : ''}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">${src ? `<img src="${escHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</i>`;
+  const { src, game } = faceOf(c);
+  return `<i class="song-face${game ? ' icon' : ''}" style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">${src ? `<img src="${escHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : ''}</i>`;
 }
 
 function levelsHtml(s: HolodoriSong): string {

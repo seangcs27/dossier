@@ -1,6 +1,6 @@
 import { escHtml } from '../format';
 import { getHolodoriTalent, type HolodoriCharacter } from '../holodori-index';
-import { DAY_MS, MONTHS, birthdayIn, daysAway, holomemLinkAttrs, ordinal } from './holodori-format';
+import { DAY_MS, MONTHS, birthdayIn, daysAway, faceOf, holomemLinkAttrs, ordinal } from './holodori-format';
 
 // hololive Dreams' calendar: a month as a grid of days with the face of whoever has a birthday
 // or a debut anniversary on it, laid out as hololive Fan Wiki's monthly calendar post is
@@ -45,10 +45,10 @@ const midnight = (at: number | Date): Date => {
 // What the entry is, for a tooltip and for a screen reader.
 const kindOf = ({ years }: CalendarEntry): string => (years === undefined ? 'birthday' : `${ordinal(years)} debut anniversary`);
 
-// Her round icon, or the first letter of her name for talent the game has no picture of.
+// Her round face (faceOf), or the first letter of her name where there is none.
 function picHtml(c: HolodoriCharacter): string {
-  const src = c.icon ?? c.art;
-  return `<span class="hc-pic${c.icon ? ' icon' : ''}">${src
+  const { src, game } = faceOf(c);
+  return `<span class="dcal-pic${game ? ' icon' : ''}">${src
     ? `<img src="${escHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`
     : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>`;
 }
@@ -58,11 +58,25 @@ const accent = (c: HolodoriCharacter): string => escHtml(c.colors[0] ?? '#18c9f0
 // One face with the cake or the flag on its corner; a link to her unless `linked` is off.
 function faceHtml(e: CalendarEntry, m: number, linked: boolean): string {
   const { c, day, years } = e;
-  const cls = `hc-face ${years === undefined ? 'birthday' : 'anniversary'}`;
-  const body = `${picHtml(c)}<i class="hc-mark" aria-hidden="true">${years === undefined ? CAKE : FLAG}</i>`;
+  const cls = `dcal-face ${years === undefined ? 'birthday' : 'anniversary'}`;
+  const body = `${picHtml(c)}<i class="dcal-mark" aria-hidden="true">${years === undefined ? CAKE : FLAG}</i>`;
   if (!linked) return `<span class="${cls}" style="--a: ${accent(c)}">${body}</span>`;
   return `<a class="${cls}" ${holomemLinkAttrs(c)} data-tip="${escHtml(`${c.shortName} · ${years === undefined ? 'Birthday' : `${ordinal(years)} anniversary`}`)}"
       aria-label="${escHtml(`${c.name}, ${kindOf(e)}, ${day} ${MONTHS[m]}`)}" style="--a: ${accent(c)}">${body}</a>`;
+}
+
+// The count of those a day's square has no room for: pointed at, or focused, it opens a list of
+// them, a face and a name to each, so that none is left to the month's list under or beside the grid.
+function moreHtml(rest: CalendarEntry[], m: number, linked: boolean): string {
+  const rows = rest.map((e) => {
+    const { c, years } = e;
+    const body = `${picHtml(c)}<span>${escHtml(c.shortName)}<small>${years === undefined ? 'Birthday' : `${ordinal(years)} anniversary`}</small></span>`;
+    return linked
+      ? `<a class="dcal-rest-row" ${holomemLinkAttrs(c)} style="--a: ${accent(c)}">${body}</a>`
+      : `<span class="dcal-rest-row" style="--a: ${accent(c)}">${body}</span>`;
+  }).join('');
+  const names = rest.map(({ c }) => c.shortName).join(', ');
+  return `<span class="dcal-more" tabindex="0" aria-label="${escHtml(`${rest.length} more: ${names}`)}">+${rest.length}<span class="dcal-rest"><span class="dcal-rest-box">${rows}</span></span></span>`;
 }
 
 /**
@@ -76,8 +90,8 @@ export function monthGridHtml(y: number, m: number, now: number, variant: 'page'
   for (const e of entriesIn(y, m)) byDay.set(e.day, [...(byDay.get(e.day) ?? []), e]);
   const menu = variant === 'menu';
 
-  const head = DOW.map(d => `<li class="hc-dow" aria-hidden="true">${menu ? d[0] : d}</li>`);
-  const blanks = Array.from({ length: new Date(y, m, 1).getDay() }, () => '<li class="hc-day blank" aria-hidden="true"></li>');
+  const head = DOW.map(d => `<li class="dcal-dow" aria-hidden="true">${menu ? d[0] : d}</li>`);
+  const blanks = Array.from({ length: new Date(y, m, 1).getDay() }, () => '<li class="dcal-day blank" aria-hidden="true"></li>');
   const days = Array.from({ length: new Date(y, m + 1, 0).getDate() }, (_, i) => {
     const day = i + 1;
     const list = byDay.get(day) ?? [];
@@ -86,13 +100,13 @@ export function monthGridHtml(y: number, m: number, now: number, variant: 'page'
     const more = list.length - shown.length;
     const state = thisMonth && day === today.getDate() ? ' today' : thisMonth && day < today.getDate() ? ' past' : '';
     return `
-      <li class="hc-day${state}${list.length ? ' has' : ''}">
-        <span class="hc-num">${day}</span>
-        ${shown.length ? `<span class="hc-faces n${shown.length}">${shown.map(e => faceHtml(e, m, !menu)).join('')}</span>` : ''}
-        ${more ? `<em class="hc-more">+${more}</em>` : ''}
+      <li class="dcal-day${state}${list.length ? ' has' : ''}">
+        <span class="dcal-num">${day}</span>
+        ${shown.length ? `<span class="dcal-faces n${shown.length}">${shown.map(e => faceHtml(e, m, !menu)).join('')}</span>` : ''}
+        ${more ? moreHtml(list.slice(shown.length), m, !menu) : ''}
       </li>`;
   });
-  return `<ol class="hc-grid ${variant}" aria-label="${MONTHS[m]} ${y}">${[...head, ...blanks, ...days].join('')}</ol>`;
+  return `<ol class="dcal-grid ${variant}" aria-label="${MONTHS[m]} ${y}">${[...head, ...blanks, ...days].join('')}</ol>`;
 }
 
 /** The month's dates as a list, a face and a name to each, so that none rests on a picture alone. */
@@ -101,12 +115,13 @@ export function monthListHtml(y: number, m: number, now: number): string {
   const thisMonth = today.getFullYear() === y && today.getMonth() === m;
   const list = entriesIn(y, m).map((e) => {
     const { c, day, years } = e;
+    const { src, game } = faceOf(c);
     const when = thisMonth && day < today.getDate() ? 'past' : thisMonth && day === today.getDate() ? 'on' : '';
     return `
       <li${when ? ` class="${when}"` : ''}><a class="${years === undefined ? 'month-birthday' : 'month-anniversary'}" ${holomemLinkAttrs(c)}
               aria-label="${escHtml(`${c.name}, ${kindOf(e)}, ${day} ${MONTHS[m]}`)}" style="--a: ${accent(c)}">
         <b class="month-date">${day}</b>
-        <span class="month-face${c.icon ? ' icon' : ''}">${c.icon ?? c.art ? `<img src="${escHtml((c.icon ?? c.art)!)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : `<b>${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
+        <span class="month-face${game ? ' icon' : ''}">${src ? `<img src="${escHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">` : `<b>${escHtml([...c.shortName][0] ?? '?')}</b>`}</span>
         <span class="month-name">${escHtml(c.shortName)}</span>
         ${years === undefined ? '' : `<em class="month-years">${ordinal(years)} anniversary</em>`}
       </a></li>`;
@@ -148,12 +163,12 @@ export function monthPickerHtml(y: number, m: number, now: number, variant: 'pag
     .map(year => `<option value="${year}"${year === y ? ' selected' : ''}>${year}</option>`).join('');
   const current = at.getFullYear() === y && at.getMonth() === m;
   return `
-    <div class="hc-picker ${variant}">
-      <button type="button" class="hc-step" data-step="-1" aria-label="Previous month">${CHEVRON('left')}</button>
-      <select class="hc-select" data-pick="month" aria-label="Month">${months}</select>
-      <select class="hc-select" data-pick="year" aria-label="Year">${years}</select>
-      <button type="button" class="hc-step" data-step="1" aria-label="Next month">${CHEVRON('right')}</button>
-      ${variant === 'page' ? `<button type="button" class="hc-today" data-step="today"${current ? ' disabled' : ''}>Today</button>` : ''}
+    <div class="dcal-picker ${variant}">
+      <button type="button" class="dcal-step" data-step="-1" aria-label="Previous month">${CHEVRON('left')}</button>
+      <select class="dcal-select" data-pick="month" aria-label="Month">${months}</select>
+      <select class="dcal-select" data-pick="year" aria-label="Year">${years}</select>
+      <button type="button" class="dcal-step" data-step="1" aria-label="Next month">${CHEVRON('right')}</button>
+      ${variant === 'page' ? `<button type="button" class="dcal-today" data-step="today"${current ? ' disabled' : ''}>Today</button>` : ''}
     </div>`;
 }
 
@@ -179,18 +194,18 @@ export function calendarMenuHtml(now: number, y = new Date(now).getFullYear(), m
     const { c, years } = entry;
     const days = Math.round((date.getTime() - today.getTime()) / DAY_MS);
     return `
-      <li><a class="hc-next-row" ${holomemLinkAttrs(c)} style="--a: ${accent(c)}">
+      <li><a class="dcal-next-row" ${holomemLinkAttrs(c)} style="--a: ${accent(c)}">
         ${picHtml(c)}
-        <span class="hc-next-name">${escHtml(c.shortName)}<small>${years === undefined ? 'Birthday' : `${ordinal(years)} anniversary`}</small></span>
-        <span class="hc-next-when">${date.getDate()} ${MONTHS[date.getMonth()].slice(0, 3)}<small>${daysAway(days)}</small></span>
+        <span class="dcal-next-name">${escHtml(c.shortName)}<small>${years === undefined ? 'Birthday' : `${ordinal(years)} anniversary`}</small></span>
+        <span class="dcal-next-when">${date.getDate()} ${MONTHS[date.getMonth()].slice(0, 3)}<small>${daysAway(days)}</small></span>
       </a></li>`;
   });
   return `
     ${monthPickerHtml(y, m, now, 'menu')}
     ${monthGridHtml(y, m, now, 'menu')}
-    ${next.length ? `<p class="hc-menu-label">Coming up</p><ul class="hc-next">${next.join('')}</ul>` : ''}
-    <p class="hc-menu-hint">Click the calendar icon to open the full calendar</p>`;
+    ${next.length ? `<p class="dcal-menu-label">Coming up</p><ul class="dcal-next">${next.join('')}</ul>` : ''}
+    <p class="dcal-menu-hint">Click the calendar icon to open the full calendar</p>`;
 }
 
 /** The legend: what the cake and the flag on a face stand for. */
-export const CALENDAR_LEGEND = `<p class="legend hc-legend"><i class="hc-key birthday">${CAKE}</i>Birthday <i class="hc-key anniversary">${FLAG}</i>Debut anniversary</p>`;
+export const CALENDAR_LEGEND = `<p class="legend dcal-legend"><i class="dcal-key birthday">${CAKE}</i>Birthday <i class="dcal-key anniversary">${FLAG}</i>Debut anniversary</p>`;
