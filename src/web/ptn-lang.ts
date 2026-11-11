@@ -90,6 +90,8 @@ const TEXT = {
     cost: 'Cost', skillCosts: 'Skill level costs', noBonus: 'Stats without bonuses, at the old level cap.',
     noPhases: 'The wiki has not written up this Sinner\'s phase-ups.',
     overflow: 'Overflow (溢变): all four stats +3% / 6% / 10%, a percentage bonus, not added to the base values.',
+    tabOutfits: 'Outfits', noOutfits: 'No outfits on file for this Sinner.', collection: 'Collection', price: 'Price',
+    obtained: 'How to get', stars: 'stars', outfitVideo: 'Showcase video (Bilibili)',
   },
   zh: {
     sinners: '禁闭者', Sinners: '禁闭者', prompt: '搜索禁闭者…',
@@ -129,6 +131,8 @@ const TEXT = {
     cost: '消耗', skillCosts: '技能升级材料', noBonus: '以下数据不含加成，为升阶前等级上限时的数值。',
     noPhases: 'WIKI 尚未收录该禁闭者的升阶数据。',
     overflow: '溢变：四种数值提升3%/6%/10%。溢变提升为百分比增益，不直接增加基础数值。',
+    tabOutfits: '装束', noOutfits: '暂无该禁闭者的装束。', collection: '系列', price: '价格',
+    obtained: '获取方式', stars: '星', outfitVideo: '装束影像（哔哩哔哩）',
   },
 } as const;
 

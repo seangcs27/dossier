@@ -67,7 +67,7 @@ function faceHtml(e: CalendarEntry, m: number, linked: boolean): string {
 
 // The count of those a day's square has no room for: pointed at, or focused, it opens a list of
 // them, a face and a name to each, so that none is left to the month's list under or beside the grid.
-function moreHtml(rest: CalendarEntry[], m: number, linked: boolean): string {
+function moreHtml(rest: CalendarEntry[], m: number, linked: boolean, slot: boolean): string {
   const rows = rest.map((e) => {
     const { c, years } = e;
     const body = `${picHtml(c)}<span>${escHtml(c.shortName)}<small>${years === undefined ? 'Birthday' : `${ordinal(years)} anniversary`}</small></span>`;
@@ -76,7 +76,7 @@ function moreHtml(rest: CalendarEntry[], m: number, linked: boolean): string {
       : `<span class="dcal-rest-row" style="--a: ${accent(c)}">${body}</span>`;
   }).join('');
   const names = rest.map(({ c }) => c.shortName).join(', ');
-  return `<span class="dcal-more" tabindex="0" aria-label="${escHtml(`${rest.length} more: ${names}`)}">+${rest.length}<span class="dcal-rest"><span class="dcal-rest-box">${rows}</span></span></span>`;
+  return `<span class="dcal-more${slot ? ' slot' : ''}" tabindex="0" aria-label="${escHtml(`${rest.length} more: ${names}`)}">+${rest.length}<span class="dcal-rest"><span class="dcal-rest-box">${rows}</span></span></span>`;
 }
 
 /**
@@ -98,12 +98,14 @@ export function monthGridHtml(y: number, m: number, now: number, variant: 'page'
     const cap = menu ? 1 : list.length > MAX_FACES ? MAX_FACES - 1 : MAX_FACES;
     const shown = list.slice(0, cap);
     const more = list.length - shown.length;
+    // The page's count takes the face's place in the last slot of the 2x2; the menu's cell has no room, so its count sits in the corner.
+    const inSlot = !menu && more > 0;
     const state = thisMonth && day === today.getDate() ? ' today' : thisMonth && day < today.getDate() ? ' past' : '';
     return `
       <li class="dcal-day${state}${list.length ? ' has' : ''}">
         <span class="dcal-num">${day}</span>
-        ${shown.length ? `<span class="dcal-faces n${shown.length}">${shown.map(e => faceHtml(e, m, !menu)).join('')}</span>` : ''}
-        ${more ? moreHtml(list.slice(shown.length), m, !menu) : ''}
+        ${shown.length ? `<span class="dcal-faces n${shown.length + (inSlot ? 1 : 0)}">${shown.map(e => faceHtml(e, m, !menu)).join('')}${inSlot ? moreHtml(list.slice(shown.length), m, true, true) : ''}</span>` : ''}
+        ${more && !inSlot ? moreHtml(list.slice(shown.length), m, !menu, false) : ''}
       </li>`;
   });
   return `<ol class="dcal-grid ${variant}" aria-label="${MONTHS[m]} ${y}">${[...head, ...blanks, ...days].join('')}</ol>`;

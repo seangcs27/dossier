@@ -1252,6 +1252,30 @@ body[data-view='ptn'] #view {
   background: #101112;
 }
 
+// An outfit in the Outfits tab: its picture beside the name, a press on it putting the print
+// on the wall. The picture is a print's shape, cut to the top of it where the face is.
+.outfit-thumb {
+  flex: none;
+  width: 52px;
+  height: 68px;
+  padding: 0;
+  border: 2px solid var(--ptn-wall-ink);
+  background: var(--ptn-wall);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ptn-ease);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 0;
+  }
+
+  &:hover { border-color: $bone; }
+  &:focus-visible { outline: 2px solid $bone; outline-offset: 2px; }
+}
+
 // A skill's range: the wiki's grid, a shape to a figure, the Sinner's tile filled in bone and
 // a target the skill is centred on in the world's one red.
 .ptn-ranges {

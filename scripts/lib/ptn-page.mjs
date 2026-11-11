@@ -82,16 +82,30 @@ export function parseSinnerArt(title, attires = '', gallery = '') {
     .split('\n').map(line => line.split('|')).filter(([file]) => file.trim());
   const interrogations = shown.filter(([file, caption = '']) => /interrogation/i.test(`${file} ${caption}`))
     .map(([file, caption = '']) => ({ kind: 'interrogation', label: toGameText(caption, title) || 'Interrogation', file: fileTitle(file) }));
-  const skins = templateBodies(attires, 'Attire').map(body => templateParams(body).named)
-    .filter(named => named.Title && named.Image)
-    .map(named => ({
+  // The Attires page is one {{Attire}} call of numbered parameters: the default outfit's
+  // name, description and quote, then four to each attire, oldest first: its name, its stars
+  // (or, for one that is no one's to buy, what it came with: 'SO', 'Pre-Order Bonus'), its
+  // collection and its description. The files are not named, but follow the order: the
+  // phase-up art is Skin1 and the attires Skin2 onward.
+  const call = templateBodies(attires, 'Attire')[0];
+  const named = call ? templateParams(call).named : {};
+  const skins = [];
+  for (let n = 4; named[n]; n += 4) {
+    const marker = named[n + 1] ?? '';
+    skins.push({
       kind: 'attire',
-      label: toGameText(named.Title, title),
-      file: fileTitle(named.Image),
-      collection: toGameText(named.Collection, title),
-      // '★★★', as a count.
-      rarity: (named.Rarity?.match(/★/g) ?? []).length,
-    }));
+      label: toGameText(named[n], title),
+      // The three Kisugi's files are filed under the given name alone ('Rui Skin2.png').
+      file: fileTitle(`${title.replace(/^Kisugi /, '')} Skin${(n - 4) / 4 + 2}.png`),
+      collection: toGameText(named[n + 2], title),
+      // A number is the stars; anything else is how it came, and the stars are the other wiki's.
+      rarity: /^\d$/.test(marker) ? Number(marker) : 0,
+      ...(/^\d$/.test(marker) || !marker ? {} : { how: toGameText(marker, title) }),
+      ...(named[n + 3] ? { desc: toGameText(named[n + 3], title) } : {}),
+    });
+  }
+  // Newest first, as the game's gallery turns to them.
+  skins.reverse();
   return [
     { kind: 'original', label: 'Original', file: fileTitle(`${title}.png`) },
     { kind: 'phase', label: 'Phase-up', file: fileTitle(`${title} Skin1.png`) },

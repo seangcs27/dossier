@@ -44,8 +44,8 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
-import { fetchBiliBrands, fetchBiliFiles, fetchBiliImages, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
-import { parseBiliBrand, parseBiliDetail, parseBiliVoices, termsIn } from './lib/ptn-bili-page.mjs';
+import { fetchBiliAttires, fetchBiliBrands, fetchBiliFiles, fetchBiliImages, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
+import { parseBiliAttire, parseBiliBrand, parseBiliDetail, parseBiliVoices, termsIn } from './lib/ptn-bili-page.mjs';
 import { toEnglish } from './lib/ptn-cn-english.mjs';
 import { bakePtnFont, placardText } from './lib/ptn-font.mjs';
 import { parseSinnerArt, parseSinnerDetail } from './lib/ptn-page.mjs';
@@ -78,7 +78,7 @@ const haveLast = await readFile(SINNERS_FILE, 'utf8').then(text => text.length >
 // diff is committed with the rest.
 const SNAPSHOT_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'lib', 'ptn-bili-snapshot.json');
 const snapshot = await readFile(SNAPSHOT_FILE, 'utf8').then(JSON.parse, () => ({ rows: [], pages: {}, files: {} }));
-const fresh = { rows: [], pages: {}, files: {}, brands: {}, terms: {}, voices: {}, images: {} };
+const fresh = { rows: [], pages: {}, files: {}, brands: {}, terms: {}, voices: {}, images: {}, attires: {} };
 // What a run had of the snapshot, so that it is not written back from a run that was not whole.
 let fellBack = false;
 
@@ -496,6 +496,59 @@ async function buildRoster() {
       .map(({ file, ...art }) => ({ ...art, url: urlOf.get(file) }));
   }
 
+  // What the Chinese wiki has of each attire (装束:<Sinner> <attire>): its day, price, how it
+  // came, its series, the Chinese name, its text and its video, laid on the English wiki's
+  // list, which runs oldest to newest as the Chinese pages do by their day; and the attires
+  // only the Chinese wiki has, which are the newest and every one of a Sinner only the CN
+  // server has, added in front with their picture's address.
+  const attirePages = await fromChinese(
+    'the attires', fetchBiliAttires,
+    () => (snapshot.attires ? new Map(Object.entries(snapshot.attires)) : undefined), new Map(),
+  );
+  fresh.attires = Object.fromEntries(attirePages);
+  const zhAttires = new Map();
+  for (const attire of [...attirePages.values()].map(parseBiliAttire).filter(Boolean)) {
+    zhAttires.set(attire.sinner, [...(zhAttires.get(attire.sinner) ?? []), attire]);
+  }
+  const attireTitles = [];
+  const extras = new Map();
+  for (const s of sinners.filter(sinner => sinner.nameCn && zhAttires.has(sinner.nameCn))) {
+    const detail = details.find(d => d.id === s.id);
+    const zh = zhAttires.get(s.nameCn).sort((a, b) => a.released.localeCompare(b.released));
+    const own = detail.arts.filter(art => art.kind === 'attire').reverse();
+    // Paired by their place in the list; where the stars the English wiki gives do not agree
+    // with the Chinese wiki's, the lists are not the same and nothing is paired.
+    if (own.some((art, i) => !zh[i] || (art.rarity && art.rarity !== zh[i].rarity))) {
+      console.warn(`ptn: ${s.name}'s attires do not line up with the Chinese wiki's, so it is left out of them`);
+      continue;
+    }
+    own.forEach((art, i) => {
+      const { sinner, name, series, rarity, how, ...rest } = zh[i];
+      Object.assign(art, {
+        labelCn: name, collectionCn: series, rarity: art.rarity || rarity,
+        how: art.how === 'SO' ? 'Surveillance Order' : art.how ?? how, ...rest,
+      });
+    });
+    const added = zh.slice(own.length).reverse().map(({ sinner, name, series, ...rest }) => {
+      const title = `${sinner}${name}.png`;
+      attireTitles.push(title);
+      return { kind: 'attire', label: name, labelCn: name, collection: series, collectionCn: series, ...rest, file: title };
+    });
+    extras.set(detail.id, added);
+  }
+  const attireUrlOf = await fromChinese(
+    'the attires\' pictures', () => fetchBiliImages(attireTitles),
+    () => new Map(Object.entries(snapshot.images ?? {})), new Map(),
+  );
+  for (const [id, added] of extras) {
+    const first = details.find(d => d.id === id).arts.findIndex(art => art.kind === 'attire');
+    const arts = details.find(d => d.id === id).arts;
+    arts.splice(first < 0 ? arts.length : first, 0,
+      ...added.filter(art => attireUrlOf.has(art.file)).map(({ file, ...art }) => ({ ...art, url: attireUrlOf.get(file) })));
+  }
+  Object.assign(fresh.images, Object.fromEntries(attireUrlOf));
+  console.log(`ptn: ${[...zhAttires.values()].flat().length} attires on the Chinese wiki, ${[...extras.values()].flat().length} of them only there`);
+
   // A Sinner the English wiki lacks one of the three pictures every Sinner has of (Pine,
   // Pixel, Kisugi Ai, everyone on the CN server alone) has the Chinese wiki's where it has
   // one: the same artwork under that wiki's own names for it. The first and the last are
@@ -564,7 +617,8 @@ async function buildRoster() {
       .map(([name, text]) => [name, text.replace(/<!--[\s\S]*?-->/g, '')]));
     const files = Object.fromEntries([...new Set([...Object.keys(snapshot.files), ...Object.keys(fresh.files)])]
       .map(suffix => [suffix, { ...snapshot.files[suffix], ...fresh.files[suffix] }]));
-    await writeFile(SNAPSHOT_FILE, JSON.stringify({ rows: fresh.rows, pages, files, brands: fresh.brands, terms: fresh.terms, voices: fresh.voices, images: fresh.images }));
+    await writeFile(SNAPSHOT_FILE, JSON.stringify({ rows: fresh.rows, pages, files, brands: fresh.brands, terms: fresh.terms, voices: fresh.voices, images: fresh.images,
+      attires: Object.fromEntries(Object.entries(fresh.attires).map(([title, text]) => [title, text.replace(/<!--[\s\S]*?-->/g, '')])) }));
   }
   return { sinners, details, unfinished, strays };
 }
