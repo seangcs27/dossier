@@ -41,6 +41,7 @@ const TABS = [
   { id: 'phase', label: 'tabPhase' },
   { id: 'brand', label: 'tabBrand' },
   { id: 'shackles', label: 'tabShackles' },
+  { id: 'outfits', label: 'tabOutfits' },
   { id: 'file', label: 'tabFile' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
@@ -90,13 +91,17 @@ interface Shown {
 }
 
 // A picture's name in the language that is on: this site's word for the three every Sinner
-// has, and the wiki's own for an attire or an interrogation, which it gives in English only.
+// has, and the wiki's own for an attire or an interrogation: an attire's in Chinese where the
+// Chinese wiki has it, an interrogation's in English only.
 function labelOf(art: PtnArt): string {
   if (art.kind === 'original') return t('artOriginal');
   if (art.kind === 'phase') return t('artPhase');
   if (art.kind === 'mugshot') return t('artMugshot');
-  return art.label;
+  return ptnLang() === 'zh' && art.labelCn ? art.labelCn : art.label;
 }
+
+// An attire's collection, in the same way.
+const collectionOf = (art: PtnArt): string | undefined => (ptnLang() === 'zh' && art.collectionCn ? art.collectionCn : art.collection);
 
 // The roster's own two pictures of a Sinner, which the build has baked whole.
 function bakedOf(s: PtnSinner, kind: PtnArt['kind']): PtnFigure | undefined {
@@ -110,7 +115,8 @@ function bakedOf(s: PtnSinner, kind: PtnArt['kind']): PtnFigure | undefined {
 // are tall, the Sinner among effects and scenery with no floor to put their feet on. The
 // proxy is asked to cut away any empty margin, so that the frame holds the picture.
 function shownOf(s: PtnSinner, art: PtnArt): Shown {
-  const { collection, rarity } = art;
+  const { rarity } = art;
+  const collection = collectionOf(art);
   const label = labelOf(art);
   const stand = bakedOf(s, art.kind);
   return stand
@@ -459,6 +465,41 @@ function phasePanel(d: PtnSinnerDetail): string {
   `;
 }
 
+// Every attire the Sinner has, newest first as the build lists them: its picture (a press puts
+// it on the wall), name and stars, then collection, the day it came to the CN server, how it
+// is had and its price, and its text: the English wiki's description, or on the Chinese side
+// the Chinese wiki's quote and lines.
+function outfitsPanel(s: PtnSinner, d: PtnSinnerDetail): string {
+  const zh = ptnLang() === 'zh';
+  const outfits = d.arts.map((art, index) => ({ art, index })).filter(({ art }) => art.kind === 'attire');
+  if (!outfits.length) return `<p class="empty-msg">${t('noOutfits')}</p>`;
+  return outfits.map(({ art, index }) => {
+    const how = zh ? art.howCn || art.how : art.how;
+    // Where the English wiki has no description (an attire only the Chinese wiki lists) the
+    // Chinese quote stands for it, as that attire's name does.
+    const lines = zh || !art.desc ? [art.intro, ...(art.impression ?? [])] : art.desc.split('\n');
+    return `
+      <section class="entry outfit">
+        <div class="entry-head">
+          <button class="outfit-thumb" data-art="${index}" aria-label="${escHtml(`${t('open')} ${labelOf(art)}`)}">
+            <img src="${escHtml(thumbOf(s, art))}" alt="" loading="lazy" decoding="async">
+          </button>
+          <h2 class="entry-name">${escHtml(labelOf(art))}</h2>
+          ${art.rarity ? `<span class="unlock-badge" aria-label="${art.rarity} ${t('stars')}">${'★'.repeat(art.rarity)}</span>` : ''}
+        </div>
+        ${factsHtml([
+          [t('collection'), collectionOf(art) ?? ''],
+          [t('releasedCn'), art.released ?? ''],
+          [t('obtained'), [how, zh ? art.detail : ''].filter(Boolean).join(' · ')],
+          [t('price'), art.price ? String(art.price) : ''],
+        ])}
+        ${lines.filter(Boolean).map(line => `<p class="rich file-text">${rich(line as string)}</p>`).join('')}
+        ${art.video ? `<p><a class="file-link" href="https://www.bilibili.com/video/${encodeURIComponent(art.video)}" target="_blank" rel="noopener">${t('outfitVideo')} ↗</a></p>` : ''}
+      </section>
+    `;
+  }).join('');
+}
+
 // The file: who the Sinner is, then each document under the wiki's own heading for it,
 // folded away as the Arknights archive files are, since they tell the story.
 function filePanel(s: PtnSinner, d: PtnSinnerDetail): string {
@@ -504,6 +545,7 @@ function panelHtml(s: PtnSinner, d: PtnSinnerDetail): string {
     case 'phase': return phasePanel(d);
     case 'brand': return brandPanel(d);
     case 'shackles': return shacklesPanel(d);
+    case 'outfits': return outfitsPanel(s, d);
     case 'file': return filePanel(s, d);
   }
 }

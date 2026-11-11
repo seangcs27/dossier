@@ -159,15 +159,13 @@ export async function fetchBiliTerms(terms) {
   return textOf;
 }
 
-// The text of every exclusive crimebrand's page (专属烙印:<name>, filed under
-// 分类:专属烙印), by its title. A Sinner's own page does not name theirs: the brand's page
-// names the Sinner, which ptn-bili-page.mjs reads.
-export async function fetchBiliBrands() {
+// The text of every page in a category, by its title, 50 to a request.
+async function fetchBiliCategory(category) {
   const textOf = new Map();
   let more = {};
   do {
     const json = await wiki({
-      action: 'query', generator: 'categorymembers', gcmtitle: '分类:专属烙印', gcmlimit: 50,
+      action: 'query', generator: 'categorymembers', gcmtitle: category, gcmlimit: 50,
       prop: 'revisions', rvprop: 'content', rvslots: 'main', ...more,
     });
     for (const page of json.query?.pages ?? []) {
@@ -178,3 +176,11 @@ export async function fetchBiliBrands() {
   } while (more);
   return textOf;
 }
+
+// The text of every exclusive crimebrand's page (专属烙印:<name>, filed under
+// 分类:专属烙印), by its title. A Sinner's own page does not name theirs: the brand's page
+// names the Sinner, which ptn-bili-page.mjs reads.
+export const fetchBiliBrands = () => fetchBiliCategory('分类:专属烙印');
+
+// The text of every attire's page (装束:<Sinner> <attire>, filed under 分类:装束), by its title.
+export const fetchBiliAttires = () => fetchBiliCategory('分类:装束');

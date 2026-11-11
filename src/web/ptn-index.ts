@@ -137,6 +137,21 @@ export interface PtnArt {
   url: string;          // the file's address on the wiki: 1 to 9 MB, so shown through artUrl
   collection?: string;  // an attire's: 'Airy Fantasia'
   rarity?: number;      // an attire's stars
+  // The rest of an attire's file, from the two wikis (scripts/build-ptn-index.mjs): the
+  // Chinese wiki's name and series, the day it came to the CN server, its price, how it is
+  // had (and the Chinese wiki's own words for that), the English wiki's description, the
+  // Chinese wiki's quote and lines in Chinese, and its video's Bilibili id.
+  labelCn?: string;
+  collectionCn?: string;
+  released?: string;    // '2025-05-15'
+  price?: number;
+  how?: string;
+  howCn?: string;
+  detail?: string;      // how it is had, in Chinese: '7日签到'
+  desc?: string;
+  intro?: string;
+  impression?: string[];
+  video?: string;
 }
 
 export interface PtnSinnerDetail {

@@ -417,3 +417,37 @@ function explainTerms(start, termOf) {
   }
   return terms.length ? { terms } : {};
 }
+
+// What 装束获取方式 says, in English: the way an attire is had, one or more of these joined by
+// a comma or a 、. The wiki keeps to this small a vocabulary; the Surveillance Order is the
+// English wiki's own name for 监察密令.
+const OBTAIN = {
+  限时售卖: 'Limited-time sale', 常驻售卖: 'Permanent sale', 限时活动: 'Limited-time event',
+  监察密令: 'Surveillance Order', 默认获取: 'Default', 其他途径: 'Other', 其他: 'Other',
+};
+
+// An attire's page (装束:<Sinner> <attire>), one {{装束图鉴}} call, as what the dossier shows of
+// it, or nothing for a page that is not one. The commander's own attires are the wiki's
+// 一阶 and 二阶 (the player's character is filed as 局长), so only 二星 to 四星 count.
+export function parseBiliAttire(wikitext) {
+  const body = templateBodies(wikitext.replace(/<!--[\s\S]*?-->/g, ''), '装束图鉴')[0];
+  if (!body) return undefined;
+  const { named } = templateParams(body);
+  const rarity = { 二星: 2, 三星: 3, 四星: 4 }[named.装束等级];
+  if (!rarity || !named.禁闭者姓名 || !named.装束名称) return undefined;
+  const how = (named.装束获取方式 ?? '').split(/[,、，]/).map(part => part.trim()).filter(Boolean);
+  return {
+    sinner: named.禁闭者姓名,
+    name: named.装束名称,
+    rarity,
+    released: named.上线时间 ?? '',
+    series: (named.装束系列 ?? '').replace(/系列$/, ''),
+    howCn: how.join('、'),
+    how: how.map(part => OBTAIN[part] ?? part).join(', '),
+    ...(named.装束获取详情 ? { detail: named.装束获取详情 } : {}),
+    ...(/^\d+$/.test(named.价格 ?? '') ? { price: Number(named.价格) } : {}),
+    intro: toGameText(named.装束介绍 ?? ''),
+    impression: (named.装束印象 ?? '').split(/<br\s*\/?>/i).map(line => toGameText(line).replace(/^「|」$/g, '')).filter(Boolean),
+    ...(named.装束影像 ? { video: named.装束影像 } : {}),
+  };
+}

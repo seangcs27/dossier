@@ -1637,9 +1637,23 @@ mended on the way (an unclosed style attribute, a stray brace in a template, a p
 nobody filled in), and a stat level it marks "TBA" is left out; three Sinners have no
 numbers at all yet, and 20 have only level 1 of each skill.
 
-Not on the dossier, though the English wiki has them: the interrogation records' own pages,
-an attire's description and how it is got (its `Attires` subpage has both). The ranges,
-costs and voice lines are the Chinese wiki's (above).
+**The Outfits tab** (12 November 2026, the owner's "we did not cover the sinner's skins") lists
+every attire with its picture, stars, collection, the day it came to the CN server, how it is
+had, its price, its text and its Bilibili video. The English wiki's `Attires` page is one
+`{{Attire}}` call of numbered parameters (1 to 3 the default outfit; then four to each attire,
+oldest first: name, stars or what it came with such as `SO` (Surveillance Order), collection,
+description), with no file names: the files are `<name> Skin<n>.png`, Skin1 the phase-up art and
+attires from Skin2 on (the three Kisugi under their given name alone). It was a `Title=` / `Image=`
+layout until about 9 November 2026, and the old parser returned no attire at all from the new
+one. The Chinese wiki has one page each under `分类:装束` (`{{装束图鉴}}`, read by
+`parseBiliAttire`; its 一阶 / 二阶 are the commander's, not a Sinner's), paired to the English
+list by order and checked by stars; the newest it has that the English wiki lacks, and every one
+of a CN-only Sinner, are added with the file `<Sinner><attire>.png`. The pages are in the snapshot
+(`attires`). The price has no currency named; an outfit only the Chinese wiki has is in Chinese on
+the English side too.
+
+Not on the dossier, though the English wiki has them: the interrogation records' own pages. The
+ranges, costs and voice lines are the Chinese wiki's (above).
 
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast). Its
 tile opens a **front page** (`views/holodori-home.ts`, 18 October 2026, the owner's "home
