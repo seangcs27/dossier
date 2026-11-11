@@ -924,7 +924,16 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     background: $panel;
 
     &.blank { background: none; }
-    &.past .dcal-faces { opacity: 0.55; }
+    // Dimmed face by face: the count's list is inside the faces' box, and an opacity on the box
+    // would fade the list and trap it under the days that come after.
+    &.past .dcal-face { opacity: 0.55; }
+    &.past .dcal-more.slot {
+      background: color-mix(in srgb, $sun 55%, transparent);
+      box-shadow: 0 0 0 2.5px rgb(255 255 255 / 55%), 0 1px 3px rgb(16 60 110 / 30%);
+    }
+
+    // The list the count opens goes over the days after this one.
+    &:has(.dcal-more:is(:hover, :focus-within)) { z-index: 3; }
 
     // Today, ringed in the sun; the ink on it is the print's own, which no theme changes.
     &.today {
@@ -957,6 +966,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .dcal-faces {
     position: absolute;
     inset: 18% 8% 8%;
+    container-type: inline-size;
     display: grid;
     gap: 3px;
     place-content: center;
@@ -1052,6 +1062,23 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     cursor: default;
 
     &:focus-visible { outline: 2px solid $ink-print; outline-offset: 2px; }
+
+    // On the page the count is the last of the faces: a sun disc of a face's size in the
+    // slot a fourth face would take, its number sized from the faces' own box.
+    &.slot {
+      position: relative;
+      inset: auto;
+      display: grid;
+      width: 100%;
+      aspect-ratio: 1;
+      padding: 0;
+      place-items: center;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
+      font-size: max(10px, 19cqw);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
   }
 
   // The faces left out, as a list under the count. It starts at the count's own edge, so that the
