@@ -1,3 +1,4 @@
+import { wireMonthPicker } from '../calendar-picker';
 import {
   CALENDAR_LEGEND, monthGridHtml, monthListHtml, monthMoved, monthPickerHtml,
 } from '../render/holodori-calendar-html';
@@ -6,8 +7,8 @@ import { hideSearch } from '../shell';
 
 // hololive Dreams' calendar (#/holodori/calendar), where the topbar's calendar icon leads: one
 // month at a time as a grid of days, the face of whoever's birthday or debut anniversary it is
-// on each, with the month's dates listed beside it. The month is picked as a date picker has
-// it, from a drop-down of months and one of years, or stepped to with the arrows. It covers
+// on each, with the month's dates listed beside it. The month is picked from a panel of the
+// year and its twelve months (calendar-picker.ts), or stepped to with the arrows. It covers
 // every hololive talent the build knows, the ones the game lacks too (holodori-index.ts,
 // getHolodoriTalent). In the game's world (_holodori.scss); drawn by
 // render/holodori-calendar-html.ts.
@@ -43,24 +44,9 @@ export function mountHolodoriCalendar(container: HTMLElement): void {
     `;
   };
 
-  // A press on a step, or a month or year chosen. The page is drawn again, so the control that
-  // was used is a new one: keep focus on its twin.
-  const move = (control: HTMLElement, value?: string): void => {
-    ({ y: year, m: month } = monthMoved(year, month, Date.now(), {
-      step: control.dataset.step, pick: control.dataset.pick, value,
-    }));
+  wireMonthPicker(page, (control) => {
+    ({ y: year, m: month } = monthMoved(year, month, Date.now(), control));
     draw();
-    const twin = control.dataset.step ? `[data-step="${control.dataset.step}"]:not(:disabled)` : `[data-pick="${control.dataset.pick}"]`;
-    page.querySelector<HTMLElement>(twin)?.focus();
-  };
-
-  page.addEventListener('click', (e) => {
-    const button = (e.target as Element).closest<HTMLButtonElement>('button[data-step]');
-    if (button && !button.disabled) move(button);
-  });
-  page.addEventListener('change', (e) => {
-    const select = e.target as HTMLSelectElement;
-    if (select.dataset.pick) move(select, select.value);
   });
   draw();
 }

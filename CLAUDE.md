@@ -1475,7 +1475,7 @@ each of S, A and B, with its name and head count; newest first there is one to a
 arrests ("Arrested 2026" down to "Arrested 2022", which is the launch and the four that
 year then added; "arrest" is the game's own word for getting a Sinner, and was picked
 over the owner's "detained" for that), whose placards give the month, and before them one
-of the Sinners only the CN server has ("CN server only"), who go by the day they came to it. Under the
+of the Sinners only the CN server has ("At large", 13 November 2026, the owner's ask for two words that say they are still on the run; it was "CN server only", and the rail still says "CN"), who go by the day they came to it. Under the
 pointer or the keyboard's focus a figure steps forward, the rest of its wall falls back,
 its placard takes the world's one red and its height is read off over its head. A press
 opens its page. **Only the figure and the placard answer the pointer**: a Sinner's box is a
@@ -1749,18 +1749,30 @@ owner's ask for a rework after hololive Fan Wiki's monthly calendar post, taken 
 only and drawn in the game's own look) is one month at a time, where it was the next twelve as
 a card each and a view of the roster. A month is a grid of seven columns from Sunday, the
 album's paper with a square to each day and the round face of whoever's date it is in it; a
-**cake on a face's corner is a birthday and a flag a debut anniversary** ("2nd debut
-anniversary"). Two share a square side by side, three or four make two rows of two, and past
-four a count. Today is on the sun, what has passed this month fades. **The month is picked as
-a date picker has it** (10 November 2026, the owner's ask): back and forward, a drop-down of
-the months and one of the years (the first debut to three years on), and Today
-(`monthPickerHtml`; `monthMoved` is the pure step from a press to the month it leads to, which
-the page and the menu both use). **The grid is 720px at most, so that a month is on a screen
-with the dates beside it**: at full width, on a 1440px window, it was taller than the screen
-and nobody saw the list under it, and at 620px with the list in one column the right of the
-page was empty, so the list takes the room that is left in as many columns as it holds. Under
-1040px the list goes under the grid. The dates are listed, a face and a name to each
-(`.month-list`, so no date rests on a picture alone). **A day with more than four, or in the
+**cake on a face's corner is a birthday and a star a debut anniversary** ("2nd debut
+anniversary"; filled glyphs of our own since 13 November 2026, a cake with three candles where
+a stroked cake and a flag were: hololive publishes no icon for either, a search that day found
+none). Two share a square side by side, three or four make two rows of two, and past
+four a count, a disc in the ink with white on it (it was the sun's, which is today's and an
+anniversary's). **Today is on the sun**: its square cream with a sun ring and halo, "Today"
+beside its number, its weekday's heading a sun pill; what has passed this month fades. **The
+month is picked from a panel of our own** (13 November 2026, the owner's ask, after the
+browser's own drop-downs of 10 November): back and forward, the month and year as one button,
+and Today. The button opens the year with a step either way and the twelve months, the one
+shown filled and this month dotted; a year's step leaves it open, a month shuts it, as do
+Escape and a press outside, and the arrow keys move among the months (`monthPickerHtml` draws
+it, `calendar-picker.ts` works it for the page and the menu both; `monthMoved` is the pure
+step from a press to the month it leads to, a year being a step of 12 months). The year is
+kept, with no bounds: it changes the weekdays and which anniversary it is. **The grid is 680px
+at most, so that a month is on a screen with the dates beside it**: at full width, on a 1440px
+window, it was taller than the screen and nobody saw the list under it. Under 1040px the list
+goes under the grid. **The dates are an agenda** (`.dcal-agenda`, 13 November 2026, the owner's
+ask: a bare day number beside a face told nothing): a block to a day, a tile with its weekday,
+its number and how far off it is ("in 2 days", "4 days ago", within 60 days), and beside it
+whoever's day it is, a face with the cake or the star, her short name and "Birthday" or "2nd
+anniversary", so no date rests on a picture alone. The days run down one column and then a
+second where the panel holds two (CSS columns), which keeps November's 13 on the grid's
+screen; a line marks where today falls, or today's own block is on the sun. **A day with more than four, or in the
 menu more than one, has a count (`+2`) that opens the rest when it is pointed at or focused**
 (`.dcal-rest`, a face and a name to each, a link to her page; it opens to the right in the first
 three columns and to the left in the rest, so that it never goes out over the sidebar, and
@@ -1780,8 +1792,9 @@ month picker, the month small, one face to a day and a count, then the next four
 today with the days to each, and a line saying that the icon opens the full calendar (it had an
 "Open calendar" button; the owner asked for a guide instead). The picker steps through any month
 and does not close it. It opens 120 ms after the pointer arrives and shuts 220 ms after it
-leaves, so the move from the icon to the menu does not close it, **unless a month or year list is
-open**, whose popup is the browser's and takes the pointer off the menu (`picking`); Escape, a
+leaves, so the move from the icon to the menu does not close it (the picker's panel is inside
+the menu, so the pointer never leaves it; a press on the menu's bare ground does not close it
+either); Escape (the panel first, then the menu), a
 press, a change of address and Astro's page swap shut it, a finger's tap is only a press, and it
 starts again from this month once a day or on leaving the page. The month is
 drawn the first time it is wanted, from a chunk of its own (`import()`), so that no page carries
