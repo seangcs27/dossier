@@ -60,7 +60,7 @@ const TEXT = {
     birthdayTip: 'By birthday, a line-up to a month, from this one on.',
     bdayToday: 'Today', bdayTomorrow: 'Tomorrow', bdayNow: 'Happy birthday', bdayNext: 'Next birthday',
     noBirthday: 'No birthday on file',
-    lineup: 'Line-up', arrivals: 'Arrested', newArrivals: 'Newly arrested', cnOnly: 'CN server only',
+    lineup: 'Line-up', arrivals: 'Arrested', newArrivals: 'Newly arrested', cnOnly: 'At large',
     lineups: 'Line-ups', cnShort: 'CN', newShort: 'New', scrollBack: 'Back along the wall', scrollOn: 'On along the wall',
     standing: 'standing', arrived: 'Arrested', noPhoto: 'No photograph on file', noPictures: 'No pictures',
     fRank: 'Rank', fTendency: 'Tendency', fLibram: 'Libram', fLimited: 'Limited', fCore: 'Core damage', fTags: 'Tags',

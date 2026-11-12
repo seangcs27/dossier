@@ -706,17 +706,147 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     }
   }
 
-  .month-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2px var(--sp-4);
+  // The month's dates as an agenda: a block to a day, with its weekday, its number and how far
+  // off it is on a tile at the left, and whoever's day it is beside the tile. The days run down
+  // one column and then a second where the panel is wide enough for two, so that a month's
+  // dates stay on the screen its grid is on.
+  .dcal-agenda {
+    columns: 230px 2;
+    column-gap: var(--sp-16);
     margin: 0;
     padding: 0;
     list-style: none;
 
-    // What has passed this month, faded; what is today, on the sun.
-    .past { opacity: 0.45; }
-    .on .month-birthday, .on .month-anniversary { background: #fff4cc; box-shadow: inset 0 0 0 2px $sun; }
+    > li {
+      margin-bottom: var(--sp-6);
+      break-inside: avoid;
+    }
+  }
+
+  .dcal-agenda-day {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: var(--sp-8);
+    align-items: center;
+    padding: var(--sp-4);
+    border-radius: 18px;
+
+    &.past { opacity: 0.5; }
+
+    // Today's, on the sun as its square in the grid is: the ink on it is the print's own.
+    &.on {
+      --hd-ink: #{$ink-print};
+      --hd-ink-soft: #6b6fa3;
+      --hd-panel: #ffe7a0;
+
+      background: #fff4cc;
+      box-shadow: inset 0 0 0 2px $sun;
+    }
+  }
+
+  .dcal-agenda-date {
+    display: grid;
+    justify-items: center;
+    align-self: start;
+    margin: 0;
+    padding: var(--sp-8) var(--sp-4);
+    border-radius: 14px;
+    background: $panel;
+    color: $ink;
+    line-height: 1.15;
+
+    small {
+      color: $ink-soft;
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    b {
+      font-size: var(--fs-4xl);
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    em {
+      color: $ink-soft;
+      font-size: var(--fs-2xs);
+      font-style: normal;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+  }
+
+  .dcal-agenda-day.on .dcal-agenda-date {
+    background: $sun;
+
+    small, em { color: $ink-print; }
+  }
+
+  .dcal-agenda-who {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .dcal-agenda-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--sp-10);
+    padding: var(--sp-4) var(--sp-6);
+    border-radius: 14px;
+    color: $ink;
+    text-decoration: none;
+
+    &:hover { background: $panel; }
+    &:hover .dcal-pic { transform: scale(1.06) rotate(-4deg); }
+    &:focus-visible { outline: 2px solid $cover-deep; outline-offset: 1px; }
+  }
+
+  .dcal-agenda-name {
+    display: grid;
+    min-width: 0;
+    line-height: 1.3;
+
+    b, small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    b { font-size: var(--fs-md); font-weight: 800; }
+    small { color: $ink-soft; font-size: var(--fs-xs); font-weight: 700; }
+  }
+
+  // Where today falls among the month's dates, when it is nobody's day.
+  .dcal-agenda-now {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-8);
+    padding: var(--sp-4) var(--sp-6);
+
+    span {
+      padding: 3px var(--sp-10);
+      border-radius: var(--radius-pill);
+      background: $sun;
+      color: $ink-print;
+      font-size: var(--fs-xs);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    &::after {
+      flex: 1;
+      height: 2px;
+      border-radius: 1px;
+      background: $sun;
+      content: '';
+    }
   }
 
   .month-none {
@@ -726,91 +856,18 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-weight: 700;
   }
 
-  // The day, her face, and her name over the anniversary it is, if it is one: a birthday
-  // ringed in white, a debut anniversary in the sun.
-  .month-birthday,
-  .month-anniversary {
-    display: grid;
-    grid-template-columns: 20px 40px minmax(0, 1fr);
-    align-items: center;
-    column-gap: var(--sp-6);
-    width: 100%;
-    padding: var(--sp-4);
-    border: 0;
-    border-radius: var(--radius-lg);
-    background: none;
-    color: $ink;
-    text-decoration: none;
-    font: inherit;
-    font-size: var(--fs-sm);
-    font-weight: 800;
-    line-height: 1.2;
-    text-align: left;
-    cursor: pointer;
-
-    &:hover { background: $panel; }
-    &:focus-visible { outline: 2px solid $cover-deep; outline-offset: 1px; }
-  }
-
-  .month-date {
-    grid-row: span 2;
-    font-size: var(--fs-md);
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-  }
-
-  .month-face {
-    grid-row: span 2;
-    width: 40px;
-    height: 40px;
-    overflow: hidden;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--a) 28%, #fff);
-    box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
-
-    img { display: block; width: 100%; height: auto; }
-
-    // The game's round icon, her face at its centre: drawn larger than the circle so that
-    // the ring with her name round its edge falls outside it.
-    &.icon img { width: 130%; max-width: none; margin: -15%; }
-  }
-
-  .month-anniversary .month-face { box-shadow: 0 0 0 2.5px $sun, 0 1px 3px rgb(16 60 110 / 30%); }
-
-  .month-name {
-    grid-column: 3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .month-years {
-    grid-column: 3;
-    color: $ink-soft;
-    font-size: var(--fs-2xs);
-    font-style: normal;
-    font-weight: 800;
-  }
-
-  // Talent the game has no picture of: the first letter of her name.
-  .month-face b {
-    display: grid;
-    height: 100%;
-    place-items: center;
-    color: color-mix(in srgb, var(--a) 70%, $ink);
-    font-weight: 900;
-  }
-
   // The page: the month on the left, small enough that the whole of it is on a screen, and the
   // month's dates beside it, in as many columns as the room holds, where they are in view too.
   // Under 1040px the list goes under it.
   .dcal-layout {
     display: grid;
-    grid-template-columns: minmax(0, 720px) minmax(260px, 1fr);
-    gap: var(--sp-20);
+    grid-template-columns: minmax(0, 680px) minmax(300px, 1fr);
+    gap: var(--sp-24);
     align-items: start;
   }
+
+  .dcal-list { padding: var(--sp-16) var(--sp-20) var(--sp-20); }
+  .dcal-list .month-head { margin-bottom: var(--sp-12); }
 
   @media (max-width: 1040px) {
     .dcal-layout { grid-template-columns: minmax(0, 720px); }
@@ -820,8 +877,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-layout { grid-template-columns: minmax(0, 1fr); }
   }
 
-  // The month picker, as a date picker has it: back, the months, the years, forward, and the
-  // way back to this month.
+  // The month picker: back, the month and year as one button, forward, and the way back to this
+  // month. The button opens a panel of the year and its twelve months (calendar-picker.ts).
   .dcal-picker {
     display: flex;
     flex-wrap: wrap;
@@ -830,28 +887,118 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     margin: 0 0 var(--sp-12);
   }
 
-  // The chevron is a picture, which cannot take the ink from a custom property: one for each theme.
+  .dcal-drop { position: relative; }
+
   .dcal-select {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-8);
     height: 44px;
-    padding: 0 36px 0 var(--sp-16);
-    appearance: none;
+    padding: 0 var(--sp-16);
     border: 0;
     border-radius: var(--radius-pill);
-    background: $white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%233d4180' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E") no-repeat right 14px center / 12px;
+    background: $white;
     box-shadow: 0 3px 8px $lift;
+    color: $ink;
+    font: inherit;
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+
+    // The year, a step quieter than the month.
+    span { color: $ink-soft; }
+
+    svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.15s;
+    }
+
+    &[aria-expanded='true'] svg { transform: rotate(180deg); }
+    &:hover,
+    &[aria-expanded='true'] { background: $panel; }
+    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
+  }
+
+  .dcal-pop {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 8; // over the list a day's count opens (6)
+    width: 264px;
+    padding: var(--sp-12);
+    border: 1px solid $line;
+    border-radius: 18px;
+    background: $paper;
+    box-shadow: 0 12px 28px rgb(16 60 110 / 28%);
+    animation: dcal-menu-in 0.16s ease-out;
+
+    &[hidden] { display: none; }
+  }
+
+  .dcal-pop-year {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sp-8);
+
+    b {
+      font-size: var(--fs-xl);
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+    }
+
+    .dcal-step {
+      min-width: 36px;
+      height: 36px;
+      background: $panel;
+      box-shadow: none;
+    }
+  }
+
+  .dcal-pop-months {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); // calendar-picker.ts's MONTH_COLS
+    gap: var(--sp-4);
+  }
+
+  .dcal-pop-month {
+    position: relative;
+    height: 44px;
+    border: 0;
+    border-radius: 14px;
+    background: none;
     color: $ink;
     font: inherit;
     font-size: var(--fs-md);
     font-weight: 800;
     cursor: pointer;
 
-    @include dark {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23e2e4ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5'/%3E%3C/svg%3E");
+    &:hover { background: $panel; }
+    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 1px; }
+
+    &[aria-pressed='true'] {
+      background: $ink-fill;
+      color: #fff;
     }
 
-    &:hover { background-color: $panel; }
-    &:focus-visible { outline: 3px solid $ink-print; outline-offset: 2px; }
-    option { background: $paper; color: $ink; }
+    // This month, wherever the picker has gone: a sun dot under its name.
+    &.now::after {
+      position: absolute;
+      bottom: 5px;
+      left: calc(50% - 3px);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: $sun;
+      content: '';
+    }
   }
 
   .dcal-step,
@@ -889,7 +1036,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .dcal-today { margin-left: auto; }
 
   // The month: the album's paper with a day to each square, the face of whoever's date it is
-  // on it. A birthday has a cake on its corner, a debut anniversary a flag.
+  // on it. A birthday has a cake on its corner, a debut anniversary a star.
   $pink: #ff8fbf;
 
   .dcal-sheet {
@@ -914,6 +1061,15 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     letter-spacing: 0.06em;
     text-align: center;
     text-transform: uppercase;
+
+    // Today's weekday, on the sun as today's square is.
+    &.on {
+      justify-self: center;
+      padding: var(--sp-4) var(--sp-10);
+      border-radius: var(--radius-pill);
+      background: $sun;
+      color: $ink-print;
+    }
   }
 
   .dcal-day {
@@ -928,18 +1084,21 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     // would fade the list and trap it under the days that come after.
     &.past .dcal-face { opacity: 0.55; }
     &.past .dcal-more.slot {
-      background: color-mix(in srgb, $sun 55%, transparent);
+      background: color-mix(in srgb, $ink-fill 55%, $panel);
       box-shadow: 0 0 0 2.5px rgb(255 255 255 / 55%), 0 1px 3px rgb(16 60 110 / 30%);
+      color: rgb(255 255 255 / 80%);
+    }
+
+    // Today, ringed in the sun with a halo of it, and over its neighbours; the ink on it is the
+    // print's own, which no theme changes.
+    &.today {
+      z-index: 1;
+      background: #fff4cc;
+      box-shadow: 0 0 0 3px $sun, 0 0 0 7px rgb(255 201 60 / 30%), 0 6px 18px rgb(255 201 60 / 40%);
     }
 
     // The list the count opens goes over the days after this one.
     &:has(.dcal-more:is(:hover, :focus-within)) { z-index: 3; }
-
-    // Today, ringed in the sun; the ink on it is the print's own, which no theme changes.
-    &.today {
-      background: #fff4cc;
-      box-shadow: 0 0 0 3px $sun;
-    }
   }
 
   .dcal-num {
@@ -956,10 +1115,19 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .dcal-day.today .dcal-num {
     margin: -2px 0 0 -4px;
-    padding: 2px 6px;
+    padding: 3px 7px;
     border-radius: var(--radius-pill);
     background: $sun;
     color: $ink-print;
+
+    // The word, beside the number.
+    b {
+      margin-left: var(--sp-4);
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
   }
 
   // One face fills the square; two sit side by side, three or four as two rows of two.
@@ -1037,17 +1205,14 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     svg {
       width: 68%;
       height: 68%;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      fill: currentColor;
     }
   }
 
   .dcal-face.anniversary .dcal-mark { background: $sun; }
 
   // How many more share the date than the square holds. Pointed at, or focused, it opens them.
+  // In the ink, white set on it: the sun is today's and an anniversary's.
   .dcal-more {
     position: absolute;
     top: 5px;
@@ -1055,15 +1220,16 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     z-index: 2;
     padding: 1px 5px;
     border-radius: var(--radius-pill);
-    background: $sun;
-    color: $ink-print;
+    background: $ink-fill;
+    color: #fff;
     font-size: var(--fs-2xs);
     font-weight: 900;
     cursor: default;
 
+    &:is(:hover, :focus-within) { background: $cover-deep; }
     &:focus-visible { outline: 2px solid $ink-print; outline-offset: 2px; }
 
-    // On the page the count is the last of the faces: a sun disc of a face's size in the
+    // On the page the count is the last of the faces: an ink disc of a face's size in the
     // slot a fourth face would take, its number sized from the faces' own box.
     &.slot {
       position: relative;
@@ -1152,11 +1318,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     svg {
       width: 13px;
       height: 13px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+      fill: currentColor;
     }
 
     &.anniversary {
@@ -1164,8 +1326,6 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       background: $sun;
     }
   }
-
-  .dcal-list .month-list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
 
   @media (max-width: 640px) {
     .dcal-sheet {
@@ -1176,6 +1336,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-grid { gap: 3px; }
     .dcal-day { border-radius: 9px; }
     .dcal-num { top: 3px; left: 4px; font-size: 10px; }
+    .dcal-day.today .dcal-num b { display: none; }
+    .dcal-dow.on { padding: var(--sp-4) var(--sp-6); }
+    .dcal-list { padding: var(--sp-12); }
     // The squares are about 44px wide: the date stays clear of the face under it.
     .dcal-faces { inset: 28% 6% 6%; }
     .dcal-faces.n3,
@@ -1228,14 +1391,18 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       font-size: var(--fs-sm);
     }
 
-    .dcal-select { padding-left: var(--sp-10); }
-    .dcal-select[data-pick='month'] { flex: 1; }
+    // The month and year take what the steps leave, and their panel hangs centred under them.
+    .dcal-drop { flex: 1; }
+    .dcal-select { width: 100%; justify-content: center; }
+    .dcal-pop { left: calc(50% - 132px); }
   }
 
   .dcal-grid.menu {
     gap: 2px;
 
+    .dcal-dow.on { padding: 2px var(--sp-6); }
     .dcal-day { border-radius: 8px; }
+    .dcal-day.today { box-shadow: 0 0 0 2px $sun, 0 0 0 5px rgb(255 201 60 / 30%); }
     .dcal-num { top: 2px; left: 3px; font-size: 9px; }
     .dcal-faces { inset: 26% 10% 6%; }
     .dcal-faces.n1 { grid-template-columns: minmax(0, 100%); }

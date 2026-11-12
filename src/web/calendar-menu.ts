@@ -4,6 +4,8 @@
 // is wanted, from a chunk of its own, so that no page carries the cast for a menu that is
 // never opened.
 
+import { wireMonthPicker } from './calendar-picker';
+
 const OPEN_DELAY_MS = 120;
 // Long enough to cross the gap between the icon and the menu.
 const CLOSE_DELAY_MS = 220;
@@ -13,8 +15,6 @@ export function mountCalendarMenu(): void {
   const menu = document.getElementById('cal-menu')!;
   let timer = 0;
   let wanted = false;
-  // A month or year list is open: its popup is the browser's and takes the pointer off the menu.
-  let picking = false;
   let drawnOn = '';
   let shown = { y: 0, m: 0 };
   let html: typeof import('./render/holodori-calendar-html') | undefined;
@@ -23,10 +23,11 @@ export function mountCalendarMenu(): void {
 
   const close = (): void => {
     wanted = false;
-    picking = false;
     window.clearTimeout(timer);
     menu.hidden = true;
     link.setAttribute('aria-expanded', 'false');
+    // Drawn again, so that the picker's panel is shut the next time the menu opens.
+    if (drawnOn) draw();
   };
 
   // Leaving the page puts the month back to this one for the next time the menu is wanted.
@@ -53,20 +54,15 @@ export function mountCalendarMenu(): void {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
       if (want) void open();
-      else if (!picking) close();
+      else close();
     }, delay);
   };
 
-  // A step or a chosen month or year: draw again, and keep focus on the control's twin.
-  const move = (control: HTMLElement, value?: string): void => {
-    shown = html!.monthMoved(shown.y, shown.m, Date.now(), {
-      step: control.dataset.step, pick: control.dataset.pick, value,
-    });
-    picking = false;
+  // Before the menu's own Escape below: the picker's shuts its panel first and marks the key handled.
+  wireMonthPicker(menu, (control) => {
+    shown = html!.monthMoved(shown.y, shown.m, Date.now(), control);
     draw();
-    const twin = control.dataset.step ? `[data-step="${control.dataset.step}"]` : `[data-pick="${control.dataset.pick}"]`;
-    menu.querySelector<HTMLElement>(twin)?.focus();
-  };
+  });
 
   for (const el of [link, menu]) {
     // A finger has no hover: its tap is the press, which opens the page.
@@ -74,30 +70,18 @@ export function mountCalendarMenu(): void {
     el.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') later(false, CLOSE_DELAY_MS); });
     el.addEventListener('focusin', () => later(true, 0));
     el.addEventListener('focusout', (e) => {
-      if (!link.contains(e.relatedTarget as Node | null) && !menu.contains(e.relatedTarget as Node | null)) {
-        picking = false;
+      // A press on the menu's bare ground takes the focus too, with the pointer still on the menu.
+      if (!link.contains(e.relatedTarget as Node | null) && !menu.contains(e.relatedTarget as Node | null) && !menu.matches(':hover')) {
         later(false, 0);
       }
     });
   }
-  menu.addEventListener('pointerdown', (e) => {
-    if ((e.target as Element).closest('select')) picking = true;
-  });
-  menu.addEventListener('focusout', (e) => {
-    if ((e.target as Element).closest('select')) picking = false;
-  });
-  menu.addEventListener('change', (e) => {
-    const select = e.target as HTMLSelectElement;
-    if (select.dataset.pick) move(select, select.value);
-  });
   menu.addEventListener('click', (e) => {
-    const step = (e.target as Element).closest<HTMLElement>('button[data-step]');
-    if (step) { move(step); return; }
     // A press on a row is a link to somebody: the menu goes with the page.
     if ((e.target as Element).closest('a')) leave();
   });
   menu.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { close(); link.focus(); }
+    if (e.key === 'Escape' && !e.defaultPrevented) { close(); link.focus(); }
   });
   link.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') close();
