@@ -1761,7 +1761,12 @@ anniversary"; filled glyphs of our own since 13 November 2026, a cake with three
 a stroked cake and a flag were: hololive publishes no icon for either, a search that day found
 none). Two share a square side by side, three or four make two rows of two, and past
 four a count, a disc in the ink with white on it (it was the sun's, which is today's and an
-anniversary's). **Today is on the sun**: its square cream with a sun ring and halo, "Today"
+anniversary's). **Faces in one square never overlap** (15 November 2026, the owner's report of
+the 9th, FLOW GLOW's debut): the gap between two is 6px, wider than their two rings, and three
+or four are sized by the box's height as well as its width (`--face`; by the width alone the two
+rows were taller than the box and ran over each other and the date), about 31px in an 87px
+square where they were 38. The count is 0.72 of a face, always the smaller. On a phone four are
+about 15px each, with thinner rings and no cake or star, which would cover the face. **Today is on the sun**: its square cream with a sun ring and halo, "Today"
 beside its number, its weekday's heading a sun pill; what has passed this month fades. **The
 month is picked from a panel of our own** (13 November 2026, the owner's ask, after the
 browser's own drop-downs of 10 November): back and forward, the month and year as one button,

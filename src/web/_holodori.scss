@@ -1134,18 +1134,25 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .dcal-faces {
     position: absolute;
     inset: 18% 8% 8%;
-    container-type: inline-size;
+    container-type: size;
     display: grid;
-    gap: 3px;
+    // Wider than the rings of two faces (2.5px each), so that neighbours never overlap.
+    gap: 6px;
     place-content: center;
 
     &.n1 { grid-template-columns: minmax(0, 88%); }
     &.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    // A face as large as lets both columns and both rows into the box: by its width alone the
+    // two rows were taller than the box, and ran over the date and each other.
     &.n3,
     &.n4 {
+      --face: min((100cqw - 6px) / 2, (100cqh - 6px) / 2);
+
       inset: 16% 6% 6%;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 2px;
+      grid-template-columns: repeat(2, auto);
+
+      .dcal-face { width: var(--face); }
+      .dcal-mark { right: -3px; bottom: -3px; }
     }
   }
 
@@ -1229,19 +1236,20 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     &:is(:hover, :focus-within) { background: $cover-deep; }
     &:focus-visible { outline: 2px solid $ink-print; outline-offset: 2px; }
 
-    // On the page the count is the last of the faces: an ink disc of a face's size in the
-    // slot a fourth face would take, its number sized from the faces' own box.
+    // On the page the count is the last of the faces: an ink disc in the slot a fourth face
+    // would take, always smaller than a face, its number sized from the faces' own box.
     &.slot {
       position: relative;
       inset: auto;
       display: grid;
-      width: 100%;
+      width: calc(var(--face) * 0.72);
       aspect-ratio: 1;
       padding: 0;
+      place-self: center;
       place-items: center;
       border-radius: 50%;
-      box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
-      font-size: max(10px, 19cqw);
+      box-shadow: 0 0 0 2px #fff, 0 1px 3px rgb(16 60 110 / 30%);
+      font-size: max(9px, 14cqw);
       font-variant-numeric: tabular-nums;
       line-height: 1;
     }
@@ -1340,9 +1348,19 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-dow.on { padding: var(--sp-4) var(--sp-6); }
     .dcal-list { padding: var(--sp-12); }
     // The squares are about 44px wide: the date stays clear of the face under it.
-    .dcal-faces { inset: 28% 6% 6%; }
+    .dcal-faces { inset: 28% 6% 6%; gap: 4px; }
+    // Four in a square this small are about 15px each: thinner rings, and no mark, which would
+    // cover the face; the dates' list under the grid says what each day is.
     .dcal-faces.n3,
-    .dcal-faces.n4 { inset: 26% 3% 3%; }
+    .dcal-faces.n4 {
+      --face: min((100cqw - 4px) / 2, (100cqh - 4px) / 2);
+
+      inset: 26% 3% 3%;
+
+      .dcal-pic { box-shadow: 0 0 0 1.5px #fff; }
+      .dcal-face.anniversary .dcal-pic { box-shadow: 0 0 0 1.5px $sun; }
+      .dcal-mark { display: none; }
+    }
     .dcal-more { top: auto; right: auto; bottom: 3px; left: 4px; }
     // The count is at the square's foot here, so its list opens upward.
     .dcal-rest { top: auto; bottom: 100%; padding: 0 0 6px; }
