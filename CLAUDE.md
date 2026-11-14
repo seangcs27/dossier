@@ -1660,9 +1660,14 @@ tile opens a **front page** (`views/holodori-home.ts`, 18 October 2026, the owne
 page"): a tile into each of Holomems, Songs, Cards and Gachas with its count and a few of
 its pictures, the gachas running now, the next six birthdays as the game's round icons,
 the next six debut anniversaries under them (15 November 2026, the owner's ask; "Upcoming
-birthdays" and "Upcoming anniversaries", the owner's wording: a birthday's face has the
-calendar's cake on its corner, on pink, and an anniversary's the star with the number of the
-anniversary beside it, on the sun, over "5th anniversary", the day and the days to go; the cake
+Birthdays" and "Upcoming Anniversaries", the owner's wording, and "New Songs": a birthday's face
+has the calendar's cake on its corner, on pink, and an anniversary's a seal (`.hh-seal`):
+hololive's triangle itself (`icons/games/holodori.webp` as a mask, 46px) in the game's blue
+(`$cover-deep`, the owner's pick over the sun), edged in white by a drop-shadow, with "5th" in
+white on its larger triangle, over "5th anniversary", the day and
+the days to go; a star beside the number was tried first, which the owner found read as a
+rarity, then a round stamp with the triangle inside it, where they wanted the badge to be the
+triangle; the cake
 is ours still, a search of the game's stamps and items and of the web that day finding no
 hololive one; an anniversary's "in N days" carries the birthdays' `data-bday` hook with the
 debut's month and day, so `freshen()` sets it with no rule of its own),

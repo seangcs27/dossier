@@ -3,7 +3,7 @@ import {
   gachaLogoUrl, getHolodoriCards, getHolodoriGachas, getHolodoriSongs, getHolodoriTalent, type HolodoriSong,
 } from '../holodori-index';
 import { getHolodoriAnnouncements, type HolodoriAnnouncement } from '../holodori-news';
-import { CAKE, STAR } from './holodori-calendar-html';
+import { CAKE } from './holodori-calendar-html';
 import { birthdayText, daysAway, daysToBirthday, faceOf, holomemLinkAttrs, MONTHS, nextBirthday, ordinal, today } from './holodori-format';
 import { bannerHtml, isLive } from './holodori-gachas-html';
 import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
@@ -58,8 +58,8 @@ function newsHtml(list: HolodoriAnnouncement[]): string {
       </section>`;
 }
 
-// The next debut anniversaries from `day`, built as the birthdays are, with the calendar's star and
-// which anniversary it is on each face. A debut's day of the year is asked of the birthday helpers, and its "in N days"
+// The next debut anniversaries from `day`, built as the birthdays are, with a seal on each
+// face: hololive's triangle with which anniversary it is on it. A debut's day of the year is asked of the birthday helpers, and its "in N days"
 // carries the birthdays' hook, so freshen() sets it the same way.
 function anniversariesHtml(day: Date): string {
   const soon = cast
@@ -73,13 +73,13 @@ function anniversariesHtml(day: Date): string {
     .slice(0, ANNIVERSARIES);
   return `
       <section class="hm-section">
-        <h3 class="hm-head">Upcoming anniversaries</h3>
+        <h3 class="hm-head">Upcoming Anniversaries</h3>
         <ul class="hh-bdays">${soon.map(({ c, born, years }) => {
           const days = daysToBirthday(born, day);
           const { src } = faceOf(c);
           return `
           <li><a class="hh-bday${days === 0 ? ' today' : ''}" ${holomemLinkAttrs(c)} style="--a: ${escHtml(c.colors[0] ?? '#18c9f0')}">
-            <span class="hh-face"><span class="hh-icon">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span><i class="hh-mark years" aria-hidden="true">${STAR}${years}</i></span>
+            <span class="hh-face"><span class="hh-icon">${src ? `<img src="${escHtml(src)}" alt="" width="128" height="128" loading="lazy" decoding="async" onerror="this.remove()">` : `<b aria-hidden="true">${escHtml([...c.shortName][0] ?? '?')}</b>`}</span><i class="hh-seal${years > 9 ? ' wide' : ''}" aria-hidden="true"><i style="-webkit-mask-image: url(icons/games/holodori.webp); mask-image: url(icons/games/holodori.webp)"></i><b>${years}<small>${ordinal(years).slice(String(years).length)}</small></b></i></span>
             <span class="hh-bday-name">${escHtml(c.shortName)}</span>
             <span class="hh-bday-when">${ordinal(years)} anniversary</span>
             <span class="hh-bday-when">${birthdayText(born)} · <span data-bday="${born.birthday}">${daysAway(days)}</span></span>
@@ -134,7 +134,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
           <div class="gacha-list">${live.map(g => bannerHtml(g, now)).join('')}</div>
         </section>` : ''}${newsHtml(announced)}
       <section class="hm-section">
-        <h3 class="hm-head">Upcoming birthdays</h3>
+        <h3 class="hm-head">Upcoming Birthdays</h3>
         <ul class="hh-bdays">${soon.map((c) => {
           const days = daysToBirthday(c, day);
           const { src } = faceOf(c);
@@ -148,7 +148,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         </ul>
       </section>${anniversariesHtml(day)}
       <section class="hm-section">
-        <h3 class="hm-head">Newest songs</h3>
+        <h3 class="hm-head">New Songs</h3>
         <ul class="song-grid">${newest.map(s => songTileHtml(s, disc)).join('')}</ul>
         <p class="hm-note"><a href="#/holodori/songs">Every song</a></p>
       </section>
