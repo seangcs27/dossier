@@ -2049,15 +2049,20 @@ before it opens). The game previews each new ★5 about a day ahead on its Engli
 (the dump learns of the gacha only once it is open, within the hour), and X cannot be read
 by a build. **hololive Dreams Lab** (`dreams.wf-calc.net/wiki/game-updates?lang=en`), a fan
 site whose robots.txt allows a crawl, collects those posts by date on a server-rendered
-page, each an `<h3>` with a paragraph under it that names the card as "★5 [Card] Holomem" and
+page, each an `<h3>` with a paragraph under it that names the holomems after one "★5" ("new
+★5 Usada Pekora, IRyS, Momosuzu Nene and Pavolia Reine") and
 the opening as "gacha … from Monday, October 19 at 11:00 AM (JST)" (or "… start on Thursday,
 October 29, at 11:00 JST", 24-hour) and the official posts linked. `buildUpcoming` reads the
 paragraph and not the headline, which went from "★5 [Card] Holomem previewed" to "New ★5
 Vestia Zeta and Nerissa Ravencroft previews" on 27 October 2026, when it began to miss the
 new banner: one post may reveal several cards, each with a link of its own, matched to the
-holomem by her name in the link's label. It writes `holodori/upcoming.json` (card, holomem,
-opening time in UTC, the post), keeping those that open no more than 14 days before the
-build, and warns if the page names no ★5 card at all.
+holomem by her name, or the start of it ("Iofi"), in the link's label. **The paragraph named
+the card too, as "★5 [Card] Holomem", until the Lab rewrote every post without it** (found 14
+November 2026; the build had read no preview since the ones of 5 November): the bracket is
+still read where one is given, and a preview without one shows as "★5 Holomem". It writes
+`holodori/upcoming.json` (holomem, the card where given, opening time in UTC, the post),
+keeping those that open no more than 14 days before the build, and warns if it reads no
+preview anywhere on the page, which holds every one since October.
 The page shows them under **Announced**, a card to each opening time, until the record has
 a banner opening within the hour of it. A preview names no banner, so the card reads "New
 ★5 Members"; not every ★5 is previewed there (Kaela was not, for Blissful Seaside Days).

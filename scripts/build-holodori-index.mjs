@@ -677,9 +677,11 @@ async function buildGachas() {
 // The game announces a new ★5 about a day before its gacha opens, on its English X account,
 // which a build cannot read; the dump learns of the gacha only once it is open. hololive
 // Dreams Lab, a fan site, collects those posts by date on a server-rendered page, each as an
-// <h3> whose paragraph names the card as "★5 [Card] Holomem" and the gacha's opening as "gacha
-// … from Monday, October 19 at 11:00 AM (JST)" or "… start on Thursday, October 29, at 11:00
-// JST", with the official posts linked under it. The headline is not read: it has been "★5
+// <h3> whose paragraph names the holomems after one "★5" ("new ★5 Usada Pekora, IRyS, Momosuzu
+// Nene and Pavolia Reine"; "★5 [Card] Holomem" with the card's name until the Lab dropped it
+// from every post, found 14 November 2026, when the build read no preview) and the gacha's opening as
+// "gacha … from Monday, October 19 at 11:00 AM (JST)" or "… start on Thursday, October 29, at
+// 11:00 JST", with the official posts linked under it. The headline is not read: it has been "★5
 // [Card] Holomem previewed" for one card and "New ★5 Vestia Zeta and Nerissa Ravencroft
 // previews" for two, and a post that reveals several cards has a link for each. Its
 // robots.txt allows a crawl.
@@ -705,8 +707,12 @@ async function buildUpcoming() {
       continue;
     }
     const summary = strip(m[4]);
-    // A holomem's name is the capitalised words after the card's: "Vestia Zeta" in "… Vestia Zeta and ★5 […".
-    const cards = new Map([...summary.matchAll(/★5 \[([^\]]+)\] ([A-Z][\w'’+-]*(?: [A-Z][\w'’+-]*)*)/g)].map(c => [`${c[1]}|${c[2]}`, c]));
+    // A holomem's name is the capitalised words after "★5", and one "★5" may lead several:
+    // "★5 Usada Pekora, IRyS, Momosuzu Nene and Pavolia Reine. Each is…". A card's own name
+    // came first in brackets once and is kept where one is given.
+    const name = "[A-Z][\\w'’+-]*(?: [A-Z][\\w'’+-]*)*";
+    const cards = new Map([...summary.matchAll(new RegExp(`★5 (?:\\[([^\\]]+)\\] )?(${name}(?:(?:, | and )${name})*)`, 'g'))]
+      .flatMap(c => c[2].split(/, | and /).map(holomem => [`${c[1]}|${holomem}`, [c[0], c[1], holomem]])));
     const when = summary.match(/gacha[^.]*?(\w+) (\d+),? at (\d+):(\d+)(?: (AM|PM))? \(?JST\)?/);
     const mo = when ? MONTH_NO.indexOf(when[1]) + 1 : 0;
     if (!cards.size || !mo || !year) continue;
@@ -717,13 +723,13 @@ async function buildUpcoming() {
     const from = new Date(Date.UTC(y, mo - 1, Number(when[2]), hour - 9, Number(when[4]))).toISOString();
     const links = [...m[4].matchAll(/href="(https:\/\/x\.com\/[^"]+)"[^>]*>(.*?)<\/a>/g)];
     for (const [, card, holomem] of cards.values()) {
-      // Several cards in one post have a link each, labelled with her name.
-      const link = cards.size === 1 ? links[0] : links.find(l => holomem.split(' ').some(word => strip(l[2]).includes(word)));
+      // Several cards in one post have a link each, labelled with a word of her name or the start of one ("Iofi").
+      const link = cards.size === 1 ? links[0] : links.find(l => holomem.split(' ').some(word => strip(l[2]).split(' ').some(label => word.startsWith(label))));
       seen.set(`${card}|${holomem}`, { card, holomem, from, ...(link && { source: link[1] }) });
     }
   }
   const list = [...seen.values()].filter(p => Date.parse(p.from) > Date.now() - KEEP_MS);
-  if (!list.length && !html.includes('★5 [')) console.warn('holodori: hololive Dreams Lab names no ★5 preview; has its page changed?');
+  if (!seen.size) console.warn('holodori: hololive Dreams Lab names no ★5 preview; has its page changed?');
   return list.sort((a, b) => a.from.localeCompare(b.from));
 }
 

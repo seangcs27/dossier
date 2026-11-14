@@ -246,11 +246,12 @@ export function getHolodoriGachas(): HolodoriGacha[] {
 
 /**
  * A ★5 the game has announced for a gacha, as hololive Dreams Lab collects the official
- * posts (scripts/build-holodori-index.mjs): its card's name and its holomem's, and when the
- * gacha opens, ISO in UTC. The dump has neither card nor gacha until it opens.
+ * posts (scripts/build-holodori-index.mjs): its holomem's name, its card's where the Lab
+ * gives one, and when the gacha opens, ISO in UTC. The dump has neither card nor gacha until
+ * it opens.
  */
 export interface HolodoriPreview {
-  card: string;      // 'Shady Hammock Days'
+  card?: string;     // 'Shady Hammock Days'
   holomem: string;   // 'Tokoyami Towa'
   from: string;
   source?: string;   // the official post, on X
