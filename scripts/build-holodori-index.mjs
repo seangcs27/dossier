@@ -611,25 +611,36 @@ async function buildHolomemVoices() {
 // has and the record has not, read from the dump itself (29 October 2026, when the record had
 // fallen a banner behind): the Gacha table has ids alone, but a pickup banner's gacha points
 // are named for it ("Free-Style Cosplay Night Gacha Pt", LangGachaPoint_Eng), its id carries
-// the day it opens (pickup-normal-261029), and the ★5 cards it features are the new ones,
-// numbered on from every earlier banner's (uniq-0096 to -0100 for that one, as each recorded
-// banner's run on from the one before). It opens at 11:00 JST, as every recorded pickup but
+// the day it opens (pickup-normal-261029), and the ★5 cards it features are the new ones: the
+// next in the game's order of cards after every earlier banner's, as many as its points buy
+// (ExchangeBoothFixedItem has a row for each featured card and does not name it; the count is
+// the recorded count on all nine recorded banners, whose cards run on in that order with no
+// gap). Not by the number in a card's id, which was the rule until 14 November 2026: the cards
+// of 6 November are uniq-0113 to -0115 and those of 14 November uniq-0104 to -0108, so the
+// older banner took all eight. It opens at 11:00 JST, as every recorded pickup but
 // the area celebration did, and runs until the minute before the next banner opens; the
 // newest has no end until then, which the page says. A banner's usual gacha, its free one
 // and its "Take your pick!" twin are one entry. What the dump does not name (a "fixed"
 // gacha, the ★5 ticket) is left out with a warning, as before. Its logos are asked of the CDN
 // by the page.
 const OPENS_UTC = 'T02:00Z';  // 11:00 JST
-const uniqOf = id => Number(/uniq-(\d+)/.exec(id)?.[1] ?? 0);
 
 async function buildGachas() {
-  const [rows, points, cards] = await Promise.all([
-    table('Gacha'), table('LangGachaPoint_Eng'), readFile(CARDS_FILE, 'utf8').then(JSON.parse),
+  const [rows, points, booth, cards] = await Promise.all([
+    table('Gacha'), table('LangGachaPoint_Eng'), table('ExchangeBoothFixedItem'),
+    readFile(CARDS_FILE, 'utf8').then(JSON.parse),
   ]);
   const recorded = new Set(GACHAS.flatMap(g => g.gachas));
   const ids = rows.map(r => r.id.replace(/^gacha-/, ''));
   const pointName = new Map(points.map(p => [p.id, p.text]));
-  const fives = cards.filter(c => c.rarity === 5);
+  // In the game's order of cards, which is the order cards.json is written in.
+  const fives = cards.filter(c => c.rarity === 5).map(c => c.id);
+  // How many cards a banner's points buy, by its day.
+  const featured = new Map();
+  for (const item of booth) {
+    const day = /^exchange_booth-gacha-pickup-(\d{6})$/.exec(item.exchangeBoothId)?.[1];
+    if (day) featured.set(day, (featured.get(day) ?? 0) + 1);
+  }
 
   // The dump's pickup banners the record lacks, by the day in their ids: newer ones only, since
   // the record is the word on the past (it leaves the launch banner out on purpose, and the
@@ -654,10 +665,8 @@ async function buildGachas() {
   for (const g of found.sort((a, b) => a.from.localeCompare(b.from))) {
     const before = pickups.filter(o => o !== g && o.from < g.from);
     const after = pickups.filter(o => o !== g && o.from > g.from);
-    const floor = Math.max(0, ...before.flatMap(o => o.pickup.map(uniqOf)));
-    const ceiling = Math.min(Infinity, ...after.filter(o => o.pickup.length).flatMap(o => o.pickup.map(uniqOf)));
-    g.pickup = fives.filter(c => uniqOf(c.id) > floor && uniqOf(c.id) < ceiling)
-      .sort((a, b) => uniqOf(a.id) - uniqOf(b.id)).map(c => c.id);
+    const first = Math.max(-1, ...before.flatMap(o => o.pickup.map(id => fives.indexOf(id)))) + 1;
+    g.pickup = fives.slice(first, first + (featured.get(g.from.slice(2, 10).replaceAll('-', '')) ?? 0));
     const next = after.map(o => o.from).sort()[0];
     if (next) g.to = new Date(Date.parse(next) - 60_000).toISOString().replace(':00.000Z', 'Z');
     console.log(`holodori: from the dump, "${g.name}" (${g.gachas.join(', ')}), ${g.pickup.length} ★5s${g.to ? '' : ', end not announced'}`);
