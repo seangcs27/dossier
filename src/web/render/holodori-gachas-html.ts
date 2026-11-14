@@ -74,7 +74,7 @@ function upcomingHtml(now: number): string {
             <h3 class="gacha-name">New ★5 Members</h3>
             <p class="gacha-dates">From ${whenHtml(from)}</p>
             <ul class="gacha-previews">${list.map(p => `
-              <li>★5 [${escHtml(p.card)}] ${escHtml(p.holomem)}${p.source ? ` · <a href="${escHtml(p.source)}" target="_blank" rel="noopener">Announcement</a>` : ''}</li>`).join('')}
+              <li>★5 ${p.card ? `[${escHtml(p.card)}] ` : ''}${escHtml(p.holomem)}${p.source ? ` · <a href="${escHtml(p.source)}" target="_blank" rel="noopener">Announcement</a>` : ''}</li>`).join('')}
             </ul>
           </div>
         </div>
