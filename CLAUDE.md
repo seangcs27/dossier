@@ -1659,6 +1659,13 @@ ranges, costs and voice lines are the Chinese wiki's (above).
 tile opens a **front page** (`views/holodori-home.ts`, 18 October 2026, the owner's "home
 page"): a tile into each of Holomems, Songs, Cards and Gachas with its count and a few of
 its pictures, the gachas running now, the next six birthdays as the game's round icons,
+the next six debut anniversaries under them (15 November 2026, the owner's ask; "Upcoming
+birthdays" and "Upcoming anniversaries", the owner's wording: a birthday's face has the
+calendar's cake on its corner, on pink, and an anniversary's the star with the number of the
+anniversary beside it, on the sun, over "5th anniversary", the day and the days to go; the cake
+is ours still, a search of the game's stamps and items and of the web that day finding no
+hololive one; an anniversary's "in N days" carries the birthdays' `data-bday` hook with the
+debut's month and day, so `freshen()` sets it with no rule of its own),
 and the six newest songs. The sticker sheet is `#/holodori/holomems`.
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's
 master database from `raw.githubusercontent.com` (`HolodoriDB/holodori-db-eng-diff`, one of

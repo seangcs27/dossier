@@ -3540,6 +3540,41 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     b { display: grid; height: 100%; place-items: center; color: $ink-print; font-size: var(--fs-4xl); font-weight: 900; }
   }
 
+  // A face with the calendar's mark on its corner: the cake on pink for a birthday, and for a
+  // debut anniversary (.years) the star on the sun with which anniversary it is beside it.
+  .hh-face { position: relative; display: grid; }
+
+  .hh-mark {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: flex;
+    min-width: 26px;
+    height: 26px;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 13px;
+    background: $pink;
+    box-shadow: 0 0 0 2px #fff;
+    color: $ink-print;
+    font-size: var(--fs-sm);
+    font-style: normal;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+
+    svg { width: 17px; height: 17px; fill: currentColor; }
+  }
+
+  .hh-mark.years {
+    right: -8px;
+    padding: 0 var(--sp-6) 0 var(--sp-4);
+    background: $sun;
+
+    svg { width: 14px; height: 14px; }
+  }
+
   .hh-bday.today .hh-icon { box-shadow: 0 0 0 4px $sun, 0 4px 10px $lift; }
   .hh-bday-name { margin-top: var(--sp-6); font-size: var(--fs-lg); font-weight: 900; }
   .hh-bday-when { color: $ink-soft; font-size: var(--fs-sm); font-weight: 700; }
