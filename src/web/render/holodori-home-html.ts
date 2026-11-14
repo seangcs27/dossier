@@ -130,7 +130,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
       </nav>
       ${live.length ? `
         <section class="hm-section">
-          <h3 class="hm-head">Gachas running now <small>${live.length}</small></h3>
+          <h3 class="hm-head">Gachas Running Now <small>${live.length}</small></h3>
           <div class="gacha-list">${live.map(g => bannerHtml(g, now)).join('')}</div>
         </section>` : ''}${newsHtml(announced)}
       <section class="hm-section">

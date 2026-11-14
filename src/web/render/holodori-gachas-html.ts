@@ -109,9 +109,9 @@ export function gachasPageHtml(now: number): string {
       </header>
       ${upcomingHtml(now)}
       ${gachas.length ? `
-        ${groupHtml('Running now', gachas.filter(g => isLive(g, now)), now)}
-        ${groupHtml('Always on', gachas.filter(g => !dated(g)), now)}
-        ${groupHtml('Past banners', gachas.filter(g => dated(g) && !isLive(g, now)), now)}
+        ${groupHtml('Running Now', gachas.filter(g => isLive(g, now)), now)}
+        ${groupHtml('Always On', gachas.filter(g => !dated(g)), now)}
+        ${groupHtml('Past Banners',gachas.filter(g => dated(g) && !isLive(g, now)), now)}
       ` : '<div class="state-msg"><div class="label">No gachas</div>The last build had no record of them.</div>'}
       <p class="hd-credit">Names, dates and cards: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>, recorded by hand, and the game's own data (<a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s dump) for a banner newer than that record · Announced ★5s: the official posts, as <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a> collects them · Logos: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN</p>
     </div>

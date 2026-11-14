@@ -316,12 +316,12 @@ export function voicesHtml(card: HolodoriCard, d: HolodoriCardDetail, volume = 0
   return `
     ${d.voices.length ? `
       <section class="hm-section" aria-labelledby="hc-voices">
-        <h3 class="hm-head" id="hc-voices">Voice lines <small>${d.voices.length}</small></h3>
+        <h3 class="hm-head" id="hc-voices">Voice Lines <small>${d.voices.length}</small></h3>
         <ul class="vl-list">${d.voices.map(line => lineHtml(card, line)).join('')}</ul>
       </section>` : ''}
     ${d.dialogues.length ? `
       <section class="hm-section" aria-labelledby="hc-dialogues">
-        <h3 class="hm-head" id="hc-dialogues">Live dialogues <small>${d.dialogues.length}</small></h3>
+        <h3 class="hm-head" id="hc-dialogues">Live Dialogues <small>${d.dialogues.length}</small></h3>
         <div class="hc-dialogues">
           ${d.dialogues.map(x => `
             <div class="hc-dialogue">

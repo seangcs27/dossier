@@ -61,7 +61,7 @@ export function holomemVoicesHtml(c: HolodoriCharacter, d: HolodoriHolomemDetail
   const who = { colour: c.colors[0] ?? '#18c9f0', face: faceHtml(c), mine: true };
   return `
     <section class="hm-section" aria-labelledby="hm-voices">
-      <h3 class="hm-head" id="hm-voices">Voice lines <small>${total}</small></h3>
+      <h3 class="hm-head" id="hm-voices">Voice Lines <small>${total}</small></h3>
       ${d.voices.map(g => `
         <h4 class="hm-sub">${escHtml(g.group)} <small>${g.lines.length}</small></h4>
         <ul class="vl-list">${g.lines.map(line => bubbleHtml(line, who, line.label ?? '')).join('')}</ul>`).join('')}
@@ -118,17 +118,17 @@ export function holomemHtml(id: string, now: number, { disc, backs, voices }: Ho
         </div>
       </section>
       <section class="hm-section" aria-labelledby="hm-cards">
-        <h3 class="hm-head" id="hm-cards">Her cards <small>${own.length}</small></h3>
+        <h3 class="hm-head" id="hm-cards">Her Cards <small>${own.length}</small></h3>
         ${own.length ? `<ul class="hcard-grid">${own.map(cardTileHtml).join('')}</ul>` : '<p class="hm-none">No cards yet</p>'}
       </section>
       <section class="hm-section" aria-labelledby="hm-songs">
-        <h3 class="hm-head" id="hm-songs">Songs she sings <small>${sung.length}</small></h3>
+        <h3 class="hm-head" id="hm-songs">Songs She Sings <small>${sung.length}</small></h3>
         ${sung.length ? `<ul class="song-grid">${sung.map(s => songTileHtml(s, disc)).join('')}</ul>` : '<p class="hm-none">No songs of her own yet</p>'}
         <p class="hm-note">and the ${everyone} songs the whole cast sings · <a href="#/holodori/songs">every song</a></p>
       </section>
       ${c.stickers.length ? `
       <section class="hm-section" aria-labelledby="hm-stickers">
-        <h3 class="hm-head" id="hm-stickers">Membership stickers <small>${c.stickers.length}</small></h3>
+        <h3 class="hm-head" id="hm-stickers">Membership Stickers <small>${c.stickers.length}</small></h3>
         <ul class="hm-stickers">${c.stickers.map(s => `
           <li><img src="${escHtml(s.art)}" alt="" width="256" height="256" loading="lazy" decoding="async" onerror="this.remove()"><span>${escHtml(s.name)}</span></li>`).join('')}
         </ul>
