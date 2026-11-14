@@ -1659,6 +1659,18 @@ ranges, costs and voice lines are the Chinese wiki's (above).
 tile opens a **front page** (`views/holodori-home.ts`, 18 October 2026, the owner's "home
 page"): a tile into each of Holomems, Songs, Cards and Gachas with its count and a few of
 its pictures, the gachas running now, the next six birthdays as the game's round icons,
+the next six debut anniversaries under them (15 November 2026, the owner's ask; "Upcoming
+Birthdays" and "Upcoming Anniversaries", the owner's wording, and "New Songs": a birthday's face
+has the calendar's cake on its corner, on pink, and an anniversary's a seal (`.hh-seal`):
+hololive's triangle itself (`icons/games/holodori.webp` as a mask, 46px) in the game's blue
+(`$cover-deep`, the owner's pick over the sun), edged in white by a drop-shadow, with "5th" in
+white on its larger triangle, over "5th anniversary", the day and
+the days to go; a star beside the number was tried first, which the owner found read as a
+rarity, then a round stamp with the triangle inside it, where they wanted the badge to be the
+triangle; the cake
+is ours still, a search of the game's stamps and items and of the web that day finding no
+hololive one; an anniversary's "in N days" carries the birthdays' `data-bday` hook with the
+debut's month and day, so `freshen()` sets it with no rule of its own),
 and the six newest songs. The sticker sheet is `#/holodori/holomems`.
 `scripts/build-holodori-index.mjs` reads six tables of HolodoriDB's dump of the game's
 master database from `raw.githubusercontent.com` (`HolodoriDB/holodori-db-eng-diff`, one of
@@ -1754,7 +1766,12 @@ anniversary"; filled glyphs of our own since 13 November 2026, a cake with three
 a stroked cake and a flag were: hololive publishes no icon for either, a search that day found
 none). Two share a square side by side, three or four make two rows of two, and past
 four a count, a disc in the ink with white on it (it was the sun's, which is today's and an
-anniversary's). **Today is on the sun**: its square cream with a sun ring and halo, "Today"
+anniversary's). **Faces in one square never overlap** (15 November 2026, the owner's report of
+the 9th, FLOW GLOW's debut): the gap between two is 6px, wider than their two rings, and three
+or four are sized by the box's height as well as its width (`--face`; by the width alone the two
+rows were taller than the box and ran over each other and the date), about 31px in an 87px
+square where they were 38. The count is 0.72 of a face, always the smaller. On a phone four are
+about 15px each, with thinner rings and no cake or star, which would cover the face. **Today is on the sun**: its square cream with a sun ring and halo, "Today"
 beside its number, its weekday's heading a sun pill; what has passed this month fades. **The
 month is picked from a panel of our own** (13 November 2026, the owner's ask, after the
 browser's own drop-downs of 10 November): back and forward, the month and year as one button,

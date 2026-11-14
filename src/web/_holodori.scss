@@ -1134,18 +1134,25 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .dcal-faces {
     position: absolute;
     inset: 18% 8% 8%;
-    container-type: inline-size;
+    container-type: size;
     display: grid;
-    gap: 3px;
+    // Wider than the rings of two faces (2.5px each), so that neighbours never overlap.
+    gap: 6px;
     place-content: center;
 
     &.n1 { grid-template-columns: minmax(0, 88%); }
     &.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    // A face as large as lets both columns and both rows into the box: by its width alone the
+    // two rows were taller than the box, and ran over the date and each other.
     &.n3,
     &.n4 {
+      --face: min((100cqw - 6px) / 2, (100cqh - 6px) / 2);
+
       inset: 16% 6% 6%;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 2px;
+      grid-template-columns: repeat(2, auto);
+
+      .dcal-face { width: var(--face); }
+      .dcal-mark { right: -3px; bottom: -3px; }
     }
   }
 
@@ -1229,19 +1236,20 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     &:is(:hover, :focus-within) { background: $cover-deep; }
     &:focus-visible { outline: 2px solid $ink-print; outline-offset: 2px; }
 
-    // On the page the count is the last of the faces: an ink disc of a face's size in the
-    // slot a fourth face would take, its number sized from the faces' own box.
+    // On the page the count is the last of the faces: an ink disc in the slot a fourth face
+    // would take, always smaller than a face, its number sized from the faces' own box.
     &.slot {
       position: relative;
       inset: auto;
       display: grid;
-      width: 100%;
+      width: calc(var(--face) * 0.72);
       aspect-ratio: 1;
       padding: 0;
+      place-self: center;
       place-items: center;
       border-radius: 50%;
-      box-shadow: 0 0 0 2.5px #fff, 0 1px 3px rgb(16 60 110 / 30%);
-      font-size: max(10px, 19cqw);
+      box-shadow: 0 0 0 2px #fff, 0 1px 3px rgb(16 60 110 / 30%);
+      font-size: max(9px, 14cqw);
       font-variant-numeric: tabular-nums;
       line-height: 1;
     }
@@ -1340,9 +1348,19 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-dow.on { padding: var(--sp-4) var(--sp-6); }
     .dcal-list { padding: var(--sp-12); }
     // The squares are about 44px wide: the date stays clear of the face under it.
-    .dcal-faces { inset: 28% 6% 6%; }
+    .dcal-faces { inset: 28% 6% 6%; gap: 4px; }
+    // Four in a square this small are about 15px each: thinner rings, and no mark, which would
+    // cover the face; the dates' list under the grid says what each day is.
     .dcal-faces.n3,
-    .dcal-faces.n4 { inset: 26% 3% 3%; }
+    .dcal-faces.n4 {
+      --face: min((100cqw - 4px) / 2, (100cqh - 4px) / 2);
+
+      inset: 26% 3% 3%;
+
+      .dcal-pic { box-shadow: 0 0 0 1.5px #fff; }
+      .dcal-face.anniversary .dcal-pic { box-shadow: 0 0 0 1.5px $sun; }
+      .dcal-mark { display: none; }
+    }
     .dcal-more { top: auto; right: auto; bottom: 3px; left: 4px; }
     // The count is at the square's foot here, so its list opens upward.
     .dcal-rest { top: auto; bottom: 100%; padding: 0 0 6px; }
@@ -3540,6 +3558,77 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     b { display: grid; height: 100%; place-items: center; color: $ink-print; font-size: var(--fs-4xl); font-weight: 900; }
   }
 
+  // A face with the calendar's mark on its corner: the cake on pink for a birthday, and for a
+  // debut anniversary (.years) the star on the sun with which anniversary it is beside it.
+  .hh-face { position: relative; display: grid; }
+
+  .hh-mark {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: flex;
+    min-width: 26px;
+    height: 26px;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 13px;
+    background: $pink;
+    box-shadow: 0 0 0 2px #fff;
+    color: $ink-print;
+    font-size: var(--fs-sm);
+    font-style: normal;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+
+    svg { width: 17px; height: 17px; fill: currentColor; }
+  }
+
+  // A debut anniversary's seal: hololive's triangle itself in the game's blue, edged in white, with
+  // which anniversary it is on its larger triangle. A star beside the number read as a rarity.
+  .hh-seal {
+    position: absolute;
+    right: -14px;
+    bottom: -10px;
+    width: 46px;
+    aspect-ratio: 1;
+    color: #fff;
+    font-style: normal;
+    line-height: 1;
+    // The white edge follows the triangle's own outline, which a box-shadow cannot.
+    filter: drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff);
+
+    // The emblem, a mask filled with the blue.
+    i {
+      position: absolute;
+      inset: 0;
+      background: $cover-deep;
+      mask: center / contain no-repeat;
+    }
+
+    // On the larger triangle, which sits above the emblem's own centre, clear of its left edge.
+    b {
+      position: absolute;
+      top: 43%;
+      left: 52%;
+      font-size: var(--fs-lg);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+    }
+
+    small {
+      font-size: 8px;
+      font-weight: 800;
+      vertical-align: top;
+    }
+
+    // Two digits, from a tenth anniversary on.
+    &.wide b { font-size: var(--fs-sm); }
+  }
+
   .hh-bday.today .hh-icon { box-shadow: 0 0 0 4px $sun, 0 4px 10px $lift; }
   .hh-bday-name { margin-top: var(--sp-6); font-size: var(--fs-lg); font-weight: 900; }
   .hh-bday-when { color: $ink-soft; font-size: var(--fs-sm); font-weight: 700; }
@@ -3735,6 +3824,10 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .hh-pics.icons img { height: 48px; }
     .hh-pics.logos img { height: 52px; }
     .hh-icon { width: 72px; }
+    // Smaller with the face, so that it stays on the face's corner.
+    .hh-seal { right: -16px; bottom: -12px; width: 40px; }
+    .hh-seal b { font-size: var(--fs-md); }
+    .hh-seal small { font-size: 7px; }
     // The day and its source on a line, the headline under them.
     .hh-news {
       padding: var(--sp-12) var(--sp-12) var(--sp-16);

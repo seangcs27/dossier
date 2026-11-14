@@ -17,8 +17,8 @@ const MAX_FACES = 4;
 // Filled glyphs, which hold at the 12px a small face's corner gives them where a stroke thinned
 // out: a cake with three lit candles and its icing for a birthday, a star for a debut
 // anniversary. Ours: hololive publishes no icon for either.
-const CAKE = '<svg viewBox="0 0 16 16"><circle cx="4.8" cy="3.4" r="1.05"></circle><circle cx="8" cy="3.4" r="1.05"></circle><circle cx="11.2" cy="3.4" r="1.05"></circle><path d="M4.1 5.2h1.4V8H4.1zM7.3 5.2h1.4V8H7.3zM10.5 5.2h1.4V8h-1.4zM2 9.2A1.2 1.2 0 0 1 3.2 8h9.6A1.2 1.2 0 0 1 14 9.2v1.1c-1 0-1 .9-2 .9s-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9ZM2 11.6c1 0 1 .9 2 .9s1-.9 2-.9 1 .9 2 .9 1-.9 2-.9 1 .9 2 .9 1-.9 2-.9v2.2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"></path></svg>';
-const STAR = '<svg viewBox="0 0 16 16"><path d="M8 1.6 9.9 5.7l4.5.6-3.3 3.1.8 4.4L8 11.7l-3.9 2.1.8-4.4L1.6 6.3l4.5-.6Z"></path></svg>';
+export const CAKE = '<svg viewBox="0 0 16 16"><circle cx="4.8" cy="3.4" r="1.05"></circle><circle cx="8" cy="3.4" r="1.05"></circle><circle cx="11.2" cy="3.4" r="1.05"></circle><path d="M4.1 5.2h1.4V8H4.1zM7.3 5.2h1.4V8H7.3zM10.5 5.2h1.4V8h-1.4zM2 9.2A1.2 1.2 0 0 1 3.2 8h9.6A1.2 1.2 0 0 1 14 9.2v1.1c-1 0-1 .9-2 .9s-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9ZM2 11.6c1 0 1 .9 2 .9s1-.9 2-.9 1 .9 2 .9 1-.9 2-.9 1 .9 2 .9 1-.9 2-.9v2.2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"></path></svg>';
+const STAR ='<svg viewBox="0 0 16 16"><path d="M8 1.6 9.9 5.7l4.5.6-3.3 3.1.8 4.4L8 11.7l-3.9 2.1.8-4.4L1.6 6.3l4.5-.6Z"></path></svg>';
 
 /** A birthday, or when `years` is set a debut anniversary, on `day` of a month. */
 export interface CalendarEntry {
