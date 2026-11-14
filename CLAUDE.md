@@ -2033,8 +2033,14 @@ newer than the record is read from the dump itself** (29 October 2026, when the 
 fallen a banner behind and the owner asked why the newest cards were in and their banner
 was not): its gacha points are named for it ("Free-Style Cosplay Night Gacha Pt",
 `LangGachaPoint_Eng`), its id carries the day it opens (`pickup-normal-261029`), and its ★5s
-are the new ones, numbered on from every earlier banner's (`uniq-0096` to `-0100`, as each
-recorded banner's run on from the one before). It opens at 11:00 JST, as every recorded
+are the new ones: the next in the game's order of cards (`Card.order`, the order `cards.json`
+is written in) after every earlier banner's, as many as its points buy
+(`ExchangeBoothFixedItem` has a row for each featured card and does not name it; on the nine
+recorded banners that count is the recorded one, and their cards run on in that order with no
+gap). Until 14 November 2026 they went by the number in a card's id, which is not the order of
+release: the cards of 6 November are `uniq-0113` to `-0115` and those of 14 November
+`uniq-0104` to `-0108`, so Heartwarming Chill Time took all eight and Bright Autumn Trip had
+none. It opens at 11:00 JST, as every recorded
 pickup but the area celebration did; it ends the minute before the next banner opens, and
 the newest has no end until then (the page says "Running · end not announced" and "end to
 be announced"). Its usual, free and "Take your pick!" gachas are one entry, marked `auto`.

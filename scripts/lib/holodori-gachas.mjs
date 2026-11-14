@@ -9,8 +9,8 @@
 // player until it is used, so it has none either.
 //
 // A new pickup banner needs no entry: the build reads one newer than this record from the dump
-// (its name from its gacha points, its day from its id, its ★5s from the run of card numbers;
-// build-holodori-index.mjs, buildGachas). An entry here is still the word on a banner, and is
+// (its name from its gacha points, its day from its id, its ★5s the next in the game's order of
+// cards, as many as its points buy; build-holodori-index.mjs, buildGachas). An entry here is still the word on a banner, and is
 // how one the dump reads wrong is put right: add it at the top. The build warns of a gacha
 // neither has, and of a featured card the dump has not. Not here, because holodori.best
 // does not load them: the launch banner's two gachas (pickup-normal-260728,
