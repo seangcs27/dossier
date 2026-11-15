@@ -51,11 +51,10 @@ export function wireMonthPicker(root: HTMLElement, move: (control: PickerControl
     const button = target.closest<HTMLButtonElement>('button[data-step], button[data-month]');
     if (!button || button.disabled) return;
     const { step, month } = button.dataset;
-    // A year's step leaves the panel open for the month that is to be picked in it.
-    const stay = step !== undefined && button.closest('.dcal-pop') !== null;
     move({ step, month });
-    if (stay) setOpen(root.querySelector('.dcal-drop')!, true);
-    root.querySelector<HTMLElement>(step ? `[data-step="${step}"]:not(:disabled)` : '.dcal-select')?.focus();
+    // A step that reached the year's end, or Today, is off in the new picker: the month's button takes the focus.
+    const again = step ? root.querySelector<HTMLElement>(`[data-step="${step}"]:not(:disabled)`) : null;
+    (again ?? root.querySelector<HTMLElement>('.dcal-select'))?.focus();
   });
 
   root.addEventListener('keydown', (e) => {
