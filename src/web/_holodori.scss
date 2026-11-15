@@ -943,22 +943,13 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   .dcal-pop-year {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     margin-bottom: var(--sp-8);
+    text-align: center;
 
     b {
       font-size: var(--fs-xl);
       font-variant-numeric: tabular-nums;
       font-weight: 900;
-    }
-
-    .dcal-step {
-      min-width: 36px;
-      height: 36px;
-      background: $panel;
-      box-shadow: none;
     }
   }
 
@@ -1036,7 +1027,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .dcal-today { margin-left: auto; }
 
   // The month: the album's paper with a day to each square, the face of whoever's date it is
-  // on it. A birthday has a cake on its corner, a debut anniversary a star.
+  // on it. A birthday has a cake on its corner, a debut anniversary hololive's triangle.
   $pink: #ff8fbf;
 
   .dcal-sheet {
@@ -1161,6 +1152,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     display: block;
     width: 100%;
     aspect-ratio: 1;
+    container-type: inline-size; // the seal reads the face's width for its number
     border-radius: 50%;
     color: $ink;
     text-decoration: none;
@@ -1216,7 +1208,64 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     }
   }
 
-  .dcal-face.anniversary .dcal-mark { background: $sun; }
+  // A debut anniversary's mark, and its key in the legend: hololive's triangle in the game's blue,
+  // as the front page's seal is, with no disc under it.
+  .dcal-mark.seal,
+  .dcal-key.anniversary {
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    // The white edge follows the triangle's own outline, which a box-shadow cannot.
+    filter: drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff);
+
+    i {
+      width: 100%;
+      height: 100%;
+      background: $cover-deep;
+      mask: center / contain no-repeat;
+    }
+  }
+
+  // A triangle covers less than the cake's disc of the same width. Its number is for a larger face.
+  .dcal-mark.seal {
+    width: clamp(16px, 46%, 30px);
+
+    b { display: none; }
+  }
+
+  // A face alone in its square, off a phone, is large enough for the seal to say which
+  // anniversary it is, as the front page's does: larger, the number on the larger triangle.
+  @container (min-width: 56px) {
+    .dcal-mark.seal {
+      right: -10px;
+      bottom: -8px;
+      width: 60cqw;
+      color: #fff;
+      font-style: normal;
+      line-height: 1;
+
+      b {
+        position: absolute;
+        top: 43%;
+        left: 52%;
+        display: block;
+        font-size: 20cqw;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        transform: translate(-50%, -50%);
+      }
+
+      small {
+        font-size: 0.55em;
+        font-weight: 800;
+        vertical-align: top;
+      }
+
+      // Two digits, from a tenth anniversary on.
+      b.wide { font-size: 15cqw; }
+    }
+  }
 
   // How many more share the date than the square holds. Pointed at, or focused, it opens them.
   // In the ink, white set on it: the sun is today's and an anniversary's.
@@ -1329,10 +1378,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       fill: currentColor;
     }
 
-    &.anniversary {
-      margin-left: var(--sp-16);
-      background: $sun;
-    }
+    &.anniversary { margin-left: var(--sp-16); }
   }
 
   @media (max-width: 640px) {
@@ -1426,6 +1472,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-faces.n1 { grid-template-columns: minmax(0, 100%); }
     .dcal-more { top: 2px; right: 2px; padding: 0 3px; font-size: 8px; }
     .dcal-mark { right: -3px; bottom: -3px; width: 12px; box-shadow: 0 0 0 1.5px #fff; }
+    .dcal-mark.seal { width: 15px; box-shadow: none; }
     .dcal-pic { box-shadow: 0 0 0 1.5px #fff; }
     .dcal-face.anniversary .dcal-pic { box-shadow: 0 0 0 1.5px $sun; }
   }

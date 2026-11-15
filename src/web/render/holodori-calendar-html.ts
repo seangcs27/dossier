@@ -14,11 +14,14 @@ const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // A day's cell holds this many faces, and one fewer than this and a count when there are more.
 const MAX_FACES = 4;
 
-// Filled glyphs, which hold at the 12px a small face's corner gives them where a stroke thinned
-// out: a cake with three lit candles and its icing for a birthday, a star for a debut
-// anniversary. Ours: hololive publishes no icon for either.
-export const CAKE = '<svg viewBox="0 0 16 16"><circle cx="4.8" cy="3.4" r="1.05"></circle><circle cx="8" cy="3.4" r="1.05"></circle><circle cx="11.2" cy="3.4" r="1.05"></circle><path d="M4.1 5.2h1.4V8H4.1zM7.3 5.2h1.4V8H7.3zM10.5 5.2h1.4V8h-1.4zM2 9.2A1.2 1.2 0 0 1 3.2 8h9.6A1.2 1.2 0 0 1 14 9.2v1.1c-1 0-1 .9-2 .9s-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9ZM2 11.6c1 0 1 .9 2 .9s1-.9 2-.9 1 .9 2 .9 1-.9 2-.9 1 .9 2 .9 1-.9 2-.9v2.2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"></path></svg>';
-const STAR ='<svg viewBox="0 0 16 16"><path d="M8 1.6 9.9 5.7l4.5.6-3.3 3.1.8 4.4L8 11.7l-3.9 2.1.8-4.4L1.6 6.3l4.5-.6Z"></path></svg>';
+// A birthday's glyph, filled, which holds at the 12px a small face's corner gives it where a
+// stroke thinned out: a cake with three lit candles and its icing. Ours: hololive publishes none.
+export const CAKE ='<svg viewBox="0 0 16 16"><circle cx="4.8" cy="3.4" r="1.05"></circle><circle cx="8" cy="3.4" r="1.05"></circle><circle cx="11.2" cy="3.4" r="1.05"></circle><path d="M4.1 5.2h1.4V8H4.1zM7.3 5.2h1.4V8H7.3zM10.5 5.2h1.4V8h-1.4zM2 9.2A1.2 1.2 0 0 1 3.2 8h9.6A1.2 1.2 0 0 1 14 9.2v1.1c-1 0-1 .9-2 .9s-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9-1 .9-2 .9-1-.9-2-.9ZM2 11.6c1 0 1 .9 2 .9s1-.9 2-.9 1 .9 2 .9 1-.9 2-.9 1 .9 2 .9 1-.9 2-.9v2.2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z"></path></svg>';
+// A debut anniversary's: hololive's triangle, the front page's seal. A mask, which the stylesheet
+// fills. On a face it carries which anniversary it is, shown where the face is large enough.
+const SEAL = '<i style="-webkit-mask-image: url(icons/games/holodori.webp); mask-image: url(icons/games/holodori.webp)"></i>';
+const sealNumberHtml = (years: number): string =>
+  `<b${years > 9 ? ' class="wide"' : ''}>${years}<small>${ordinal(years).slice(String(years).length)}</small></b>`;
 
 /** A birthday, or when `years` is set a debut anniversary, on `day` of a month. */
 export interface CalendarEntry {
@@ -64,11 +67,11 @@ function picHtml(c: HolodoriCharacter): string {
 
 const accent = (c: HolodoriCharacter): string => escHtml(c.colors[0] ?? '#18c9f0');
 
-// One face with the cake or the star on its corner; a link to her unless `linked` is off.
+// One face with the cake or the seal on its corner; a link to her unless `linked` is off.
 function faceHtml(e: CalendarEntry, m: number, linked: boolean): string {
   const { c, day, years } = e;
   const cls = `dcal-face ${years === undefined ? 'birthday' : 'anniversary'}`;
-  const body = `${picHtml(c)}<i class="dcal-mark" aria-hidden="true">${years === undefined ? CAKE : STAR}</i>`;
+  const body = `${picHtml(c)}<i class="dcal-mark${years === undefined ? '' : ' seal'}" aria-hidden="true">${years === undefined ? CAKE : SEAL + sealNumberHtml(years)}</i>`;
   if (!linked) return `<span class="${cls}" style="--a: ${accent(c)}">${body}</span>`;
   return `<a class="${cls}" ${holomemLinkAttrs(c)} data-tip="${escHtml(`${c.shortName} · ${years === undefined ? 'Birthday' : `${ordinal(years)} anniversary`}`)}"
       aria-label="${escHtml(`${c.name}, ${kindOf(e)}, ${day} ${MONTHS[m]}`)}" style="--a: ${accent(c)}">${body}</a>`;
@@ -185,9 +188,10 @@ const CHEVRON = (turn: keyof typeof CHEVRON_PATH): string =>
 /**
  * The month picker over a grid: back, the month and year as one button, forward, and on the
  * page a button back to this month. The button opens a panel of our own (no browser drop-down):
- * the year with a step either way, and the twelve months, the one shown filled and this month
- * dotted. Its controls carry `data-step` (months to move by: '-1', '1', a year as '-12' and
- * '12', or 'today') or `data-month`, which `monthMoved` reads; calendar-picker.ts works them.
+ * the year and its twelve months, the one shown filled and this month dotted. The calendar is
+ * one year's, so back is off in January and forward in December. Its controls carry `data-step`
+ * (months to move by, '-1' or '1', or 'today') or `data-month`, which `monthMoved` reads;
+ * calendar-picker.ts works them.
  */
 export function monthPickerHtml(y: number, m: number, now: number, variant: 'page' | 'menu'): string {
   const at = new Date(now);
@@ -197,19 +201,15 @@ export function monthPickerHtml(y: number, m: number, now: number, variant: 'pag
                   aria-pressed="${i === m}" aria-label="${name} ${y}">${name.slice(0, 3)}</button>`).join('');
   return `
     <div class="dcal-picker ${variant}">
-      <button type="button" class="dcal-step" data-step="-1" aria-label="Previous month">${CHEVRON('left')}</button>
+      <button type="button" class="dcal-step" data-step="-1" aria-label="Previous month"${m === 0 ? ' disabled' : ''}>${CHEVRON('left')}</button>
       <div class="dcal-drop">
         <button type="button" class="dcal-select" aria-haspopup="dialog" aria-expanded="false">${MONTHS[m]} <span>${y}</span>${CHEVRON('down')}</button>
         <div class="dcal-pop" role="dialog" aria-label="Choose a month" hidden>
-          <div class="dcal-pop-year">
-            <button type="button" class="dcal-step" data-step="-12" aria-label="Previous year">${CHEVRON('left')}</button>
-            <b>${y}</b>
-            <button type="button" class="dcal-step" data-step="12" aria-label="Next year">${CHEVRON('right')}</button>
-          </div>
+          <div class="dcal-pop-year"><b>${y}</b></div>
           <div class="dcal-pop-months">${months}</div>
         </div>
       </div>
-      <button type="button" class="dcal-step" data-step="1" aria-label="Next month">${CHEVRON('right')}</button>
+      <button type="button" class="dcal-step" data-step="1" aria-label="Next month"${m === 11 ? ' disabled' : ''}>${CHEVRON('right')}</button>
       ${variant === 'page' ? `<button type="button" class="dcal-today" data-step="today"${current ? ' disabled' : ''}>Today</button>` : ''}
     </div>`;
 }
@@ -219,10 +219,7 @@ export function monthMoved(
   y: number, m: number, now: number, control: { step?: string; month?: string },
 ): { y: number; m: number } {
   if (control.step === 'today') return { y: new Date(now).getFullYear(), m: new Date(now).getMonth() };
-  if (control.step) {
-    const to = new Date(y, m + Number(control.step), 1);
-    return { y: to.getFullYear(), m: to.getMonth() };
-  }
+  if (control.step) return { y, m: m + Number(control.step) };
   return { y, m: Number(control.month) };
 }
 
@@ -249,5 +246,5 @@ export function calendarMenuHtml(now: number, y = new Date(now).getFullYear(), m
     <p class="dcal-menu-hint">Click the calendar icon to open the full calendar</p>`;
 }
 
-/** The legend: what the cake and the star on a face stand for. */
-export const CALENDAR_LEGEND = `<p class="legend dcal-legend"><i class="dcal-key birthday">${CAKE}</i>Birthday <i class="dcal-key anniversary">${STAR}</i>Debut anniversary</p>`;
+/** The legend: what the cake and the seal on a face stand for. */
+export const CALENDAR_LEGEND = `<p class="legend dcal-legend"><i class="dcal-key birthday">${CAKE}</i>Birthday <i class="dcal-key anniversary">${SEAL}</i>Debut anniversary</p>`;

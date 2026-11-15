@@ -1761,32 +1761,41 @@ owner's ask for a rework after hololive Fan Wiki's monthly calendar post, taken 
 only and drawn in the game's own look) is one month at a time, where it was the next twelve as
 a card each and a view of the roster. A month is a grid of seven columns from Sunday, the
 album's paper with a square to each day and the round face of whoever's date it is in it; a
-**cake on a face's corner is a birthday and a star a debut anniversary** ("2nd debut
-anniversary"; filled glyphs of our own since 13 November 2026, a cake with three candles where
-a stroked cake and a flag were: hololive publishes no icon for either, a search that day found
-none). Two share a square side by side, three or four make two rows of two, and past
+**cake on a face's corner is a birthday and hololive's triangle a debut anniversary** ("2nd debut
+anniversary"; the cake is a filled glyph of our own since 13 November 2026, three candles where
+a stroked cake was: hololive publishes no icon for it, a search that day found none; the
+triangle is the front page's seal, `icons/games/holodori.webp` as a mask in `$cover-deep` edged
+in white, with no disc, since 15 November 2026, the owner's ask, where a star on the sun was;
+the legend's key is the same. **A face 56px wide or more carries the number too** ("5th", the
+owner's ask the same day): a face alone in its square off a phone, about 64px, where the seal
+is 60% of the face and the number 20%, by a container query on `.dcal-face`; on every smaller
+face, the dates list's, the menu's and a shared square's, the triangle is bare and the number
+is in the markup, hidden). Two share a square side by side, three or four make two rows of two, and past
 four a count, a disc in the ink with white on it (it was the sun's, which is today's and an
 anniversary's). **Faces in one square never overlap** (15 November 2026, the owner's report of
 the 9th, FLOW GLOW's debut): the gap between two is 6px, wider than their two rings, and three
 or four are sized by the box's height as well as its width (`--face`; by the width alone the two
 rows were taller than the box and ran over each other and the date), about 31px in an 87px
 square where they were 38. The count is 0.72 of a face, always the smaller. On a phone four are
-about 15px each, with thinner rings and no cake or star, which would cover the face. **Today is on the sun**: its square cream with a sun ring and halo, "Today"
+about 15px each, with thinner rings and no cake or triangle, which would cover the face. **Today is on the sun**: its square cream with a sun ring and halo, "Today"
 beside its number, its weekday's heading a sun pill; what has passed this month fades. **The
 month is picked from a panel of our own** (13 November 2026, the owner's ask, after the
 browser's own drop-downs of 10 November): back and forward, the month and year as one button,
-and Today. The button opens the year with a step either way and the twelve months, the one
-shown filled and this month dotted; a year's step leaves it open, a month shuts it, as do
+and Today. The button opens the year and its twelve months, the one
+shown filled and this month dotted; a month shuts it, as do
 Escape and a press outside, and the arrow keys move among the months (`monthPickerHtml` draws
 it, `calendar-picker.ts` works it for the page and the menu both; `monthMoved` is the pure
-step from a press to the month it leads to, a year being a step of 12 months). The year is
-kept, with no bounds: it changes the weekdays and which anniversary it is. **The grid is 680px
+step from a press to the month it leads to). **The calendar is this year's alone** (15 November
+2026, the owner's ask; the year had a step either way and no bounds until then): the panel has
+no year steps, back is off in January and forward in December, and a step that turns its own
+button off hands the focus to the month's button. The year is the one the page opened in, and
+Today goes to the reader's own. **The grid is 680px
 at most, so that a month is on a screen with the dates beside it**: at full width, on a 1440px
 window, it was taller than the screen and nobody saw the list under it. Under 1040px the list
 goes under the grid. **The dates are an agenda** (`.dcal-agenda`, 13 November 2026, the owner's
 ask: a bare day number beside a face told nothing): a block to a day, a tile with its weekday,
 its number and how far off it is ("in 2 days", "4 days ago", within 60 days), and beside it
-whoever's day it is, a face with the cake or the star, her short name and "Birthday" or "2nd
+whoever's day it is, a face with the cake or the triangle, her short name and "Birthday" or "2nd
 anniversary", so no date rests on a picture alone. The days run down one column and then a
 second where the panel holds two (CSS columns), which keeps November's 13 on the grid's
 screen; a line marks where today falls, or today's own block is on the sun. **A day with more than four, or in the
@@ -1794,8 +1803,8 @@ menu more than one, has a count (`+2`) that opens the rest when it is pointed at
 (`.dcal-rest`, a face and a name to each, a link to her page; it opens to the right in the first
 three columns and to the left in the rest, so that it never goes out over the sidebar, and
 upward on a phone, where the count is at the square's foot).
-It covers `getHolodoriTalent()`, so FLOW GLOW's second anniversary and ASOBI★MAWARI-TAI!'s first
-(September 2027) are on it. The grid, the list and the menu are drawn by
+It covers `getHolodoriTalent()`, so FLOW GLOW's second anniversary is on it, and
+ASOBI★MAWARI-TAI!'s first (September 2027) once that year comes. The grid, the list and the menu are drawn by
 `render/holodori-calendar-html.ts` (`entriesIn` is the one place a month's dates are worked
 out). Its classes are `dcal-`: `cal-grid`, `cal-day` and `cal-bar` are the Arknights Events
 calendar's, global in `styles.scss`, and a first pass under those names took its rules, and `hc-`
@@ -1807,7 +1816,7 @@ theirs) opens that page when pressed, and **pointed at, or reached by the keyboa
 calendar down** (`calendar-menu.ts`, `.dcal-menu` under `.sections`, hung from its left end): the
 month picker, the month small, one face to a day and a count, then the next four dates from
 today with the days to each, and a line saying that the icon opens the full calendar (it had an
-"Open calendar" button; the owner asked for a guide instead). The picker steps through any month
+"Open calendar" button; the owner asked for a guide instead). The picker steps through this year's months
 and does not close it. It opens 120 ms after the pointer arrives and shuts 220 ms after it
 leaves, so the move from the icon to the menu does not close it (the picker's panel is inside
 the menu, so the pointer never leaves it; a press on the menu's bare ground does not close it
