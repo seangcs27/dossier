@@ -96,7 +96,7 @@ const SANITYGONE_BASE = 'https://sanitygone.help';
 const AN_EN_TAGS_JSON_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/AN-EN-Tags/main/json';
 const AN_EN_TAGS_BASE = `${AN_EN_TAGS_JSON_BASE}/ace`;
 const ARKNIGHT_IMAGES_TREE_URL =
-  'https://api.github.com/repos/PuppiizSunniiz/Arknight-Images/git/trees/main?recursive=1';
+  'https://api.github.com/repos/PuppiizSunniiz/Arknight-Images/git/trees/main';
 // Mirrors IMAGE_BASE in src/shared/api/hella-api.ts, and the jsDelivr copy it falls back to.
 const ARKNIGHT_IMAGES_BASE = 'https://raw.githubusercontent.com/PuppiizSunniiz/Arknight-Images/main';
 const ARKNIGHT_IMAGES_MIRROR = 'https://cdn.jsdelivr.net/gh/PuppiizSunniiz/Arknight-Images@main';
@@ -107,18 +107,25 @@ const PORTRAIT_BASE = 'https://cdn.jsdelivr.net/gh/yuanyan3060/ArknightsGameReso
 // Every characters/<id>_<suffix>.png in the asset repo, grouped by operator id — base
 // art (`1`), elite 2 art (`2`), and any alternate-outfit/promo variant (`sale#14`,
 // `epoque#7`, ...). The repo's own directory-listing API truncates past 1000 entries
-// (this folder alone has 1300+), so this uses the git Trees API instead, which returns
-// the whole repo in one call. Supplemental only — a fetch failure here just means no
-// operator gets an arts gallery, not a build failure; the plain avatar still works.
+// (this folder alone has 1400+), so this uses the git Trees API instead: the root's tree,
+// then the `characters` folder's own. The whole repo's tree in one call (`?recursive=1`)
+// answered 500 from 15 November 2026. Supplemental only — a fetch failure here is not a
+// build failure: each operator keeps the arts the last build's payload listed (that 500
+// shipped every payload with none), and one the last build did not have gets none; the
+// plain avatar still works.
 async function fetchCharacterArtIndex() {
   try {
-    const res = await timedFetch(ARKNIGHT_IMAGES_TREE_URL);
-    if (!res.ok) throw new Error(`tree ${res.status}`);
+    const rootRes = await timedFetch(ARKNIGHT_IMAGES_TREE_URL);
+    if (!rootRes.ok) throw new Error(`tree ${rootRes.status}`);
+    const folder = (await rootRes.json()).tree.find(t => t.path === 'characters');
+    if (!folder) throw new Error('no characters folder in the tree');
+    const res = await timedFetch(folder.url);
+    if (!res.ok) throw new Error(`characters tree ${res.status}`);
     const json = await res.json();
     if (json.truncated) throw new Error('tree response truncated');
     const byId = new Map();
     for (const entry of json.tree) {
-      const m = /^characters\/(char_\w+)_([^/]+)\.png$/.exec(entry.path);
+      const m = /^(char_\w+)_([^/]+)\.png$/.exec(entry.path);
       if (!m) continue;
       const [, id, suffix] = m;
       if (!byId.has(id)) byId.set(id, []);
@@ -126,8 +133,14 @@ async function fetchCharacterArtIndex() {
     }
     return byId;
   } catch (e) {
-    console.warn(`character art index skipped: ${e.message}`);
-    return new Map();
+    const byId = new Map();
+    const dir = path.join(outDir, 'operator-details');
+    for (const file of await readdir(dir).catch(() => [])) {
+      const prev = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
+      if (prev.arts?.length) byId.set(path.basename(file, '.json'), prev.arts.map(a => a.suffix));
+    }
+    console.warn(`character art index: ${e.message}; using the last build's arts for ${byId.size} operators`);
+    return byId;
   }
 }
 
