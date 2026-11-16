@@ -9,7 +9,7 @@ import { bannerHtml, isLive } from './holodori-gachas-html';
 import { songBackTemplatesHtml, songTileHtml } from './holodori-songs-html';
 
 // hololive Dreams' front page (#/holodori), where its tile in the sidebar lands: a way into
-// each of its four pages, then what is going on in the game now (the gachas running, the
+// each of its four pages and its calendar, then what is going on in the game now (the gachas running, the
 // birthdays coming) and its newest songs. In the game's world (_holodori.scss). No DOM and
 // no window: the view and the pages built at build time (site/) draw from this.
 
@@ -101,6 +101,25 @@ function linkHtml(href: string, count: number, name: string, pics: string[], kin
   `;
 }
 
+// The tile into the calendar: the faces of the next four birthdays and debut anniversaries, and
+// who is next with the days to go (the birthdays' hook, so freshen() sets it).
+function calendarLinkHtml(day: Date): string {
+  const dates = cast.flatMap((c) => {
+    const debut = { birthday: c.debut.slice(5) };
+    const years = nextBirthday(debut, day).getFullYear() - Number(c.debut.slice(0, 4));
+    return [{ c, born: { birthday: c.birthday }, what: 'birthday' },
+      ...(years > 0 ? [{ c, born: debut, what: `${ordinal(years)} anniversary` }] : [])];
+  }).sort((a, b) => daysToBirthday(a.born, day) - daysToBirthday(b.born, day)).slice(0, 4);
+  const [next] = dates;
+  return `
+    <a class="hh-link calendar" href="#/holodori/calendar">
+      <span class="hh-pics icons" aria-hidden="true">${dates.flatMap(d => faceOf(d.c).src ?? []).map(src => `<img src="${escHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`).join('')}</span>
+      <span class="hh-name">Calendar</span>
+      ${next ? `<span class="hh-next">Next: ${escHtml(next.c.shortName)}'s ${next.what} · <span data-bday="${next.born.birthday}">${daysAway(daysToBirthday(next.born, day))}</span></span>` : ''}
+    </a>
+  `;
+}
+
 /** How the page is drawn: `disc` as songTileHtml takes it, and `backs` to carry the songs' backs in `<template>`s. */
 export interface HomeOptions {
   disc?: (song: HolodoriSong) => string;
@@ -127,6 +146,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         ${linkHtml('#/holodori/songs', songs.length, 'Songs', newest.slice(0, 3).flatMap(s => s.jacket ?? []), 'jackets')}
         ${linkHtml('#/holodori/cards', cards.length, 'Characters', newCards.flatMap(c => c.art ?? []), 'cards')}
         ${linkHtml('#/holodori/gachas', banners.length, 'Gacha Banners', banners.slice(0, 2).map(g => gachaLogoUrl(g.gachas[0])), 'logos')}
+        ${calendarLinkHtml(day)}
       </nav>
       ${live.length ? `
         <section class="hm-section">
@@ -150,7 +170,6 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
       <section class="hm-section">
         <h3 class="hm-head">New Songs</h3>
         <ul class="song-grid">${newest.map(s => songTileHtml(s, disc)).join('')}</ul>
-        <p class="hm-note"><a href="#/holodori/songs">Every song</a></p>
       </section>
       <p class="hd-credit">Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Gachas: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>${announced.length ? ' · Announcements: <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a>, <a href="https://store.steampowered.com/news/app/4282500" target="_blank" rel="noopener">Steam</a>' : ''}</p>
       ${backs ? songBackTemplatesHtml(newest) : ''}

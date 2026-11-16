@@ -377,7 +377,10 @@ on `astro:before-swap`, since Astro's router swaps the root's attributes. The sw
 topbar just before the section links (`#theme-toggle`, pressed while dark is on; 4 November
 2026, moved there from the sidebar's foot at the owner's ask): a track whose knob is the sun or
 the moon, placed by the `dark` mixin so a page that opens dark does not slide it over. A light
-runs round its rim (a conic gradient on a registered `--rim-angle`, 4 s a turn), the same light
+runs round its rim (a square of conic gradient turned by `transform`, 4 s a turn, clipped to the
+track by `.theme-rim`; 17 November 2026 it was a registered `--rim-angle` animated in the
+gradient, which repainted on the main thread every frame and, with hardware acceleration off,
+held the Songs page's scrolling to about 30 fps), the same light
 blurred is a halo under it, brighter under the pointer, and a glow inside follows the pointer
 (`--mx`/`--my`), after a YouTube short of a glowing button the owner pointed to. It takes the
 world's `--accent`. With the switch beside them, hololive Dreams' four section links take row 2
@@ -1206,7 +1209,9 @@ a row of a table, its name in a cell at the left and its choices beside it (`.fi
 a badge can carry a picture before its name (`icon`), say something other than the value
 it filters by (`text`), and a group can be sorted into named kinds, a line to each (`sets`).
 Any pick within a group, every group across them. The search and the picks live in a `RosterState` the game's own view keeps, so they
-survive a visit elsewhere and never show on another game's roster. With `looks`, a switch
+survive a visit elsewhere in the same game and never show on another game's roster; going to
+another game puts every roster back as it starts (`game-change.ts`, fired by `showShell`; the
+Arknights and Endfield grids and FGO's class register their own resets; 17 November 2026). With `looks`, a switch
 over the grid (`.roster-bar`, the Any / All switch's construction) chooses between two or
 more ways of drawing the same cards, and `toCard` is told which (`name` is what a screen
 reader calls the switch, "Card art" if not given); with `orders`, a second
@@ -1658,7 +1663,8 @@ ranges, costs and voice lines are the Chinese wiki's (above).
 **hololive Dreams** (`#/holodori`, 54 holomems, the game's own word for its cast). Its
 tile opens a **front page** (`views/holodori-home.ts`, 18 October 2026, the owner's "home
 page"): a tile into each of Holomems, Songs, Cards and Gachas with its count and a few of
-its pictures, the gachas running now, the next six birthdays as the game's round icons,
+its pictures, and one into the calendar with the next four faces and who is next (17 November
+2026; three to a row under 1320px, the calendar's two wide), the gachas running now, the next six birthdays as the game's round icons,
 the next six debut anniversaries under them (15 November 2026, the owner's ask; "Upcoming
 Birthdays" and "Upcoming Anniversaries", the owner's wording, and "New Songs": a birthday's face
 has the calendar's cake on its corner, on pink, and an anniversary's a seal (`.hh-seal`):
@@ -1796,9 +1802,10 @@ goes under the grid. **The dates are an agenda** (`.dcal-agenda`, 13 November 20
 ask: a bare day number beside a face told nothing): a block to a day, a tile with its weekday,
 its number and how far off it is ("in 2 days", "4 days ago", within 60 days), and beside it
 whoever's day it is, a face with the cake or the triangle, her short name and "Birthday" or "2nd
-anniversary", so no date rests on a picture alone. The days run down one column and then a
-second where the panel holds two (CSS columns), which keeps November's 13 on the grid's
-screen; a line marks where today falls, or today's own block is on the sun. **A day with more than four, or in the
+anniversary", so no date rests on a picture alone. The days run down one column that, beside
+the grid, scrolls in a box as tall as the grid (`contain: size` on `.dcal-list`) and opens with
+today at its top (17 November 2026; it ran on into a second column, and readers missed the
+order); under 1040px it is the whole list under the grid. A line marks where today falls, or today's own block is on the sun. **A day with more than four, or in the
 menu more than one, has a count (`+2`) that opens the rest when it is pointed at or focused**
 (`.dcal-rest`, a face and a name to each, a link to her page; it opens to the right in the first
 three columns and to the left in the rest, so that it never goes out over the sidebar, and
@@ -1843,8 +1850,10 @@ while it plays, as YouTube's API policy wants, and can be moved (the owner's ask
 October): by the grip along its top, its title, or the arrow keys on the grip, kept inside
 the window and remembered while the page is open; and resized (25 October), by a handle in
 its upper left corner or the arrow keys on it, from 240px wide to as large as the window
-holds it, keeping its lower right corner where it was. The disc has a ring that is always there
-and a pink arc that fills from the time the player reports over `postMessage`, with a halo
+holds it, keeping its lower right corner where it was. The disc is pink with a white edge (17
+November 2026: white read as a button turned off) and gives a short shake every 4 s, the discs
+out of step, until pointed at or played; it has a faint ring that is always there and a white
+arc that fills from the time the player reports over `postMessage`, with a halo
 going out from it while the clip plays. **The game's chorus window is in the game's own cut
 of the song, which is about 2 minutes, and the dump's `mvUrl` is most often the full music
 video (3 to 5)**: found on 21 October by comparing each video's length with the song's
@@ -1949,7 +1958,8 @@ the matte inverted and multiplied in and the colour screened in, which is the al
 composite. The writing fades out in the video's last half-second, so the frame before the
 fade is the one that stays (`FADE`). Under the screen three tracks (the line, the
 animation, the signature) run along the whole (10 s, 9 s and 5 s, and 0.4 s held after the
-line, on the card checked), with Skip, Replay and the volume. **They float over the screen's foot** (31 October
+line, on the card checked), with the volume (Skip to end and Replay were dropped on 17 November
+2026: the seek bar taken to its end skips, and the corner button replays). **They float over the screen's foot** (31 October
 2026), hiding 1 s after the pointer stops while it plays, and a chevron folds the tracks away
 (kept while the page is open); a click on a 5-star card's still illustration plays it, and the
 gallery button in the stage's corner opens the art viewer. **A seek bar lies over the
@@ -2160,7 +2170,7 @@ for under the topbar (720px cut its foot off), its buttons and type grow on a ci
 phone's width, its dashed ring turns once in two minutes where the system allows motion,
 and a pick on a phone, where the list is under the circle, scrolls the list's head into
 view. The class
-picked is kept across visits, and a search that empties it goes back to every class. The
+picked is kept across visits until another game is shown, and a search that empties it goes back to every class. The
 world is Chaldea's navy and gold, Cinzel for what is engraved and EB Garamond for the rest
 (self-hosted, approved with Endfield's). The art sits 18% of its overhang down, which puts
 the two cut corners at the figure's top out of sight; the bake cuts at the same 18% (`LIFT`

@@ -1,6 +1,7 @@
 import { mountCalendarMenu } from './calendar-menu';
 import { applyRandomLogo, setLogoGame } from './logo';
 import type { Route } from './router';
+import { gameChanged } from './game-change';
 import { markSection } from './sections';
 import { mountScrollbars } from './scrollbar';
 import { mountThemeSwitch } from './theme';
@@ -21,6 +22,9 @@ const GAMES = {
   fgo: { roster: '#/fgo', cast: 'Servants' },
 };
 type Game = keyof typeof GAMES;
+
+// The game the last page shown belonged to, so that showShell sees a change of game.
+let shownGame: Game | undefined;
 
 // The game a page belongs to. Whatever is not another game's is Arknights', as it was
 // before there were others, so a link made then still lands where it did.
@@ -71,6 +75,9 @@ export function showShell(page: Route['view']): void {
   const homeLink = document.getElementById('nav-home')!;
 
   const game = gameOf(page);
+  // The rosters forget their search and picks on a change of game (game-change.ts).
+  if (shownGame && game !== shownGame) gameChanged();
+  shownGame = game;
   // Which page is showing, for the few rules that differ by it (the phone's count).
   document.body.dataset.view = page;
   setLogoGame(game);
