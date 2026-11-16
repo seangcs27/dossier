@@ -2,6 +2,7 @@ import { endfieldIconUrl, endfieldPortraitUrl, endfieldSplashUrl } from '../../s
 import { getEndfieldOperators, type EndfieldOperator } from '../endfield-index';
 import { escHtml } from '../format';
 import { focusSelector, riseLines, settlePress, sinkLines, unsink, watchFilterTab } from '../filter-box';
+import { onGameChange } from '../game-change';
 
 // This page's own search and picks. The box in the topbar and the panel under it are the
 // Arknights grid's too, and whichever grid mounted last has them; each keeps its state to
@@ -22,6 +23,9 @@ const state = {
   // The operator the showcase has up, by id; '' until the page is first drawn.
   featured: '',
 };
+// Put back as it starts on going to another game (game-change.ts).
+const initial = structuredClone(state);
+onGameChange(() => Object.assign(state, structuredClone(initial)));
 
 type Group = keyof typeof state.picks;
 

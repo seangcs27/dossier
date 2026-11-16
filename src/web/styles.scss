@@ -515,13 +515,12 @@ body {
 // pointer too (theme.ts sets --mx and --my). After the glowing button of a YouTube short the
 // owner pointed to. Where the knob stands is the dark mixin's, not aria-pressed, so a page
 // that opens dark has it there from the first paint rather than sliding it over.
-@property --rim-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes rim-spin { to { --rim-angle: 360deg; } }
+//
+// The light turns as a square of conic gradient rotated by `transform`, clipped to the track,
+// which the compositor runs alone. It was a registered angle (`--rim-angle`) animated in the
+// gradient, which repainted on the main thread every frame: on a machine without hardware
+// acceleration the Songs page then scrolled at about 30 fps (17 November 2026).
+@keyframes rim-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
 
 .theme-toggle {
   --w: 58px;
@@ -541,34 +540,41 @@ body {
   cursor: pointer;
   isolation: isolate; // the rim and the halo stay under the face, not under the bar
 
-  // The rim (the border's colour with the light running over it), and the halo.
-  &::before,
-  &::after {
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+}
+
+// The rim (the border's colour with the light running over it), and the halo: the same light
+// blurred.
+.theme-rim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--border);
+
+  // A square as wide as the track, centred on it, so that it covers the track at any angle.
+  &::before {
     content: '';
     position: absolute;
-    inset: 0;
-    z-index: -1;
-    border-radius: inherit;
-    background: conic-gradient(from var(--rim-angle), transparent 50%, var(--accent) 85%, transparent);
+    top: 50%;
+    left: 50%;
+    width: calc(var(--w) + 4px);
+    aspect-ratio: 1;
+    background: conic-gradient(transparent 50%, var(--accent) 85%, transparent);
+    transform: translate(-50%, -50%);
     animation: rim-spin 4s linear infinite;
   }
+}
 
-  &::before {
-    background:
-      conic-gradient(from var(--rim-angle), transparent 50%, var(--accent) 85%, transparent),
-      var(--border);
-  }
+.theme-halo {
+  background: none;
+  filter: blur(8px);
+  opacity: 0.35;
+  transition: opacity 0.3s;
 
-  &::after {
-    filter: blur(8px);
-    opacity: 0.35;
-    transition: opacity 0.3s;
-  }
-
-  &:hover::after,
-  &:focus-visible::after { opacity: 0.9; }
-
-  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .theme-toggle:hover &,
+  .theme-toggle:focus-visible & { opacity: 0.9; }
 }
 
 .theme-face {

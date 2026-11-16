@@ -707,20 +707,16 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   // The month's dates as an agenda: a block to a day, with its weekday, its number and how far
-  // off it is on a tile at the left, and whoever's day it is beside the tile. The days run down
-  // one column and then a second where the panel is wide enough for two, so that a month's
-  // dates stay on the screen its grid is on.
+  // off it is on a tile at the left, and whoever's day it is beside the tile, in one column.
+  // Beside the grid it scrolls in a box as tall as the grid (.dcal-layout); it ran down one
+  // column and on into a second, and readers missed the order (17 November 2026).
   .dcal-agenda {
-    columns: 230px 2;
-    column-gap: var(--sp-16);
+    position: relative; // the rows' offsetTop is the list's, for the scroll to today
     margin: 0;
     padding: 0;
     list-style: none;
 
-    > li {
-      margin-bottom: var(--sp-6);
-      break-inside: avoid;
-    }
+    > li { margin-bottom: var(--sp-6); }
   }
 
   .dcal-agenda-day {
@@ -857,8 +853,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   // The page: the month on the left, small enough that the whole of it is on a screen, and the
-  // month's dates beside it, in as many columns as the room holds, where they are in view too.
-  // Under 1040px the list goes under it.
+  // month's dates beside it, as tall as the month and scrolling inside that (`contain: size`
+  // keeps the list out of the row's height, which the month alone sets). Under 1040px the list
+  // goes under it, whole.
   .dcal-layout {
     display: grid;
     grid-template-columns: minmax(0, 680px) minmax(300px, 1fr);
@@ -868,6 +865,22 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .dcal-list { padding: var(--sp-16) var(--sp-20) var(--sp-20); }
   .dcal-list .month-head { margin-bottom: var(--sp-12); }
+
+  @media (min-width: 1041px) {
+    .dcal-layout { align-items: stretch; }
+
+    .dcal-list {
+      display: flex;
+      flex-direction: column;
+      contain: size;
+    }
+
+    .dcal-agenda {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+  }
 
   @media (max-width: 1040px) {
     .dcal-layout { grid-template-columns: minmax(0, 720px); }
@@ -1603,9 +1616,12 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
   .song-art { position: relative; }
 
-  // The disc that plays a song's clip, on its jacket's lower corner: a ring that is always
-  // there, and a pink arc along it that fills as the clip goes (`--p`, 0 to 1). While the clip
-  // plays a halo goes out from the disc, and the disc stays raised after it is paused.
+  // The disc that plays a song's clip, on its jacket's lower corner: pink with a white edge, a
+  // faint ring that is always there, and a white arc along it that fills as the clip goes
+  // (`--p`, 0 to 1). It was white, which read as a button turned off (17 November 2026), so it
+  // is pink and gives a short shake every 4 s, the discs out of step, until it is pointed at or
+  // played. While the clip plays a halo goes out from the disc, and the disc stays raised after
+  // it is paused.
   .song-play {
     position: absolute;
     right: -10px;
@@ -1615,11 +1631,12 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: #fff;
-    color: $ink;
+    background: #ff4f9a;
+    color: #fff;
     cursor: pointer;
     box-shadow: 0 0 0 3px #fff, 0 4px 10px $lift;
     transition: transform 0.15s;
+    animation: disc-shake 4s ease-in-out infinite;
 
     svg { display: block; width: 100%; height: 100%; }
 
@@ -1629,10 +1646,10 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       stroke-width: 4;
     }
 
-    .ring { stroke: #c9cfee; }
+    .ring { stroke: rgb(255 255 255 / 35%); }
 
     .ring-on {
-      stroke: #ff4f9a;
+      stroke: #fff;
       stroke-dasharray: 100;
       // In px, not a bare number: Firefox drops a unitless calc() here and draws the arc full.
       stroke-dashoffset: calc((1 - var(--p, 0)) * 100px);
@@ -1646,7 +1663,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .ico-pause { fill: currentcolor; }
     .ico-pause { display: none; }
 
-    &.is-on { transform: scale(1.1); }
+    &.is-on { transform: scale(1.1); animation: none; }
 
     &.is-playing {
       .ico-play { display: none; }
@@ -1665,8 +1682,22 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       }
     }
 
-    &:hover { transform: scale(1.12); }
+    &:hover { transform: scale(1.12); animation: none; }
     &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
+  }
+
+  // Out of step: a tile in three starts its shake at another point of the 4 s.
+  .song:nth-child(3n + 2) .song-play { animation-delay: -1.4s; }
+  .song:nth-child(3n) .song-play { animation-delay: -2.7s; }
+
+  // The shake: a quick wobble with a small swell, then still for the rest of the 4 s. In
+  // `rotate` and `scale`, not `transform`, which pointing and playing set.
+  @keyframes disc-shake {
+    0%, 16%, 100% { rotate: 0deg; scale: 1; }
+    3% { rotate: -16deg; scale: 1.08; }
+    6% { rotate: 13deg; scale: 1.08; }
+    9% { rotate: -9deg; scale: 1.05; }
+    12% { rotate: 5deg; scale: 1.02; }
   }
 
   @keyframes disc-halo {
@@ -3513,12 +3544,12 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   // ── The front page ──
-  // A tile into each of the game's four pages, then the gachas running, the birthdays
-  // coming and the newest songs.
+  // A tile into each of the game's four pages and its calendar, then the gachas running, the
+  // birthdays coming and the newest songs.
 
   .hh-links {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: var(--sp-16);
   }
 
@@ -3568,6 +3599,25 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   }
 
   .hh-name { font-size: var(--fs-xl); font-weight: 900; }
+
+  // The calendar's tile has no count: its name, and who is next under it.
+  .hh-link.calendar { grid-template: 'pics' auto 'name' auto 'next' auto / minmax(0, 1fr); row-gap: var(--sp-4); }
+  .hh-link.calendar .hh-pics { margin-bottom: var(--sp-8); }
+  .hh-link.calendar .hh-name { grid-area: name; line-height: 32px; }
+
+  .hh-next {
+    grid-area: next;
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+  }
+
+  // Five in a row are too narrow for "209 Characters" under about 1320px: three, the calendar
+  // two wide beside the gachas. Under 900px, two (at the foot).
+  @media (max-width: 1320px) {
+    .hh-links { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .hh-link.calendar { grid-column: span 2; }
+  }
 
   .hh-bdays {
     @include paper;
@@ -3844,6 +3894,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .hc-body { grid-template-columns: minmax(0, 1fr); }
 
     .hh-links { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hh-link.calendar { grid-column: 1 / -1; }
   }
 
   @media (max-width: 640px) {

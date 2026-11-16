@@ -22,6 +22,7 @@ import {
 import { MODE_LABEL, PROFESSION_LABEL, PROFESSION_CSS, rarityNum, escHtml, splitAlterName } from '../format';
 import { mountCardSpin } from '../card-spin';
 import { focusSelector, riseLines, settlePress, sinkLines, unsink, watchFilterTab } from '../filter-box';
+import { onGameChange } from '../game-change';
 
 const state = {
   query: '',
@@ -40,6 +41,9 @@ const state = {
   // the tag list alone is longer than everything above it put together.
   advancedOpen: false,
 };
+// Put back as it starts on going to another game (game-change.ts).
+const initial = structuredClone(state);
+onGameChange(() => Object.assign(state, structuredClone(initial)));
 
 function buildCard(op: OperatorIndexEntry): string {
   const n      = rarityNum(op.rarity);

@@ -93,8 +93,6 @@ export function revealHtml(r: Reveal): string {
         <button class="rv-fold" type="button" data-rv="fold" aria-pressed="${folded}" aria-label="Hide the tracks">
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.5l4 4 4-4"></path></svg>
         </button>
-        <button type="button" data-rv="skip">Skip to end</button>
-        <button type="button" data-reveal hidden>Replay</button>
         ${volumeHtml()}
         <output class="rv-time">0:00 / 0:00</output>
       </div>
@@ -227,8 +225,6 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     stopVolume();
     releaseAudio(halt);
     drawSign();
-    find('.rv-ctl [data-reveal]').hidden = false;
-    find('[data-rv="skip"]').hidden = true;
     corner.setAttribute('aria-label', 'Replay');
     paint();
   }
@@ -314,6 +310,8 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     voice.onerror = begin;
   }
 
+  // To the end, from the seek bar taken past it (or its End key): the corner button replays,
+  // and the bar plays on from anywhere, so there are no Skip or Replay buttons (17 November 2026).
   const skip = (): void => {
     skipped = true;
     movie.pause();
@@ -323,7 +321,6 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     if (length(sign)) sign.currentTime = length(sign) - FADE;
     finish();
   };
-  find('[data-rv="skip"]').onclick = skip;
 
   const fold = find('[data-rv="fold"]');
   const showFold = (): void => {
@@ -359,8 +356,6 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     if (finished) {
       finished = false;
       stopVolume = onVolume(applyVolume);
-      find('.rv-ctl [data-reveal]').hidden = true;
-      find('[data-rv="skip"]').hidden = false;
       frame = requestAnimationFrame(loop);
     }
     claimAudio(halt);

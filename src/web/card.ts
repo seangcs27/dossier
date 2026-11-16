@@ -1,6 +1,7 @@
 import { escHtml } from './format';
 import { mountCardSpin } from './card-spin';
 import { focusSelector, riseLines, settlePress, sinkLines, unsink, watchFilterTab } from './filter-box';
+import { onGameChange } from './game-change';
 
 /**
  * One card on the roster of a game that is not Arknights or Endfield: the plate the
@@ -73,7 +74,10 @@ export interface RosterState {
 }
 
 export function newRosterState(): RosterState {
-  return { query: '', picks: {}, open: false, unfolded: new Set(), look: '', order: '' };
+  const fresh = (): RosterState => ({ query: '', picks: {}, open: false, unfolded: new Set(), look: '', order: '' });
+  const state = fresh();
+  onGameChange(() => Object.assign(state, fresh()));
+  return state;
 }
 
 /** One choice of a switch over the grid. `tip` is its tooltip, where the label wants one. */

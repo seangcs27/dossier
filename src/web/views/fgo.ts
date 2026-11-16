@@ -1,6 +1,7 @@
 import { mountRoster, newRosterState, type RosterFilter } from '../card';
 import { escHtml } from '../format';
 import { getFgoServants, type FgoServant } from '../fgo-index';
+import { onGameChange } from '../game-change';
 
 // Fate/Grand Order's roster, the owner's pick of 22 October 2026: the summoning circle of
 // one direction with the Saint Graph cards of another. The circle is the way in, the seven
@@ -10,9 +11,11 @@ import { getFgoServants, type FgoServant } from '../fgo-index';
 // draws them. The search, the filters and the order are card.ts's, and the circle counts
 // what they leave.
 
-// Kept across visits, as every roster's search and picks are, with the class picked.
+// Kept across visits within the game, as every roster's search and picks are, with the class
+// picked; all dropped on going to another game (game-change.ts).
 const state = newRosterState();
 let picked = '';   // a class, or '' for every Servant
+onGameChange(() => { picked = ''; });
 
 const KNIGHTS = ['Saber', 'Archer', 'Lancer', 'Rider', 'Caster', 'Assassin', 'Berserker'];
 const EXTRAS = ['Shielder', 'Ruler', 'Avenger', 'Alter Ego', 'Moon Cancer', 'Foreigner', 'Pretender', 'Beast'];
