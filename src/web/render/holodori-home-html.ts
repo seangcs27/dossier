@@ -171,7 +171,6 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
         <h3 class="hm-head">New Songs</h3>
         <ul class="song-grid">${newest.map(s => songTileHtml(s, disc)).join('')}</ul>
       </section>
-      <p class="hd-credit">Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Gachas: <a href="https://holodori.best/gachas" target="_blank" rel="noopener">holodori.best</a>${announced.length ? ' · Announcements: <a href="https://dreams.wf-calc.net/wiki/game-updates?lang=en" target="_blank" rel="noopener">hololive Dreams Lab</a>, <a href="https://store.steampowered.com/news/app/4282500" target="_blank" rel="noopener">Steam</a>' : ''}</p>
       ${backs ? songBackTemplatesHtml(newest) : ''}
     </div>
   `;

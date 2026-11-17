@@ -4,7 +4,7 @@ import {
   cardArtUrl, cardMovieUrl, cardSignUrl, fetchHolodoriCard, getHolodoriCards, getHolodoriCharacters, motifUrl, voiceUrl,
   type HolodoriCardDetail, type HolodoriLine,
 } from '../holodori-index';
-import { playReveal, revealHtml } from '../holodori-reveal';
+import { playReveal, revealHtml, warmReveal } from '../holodori-reveal';
 import { voiceClick } from '../holodori-voice';
 import {
   bodyHtml, cardHtml, headHtml, readoutHtml, stageHtml, voicesHtml, type Shown,
@@ -64,6 +64,8 @@ export function mountHolodoriCard(container: HTMLElement, id: string, inlined?: 
     container.innerHTML = cardHtml(id);
     return;
   }
+  // A 5-star card's animation and signature load now, so that Play's line is not what they have to be ready by.
+  if (card.movie) warmReveal(cardMovieUrl(card.asset), cardSignUrl(card.asset));
   let detail: HolodoriCardDetail | null = inlined ?? null;
   let failed = false;
   let shown: Shown = 'art';

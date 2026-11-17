@@ -50,15 +50,33 @@ function sparksHtml(seed: string): string {
 // page is open.
 let folded = false;
 
-// Seconds the white screen is held after the line ends, before the animation.
-const HOLD = 0.4;
-
-// Seconds the white screen waits at most, after the hold, for the videos to be loaded.
+// Seconds the white screen waits at most, after the line ends, for the videos to be loaded.
 const WAIT = 6;
 
 // The signature fades out in the last half-second of its video (9 s on every card checked);
 // the frame this many seconds before the end is the one that stays over the art.
 const FADE = 0.6;
+
+// The animation and the signature of the card whose page is open, started loading when the page
+// opened (warmReveal) so that they are in hand by the time the line has been said: from the
+// press alone the line is only a few seconds, and the CDN is slow at times. playReveal takes
+// them in place of the ones revealHtml draws.
+let warm: HTMLVideoElement[] = [];
+
+/** Starts loading a card's animation and signature, and lets go of the last card's. */
+export function warmReveal(...urls: string[]): void {
+  for (const v of warm) {
+    v.removeAttribute('src');
+    v.load();
+  }
+  warm = urls.map((url) => {
+    const v = document.createElement('video');
+    v.preload = 'auto';
+    v.playsInline = true;
+    v.src = url;
+    return v;
+  });
+}
 
 /** The reveal's screen, and its three tracks with the seek bar over them and its buttons floating over the screen's foot, in place of a stage's picture. */
 export function revealHtml(r: Reveal): string {
@@ -142,8 +160,18 @@ function paintMark(stage: HTMLElement): void {
 /** Plays the reveal laid out by `revealHtml` in `stage`, from a press. */
 export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   const find = <T extends HTMLElement>(selector: string): T => stage.querySelector<T>(selector)!;
-  const movie = find<HTMLVideoElement>('.rv-movie');
-  const sign = find<HTMLVideoElement>('.rv-sign');
+  const adopt = (selector: string): HTMLVideoElement => {
+    const placed = find<HTMLVideoElement>(selector);
+    const loaded = warm.find(v => v.src === placed.src);
+    if (!loaded) return placed;
+    warm = warm.filter(v => v !== loaded);
+    loaded.className = placed.className;
+    loaded.poster = placed.poster;
+    placed.replaceWith(loaded);
+    return loaded;
+  };
+  const movie = adopt('.rv-movie');
+  const sign = adopt('.rv-sign');
   const matte = find<HTMLCanvasElement>('.rv-matte').getContext('2d')!;
   const ink = find<HTMLCanvasElement>('.rv-ink').getContext('2d')!;
   const segs = Array.from(stage.querySelectorAll<HTMLElement>('.rv-seg'));
@@ -160,7 +188,6 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   let movieDone = false;
   let signDone = false;
   let frame = 0;
-  let hold = 0;
   let turn = 0;          // bumped by a seek, so that a begin still waiting on the videos stands down
 
   const length = (media?: HTMLMediaElement): number => (media && Number.isFinite(media.duration) ? media.duration : 0);
@@ -176,13 +203,13 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
 
   const drawSign = (): void => paintSign(sign, ink, matte);
 
-  // The line first, then the animation and the signature side by side: the tracks run in that
-  // order along the whole, and fill as each plays.
+  // The line first, then the animation and the signature side by side, with nothing between:
+  // the tracks run in that order along the whole, and fill as each plays.
   function paint(): void {
     const a = length(movie);
     const b = length(sign);
     const v = length(voice);
-    const lead = voice ? v + HOLD : 0;
+    const lead = v;
     const total = lead + Math.max(a, b);
     const share = (x: number): number => (total ? x / total : 0);
     const set = (seg: HTMLElement | undefined, from: number, wide: number, done: number): void => {
@@ -221,7 +248,6 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     finished = true;
     stage.dataset.ph = 'done';
     cancelAnimationFrame(frame);
-    clearTimeout(hold);
     stopVolume();
     releaseAudio(halt);
     drawSign();
@@ -306,7 +332,7 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   sign.onseeked = drawSign;
   if (voice) {
     voice.preload = 'auto';
-    voice.onended = () => { hold = window.setTimeout(begin, HOLD * 1000); };
+    voice.onended = begin;
     voice.onerror = begin;
   }
 
@@ -334,20 +360,19 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
   };
   showFold();
 
-  // Plays on from `t` seconds into the whole, finished or not: in the line, in the hold after
-  // it, or in the animation and the signature, each put where it is at that moment.
+  // Plays on from `t` seconds into the whole, finished or not: in the line, or in the
+  // animation and the signature, each put where it is at that moment.
   function jump(t: number): void {
     const a = length(movie);
     const b = length(sign);
     const v = length(voice);
-    const lead = voice ? v + HOLD : 0;
+    const lead = v;
     const total = lead + Math.max(a, b);
     if (!total) return;
     if (t >= total) {
       skip();
       return;
     }
-    clearTimeout(hold);
     turn++;
     skipped = false;
     paused = false;
@@ -374,7 +399,6 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
       movie.currentTime = 0;
       sign.currentTime = 0;
       stage.dataset.ph = 'voice';
-      if (t >= v) hold = window.setTimeout(begin, (lead - t) * 1000);
       return;
     }
     stage.dataset.ph = movieDone ? 'end' : 'play';
@@ -387,12 +411,10 @@ export function playReveal(stage: HTMLElement, voiceUrl?: string): void {
     else void sign.play().catch(endSign);
   }
 
-  // Stops all three where they are, to go on from there (`jump`) on the next press. A pause in
-  // the hold after the line goes on from the line's end, the hold whole.
+  // Stops all three where they are, to go on from there (`jump`) on the next press.
   function pause(): void {
     paused = true;
     stage.dataset.paused = '';
-    clearTimeout(hold);
     movie.pause();
     sign.pause();
     voice?.pause();

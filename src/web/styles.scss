@@ -507,7 +507,14 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--bg);
+  // The bar's right end whichever of the search box, the count and the theme switch is on
+  // the page: the switch is hidden on Arknights and Fate/Grand Order, and the links then
+  // floated left on the Events page with no search box (18 November 2026). With the switch
+  // showing it takes the auto margin and the links follow it.
+  margin-left: auto;
 }
+
+.theme-toggle:not([hidden]) + .sections { margin-left: 0; }
 
 // The light and dark theme's switch, just before the section links and as tall: a track whose
 // knob is the sun or the moon. A light runs round its rim, and the same light blurred is a
@@ -4271,3 +4278,4 @@ a.pool-op:hover { text-decoration: underline; }
 @include meta.load-css('ptn');
 @include meta.load-css('holodori');
 @include meta.load-css('fgo');
+@include meta.load-css('footer');

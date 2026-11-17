@@ -232,6 +232,8 @@ src/
                       holomem and card pages, songs and cards tiles, the Events page and the
                       Endfield dossier; holodori-dates.ts, clock-text.ts and events-clock.ts,
                       the date and clock formatters with no data of their own
+    footer.ts       ← each game's sources and its not-affiliated line, as the footer's markup
+                      (footerHtml); no document in it
     fresh.ts        ← sets the clock-dependent text of a page built at build time from the
                       reader's clock (freshen)
     filter-box.ts   ← focusSelector, settlePress, riseLines, sinkLines and watchFilterTab, the
@@ -781,6 +783,8 @@ window's width, which is what a browser without container queries is left with, 
 menu button first; on the grid the count pill gives its room in row 1 to the section links
 and shows instead as a bare number inside the search box (`#search-count`), which `body`'s
 `data-view` (set by `showShell`) decides. Under 360px the wordmark shrinks to fit a 320px phone.
+
+**The footer** (`#site-foot`, 18 November 2026, the owner's ask for "a footer and credit the sources") closes every page, below `#view` in `index.html`, so the Astro layout takes it from the same file and keeps it across a page swap (`data-astro-transition-persist`); it is in the flow, not pinned, so a card page's voice dock (sticky inside its own section) always ends above it. `showShell` fills it from `footer.ts`'s table, one entry per game: its owners, and a line per source (Arknights: ArknightsGamedata, arknights.wiki.gg, Sanity Gone, AN-EN-Tags, Arknight-Images, ArknightsGameResource, the dossier's layout after Sanity Gone and the schedule's after Arkpedia; Endfield: its wiki; Path to Nowhere: its wiki, the Chinese wiki, S1N; hololive Dreams: HolodoriDB, the official site, holodori.best, hololive Dreams Lab and Steam, hololive Fan Wiki, YouTube; FGO: Atlas Academy and its ODC-BY 1.0 licence), then a fan-made, unofficial, not-affiliated line, the repository link and, on the Astro site, the build's date (`DOSSIER_NOW` pins it; the SPA leaves it empty). The Astro pages draw only that fixed part at build time and the credit list is set when the page's script runs. **A new source is a line in that table**; the pages no longer carry credit lines of their own, but for the card page's "Numbers checked against holodori.best" link to that card. Its colours are the surface variables of the world showing (Path to Nowhere restates them for its wall, which the footer stands on), so it reads in every world and theme; on Path to Nowhere's roster, the wall being a window tall, the footer is a scroll below it. Styles: `_footer.scss`.
 
 **Breadcrumbs** (`crumbsHtml` in `format.ts`) open a dossier and the schedule: the way back
 as a pill with a back chevron ("‹ Operators", or "‹ Sinners" on a Sinner's page), a chevron, and the page's own name, in the
@@ -1700,7 +1704,7 @@ head, which is where the opaque pixels of the figure's top quarter centre, or a 
 recorded by hand (`FACE_X`) for the seven whose hair, ears or a prop pull that off. The
 owner chose these pictures after being told that the game's guidelines bar reproducing its
 promotional material without permission, and approved the download on 15 October 2026 (54
-pictures, about 1.6 MB, baked to 750 KB). The page credits both sources under the roster.
+pictures, about 1.6 MB, baked to 750 KB). The footer credits both sources.
 
 **The roster is a sheet of stickers** (`draw` in `views/holodori.ts`, `_holodori.scss`); its
 calendar has a page of its own, below. It began on 15 October 2026
@@ -1772,11 +1776,15 @@ anniversary"; the cake is a filled glyph of our own since 13 November 2026, thre
 a stroked cake was: hololive publishes no icon for it, a search that day found none; the
 triangle is the front page's seal, `icons/games/holodori.webp` as a mask in `$cover-deep` edged
 in white, with no disc, since 15 November 2026, the owner's ask, where a star on the sun was;
-the legend's key is the same. **A face 56px wide or more carries the number too** ("5th", the
-owner's ask the same day): a face alone in its square off a phone, about 64px, where the seal
-is 60% of the face and the number 20%, by a container query on `.dcal-face`; on every smaller
-face, the dates list's, the menu's and a shared square's, the triangle is bare and the number
-is in the markup, hidden). Two share a square side by side, three or four make two rows of two, and past
+the legend's key is the same. **Every anniversary mark carries its number** ("5th" on a face 56px
+wide or more, the owner's ask of 15 November 2026; on a smaller one too from 18 November, when
+the bare triangle was found to say nothing on the agenda's, the menu's, a shared square's and a
+phone's faces), by container queries on `.dcal-face`: a face alone in its square off a phone,
+about 64px, has the seal at 60% of the face and the number 20%; from 24px the mark is a pill
+in `$cover-deep` edged in white, hung off the face's corner, the triangle in white before the
+digits (9px or more); under 24px, a shared square on a phone, the digits alone (8px). The
+ordinal's letters are kept for the large seal; the tooltip, the label and the agenda's text say
+them in full. Two share a square side by side, three or four make two rows of two, and past
 four a count, a disc in the ink with white on it (it was the sun's, which is today's and an
 anniversary's). **Faces in one square never overlap** (15 November 2026, the owner's report of
 the 9th, FLOW GLOW's debut): the gap between two is 6px, wider than their two rings, and three
@@ -1851,8 +1859,12 @@ October): by the grip along its top, its title, or the arrow keys on the grip, k
 the window and remembered while the page is open; and resized (25 October), by a handle in
 its upper left corner or the arrow keys on it, from 240px wide to as large as the window
 holds it, keeping its lower right corner where it was. The disc is pink with a white edge (17
-November 2026: white read as a button turned off) and gives a short shake every 4 s, the discs
-out of step, until pointed at or played; it has a faint ring that is always there and a white
+November 2026: white read as a button turned off) and gives a short shake every 4 s (two hops
+and a swell; a wobble did not show on a round disc), each disc one of 11 steps out of step, set
+from the song's id so that the spread is the same at any width, search or order. Pointing at it
+or playing sets the shake's size to 0 (`--amp`) and leaves its clock running, so the disc is back
+in step afterwards (before, those cancelled the animation and it restarted at its own phase,
+18 November 2026); it has a faint ring that is always there and a white
 arc that fills from the time the player reports over `postMessage`, with a halo
 going out from it while the clip plays. **The game's chorus window is in the game's own cut
 of the song, which is about 2 minutes, and the dump's `mvUrl` is most often the full music
@@ -1943,8 +1955,10 @@ out from their middle as the screen comes up, as the recording shows. Then the a
 plays and the signature is written
 over it from the same instant. The animation is silent, begins on a white burst (which is
 why the white screen leads into it; the white screen stays until both videos can play through,
-6 s at most, and goes only on the animation's first frame, since the CDN does not cache them
-and is slow at times: the poster, the card's art, showed through in between, or the animation
+6 s at most, and goes only on the animation's first frame, since the CDN is slow at times (its
+files are immutable, so a browser keeps them) and a press alone gives them only the line to
+load in, so both start loading when the card's page opens (`warmReveal`; the stage adopts the
+elements, ready at the press where they were not): the poster, the card's art, showed through in between, or the animation
 stalled under a signature that wrote on; measured over all 93 by a throttled run) and ends on a flash, after which the card's own art
 comes up under the signature, which stays. The owner's asks that led here: "can they all
 be play tgt" (all three at once, the first version after the animation-then-signature
@@ -1957,8 +1971,8 @@ cannot be read back, which nothing does; the CDN sends no CORS headers) over the
 the matte inverted and multiplied in and the colour screened in, which is the alpha
 composite. The writing fades out in the video's last half-second, so the frame before the
 fade is the one that stays (`FADE`). Under the screen three tracks (the line, the
-animation, the signature) run along the whole (10 s, 9 s and 5 s, and 0.4 s held after the
-line, on the card checked), with the volume (Skip to end and Replay were dropped on 17 November
+animation, the signature) run along the whole (10 s, 9 s and 5 s; they follow the line with nothing between
+since 18 November 2026, when a 0.4 s hold, drawn as a gap in the bar, was taken out), with the volume (Skip to end and Replay were dropped on 17 November
 2026: the seek bar taken to its end skips, and the corner button replays). **They float over the screen's foot** (31 October
 2026), hiding 1 s after the pointer stops while it plays, and a chevron folds the tracks away
 (kept while the page is open); a click on a 5-star card's still illustration plays it, and the
@@ -2124,7 +2138,7 @@ item whose line links none of them is left out, with a count in a warning (9 of 
 seven from the launch week with no link at all, a press release on einpresswire.com and a
 page on konami.com), since the owner's rule is a link to the official post.
 Only the headline, day and link are kept: **the headlines are the Lab's wording, a third
-party's**, and the page credits it, so no summary is kept. A Steam patch and the Lab's item
+party's**, and the footer credits it, so no summary is kept. A Steam patch and the Lab's item
 about the same version both show. Either source failing, or a Lab page that yields nothing
 (its markup has changed), throws, and `writeOrKeep` keeps the last whole file, so the section
 goes stale rather than half-fresh; with no file it is written empty and the section and its
@@ -2176,7 +2190,7 @@ world is Chaldea's navy and gold, Cinzel for what is engraved and EB Garamond fo
 the two cut corners at the figure's top out of sight; the bake cuts at the same 18% (`LIFT`
 in the script), and the two have to agree. Not built: the game's class icons (Atlas Academy
 has them, a download to ask for), a dossier. Atlas Academy's data is ODC-BY 1.0
-and asks for credit, which the README gives and the site itself does not yet.
+and asks for credit, which the README and the footer (below) give.
 
 Not built for any of the three: glyphs; a release order for hololive Dreams or FGO (Path
 to Nowhere has its own, from a record kept by hand). Not built for hololive Dreams: units, a gacha's rates and the cards it has besides its featured ones, stories, the launch banner. Not built for FGO: a dossier.

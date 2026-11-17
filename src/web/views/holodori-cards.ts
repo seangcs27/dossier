@@ -24,7 +24,6 @@ function draw(page: HTMLElement, items: HolodoriCard[]): void {
       <p class="hd-sub">Every card in the game · open one for its stats, skills and voice lines</p>
     </header>
     <ul class="hcard-grid">${items.map(cardTileHtml).join('')}</ul>
-    <p class="hd-credit">Art: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
   `;
 }
 

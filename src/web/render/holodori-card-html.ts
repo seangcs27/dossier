@@ -368,7 +368,7 @@ export function cardHtml(
         <section class="hc-top">${stageHtml(card, 'art')}${headHtml(card, d)}</section>
         <div class="hc-main">${bodyHtml(d, false, level, bloom)}</div>
         <div class="hc-voices">${d ? voicesHtml(card, d, volume) : ''}</div>
-        <p class="hd-credit">Art, video and voices: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a>'s CDN · Numbers checked against <a href="https://holodori.best/cards/${encodeURIComponent(card.id)}" target="_blank" rel="noopener">holodori.best</a></p>
+        <p class="hd-credit">Numbers checked against <a href="https://holodori.best/cards/${encodeURIComponent(card.id)}" target="_blank" rel="noopener">holodori.best</a></p>
       </div>
     `;
 }

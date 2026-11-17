@@ -1221,9 +1221,8 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     }
   }
 
-  // A debut anniversary's mark, and its key in the legend: hololive's triangle in the game's blue,
-  // as the front page's seal is, with no disc under it.
-  .dcal-mark.seal,
+  // The legend's key for a debut anniversary: hololive's triangle in the game's blue, as the front
+  // page's seal is, with no disc under it.
   .dcal-key.anniversary {
     border-radius: 0;
     background: none;
@@ -1239,11 +1238,47 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     }
   }
 
-  // A triangle covers less than the cake's disc of the same width. Its number is for a larger face.
+  // A debut anniversary's mark always says which anniversary it is, whatever the face's size
+  // (it was bare below 56px until 18 November 2026). By the face's width: a pill of the number
+  // alone, from 24px the triangle before it, and from 56px the seal itself with the number on it.
   .dcal-mark.seal {
-    width: clamp(16px, 46%, 30px);
+    display: flex;
+    right: -3px;
+    bottom: -3px;
+    gap: 2px;
+    width: auto;
+    aspect-ratio: auto;
+    padding: 1px 3px;
+    border-radius: var(--radius-pill);
+    background: $cover-deep;
+    box-shadow: 0 0 0 1.5px #fff;
+    color: #fff;
+    font-size: max(8px, 22cqw);
+    font-style: normal;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    white-space: nowrap;
 
-    b { display: none; }
+    i {
+      display: none;
+      width: 0.9em;
+      height: 0.9em;
+      background: #fff;
+      mask: center / contain no-repeat;
+    }
+
+    small { display: none; }
+  }
+
+  @container (min-width: 24px) {
+    .dcal-mark.seal {
+      right: -4px;
+      bottom: -4px;
+      font-size: max(9px, 24cqw);
+
+      i { display: block; }
+    }
   }
 
   // A face alone in its square, off a phone, is large enough for the seal to say which
@@ -1252,24 +1287,32 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-mark.seal {
       right: -10px;
       bottom: -8px;
+      display: grid;
       width: 60cqw;
-      color: #fff;
-      font-style: normal;
-      line-height: 1;
+      aspect-ratio: 1;
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+      // The white edge follows the triangle's own outline, which a box-shadow cannot.
+      filter: drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff);
+
+      i {
+        width: 100%;
+        height: 100%;
+        background: $cover-deep;
+      }
 
       b {
         position: absolute;
         top: 43%;
         left: 52%;
-        display: block;
         font-size: 20cqw;
-        font-weight: 900;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
         transform: translate(-50%, -50%);
       }
 
       small {
+        display: inline;
         font-size: 0.55em;
         font-weight: 800;
         vertical-align: top;
@@ -1408,8 +1451,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-list { padding: var(--sp-12); }
     // The squares are about 44px wide: the date stays clear of the face under it.
     .dcal-faces { inset: 28% 6% 6%; gap: 4px; }
-    // Four in a square this small are about 15px each: thinner rings, and no mark, which would
-    // cover the face; the dates' list under the grid says what each day is.
+    // Four in a square this small are about 15px each: thinner rings, and no cake, which would
+    // cover the face; the dates' list under the grid says what each day is. An anniversary keeps
+    // its number, a pill that hangs a few pixels off the face's corner.
     .dcal-faces.n3,
     .dcal-faces.n4 {
       --face: min((100cqw - 4px) / 2, (100cqh - 4px) / 2);
@@ -1418,7 +1462,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
       .dcal-pic { box-shadow: 0 0 0 1.5px #fff; }
       .dcal-face.anniversary .dcal-pic { box-shadow: 0 0 0 1.5px $sun; }
-      .dcal-mark { display: none; }
+      .dcal-mark:not(.seal) { display: none; }
     }
     .dcal-more { top: auto; right: auto; bottom: 3px; left: 4px; }
     // The count is at the square's foot here, so its list opens upward.
@@ -1484,8 +1528,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .dcal-faces { inset: 26% 10% 6%; }
     .dcal-faces.n1 { grid-template-columns: minmax(0, 100%); }
     .dcal-more { top: 2px; right: 2px; padding: 0 3px; font-size: 8px; }
-    .dcal-mark { right: -3px; bottom: -3px; width: 12px; box-shadow: 0 0 0 1.5px #fff; }
-    .dcal-mark.seal { width: 15px; box-shadow: none; }
+    .dcal-mark:not(.seal) { right: -3px; bottom: -3px; width: 12px; box-shadow: 0 0 0 1.5px #fff; }
     .dcal-pic { box-shadow: 0 0 0 1.5px #fff; }
     .dcal-face.anniversary .dcal-pic { box-shadow: 0 0 0 1.5px $sun; }
   }
@@ -1637,6 +1680,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     box-shadow: 0 0 0 3px #fff, 0 4px 10px $lift;
     transition: transform 0.15s;
     animation: disc-shake 4s ease-in-out infinite;
+    // Where in the 4 s this disc shakes: one of 11 steps, set from the song's own id
+    // (holodori-clip-html.ts), so it is the same whatever the column count, search or order.
+    animation-delay: calc(var(--d, 0) * -0.37s);
 
     svg { display: block; width: 100%; height: 100%; }
 
@@ -1663,7 +1709,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     .ico-pause { fill: currentcolor; }
     .ico-pause { display: none; }
 
-    &.is-on { transform: scale(1.1); animation: none; }
+    // Raised and still: the shake's size goes to 0 (`--amp`), and its clock keeps running, so
+    // the disc is back in step with the others when the pointer leaves or the player closes.
+    &.is-on { transform: scale(1.1); --amp: 0; }
 
     &.is-playing {
       .ico-play { display: none; }
@@ -1682,22 +1730,19 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
       }
     }
 
-    &:hover { transform: scale(1.12); animation: none; }
+    &:hover { transform: scale(1.12); --amp: 0; }
     &:focus-visible { outline: 3px solid $ink; outline-offset: 3px; }
   }
 
-  // Out of step: a tile in three starts its shake at another point of the 4 s.
-  .song:nth-child(3n + 2) .song-play { animation-delay: -1.4s; }
-  .song:nth-child(3n) .song-play { animation-delay: -2.7s; }
-
-  // The shake: a quick wobble with a small swell, then still for the rest of the 4 s. In
-  // `rotate` and `scale`, not `transform`, which pointing and playing set.
+  // The shake: two hops with a swell, then still for the rest of the 4 s. A round disc shows
+  // no turning, so it moves up and swells instead (18 November 2026; it was a wobble that
+  // read only on the triangle). In `translate` and `scale`, not `transform`, which pointing
+  // and playing set; `--amp` is 1, and 0 while pointed at or playing.
   @keyframes disc-shake {
-    0%, 16%, 100% { rotate: 0deg; scale: 1; }
-    3% { rotate: -16deg; scale: 1.08; }
-    6% { rotate: 13deg; scale: 1.08; }
-    9% { rotate: -9deg; scale: 1.05; }
-    12% { rotate: 5deg; scale: 1.02; }
+    0%, 16%, 100% { translate: 0 0; scale: 1; }
+    4% { translate: 0 calc(var(--amp, 1) * -5px); scale: calc(1 + var(--amp, 1) * 0.14); }
+    8% { translate: 0 0; scale: calc(1 + var(--amp, 1) * 0.02); }
+    12% { translate: 0 calc(var(--amp, 1) * -2px); scale: calc(1 + var(--amp, 1) * 0.07); }
   }
 
   @keyframes disc-halo {

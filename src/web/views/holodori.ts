@@ -174,7 +174,6 @@ function draw(page: HTMLElement, items: HolodoriCharacter[]): void {
     </header>
     ${spotlightHtml(soon)}
     <div class="sheet-wrap"><div class="sheet">${sheetHtml(shown, soon)}</div></div>
-    <p class="hd-credit">Pictures: <a href="https://www.hololive-dreams.com/en/" target="_blank" rel="noopener">hololive Dreams official site</a> · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Talent the game lacks: <a href="https://hololive.wiki" target="_blank" rel="noopener">hololive Fan Wiki</a></p>
   `;
 }
 

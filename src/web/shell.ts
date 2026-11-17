@@ -1,4 +1,5 @@
 import { mountCalendarMenu } from './calendar-menu';
+import { footerHtml } from './footer';
 import { applyRandomLogo, setLogoGame } from './logo';
 import type { Route } from './router';
 import { gameChanged } from './game-change';
@@ -120,6 +121,10 @@ export function showShell(page: Route['view']): void {
   // switch would do nothing there.
   document.getElementById('theme-toggle')!.hidden = game === 'arknights' || game === 'fgo';
   markSection(front ? homeLink : own ?? operatorsLink);
+  // The footer's sources are the game's.
+  const foot = footerHtml(game);
+  document.getElementById('foot-credits')!.innerHTML = foot.credits;
+  document.getElementById('foot-note')!.textContent = foot.note;
 }
 
 function setCurrent(link: HTMLElement, on: boolean): void {

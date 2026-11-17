@@ -982,8 +982,9 @@ body[data-view='ptn'] #view {
   }
 }
 
-// The phase-up art, cut out on transparency: no frame and no mount, straight on the wall,
-// its shadow following its own edge. Given the room the frame took.
+// Every picture that hangs is bare, straight on the wall with no frame or mount, its shadow
+// following its own edge (18 November 2026, the owner's ask; only the phase-up art was before,
+// and a mount showed through its gaps as a white sheet). Given the room the frame took.
 .cell-print.bare {
   // Under the Sinner's height line, which is always 1/13 of the wall down, and its tag.
   top: calc(var(--band-h) * 0.12);
@@ -1002,6 +1003,26 @@ body[data-view='ptn'] #view {
   img {
     max-width: calc(100cqw - var(--gutter) - var(--sp-8));
     max-height: calc(var(--band-h) * 0.86);
+  }
+
+  // A rectangle (an interrogation's picture, an attire that is one): its four edges fade
+  // out into the wall, so it has no edge to read as a frame. The shadow of a faded edge
+  // would draw the rectangle again, so it goes.
+  &.scene {
+    filter: none;
+
+    &:not(:disabled):hover { filter: none; }
+
+    img {
+      mask-image:
+        linear-gradient(to right, transparent, #000 9%, #000 91%, transparent),
+        linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
+      mask-composite: intersect;
+      -webkit-mask-image:
+        linear-gradient(to right, transparent, #000 9%, #000 91%, transparent),
+        linear-gradient(to bottom, transparent, #000 7%, #000 93%, transparent);
+      -webkit-mask-composite: source-in;
+    }
   }
 }
 
