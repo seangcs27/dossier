@@ -3031,6 +3031,7 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
     > span {
       background: linear-gradient(90deg, var(--deep) calc(var(--p, 0) * 100%), transparent 0);
+      // impeccable-disable-next-line gradient-text: the line's playback fill, not decoration
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
