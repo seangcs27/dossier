@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dossier — pick a game</title>
+  <meta name="description" content="A fan-made lookup site for Arknights, Arknights: Endfield, Path to Nowhere, hololive Dreams and Fate/Grand Order.">
+  <meta name="theme-color" content="#12141a">
+  <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas class="field" id="field" aria-hidden="true"></canvas>
+
+  <main>
+    <h1>Pick a game.</h1>
+    <p class="lede">Dossier is a fan-made lookup site for five games: rosters, dossiers and schedules, built from the games' own data.</p>
+
+    <ul class="games">
+      <li>
+        <a class="game" href="/dossier/" data-game="arknights">
+          <span class="emblem" aria-hidden="true"></span>
+          <span class="name">Arknights</span>
+          <span class="what">Operators, dossiers, the Global event schedule</span>
+          <svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a>
+      </li>
+      <li>
+        <a class="game" href="/dossier/endfield/" data-game="endfield">
+          <span class="emblem" aria-hidden="true"></span>
+          <span class="name">Arknights: Endfield</span>
+          <span class="what">Operator roster and operator pages</span>
+          <svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a>
+      </li>
+      <li>
+        <a class="game" href="/dossier/ptn/" data-game="ptn">
+          <span class="emblem" aria-hidden="true"></span>
+          <span class="name">Path to Nowhere</span>
+          <span class="what">Sinners on the line-up wall, with their files</span>
+          <svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a>
+      </li>
+      <li>
+        <a class="game" href="/dossier/holodori/" data-game="holodori">
+          <span class="emblem" aria-hidden="true"></span>
+          <span class="name">hololive Dreams</span>
+          <span class="what">Holomems, songs, cards, gachas, calendar</span>
+          <svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a>
+      </li>
+      <li>
+        <a class="game" href="/dossier/fgo/" data-game="fgo">
+          <span class="emblem" aria-hidden="true"></span>
+          <span class="name">Fate/Grand Order</span>
+          <span class="what">Servants by class, with search and filters</span>
+          <svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </a>
+      </li>
+    </ul>
+
+    <footer>
+      <p>Unofficial and fan-made. Game names, art and marks belong to their owners.</p>
+      <p><a href="https://github.com/seangcs27/dossier">Source on GitHub</a></p>
+    </footer>
+  </main>
+
+  <script src="field.js"></script>
+</body>
+</html>
