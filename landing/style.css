@@ -1,0 +1,200 @@
+/* Archivo (variable, with its width axis) and JetBrains Mono: Latin cuts from Google Fonts,
+   self-hosted. OFL, licences beside the files. */
+@font-face {
+  font-family: 'Archivo';
+  font-weight: 400 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('fonts/archivo-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('fonts/jetbrains-mono-latin.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+  --ground: #12141a;
+  --ink: #ece9de;
+  --ink-soft: #a7abb9;
+  --rule: #2b3040;
+  --accent: #aab2c4;
+  --wide: 'Archivo', 'Bahnschrift', 'Arial Narrow', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--ground); }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+::selection { background: var(--accent); color: var(--ground); }
+
+/* The field fills the window behind everything; field.js draws it. */
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 1240px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: clamp(28px, 7vh, 80px) 24px 0;
+}
+
+h1 {
+  margin: 0;
+  font: 800 clamp(2.6rem, 8vw, 5.6rem) / 0.95 var(--wide);
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.lede {
+  max-width: 52ch;
+  margin: 1.1rem 0 clamp(28px, 6vh, 64px);
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.games {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.game {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) minmax(0, 24ch) 28px;
+  gap: 20px;
+  align-items: center;
+  padding: clamp(14px, 2.6vh, 28px) 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.game:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* Each row owns its game's colour; it shows on the name, the emblem and the arrow while the
+   row is under the pointer or has focus, and the field tunes to it (field.js). */
+.game[data-game='arknights'] { --accent: #6888d6; }
+.game[data-game='endfield']  { --accent: #fae828; }
+.game[data-game='ptn']       { --accent: #e6383c; }
+.game[data-game='holodori']  { --accent: #5aceff; }
+.game[data-game='fgo']       { --accent: #e2b254; }
+
+.emblem {
+  width: 44px;
+  aspect-ratio: 1;
+  background: var(--ink-soft);
+  -webkit-mask: var(--mark) center / contain no-repeat;
+  mask: var(--mark) center / contain no-repeat;
+  transition: background-color 0.2s;
+}
+
+.game[data-game='arknights'] .emblem { --mark: url('icons/arknights.webp'); }
+.game[data-game='endfield']  .emblem { --mark: url('icons/endfield.webp'); }
+.game[data-game='ptn']       .emblem { --mark: url('icons/ptn.webp'); }
+.game[data-game='holodori']  .emblem { --mark: url('icons/holodori.webp'); }
+.game[data-game='fgo']       .emblem { --mark: url('icons/fgo.webp'); }
+
+.name,
+.what { justify-self: start; }
+
+.name {
+  font: 800 clamp(1.5rem, 4.2vw, 3.2rem) / 1 var(--wide);
+  font-stretch: 125%;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  transition: color 0.2s;
+}
+
+.what {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.go {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s;
+}
+
+.game:hover .name,
+.game:focus-visible .name { color: var(--accent); }
+.game:hover .emblem,
+.game:focus-visible .emblem { background: var(--accent); }
+.game:hover .go,
+.game:focus-visible .go { stroke: var(--accent); transform: translateX(6px); }
+
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  justify-content: space-between;
+  margin-top: auto;
+  padding: 36px 0 28px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+footer p { margin: 0; }
+footer a { color: var(--ink); text-underline-offset: 3px; }
+footer a:hover { color: var(--accent); }
+footer a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+@media (max-width: 720px) {
+  main { padding-inline: 16px; }
+
+  .game {
+    grid-template-columns: 40px minmax(0, 1fr) 24px;
+    gap: 6px 14px;
+  }
+
+  .emblem { width: 36px; }
+  .what { grid-column: 2 / 3; grid-row: 2; }
+  .go { width: 24px; height: 24px; grid-column: 3; grid-row: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .go,
+  .name,
+  .emblem { transition: none; }
+  .game:hover .go,
+  .game:focus-visible .go { transform: none; }
+}

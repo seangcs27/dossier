@@ -16,6 +16,14 @@ export function videoOf(song: Pick<HolodoriSong, 'mv'>): string | undefined {
   return /(?:[?&]v=|youtu\.be\/)([\w-]{11})/.exec(song.mv)?.[1];
 }
 
+// Which of 11 steps of the disc's 4 s shake a song takes: from its id, so that it does not
+// move with the tile's place in the grid.
+function stepOf(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 11;
+  return h;
+}
+
 /**
  * A song's disc, the button that plays its chorus; nothing for a song with no video. It
  * carries what the player needs of the song (data-title, -mv, -chorus, -estimated), so that
@@ -28,7 +36,7 @@ export function clipButtonHtml(song: HolodoriSong, on?: ClipOn): string {
   return `
     <button class="song-play${mine ? ' is-on' : ''}${playing ? ' is-playing' : ''}" type="button"
             data-clip="${escHtml(song.id)}" data-title="${escHtml(song.title)}" data-mv="${escHtml(song.mv)}"${song.chorus ? ` data-chorus="${song.chorus.join(',')}"` : ''}${song.estimated ? ' data-estimated' : ''} aria-pressed="${playing}"
-            aria-label="Play the chorus of ${escHtml(song.title)}" style="--p: ${mine ? on.progress : 0}">
+            aria-label="Play the chorus of ${escHtml(song.title)}" style="--p: ${mine ? on.progress : 0}; --d: ${stepOf(song.id)}">
       <svg viewBox="0 0 44 44" aria-hidden="true">
         <circle class="ring" cx="22" cy="22" r="19" pathLength="100"></circle>
         <circle class="ring-on" cx="22" cy="22" r="19" pathLength="100"></circle>

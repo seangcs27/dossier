@@ -40,7 +40,6 @@ export function mountHolodoriCalendar(container: HTMLElement): void {
           ${monthListHtml(year, month, now)}
         </section>
       </div>
-      <p class="hd-credit">Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a> · Talent the game lacks: <a href="https://hololive.wiki" target="_blank" rel="noopener">hololive Fan Wiki</a></p>
     `;
     // Where the list scrolls beside the grid, it opens with today at its top; under the grid
     // it does not scroll and this does nothing.

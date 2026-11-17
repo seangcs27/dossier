@@ -1,0 +1,65 @@
+// The footer under every page: the game's sources, a line that the site is a fan's, and the
+// repository. It sits in the flow after #view, so a pinned dock rides over it, never under
+// it. It takes every colour from the surface variables, which each game's world restates, so
+// it reads on all of them in both themes; holodori's face is its own where it is set.
+
+.site-foot {
+  --foot-pad: var(--sp-24);
+
+  padding: var(--sp-24) var(--foot-pad) var(--sp-24);
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--hd-face, inherit);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+
+  a {
+    color: var(--text);
+    text-underline-offset: 2px;
+
+    &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  }
+}
+
+.foot-head {
+  margin: 0 0 var(--sp-8);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.foot-credits {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-6) var(--sp-24);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.foot-what {
+  display: block;
+  font-size: var(--fs-xs);
+}
+
+.foot-note,
+.foot-meta {
+  max-width: 70ch;
+  margin: var(--sp-12) 0 0;
+}
+
+// Path to Nowhere's shell is ink and bone but its page is the wall, which turns light and dark
+// by the theme: the footer stands on the wall.
+body:is([data-view='ptn'], [data-view='ptn-detail']) .site-foot {
+  --text: var(--ptn-wall-ink);
+  --border: var(--ptn-wall-ink-soft);
+  --accent: var(--ptn-wall-ink);
+}
+
+.foot-built::before { content: ' · '; }
+.foot-built:empty::before { content: none; }
+
+@media (max-width: 640px) {
+  .site-foot { --foot-pad: var(--sp-16); }
+}

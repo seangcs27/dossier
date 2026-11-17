@@ -170,6 +170,13 @@
     </header>
   </div>
   <main id="view"></main>
+  <!-- Under every page: its game's sources, filled in by showShell (footer.ts). -->
+  <footer class="site-foot" id="site-foot">
+    <h2 class="foot-head">Sources</h2>
+    <ul class="foot-credits" id="foot-credits"></ul>
+    <p class="foot-note" id="foot-note"></p>
+    <p class="foot-meta"><a href="https://github.com/seangcs27/dossier" target="_blank" rel="noopener">Dossier on GitHub</a><span class="foot-built"></span></p>
+  </footer>
   <!-- What makes separate blocks read as one liquid shape: blur them, then cut the blur back
        to a hard edge, so two blocks that sit close run together and every corner between
        them fills in. The last four steps draw a 1px rim round the result. sRGB, because the

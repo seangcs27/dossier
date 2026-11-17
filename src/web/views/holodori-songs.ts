@@ -27,7 +27,6 @@ function draw(page: HTMLElement, items: HolodoriSong[]): void {
     </header>
     ${songRewardsHtml(getHolodoriSongRewards(), rewardsOpen)}
     <ul class="song-grid">${items.map(s => songTileHtml(s, clipHtml)).join('')}</ul>
-    <p class="hd-credit">Choruses play from the songs' official music videos on YouTube · Jackets:<a href="https://www.hololive-dreams.com/en/music" target="_blank" rel="noopener">hololive Dreams official site</a>, and HolodoriDB's CDN for the newer songs · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
   `;
   page.querySelector<HTMLDetailsElement>('.song-rewards')?.addEventListener('toggle', (ev) => {
     rewardsOpen = (ev.target as HTMLDetailsElement).open;

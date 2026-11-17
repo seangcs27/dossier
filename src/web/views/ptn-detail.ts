@@ -86,8 +86,9 @@ interface Shown {
   stand?: PtnFigure;
   // Any other, through the proxy, with the wiki's own file for when the proxy fails. `bare`
   // hangs it with no frame: the phase-up art is cut out on transparency, and a mount
-  // showed through its gaps as a white sheet.
-  print?: { src: string; raw: string; bare?: boolean };
+  // showed through its gaps as a white sheet. `scene` is a picture that is a plain rectangle
+  // (an interrogation's, some attires'): its edges fade into the wall instead.
+  print?: { src: string; raw: string; bare?: boolean; scene?: boolean; probe?: boolean };
 }
 
 // A picture's name in the language that is on: this site's word for the three every Sinner
@@ -121,7 +122,36 @@ function shownOf(s: PtnSinner, art: PtnArt): Shown {
   const stand = bakedOf(s, art.kind);
   return stand
     ? { label, stand }
-    : { label, collection, rarity, print: { src: `${artUrl(art.url, 1024)}&trim=10`, raw: art.url, bare: art.kind === 'phase' } };
+    : { label, collection, rarity, print: { src: `${artUrl(art.url, 1024)}&trim=10`, raw: art.url, bare: true, scene: art.kind === 'interrogation', probe: art.kind === 'attire' } };
+}
+
+// An attire is either cut out on transparency or a rectangle, and the file does not say which.
+// Once it has loaded, one whose border is all opaque is a rectangle and fades into the wall
+// as an interrogation's does. The probe asks the proxy again with CORS on, since a canvas
+// cannot be read back from a picture that came without; where it cannot be read the picture
+// stays as it is.
+function fadeRectangle(root: ParentNode): void {
+  const button = root.querySelector<HTMLElement>('.cell-print[data-probe]');
+  const img = button?.querySelector('img');
+  if (!button || !img) return;
+  const probe = new Image();
+  probe.crossOrigin = 'anonymous';
+  probe.onload = () => {
+    try {
+      const size = 24;
+      const ctx = Object.assign(document.createElement('canvas'), { width: size, height: size }).getContext('2d')!;
+      ctx.drawImage(probe, 0, 0, size, size);
+      const { data } = ctx.getImageData(0, 0, size, size);
+      for (let i = 0; i < size * size; i++) {
+        const x = i % size;
+        const y = Math.floor(i / size);
+        if (x && y && x < size - 1 && y < size - 1) continue;
+        if (data[i * 4 + 3] < 250) return;
+      }
+      button.classList.add('scene');
+    } catch { /* tainted: left as it is */ }
+  };
+  probe.src = img.currentSrc || img.src;
 }
 
 // Before the payload is here there is no list of pictures: the wall stands the one the
@@ -166,7 +196,7 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
     `;
   } else if (shown?.print) {
     picture = `
-      <button class="cell-print${shown.print.bare ? ' bare' : ''}" ${press}>
+      <button class="cell-print${shown.print.bare ? ' bare' : ''}${shown.print.scene ? ' scene' : ''}"${shown.print.probe ? ' data-probe' : ''} ${press}>
         <img src="${escHtml(shown.print.src)}" alt="${escHtml(`${nameOf(s)}, ${shown.label}`)}" fetchpriority="high" decoding="async"
              onerror="this.onerror=null;this.src='${shown.print.raw.replace(/'/g, '%27')}'">
       </button>
@@ -626,6 +656,7 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
     document.getElementById('nav-operators-label')!.textContent = t('Sinners');
     document.documentElement.lang = ptnLang() === 'zh' ? 'zh-CN' : 'en';
     container.innerHTML = shellHtml(sinner, detail, picked);
+    fadeRectangle(container);
     root = container.firstElementChild;
     // Bound to this render's own page, not to the container every view shares: a handler
     // left there would answer a press on the Arknights dossier's tabs too.

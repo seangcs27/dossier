@@ -134,7 +134,6 @@ export function holomemHtml(id: string, now: number, { disc, backs, voices }: Ho
         </ul>
       </section>` : ''}
       <div class="hc-voices">${voices ? holomemVoicesHtml(c, voices) : ''}</div>
-      <p class="hd-credit">Picture: <a href="https://www.hololive-dreams.com/en/holomem" target="_blank" rel="noopener">hololive Dreams official site</a> · Stickers and voices: HolodoriDB's CDN · Data: <a href="https://github.com/HolodoriDB" target="_blank" rel="noopener">HolodoriDB</a></p>
       ${backs ? songBackTemplatesHtml(sung) : ''}
     </div>
   `;

@@ -7,6 +7,7 @@ import { ClientRouter } from 'astro:transitions';
 import '../../../src/web/styles.scss';
 import ported from '../ported-routes.json';
 import { portedLinks } from '../lib/ported';
+import { buildNow } from '../lib/now';
 
 interface Props {
   view: string;
@@ -37,7 +38,10 @@ for (const [hash, page] of Object.entries(ported)) top = top.replaceAll(`href="$
 // SPA does: their handlers, the section links' moving fill and the search box are the shell's.
 const keep = (html: string, open: string, id: string): string => html.replace(open, `${open} data-astro-transition-persist="${id}"`);
 top = keep(keep(keep(top, '<nav class="sidebar"', 'sidebar'), '<div class="side-scrim"', 'side-scrim'), '<div class="topbar"', 'topbar');
-bottom = keep(bottom, '<svg class="svg-defs"', 'svg-defs');
+bottom = keep(keep(bottom, '<svg class="svg-defs"', 'svg-defs'), '<footer class="site-foot"', 'site-foot');
+// The footer says when the site was built. The SPA's index.html leaves it empty.
+const built = new Date(buildNow()).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+bottom = bottom.replace('<span class="foot-built"></span>', `<span class="foot-built">Built ${built}</span>`);
 
 // Every address in the SPA's markup and code is written beside index.html ('icons/…',
 // 'holodori/jackets/…'). Under /holodori/ that would be one folder too deep, so the pages
