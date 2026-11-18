@@ -10,6 +10,7 @@ export type Route =
   | { view: 'holodori-songs' }
   | { view: 'holodori-cards' }
   | { view: 'holodori-calendar' }
+  | { view: 'holodori-mahjong' }
   | { view: 'holodori-holomem'; id: string }
   | { view: 'holodori-card'; id: string }
   | { view: RosterGame };
@@ -41,6 +42,8 @@ export function parseHash(hash: string): Route {
   if (hash === '#/holodori/songs') return { view: 'holodori-songs' };
   if (hash === '#/holodori/cards') return { view: 'holodori-cards' };
   if (hash === '#/holodori/calendar') return { view: 'holodori-calendar' };
+  // The guide to hololive's mahjong game, Holojan, in hololive Dreams' world.
+  if (hash === '#/holodori/mahjong') return { view: 'holodori-mahjong' };
   const holomem = /^#\/holodori\/holomem\/([^/]+)$/.exec(hash);
   if (holomem) return { view: 'holodori-holomem', id: decodeURIComponent(holomem[1]) };
   const card = /^#\/holodori\/card\/([^/]+)$/.exec(hash);
