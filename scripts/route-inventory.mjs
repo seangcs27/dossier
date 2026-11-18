@@ -53,6 +53,7 @@ async function gameRoutes() {
       ['#/holodori/cards', 'holodori-cards'],
       ['#/holodori/gachas', 'holodori-gachas'],
       ['#/holodori/calendar', 'holodori-calendar'],
+      ['#/holodori/mahjong', 'holodori-mahjong'],
       ...withId('#/holodori/holomem/', 'holodori-holomem', holomems),
       ...withId('#/holodori/card/', 'holodori-card', cards),
     ],

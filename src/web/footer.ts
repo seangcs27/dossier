@@ -42,7 +42,7 @@ const CREDITS: Record<FooterGame, GameCredits> = {
     ],
   },
   holodori: {
-    owners: 'COVER Corp. and QualiArts',
+    owners: 'COVER Corp., QualiArts and Aiming',
     credits: [
       { what: 'Data, and art, video and voices from its CDN', from: [['HolodoriDB', 'https://github.com/HolodoriDB']] },
       { what: 'Key art and jackets', from: [['hololive Dreams official site', 'https://www.hololive-dreams.com/en/']] },
@@ -53,6 +53,10 @@ const CREDITS: Record<FooterGame, GameCredits> = {
       },
       { what: 'Talent the game lacks', from: [['hololive Fan Wiki', 'https://hololive.wiki']] },
       { what: 'Chorus clips (played from the official music videos) and channel avatars', from: [['YouTube', 'https://www.youtube.com']] },
+      {
+        what: 'Holojan guide: facts, and the rules after',
+        from: [['Holojan official site', 'https://www.holo-jong.com/'], ['COVER', 'https://hololivepro.com/news/20261009-01-309/'], ['Mahjong Soul', 'https://mahjongsoul.yo-star.com/']],
+      },
     ],
   },
   fgo: {

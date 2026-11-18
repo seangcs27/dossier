@@ -44,6 +44,7 @@ const CHECKS = {
   'holodori-cards-html': [['cardTileHtml', cards[0]], ['skillHtml', '[highlight]5%[/highlight] of [attribute=cute]Cute[/attribute]']],
   'holodori-gachas-html': [['gachasPageHtml', NOW]],
   'holodori-home-html': [['homeHtml', NOW]],
+  'holojong-html': [['holojongPageHtml'], ['tileHtml', '0p']],
   'holodori-calendar-html': [
     ['monthGridHtml', 2026, 10, NOW, 'page'], ['monthGridHtml', 2026, 10, NOW, 'menu'],
     ['monthListHtml', 2026, 10, NOW], ['calendarMenuHtml', NOW], ['calendarMenuHtml', NOW, 2027, 8],

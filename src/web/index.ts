@@ -13,6 +13,7 @@ import { mountHolodoriCards } from './views/holodori-cards';
 import { mountHolodoriGachas } from './views/holodori-gachas';
 import { mountHolodoriHome } from './views/holodori-home';
 import { mountHolodoriHolomem } from './views/holodori-holomem';
+import { mountHolodoriMahjong } from './views/holodori-mahjong';
 import { mountHolodoriSongs } from './views/holodori-songs';
 import { mountPtn } from './views/ptn';
 import { mountPtnDetail } from './views/ptn-detail';
@@ -47,6 +48,8 @@ function dispatch(): void {
     mountHolodoriSongs(view);
   } else if (route.view === 'holodori-cards') {
     mountHolodoriCards(view);
+  } else if (route.view === 'holodori-mahjong') {
+    mountHolodoriMahjong(view);
   } else if (route.view === 'holodori-calendar') {
     mountHolodoriCalendar(view);
   } else if (route.view === 'holodori-holomem') {

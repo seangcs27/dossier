@@ -1,0 +1,22 @@
+---
+import Shell from '../../layouts/Shell.astro';
+import { holojongPageHtml } from '@web/render/holojong-html';
+---
+<Shell
+  view="holodori-mahjong"
+  title="Holojan guide — hololive — Dossier"
+  description="How to pre-register for hololive Mahjong -Holojan-, how to play Japanese riichi mahjong, and what the Japanese on its screens means."
+>
+  <Fragment set:html={holojongPageHtml()} />
+</Shell>
+
+<script>
+  import { hideSearch } from '@web/shell';
+  import { wireGuideLinks } from '@web/views/holodori-mahjong';
+  import { onPage } from '../../lib/page';
+
+  onPage('holodori-mahjong', (view) => {
+    hideSearch();
+    wireGuideLinks(view);
+  });
+</script>
