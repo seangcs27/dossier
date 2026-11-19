@@ -4070,7 +4070,12 @@ $tile-back-deep: #d77a12;
     font-weight: 800;
   }
 
-  .hj-head { padding-right: 0; }
+  // Clear of the English / 繁體中文 switch on its right; under 900px the switch has a line of its own.
+  .hj-head { padding-right: 240px; }
+
+  @media (max-width: 900px) {
+    .hj-head { padding-right: 0; }
+  }
 
   .hj-toc {
     display: flex;
@@ -4243,15 +4248,21 @@ $tile-back-deep: #d77a12;
     b { color: $ink; font-size: var(--fs-lg); }
   }
 
+  // Two columns: the tiles, then what the set is, each description starting at one line.
   .hj-sets {
     display: grid;
-    gap: var(--sp-12);
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--sp-12) var(--sp-16);
     margin: 0 0 var(--sp-16);
     padding: 0;
     list-style: none;
 
-    li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8) var(--sp-16); }
-    li > span:last-child { flex: 1 1 260px; }
+    li {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      align-items: center;
+    }
   }
 
   .hj-example {
