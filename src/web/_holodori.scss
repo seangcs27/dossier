@@ -1112,6 +1112,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     z-index: 1;
     color: $ink-soft;
     font-size: var(--fs-xs);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     font-weight: 800;
     line-height: 1;
@@ -1256,6 +1259,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: max(8px, 22cqw);
     font-style: normal;
     font-weight: 900;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     line-height: 1;
     white-space: nowrap;
@@ -2738,6 +2744,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .rv-time {
     color: rgb(255 255 255 / 85%);
     font-size: var(--fs-xs);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
   }
 
@@ -3255,6 +3264,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     flex: none;
     min-width: 68px;
     font-size: var(--fs-xs);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
@@ -3641,6 +3653,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: 32px;
     font-weight: 900;
     line-height: 1;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
   }
 
@@ -3722,6 +3737,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: var(--fs-sm);
     font-style: normal;
     font-weight: 900;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     line-height: 1;
 
@@ -3891,6 +3909,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     color: $ink-soft;
     font-size: var(--fs-sm);
     font-weight: 700;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
   }
 
@@ -4266,6 +4287,29 @@ $tile-back-deep: #d77a12;
     }
   }
 
+  .hj-score {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-16) var(--sp-24);
+
+    @media (min-width: 1040px) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  }
+
+  .hj-score-chart p { margin: 0 0 var(--sp-12); }
+
+  .hj-terms.hj-points {
+    margin-bottom: var(--sp-16);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    font-variant-numeric: tabular-nums;
+
+    caption { text-align: left; font-weight: 800; padding-bottom: var(--sp-8); small { opacity: 0.7; } }
+    td, th { text-align: right; white-space: nowrap; padding: var(--sp-8); }
+    &.hj-limits td:first-of-type { text-align: left; white-space: normal; }
+    td small { display: block; font-size: var(--fs-xs); opacity: 0.7; }
+  }
+
   .hj-example {
     margin: 0 0 var(--sp-16);
     padding: var(--sp-12);
@@ -4348,6 +4392,11 @@ $tile-back-deep: #d77a12;
 
   @media (max-width: 640px) {
     .hh-guide { align-items: flex-start; }
+    .hj-sets { grid-template-columns: max-content minmax(0, 1fr); }
+    .hj-sets li > .hj-hand { grid-row: span 2; align-self: start; }
+    .hj-sets li > :last-child { grid-column: 2; }
+    .hj-sets li .hj-set-name { flex-direction: row; align-items: baseline; gap: var(--sp-8); }
+    .hj-terms.hj-points { font-size: var(--fs-sm); th, td { padding: var(--sp-4); } }
     .hj-tile { width: 28px; height: 38px; }
     .hj-tile svg { width: 23px; height: 31px; }
     .hj-tile .num { font-size: 11px; }
@@ -4358,7 +4407,7 @@ $tile-back-deep: #d77a12;
     // A row of words is a card on a phone: the Japanese large at the left, its reading and
     // English beside it, and what it means under both. Scrolled sideways, the meaning was
     // off the screen.
-    .hj-terms:not(.hj-milestones) {
+    .hj-terms:not(.hj-milestones, .hj-points) {
       min-width: 0;
 
       thead { display: none; }

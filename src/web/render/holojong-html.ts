@@ -318,6 +318,50 @@ const SECTIONS: [id: string, name: string, zh: string][] = [
 const range = (suit: string): string[] => [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `${n}${suit}`);
 
 /** The guide in one language. Each section's id carries the language, since both are on the page. */
+// Ron points by fu (rows) and han (columns), non-dealer then dealer: base = fu × 2^(han+2), ×4 or ×6, rounded up
+// to 100, capped at mangan (base 2,000). Mahjong Soul rounds no 4-han 30-fu or 3-han 60-fu hand up to mangan.
+const SCORE_FU = [25, 30, 40, 50, 60, 70];
+function ronPoints(fu: number, han: number, dealer: boolean): string {
+  if (fu === 25 && han === 1) return '—';
+  const base = Math.min(fu * 2 ** (han + 2), 2000);
+  return (Math.ceil((base * (dealer ? 6 : 4)) / 100) * 100).toLocaleString('en-US');
+}
+
+const LIMITS: [string, string, string, string, string][] = [
+  ['5', '満貫', 'mangan', '滿貫', '8,000 / 12,000'],
+  ['6–7', '跳満', 'haneman', '跳滿', '12,000 / 18,000'],
+  ['8–10', '倍満', 'baiman', '倍滿', '16,000 / 24,000'],
+  ['11–12', '三倍満', 'sanbaiman', '三倍滿', '24,000 / 36,000'],
+  ['13+', '役満', 'yakuman', '役滿', '32,000 / 48,000'],
+];
+
+function scoreChartHtml(t: (en: string, zh: string) => string): string {
+  const head = [1, 2, 3, 4].map(h => `<th scope="col">${h} ${t('han', '翻')}</th>`).join('');
+  const rows = SCORE_FU.map(fu => `<tr><th scope="row">${fu} ${t('fu', '符')}</th>${[1, 2, 3, 4]
+    .map(h => `<td>${ronPoints(fu, h, false)}<small>${ronPoints(fu, h, true)}</small></td>`).join('')}</tr>`).join('');
+  const limits = LIMITS.map(([han, jp, reading, zh, pts]) =>
+    `<tr><th scope="row">${han} ${t('han', '翻')}</th><td>${t(`<span lang="ja">${jp}</span> ${reading}`, zh)}</td><td>${pts}</td></tr>`).join('');
+  return `<aside class="hj-score-chart">
+          <p>${t(`<b>Han × fu.</b> Fu start at 20; a closed Ron adds 10, a Tsumo 2, and triplets, quads and some waits add
+          more; round up to the next 10. Seven pairs is always 25. Then <b>base = fu × 2<sup>han + 2</sup></b>, and Ron
+          pays base × 4 (dealer × 6), rounded up to 100.`,
+          `<b>翻 × 符。</b>符從 20 起算；門清榮和加 10，自摸加 2，刻子、槓子和部分聽牌型再加；最後進位到 10。
+          七對子固定 25 符。<b>基本點 = 符 × 2<sup>翻 + 2</sup></b>，榮和得基本點 × 4（莊家 × 6），進位到 100。`)}</p>
+          <table class="hj-terms hj-points">
+            <caption>${t('Ron points: non-dealer, <small>dealer</small>', '榮和點數：閒家，<small>莊家</small>')}</caption>
+            <thead><tr><td></td>${head}</tr></thead><tbody>${rows}</tbody>
+          </table>
+          <p class="hj-note">${t(`Base stops at 2,000: that is mangan, 8,000. So 4 han 30 fu is 7,700 by Ron, and 2,000 / 3,900 =
+          7,900 by Tsumo, not quite mangan; 4 han 40 fu reaches it. From 5 han the fu no longer count:`,
+          `基本點上限是 2,000，也就是滿貫 8,000 點。所以 4 翻 30 符榮和是 7,700，自摸是 2,000 / 3,900 = 7,900，
+          還不到滿貫；4 翻 40 符就到滿貫。5 翻以上不再看符：`)}</p>
+          <table class="hj-terms hj-points hj-limits">
+            <caption>${t('Limit hands: non-dealer / dealer', '滿貫以上：閒家 / 莊家')}</caption>
+            <tbody>${limits}</tbody>
+          </table>
+        </aside>`;
+}
+
 function guideHtml(lang: Lang): string {
   // The page's words, English or Chinese. Chinese runs on with no spaces, so its line breaks here
   // are taken out: a browser shows each one as a space.
@@ -520,6 +564,7 @@ function guideHtml(lang: Lang): string {
 
       <section class="hj-card" id="${id('score')}">
         <h3 class="hm-head">${t('Points and the game', '點數與對局')}</h3>
+        <div class="hj-score">
         <ul class="hj-list">
           <li>${t(`Everyone starts with <b>25,000</b> points. A full game (<span lang="ja">半荘</span>, hanchan) is an East round and a South
           round, four hands or more each. Highest points at the end is 1st.`,
@@ -537,6 +582,8 @@ function guideHtml(lang: Lang): string {
           '牌山摸完時，<b>沒有</b>聽牌的玩家（<span lang="ja">ノーテン</span>）共付 3,000 點給聽牌的玩家。')}</li>
           <li>${t('Below 0 points, the game usually ends at once.', '點數低於 0 時，對局通常立刻結束。')}</li>
         </ul>
+        ${scoreChartHtml(t)}
+        </div>
       </section>
 
       <section class="hj-card" id="${id('tips')}">
