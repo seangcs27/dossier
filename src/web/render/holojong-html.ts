@@ -148,8 +148,7 @@ export function tileHtml(code: string, lang: Lang = 'en'): string {
   const red = n === 0;
   const value = red ? 5 : n;
   let face: string;
-  // A tile writes five as 伍, the form Mahjong Soul and most Japanese sets print.
-  if (suit === 'm') face = `<b class="num">${value === 5 ? '伍' : NUMERALS[value]}</b><b class="man">萬</b>`;
+  if (suit === 'm') face = `<b class="num">${NUMERALS[value]}</b><b class="man">萬</b>`;
   // White is blank, as Mahjong Soul draws it: only its corner index marks it.
   else if (suit === 'z') face = n === 5 ? '' : `<b class="honour z${n}">${HONOURS[n]}</b>`;
   else face = faceSvg(value, suit, red);
@@ -451,10 +450,10 @@ function guideHtml(lang: Lang): string {
         pattern, below). A set is one of:`,
         `和牌需要 14 張：<b>四組面子加一組雀頭</b>，而且至少要有一個<b>役</b>（得分牌型，見下文）。面子有以下幾種：`)}</p>
         <ul class="hj-sets">
-          <li>${hand('345p')}<span><b lang="ja">順子</b> shuntsu · ${t('<b>Run</b>: three in a row in one suit. Never honours.', '<b>順子</b>：同一花色的三張連續數字。字牌不能組成順子。')}</span></li>
-          <li>${hand('777s')}<span><b lang="ja">刻子</b> koutsu · ${t('<b>Triplet</b>: three of the same tile.', '<b>刻子</b>：三張相同的牌。')}</span></li>
-          <li>${hand('1111z')}<span><b lang="ja">槓子</b> kantsu · ${t('<b>Quad</b>: four of the same, made with Kan.', '<b>槓子</b>：四張相同的牌，用「槓」組成。')}</span></li>
-          <li>${hand('55m')}<span><b lang="ja">雀頭</b> jantou · ${t('<b>Pair</b>: the hand\'s one pair, its "head".', '<b>雀頭</b>：手牌裡唯一的一組對子，也就是「頭」。')}</span></li>
+          <li>${hand('345p')}<span class="hj-set-name"><b lang="ja">順子</b><small>shuntsu</small></span><span>${t('<b>Run</b>: three in a row in one suit. Never honours.', '同一花色的三張連續數字。字牌不能組成順子。')}</span></li>
+          <li>${hand('777s')}<span class="hj-set-name"><b lang="ja">刻子</b><small>koutsu</small></span><span>${t('<b>Triplet</b>: three of the same tile.', '三張相同的牌。')}</span></li>
+          <li>${hand('1111z')}<span class="hj-set-name"><b lang="ja">槓子</b><small>kantsu</small></span><span>${t('<b>Quad</b>: four of the same, made with Kan.', '四張相同的牌，用「槓」組成。')}</span></li>
+          <li>${hand('55m')}<span class="hj-set-name"><b lang="ja">雀頭</b><small>jantou</small></span><span>${t('<b>Pair</b>: the hand\'s one pair, its "head".', '手牌裡唯一的一組對子，也就是「頭」，台灣俗稱「眼睛」。')}</span></li>
         </ul>
         <p>${t('A complete hand, all simples (tanyao):', '一副完整的手牌，斷么九（tanyao）：')}</p>
         <div class="hj-example">${hand('234m 678m 345p 456s 88s')}</div>
@@ -485,16 +484,19 @@ function guideHtml(lang: Lang): string {
       <section class="hj-card" id="${id('riichi')}">
         <h3 class="hm-head">${t('Riichi and furiten', '立直與振聽')}</h3>
         <p>${t(`<b lang="ja">リーチ</b> (riichi): when your hand is closed and one tile from winning (tenpai), you can declare riichi
-        and put down 1,000 points. From then on you cannot change your hand: the game discards every tile you draw unless
+        and put down 1,000 points (so you need at least 1,000). From then on you cannot change your hand: the game discards every tile you draw unless
         it wins. It is a yaku, so <b>any</b> complete closed hand can win with it, and if you win you may also get
         ippatsu and hidden dora.`,
-        `<b lang="ja">リーチ</b>（立直）：當你的手牌門清、只差一張就能和牌（聽牌）時，可以宣告立直並放出 1,000 點。
+        `<b lang="ja">リーチ</b>（立直）：當你的手牌門清、只差一張就能和牌（聽牌）時，可以宣告立直並放出 1,000 點（所以手上至少要有 1,000 點）。
         之後你不能再改變手牌：除非摸到的牌能和牌，否則遊戲會自動打出。立直本身是一個役，所以<b>任何</b>
         完整的門清手牌都能靠它和牌；和牌時還可能得到一發和裏寶牌。`)}</p>
         <p>${t(`<b lang="ja">振聴</b> (furiten): if a tile that would complete your hand is in <b>your own discards</b>, you cannot win
-        on another player's discard (Ron). You can still win by drawing it yourself (Tsumo). The app marks it for you.`,
+        on another player's discard (Ron). You can still win by drawing it yourself (Tsumo). The app marks it for you.
+        Two more cases: if you let a winning tile pass, you cannot Ron until your next discard; after riichi, a winning
+        tile you let pass makes you furiten for the rest of the hand.`,
         `<b lang="ja">振聴</b>（振聽）：如果能完成你手牌的牌在<b>你自己的捨牌</b>裡，你就不能榮和別人打出的牌。
-        你仍然可以自摸。App 會替你標示。`)}</p>
+        你仍然可以自摸。App 會替你標示。另外兩種：別人打出你能和的牌而你沒有和（同巡振聽），
+        到你下一次打牌前都不能榮和；立直後沒有和能和的牌（立直振聽），這一局剩下的時間都不能榮和。`)}</p>
         <div class="hj-example">
           <p>${t('Waiting on 3 or 6 dots with this hand. If you discarded a 6 dots earlier, you are furiten:', '這副手牌聽 3 筒或 6 筒。如果你之前打過 6 筒，就是振聽：')}</p>
           ${hand('123m 456m 789s 45p 77z')}
@@ -505,7 +507,8 @@ function guideHtml(lang: Lang): string {
         <h3 class="hm-head">${t('Yaku <small>the twelve to learn first</small>', '役 <small>先學這十二個</small>')}</h3>
         <p>${t(`A hand with no yaku cannot win, even if it is complete. Dora are bonus han, not yaku. "Open" is the value after
         a call; "—" means the yaku needs a closed hand.`,
-        `沒有役的手牌，就算完整也不能和牌。寶牌是額外的翻數，不是役。「副露」是鳴牌後的翻數；
+        `沒有役的手牌，就算完整也不能和牌。寶牌是額外的翻數，不是役。台灣麻將的「台」也不是役：
+        莊家、連莊、中洞（嵌張）在日麻都不能讓你和牌。「副露」是鳴牌後的翻數；
         「—」表示這個役必須門清。`)}</p>
         <div class="hj-table-wrap">
           <table class="hj-terms hj-yaku">

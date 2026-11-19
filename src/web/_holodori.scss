@@ -4251,7 +4251,7 @@ $tile-back-deep: #d77a12;
   // Two columns: the tiles, then what the set is, each description starting at one line.
   .hj-sets {
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: max-content max-content minmax(0, 1fr);
     gap: var(--sp-12) var(--sp-16);
     margin: 0 0 var(--sp-16);
     padding: 0;
@@ -4262,6 +4262,7 @@ $tile-back-deep: #d77a12;
       grid-column: 1 / -1;
       grid-template-columns: subgrid;
       align-items: center;
+      .hj-set-name { display: flex; flex-direction: column; font-weight: 800; small { font-size: var(--fs-xs); font-weight: 600; opacity: 0.75; } }
     }
   }
 
