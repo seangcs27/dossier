@@ -15,33 +15,93 @@ import { escHtml } from '../format';
 const NUMERALS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 const HONOURS = ['', '東', '南', '西', '北', '白', '發', '中'];
 
-// Where a dots tile's circles sit on its 30x40 face: [x, y] each, and the circles' radius.
-const DOTS: [number, [number, number][]][] = [
-  [0, []],
-  [9, [[15, 20]]],
-  [5.5, [[15, 11], [15, 29]]],
-  [5, [[8, 9], [15, 20], [22, 31]]],
-  [5, [[9, 12], [21, 12], [9, 28], [21, 28]]],
-  [4.5, [[8, 9], [22, 9], [15, 20], [8, 31], [22, 31]]],
-  [4.2, [[10, 9], [20, 9], [10, 20], [20, 20], [10, 31], [20, 31]]],
-  [3.6, [[7, 6], [15, 10], [23, 14], [10, 24], [20, 24], [10, 33], [20, 33]]],
-  [3.6, [[10, 7], [20, 7], [10, 15.5], [20, 15.5], [10, 24.5], [20, 24.5], [10, 33], [20, 33]]],
-  [3.8, [[7, 9], [15, 9], [23, 9], [7, 20], [15, 20], [23, 20], [7, 31], [15, 31], [23, 31]]],
+// The corner index Mahjong Soul prints on every tile, for the honours (the suits print their number).
+const HONOUR_INDEX = ['', 'E', 'S', 'W', 'N', 'Wh', 'G', 'R'];
+
+// Where a dots tile's circles sit on its 30x40 face: the circles' radius, [x, y] each, and each
+// one's colour in order, k (ink) or r (red). Mahjong Soul draws the suit in those two colours
+// where a traditional set mixes blue, green and red; the red stands where a set's red stands.
+const DOTS: [number, [number, number][], string][] = [
+  [0, [], ''],
+  [11, [[15, 20]], ''],
+  [7, [[15, 11], [15, 29]], 'kk'],
+  [5.9, [[8, 9], [15, 20], [22, 31]], 'krk'],
+  [6, [[8.5, 11.5], [21.5, 11.5], [8.5, 28.5], [21.5, 28.5]], 'kkkk'],
+  [5.5, [[8, 9], [22, 9], [15, 20], [8, 31], [22, 31]], 'kkrkk'],
+  [5, [[9.5, 9], [20.5, 9], [9.5, 21], [20.5, 21], [9.5, 32], [20.5, 32]], 'kkrrrr'],
+  [4.3, [[6.5, 5.5], [15, 9.5], [23.5, 13.5], [9.5, 24], [20.5, 24], [9.5, 33.5], [20.5, 33.5]], 'kkkrrrr'],
+  [4.3, [[9.5, 6.5], [20.5, 6.5], [9.5, 15.5], [20.5, 15.5], [9.5, 24.5], [20.5, 24.5], [9.5, 33.5], [20.5, 33.5]], 'kkkkkkkk'],
+  [4.1, [[6.5, 8], [15, 8], [23.5, 8], [6.5, 20], [15, 20], [23.5, 20], [6.5, 32], [15, 32], [23.5, 32]], 'kkkrrrkkk'],
 ];
 
-// A bamboo tile's sticks: the stick's height, and the [x, y] of each one's top middle.
-const STICKS: [number, [number, number][]][] = [
-  [0, []],
-  [28, [[15, 6]]],
-  [13, [[15, 5], [15, 22]]],
-  [13, [[15, 5], [9, 22], [21, 22]]],
-  [13, [[9, 5], [21, 5], [9, 22], [21, 22]]],
-  [13, [[8, 5], [22, 5], [15, 13.5], [8, 22], [22, 22]]],
-  [13, [[7, 5], [15, 5], [23, 5], [7, 22], [15, 22], [23, 22]]],
-  [9, [[15, 2], [7, 15], [15, 15], [23, 15], [7, 28], [15, 28], [23, 28]]],
-  [13, [[5, 5], [12, 5], [19, 5], [26, 5], [5, 22], [12, 22], [19, 22], [26, 22]]],
-  [9, [[7, 2], [15, 2], [23, 2], [7, 15], [15, 15], [23, 15], [7, 28], [15, 28], [23, 28]]],
+// A bamboo tile's sticks: their length, the [x, y] of each one's middle, and each one's colour,
+// g (green) or r (red): the middle of the 5, the top of the 7 and the middle column of the 9.
+// The 1 (a bird) and the 8 (a W over an M) are drawn apart.
+const STICKS: [number, [number, number][], string][] = [
+  [0, [], ''],
+  [0, [], ''],
+  [15, [[15, 11.5], [15, 28.5]], 'gg'],
+  [15, [[15, 11.5], [9, 28.5], [21, 28.5]], 'ggg'],
+  [15, [[9, 11.5], [21, 11.5], [9, 28.5], [21, 28.5]], 'gggg'],
+  [15, [[8, 11.5], [22, 11.5], [15, 20], [8, 28.5], [22, 28.5]], 'ggrgg'],
+  [15, [[7, 11.5], [15, 11.5], [23, 11.5], [7, 28.5], [15, 28.5], [23, 28.5]], 'gggggg'],
+  [10.5, [[15, 7], [7, 20], [15, 20], [23, 20], [7, 33], [15, 33], [23, 33]], 'rgggggg'],
+  [0, [], ''],
+  [10.5, [[7, 7], [15, 7], [23, 7], [7, 20], [15, 20], [23, 20], [7, 33], [15, 33], [23, 33]], 'grggrggrg'],
 ];
+
+// The 8 of bamboo, each stick from one end to the other: a W over an M.
+const EIGHT: [number, number, number, number][] = [
+  [5, 4, 5, 17], [8.5, 16.5, 14, 5.5], [16, 5.5, 21.5, 16.5], [25, 4, 25, 17],
+  [5, 23, 5, 36], [8.5, 23.5, 14, 34.5], [16, 34.5, 21.5, 23.5], [25, 23, 25, 36],
+];
+
+const fix = (v: number): number => Math.round(v * 100) / 100;
+
+/** One circle of the dots suit: a ring, a disc, and a notched white ring in it, like a coin. */
+function dotSvg(x: number, y: number, r: number, colour: string): string {
+  const notch = fix(2 * Math.PI * r * 0.3 / 12);
+  return `<g class="${colour}" fill="none" stroke="currentColor">`
+    + `<circle cx="${x}" cy="${y}" r="${fix(r * 0.86)}" stroke-width="${fix(r * 0.24)}"/>`
+    + `<circle cx="${x}" cy="${y}" r="${fix(r * 0.56)}" fill="currentColor" stroke="none"/>`
+    + `<circle cx="${x}" cy="${y}" r="${fix(r * 0.3)}" stroke="#fff" stroke-width="${fix(r * 0.16)}" stroke-dasharray="${notch}"/>`
+    + '</g>';
+}
+
+/** The 1 of dots: one large circle, an ink rim and a ring of petals round a red centre. */
+const ONE_DOT = '<g fill="none" stroke="currentColor">'
+  + '<g class="k"><circle cx="15" cy="20" r="11" stroke-width="1.3"/>'
+  + '<circle cx="15" cy="20" r="8.6" stroke-width="2.2" stroke-dasharray="1.7 1.68"/>'
+  + '<circle cx="15" cy="20" r="6.3" stroke-width=".5"/></g>'
+  + '<g class="r"><circle cx="15" cy="20" r="5.4" fill="currentColor" stroke="none"/>'
+  + '<circle cx="15" cy="20" r="3.3" stroke="#fff" stroke-width=".7" stroke-dasharray=".87 .86"/>'
+  + '<circle cx="15" cy="20" r="1.3" fill="#fff" stroke="none"/></g></g>';
+
+/** One stick of the bamboo suit from one end to the other: a stem with a joint at each end and in the middle. */
+function stickSvg(x1: number, y1: number, x2: number, y2: number, colour: string): string {
+  const cx = (x1 + x2) / 2;
+  const cy = (y1 + y2) / 2;
+  const h = Math.hypot(x2 - x1, y2 - y1);
+  const turn = fix(Math.atan2(x1 - x2, y2 - y1) * 180 / Math.PI);
+  const top = fix(cy - h / 2);
+  const joints = [top, cy, fix(cy + h / 2)].map(y => `<rect x="${fix(cx - 2.5)}" y="${fix(y - 0.9)}" width="5" height="1.8" rx=".9"/>`).join('');
+  return `<g class="${colour}" fill="currentColor"${turn ? ` transform="rotate(${turn} ${fix(cx)} ${fix(cy)})"` : ''}>`
+    + `<rect x="${fix(cx - 1.5)}" y="${top}" width="3" height="${fix(h)}" rx="1.2"/>${joints}`
+    + `<path d="M${fix(cx)} ${fix(top + 1.5)}V${fix(cy - 1.3)}M${fix(cx)} ${fix(cy + 1.3)}V${fix(cy + h / 2 - 1.5)}" stroke="#fff" stroke-opacity=".6" stroke-width=".7"/>`
+    + '</g>';
+}
+
+/** The 1 of bamboo: a peacock, its green fan of feathers spread behind it. */
+const BIRD = '<g class="g" fill="currentColor">'
+  + [-70, -35, 0, 35, 70].map(a => `<ellipse cx="13" cy="13" rx="2.8" ry="5" transform="rotate(${a} 13 22)"/>`).join('')
+  + '</g><g class="r" fill="currentColor">'
+  + [-70, -35, 0, 35, 70].map(a => `<circle cx="13" cy="11" r="1.1" transform="rotate(${a} 13 22)"/>`).join('')
+  + '</g><g class="k" stroke="currentColor" stroke-width=".9" stroke-linecap="round">'
+  + '<path d="M9 27.5c0-3 3-5 6.5-4.6 1.6.2 2.6-1 2.8-2.6.2-1.6 1.4-2.6 2.8-2.4 1.5.2 2.3 1.6 1.8 3l1.8 1-1.9.4c-.6 1.2-1 2.6-1.3 4.2-.8 4-4.2 6-7.7 5.6C10.9 31.7 9 30 9 27.5z" fill="#fff"/>'
+  + '<path d="M12.5 27.6c2.6-.2 4.6.8 5.6 2.6M14 32.6l-1.2 4M17 32.4l.6 4" fill="none"/>'
+  + '<path d="M20.4 17.6l-.6-2.2M21.6 17.6l.4-2.3" fill="none"/></g>'
+  + '<circle cx="21.4" cy="19.8" r=".6" class="k" fill="currentColor"/>'
+  + '<path d="M24.2 21l1.8 1-1.9.4z" class="r" fill="currentColor"/>';
 
 const SUIT_NAME: Record<string, string> = { m: 'characters', p: 'dots', s: 'bamboo' };
 const HONOUR_NAME = ['', 'East wind', 'South wind', 'West wind', 'North wind', 'White dragon', 'Green dragon', 'Red dragon'];
@@ -56,15 +116,20 @@ function tileName(code: string): string {
 
 /** The face of a dots or bamboo tile, as SVG. */
 function faceSvg(n: number, suit: string, red: boolean): string {
+  let art: string;
   if (suit === 'p') {
-    const [r, at] = DOTS[n];
-    return `<svg viewBox="0 0 30 40" aria-hidden="true">${at.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${r}" class="${red ? 'red' : 'dot'}"/>`).join('')}</svg>`;
+    const [r, at, colours] = DOTS[n];
+    art = n === 1 ? ONE_DOT : at.map(([x, y], i) => dotSvg(x, y, r, red ? 'r' : colours[i])).join('');
+  } else if (n === 1) {
+    art = BIRD;
+  } else if (n === 8) {
+    art = EIGHT.map(([x1, y1, x2, y2]) => stickSvg(x1, y1, x2, y2, 'g')).join('');
+  } else {
+    // A red five's sticks are all red.
+    const [h, at, colours] = STICKS[n];
+    art = at.map(([x, y], i) => stickSvg(x, y - h / 2, x, y + h / 2, red ? 'r' : colours[i])).join('');
   }
-  const [h, at] = STICKS[n];
-  const sticks = at.map(([x, y]) => `<rect x="${x - 2}" y="${y}" width="4" height="${h}" rx="2" class="${red ? 'red' : 'stick'}"/>`).join('');
-  // The 1 of bamboo is a bird in a real set; here it is one tall stick with a red crest.
-  const crest = n === 1 ? '<circle cx="15" cy="6" r="3.5" class="red"/>' : '';
-  return `<svg viewBox="0 0 30 40" aria-hidden="true">${sticks}${crest}</svg>`;
+  return `<svg viewBox="0 0 30 40" aria-hidden="true">${art}</svg>`;
 }
 
 /** One tile, from its code ('3m', '0p', '7z'). */
@@ -74,10 +139,13 @@ export function tileHtml(code: string): string {
   const red = n === 0;
   const value = red ? 5 : n;
   let face: string;
-  if (suit === 'm') face = `<b class="num">${NUMERALS[value]}</b><b class="man">萬</b>`;
-  else if (suit === 'z') face = n === 5 ? '<i class="haku" aria-hidden="true"></i>' : `<b class="honour z${n}">${HONOURS[n]}</b>`;
+  // A tile writes five as 伍, the form Mahjong Soul and most Japanese sets print.
+  if (suit === 'm') face = `<b class="num">${value === 5 ? '伍' : NUMERALS[value]}</b><b class="man">萬</b>`;
+  // White is blank, as Mahjong Soul draws it: only its corner index marks it.
+  else if (suit === 'z') face = n === 5 ? '' : `<b class="honour z${n}">${HONOURS[n]}</b>`;
   else face = faceSvg(value, suit, red);
-  return `<span class="hj-tile ${suit}${red ? ' red' : ''}" role="img" aria-label="${tileName(code)}">${face}</span>`;
+  const index = `<i class="idx" aria-hidden="true">${suit === 'z' ? HONOUR_INDEX[n] : value}</i>`;
+  return `<span class="hj-tile ${suit}${red ? ' red' : ''}" role="img" aria-label="${tileName(code)}">${face}${index}</span>`;
 }
 
 /** A row of tiles from a hand written as Tenhou does ('234m 55p'), a gap between groups. */
