@@ -4137,7 +4137,7 @@ $tile-back-deep: #d77a12;
     @include paper;
 
     margin-top: var(--sp-20);
-    scroll-margin-top: var(--sp-24);
+    scroll-margin-top: 96px; // under the sticky topbar, as _fgo.scss
     font-size: var(--fs-lg);
     line-height: 1.6;
 
@@ -4392,6 +4392,7 @@ $tile-back-deep: #d77a12;
 
   @media (max-width: 640px) {
     .hh-guide { align-items: flex-start; }
+    .hj-card { scroll-margin-top: 118px; } // the phone topbar is 99px tall
     .hj-sets { grid-template-columns: max-content minmax(0, 1fr); }
     .hj-sets li > .hj-hand { grid-row: span 2; align-self: start; }
     .hj-sets li > :last-child { grid-column: 2; }

@@ -200,8 +200,8 @@ const BUTTONS: Term[] = [
 const TABLE: Term[] = [
   ['東場 / 南場', 'tonba / nanba', 'East / South round', 'The game has an East round and then a South round.', '東場 / 南場', '一場對局先打東場，再打南場。'],
   ['東1局', 'ton ikkyoku', 'East 1', 'The round and the hand number. 南3局 is South 3.', '東一局', '場和局數。南3局就是南三局。'],
-  ['本場', 'honba', 'Repeat counter', 'Goes up when the dealer stays. Each one adds 300 to the next win.', '本場', '莊家連莊時增加。每一本場讓下一次和牌多 300 點。'],
-  ['親', 'oya', 'Dealer', 'Wins and pays 1.5 times as much. Moves on when the dealer does not win.', '莊家', '和牌得分和支付都是 1.5 倍。莊家沒有和牌時，由下一位坐莊。'],
+  ['本場', 'honba', 'Repeat counter', 'Goes up by one when the dealer wins and stays dealer, and on every exhaustive draw, even when the deal moves on. Each one adds 300 to the next win. Back to 0 when a non-dealer wins.', '本場', '莊家和牌連莊時加一，每次流局也加一（就算換莊）。每一本場讓下一次和牌多 300 點。閒家和牌時歸零。'],
+  ['親', 'oya', 'Dealer', 'Wins 1.5 times as much. On a Ron the dealer pays the normal value; on another player\'s Tsumo, a double share. Moves on when a non-dealer wins, or when the dealer is not ready at a draw.', '莊家', '和牌得 1.5 倍。放銃時照一般點數支付；別人自摸時付雙倍的份。閒家和牌，或流局時莊家沒有聽牌，就換莊。'],
   ['子', 'ko', 'Non-dealer', 'The three other players.', '閒家', '其他三位玩家。'],
   ['自風 / 場風', 'jikaze / bakaze', 'Seat wind / round wind', 'A triplet of either wind is a yaku.', '自風 / 場風', '這兩種風的刻子都是役。'],
   ['供託', 'kyoutaku', 'Riichi sticks', 'The 1,000-point sticks on the table. The next winner takes them.', '供託', '桌上的 1,000 點立直棒。下一位和牌的人拿走。'],
@@ -480,11 +480,12 @@ function guideHtml(lang: Lang): string {
         <p class="hj-note">${t(`The winds read <b lang="ja">東</b> ton, <b lang="ja">南</b> nan, <b lang="ja">西</b> shaa,
         <b lang="ja">北</b> pei; the dragons <b lang="ja">白</b> haku (white: a blank tile), <b lang="ja">發</b> hatsu
         (from <span lang="ja">發財</span>, "get rich"), <b lang="ja">中</b> chun ("centre", or "hit the mark").
-        1s, 9s and honours are "terminals and honours" (<span lang="ja">么九牌</span>, yaochuuhai).
+        The 1s and 9s of all three suits (characters, dots and bamboo) are the terminals; terminals and honours together are
+        <span lang="ja">么九牌</span> (yaochuuhai).
         Tiles drawn here in a standard style; Holojan's own tile art is not shown yet.`,
         `風牌讀作 <b lang="ja">東</b> ton、<b lang="ja">南</b> nan、<b lang="ja">西</b> shaa、<b lang="ja">北</b> pei；
         三元牌是 <b lang="ja">白</b> haku（白板，空白的牌）、<b lang="ja">發</b> hatsu（發財）、<b lang="ja">中</b> chun（紅中）。
-        1、9 和字牌合稱「么九牌」（yaochuuhai）。
+        萬、筒、索三種數牌的 1 和 9 都是「老頭牌」；老頭牌加上字牌，合稱「么九牌」（yaochuuhai）。
         這裡的牌是標準樣式；Holojan 自己的牌面還沒有公開。`)}</p>
       </section>
 
@@ -574,9 +575,10 @@ function guideHtml(lang: Lang): string {
           that more han is more points, and 5 han is a mangan, 8,000.`,
           `和牌的分數由<b>翻</b>（來自役和寶牌）和<b>符</b>決定。App 會自動計算：你只要知道翻越多分數越高，
           5 翻是滿貫，8,000 點。`)}</li>
-          <li>${t(`The <b>dealer</b> (<span lang="ja">親</span>) wins 1.5 times as much and pays more on a Tsumo. The dealer stays
+          <li>${t(`The <b>dealer</b> (<span lang="ja">親</span>) wins 1.5 times as much. When another player wins by Tsumo, the dealer pays a double share; on a Ron the dealer pays the
+          normal value. The dealer stays
           dealer after a win or a ready draw; otherwise the next player deals.`,
-          `<b>莊家</b>（<span lang="ja">親</span>）和牌得 1.5 倍，別人自摸時也付比較多。莊家和牌或流局時聽牌就連莊；
+          `<b>莊家</b>（<span lang="ja">親</span>）和牌得 1.5 倍。別人自摸時，莊家付雙倍的份；放銃時照一般點數支付。莊家和牌或流局時聽牌就連莊；
           否則由下一位玩家坐莊。`)}</li>
           <li>${t('When the wall runs out, players who are <b>not</b> ready (<span lang="ja">ノーテン</span>) pay 3,000 in all to those who are.',
           '牌山摸完時，<b>沒有</b>聽牌的玩家（<span lang="ja">ノーテン</span>）共付 3,000 點給聽牌的玩家。')}</li>
