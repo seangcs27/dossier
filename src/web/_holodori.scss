@@ -1112,6 +1112,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     z-index: 1;
     color: $ink-soft;
     font-size: var(--fs-xs);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     font-weight: 800;
     line-height: 1;
@@ -1256,6 +1259,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: max(8px, 22cqw);
     font-style: normal;
     font-weight: 900;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     line-height: 1;
     white-space: nowrap;
@@ -2738,6 +2744,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
   .rv-time {
     color: rgb(255 255 255 / 85%);
     font-size: var(--fs-xs);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
   }
 
@@ -3255,6 +3264,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     flex: none;
     min-width: 68px;
     font-size: var(--fs-xs);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
@@ -3641,6 +3653,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: 32px;
     font-weight: 900;
     line-height: 1;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
   }
 
@@ -3722,6 +3737,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     font-size: var(--fs-sm);
     font-style: normal;
     font-weight: 900;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
     line-height: 1;
 
@@ -3891,6 +3909,9 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
     color: $ink-soft;
     font-size: var(--fs-sm);
     font-weight: 700;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
     font-variant-numeric: tabular-nums;
   }
 
@@ -4022,12 +4043,14 @@ $world: "body:is([data-view='holodori'], [data-view='holodori-home'], [data-view
 
 // ── The Holojan guide (#/holodori/mahjong, render/holojong-html.ts) ──
 // hololive's mahjong game, in this world: the guide's sections are sheets of the album's
-// paper, and its tiles are real tiles, white faces on the sky's back, which no theme changes.
+// paper, and its tiles are real tiles, drawn after Mahjong Soul's: white faces on an orange
+// back, which no theme changes.
 
 $tile-ink: #23263f;
 $tile-red: #d0243a;
-$tile-blue: #1f5fbf;
 $tile-green: #17864a;
+$tile-back: #f29b2c;
+$tile-back-deep: #d77a12;
 
 #{$world} {
   // The front page's way in: a strip under its header.
@@ -4068,7 +4091,12 @@ $tile-green: #17864a;
     font-weight: 800;
   }
 
-  .hj-head { padding-right: 0; }
+  // Clear of the English / 繁體中文 switch on its right; under 900px the switch has a line of its own.
+  .hj-head { padding-right: 240px; }
+
+  @media (max-width: 900px) {
+    .hj-head { padding-right: 0; }
+  }
 
   .hj-toc {
     display: flex;
@@ -4109,7 +4137,7 @@ $tile-green: #17864a;
     @include paper;
 
     margin-top: var(--sp-20);
-    scroll-margin-top: var(--sp-24);
+    scroll-margin-top: 96px; // under the sticky topbar, as _fgo.scss
     font-size: var(--fs-lg);
     line-height: 1.6;
 
@@ -4174,29 +4202,45 @@ $tile-green: #17864a;
     flex: none;
     width: 34px;
     height: 46px;
+    position: relative;
     border-radius: 5px;
-    background: #fff;
-    // The tile's back, in the sky's blue, shows under its face.
-    box-shadow: inset 0 0 0 1px #d6dde8, 0 4px 0 $sky, 0 5px 6px $lift;
+    background: linear-gradient(#fff 72%, #eef0f3);
+    // The tile's thickness under its face, as Mahjong Soul draws it: a pale band of the face's
+    // material, then the orange back.
+    box-shadow: inset 0 0 0 1px #d9dde3, 0 2px 0 #d3d7de, 0 4px 0 $tile-back, 0 5px 0 $tile-back-deep, 0 6px 5px $lift;
     color: $tile-ink;
     font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'Noto Serif JP', 'MS Mincho', serif;
     line-height: 1;
 
     svg { width: 28px; height: 38px; }
-    .dot { fill: $tile-blue; }
-    .stick { fill: $tile-green; }
-    .red { fill: $tile-red; }
+    .k { color: $tile-ink; }
+    .r { color: $tile-red; }
+    .g { color: $tile-green; }
 
-    .num { font-size: 15px; font-weight: 700; }
-    .man { color: $tile-red; font-size: 15px; font-weight: 700; }
+    // The kanji are heavy, as a brush writes them: the serif's boldest, stroked a little more.
+    :is(.num, .man, .honour) { font-weight: 900; -webkit-text-stroke: 0.4px currentColor; }
+    .num { margin: 0 3px 1px 0; font-size: 15px; }
+    .man { color: $tile-red; font-size: 20px; }
     &.red .num { color: $tile-red; }
 
-    .honour { font-size: 24px; font-weight: 700; }
+    .honour { font-size: 26px; }
     .z6 { color: $tile-green; }
     .z7 { color: $tile-red; }
 
-    // White is a blank tile; the set's frame marks it.
-    .haku { width: 20px; height: 30px; border: 2px solid $tile-blue; border-radius: 3px; }
+    // Mahjong Soul's corner index: the number in red, or the honour's letter. A red five's is ink
+    // with a red dot.
+    .idx {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      color: $tile-red;
+      font: 800 8px/1 Arial, 'Helvetica Neue', sans-serif;
+      font-style: normal;
+      text-shadow: 0 0 1px #fff, 0 0 2px #fff;
+    }
+
+    &.red .idx { color: $tile-ink; }
+    &.red .idx::before { content: '•'; color: $tile-red; }
   }
 
   .hj-hand { display: inline-flex; flex-wrap: wrap; gap: var(--sp-8); padding-bottom: 6px; }
@@ -4225,15 +4269,45 @@ $tile-green: #17864a;
     b { color: $ink; font-size: var(--fs-lg); }
   }
 
+  // Two columns: the tiles, then what the set is, each description starting at one line.
   .hj-sets {
     display: grid;
-    gap: var(--sp-12);
+    grid-template-columns: max-content max-content minmax(0, 1fr);
+    gap: var(--sp-12) var(--sp-16);
     margin: 0 0 var(--sp-16);
     padding: 0;
     list-style: none;
 
-    li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-8) var(--sp-16); }
-    li > span:last-child { flex: 1 1 260px; }
+    li {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      align-items: center;
+      .hj-set-name { display: flex; flex-direction: column; font-weight: 800; small { font-size: var(--fs-xs); font-weight: 600; opacity: 0.75; } }
+    }
+  }
+
+  .hj-score {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-16) var(--sp-24);
+
+    @media (min-width: 1040px) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  }
+
+  .hj-score-chart p { margin: 0 0 var(--sp-12); }
+
+  .hj-terms.hj-points {
+    margin-bottom: var(--sp-16);
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    font-variant-numeric: tabular-nums;
+
+    caption { text-align: left; font-weight: 800; padding-bottom: var(--sp-8); small { opacity: 0.7; } }
+    td, th { text-align: right; white-space: nowrap; padding: var(--sp-8); }
+    &.hj-limits td:first-of-type { text-align: left; white-space: normal; }
+    td small { display: block; font-size: var(--fs-xs); opacity: 0.7; }
   }
 
   .hj-example {
@@ -4310,22 +4384,31 @@ $tile-green: #17864a;
   .hj-yaku-hand { display: block; margin-top: var(--sp-6); }
   .hj-yaku .hj-tile { width: 28px; height: 38px; }
   .hj-yaku .hj-tile svg { width: 23px; height: 31px; }
-  .hj-yaku .hj-tile :is(.num, .man) { font-size: 13px; }
-  .hj-yaku .hj-tile .honour { font-size: 19px; }
-  .hj-yaku .hj-tile .haku { width: 16px; height: 25px; }
+  .hj-yaku .hj-tile .num { font-size: 11px; }
+  .hj-yaku .hj-tile .man { font-size: 15px; }
+  .hj-yaku .hj-tile .honour { font-size: 21px; }
+  .hj-yaku .hj-tile .idx { top: 1px; right: 2px; font-size: 7px; }
   .hj-yaku .hj-hand { gap: var(--sp-6); }
 
   @media (max-width: 640px) {
     .hh-guide { align-items: flex-start; }
+    .hj-card { scroll-margin-top: 118px; } // the phone topbar is 99px tall
+    .hj-sets { grid-template-columns: max-content minmax(0, 1fr); }
+    .hj-sets li > .hj-hand { grid-row: span 2; align-self: start; }
+    .hj-sets li > :last-child { grid-column: 2; }
+    .hj-sets li .hj-set-name { flex-direction: row; align-items: baseline; gap: var(--sp-8); }
+    .hj-terms.hj-points { font-size: var(--fs-sm); th, td { padding: var(--sp-4); } }
     .hj-tile { width: 28px; height: 38px; }
     .hj-tile svg { width: 23px; height: 31px; }
-    .hj-tile :is(.num, .man) { font-size: 12px; }
-    .hj-tile .honour { font-size: 19px; }
+    .hj-tile .num { font-size: 11px; }
+    .hj-tile .man { font-size: 15px; }
+    .hj-tile .honour { font-size: 21px; }
+    .hj-tile .idx { top: 1px; right: 2px; font-size: 7px; }
 
     // A row of words is a card on a phone: the Japanese large at the left, its reading and
     // English beside it, and what it means under both. Scrolled sideways, the meaning was
     // off the screen.
-    .hj-terms:not(.hj-milestones) {
+    .hj-terms:not(.hj-milestones, .hj-points) {
       min-width: 0;
 
       thead { display: none; }

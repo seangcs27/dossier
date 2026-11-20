@@ -12,11 +12,12 @@ import { holojongPageHtml } from '@web/render/holojong-html';
 
 <script>
   import { hideSearch } from '@web/shell';
-  import { wireGuideLinks } from '@web/views/holodori-mahjong';
+  import { wireGuideLang, wireGuideLinks } from '@web/views/holodori-mahjong';
   import { onPage } from '../../lib/page';
 
   onPage('holodori-mahjong', (view) => {
     hideSearch();
     wireGuideLinks(view);
+    wireGuideLang(view);
   });
 </script>
