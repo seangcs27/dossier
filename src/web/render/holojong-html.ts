@@ -269,15 +269,294 @@ const YAKU: Yaku[] = [
   ['清一色', 'chinitsu', 'Full flush', '清一色', '6', '5', 'One suit only.', '只有一種花色。', '112233s 456s 789s 55s'],
 ];
 
-const yakuRows = (lang: Lang): string => YAKU.map(([jp, reading, en, zh, closed, open, how, zhHow, hand]) => `
+// ── Every yaku ──
+// The standard yaku as Mahjong Soul's ranked rules play them, by han. 'mangan' is written as the
+// word; '1×' and '2×' are a yakuman and a double one. The twelve above are reused as they are.
+const first = (jp: string): Yaku => YAKU.find(row => row[0] === jp)!;
+
+const YAKU_GROUPS: [en: string, zh: string, rows: Yaku[]][] = [
+  ['1 han', '1 翻', [
+    first('立直'),
+    ['一発', 'ippatsu', 'One shot', '一發', '1', '—', 'Win within one go-round of your riichi: by your next draw, with no call by anyone before it.', '立直後一巡內和牌：在你下一次摸牌（含）之前，而且中間沒有任何人鳴牌。'],
+    first('門前清自摸和'),
+    first('断么九'),
+    first('平和'),
+    first('一盃口'),
+    ['役牌', 'yakuhai', 'Value tiles', '役牌', '1', '1', 'A triplet of White, Green or Red, your seat wind or the round wind: 1 han each. A wind that is both (East for the dealer in the East round, 連風牌) is 2.', '白、發、中、自風或場風的刻子：每組 1 翻。同時是自風和場風的風牌（連風牌，例如東場的莊家拿東）算 2 翻。', '555z'],
+    ['海底摸月', 'haitei moyue', 'Last tile', '海底撈月', '1', '1', 'Win by Tsumo on the last tile of the wall.', '用牌山最後一張牌自摸和牌。'],
+    ['河底撈魚', 'houtei raoyui', 'Last discard', '河底撈魚', '1', '1', 'Win by Ron on the last discard of the hand.', '用這一局最後一張捨牌榮和。'],
+    ['嶺上開花', 'rinshan kaihou', 'After a kan', '嶺上開花', '1', '1', 'Win on the extra tile you draw after a kan.', '用開槓後補摸的嶺上牌和牌。'],
+    ['槍槓', 'chankan', 'Robbing a kan', '搶槓', '1', '1', 'Win by Ron on the tile another player adds to their pon to make a kan.', '別人把一張牌加到碰出的刻子上開槓（加槓）時，用那張牌榮和。'],
+  ]],
+  ['2 han', '2 翻', [
+    ['ダブル立直', 'daburu riichi', 'Double riichi', '兩立直', '2', '—', 'Riichi on your first discard, with no call before it. It takes the place of riichi\'s 1 han.', '在第一次打牌時立直，而且在那之前沒有人鳴牌。取代立直的 1 翻。'],
+    first('三色同順'),
+    first('一気通貫'),
+    ['混全帯么九', 'chanta', 'Half outside hand', '混全帶么九', '2', '1', 'Every set and the pair has a 1, a 9 or an honour, with at least one run and one honour.', '每組面子和雀頭都含有 1、9 或字牌，至少有一組順子和一張字牌。', '123m 789p 789s 999s 33z'],
+    first('七対子'),
+    first('対々和'),
+    ['三暗刻', 'sanankou', 'Three closed triplets', '三暗刻', '2', '2', 'Three triplets you drew yourself, not called. A triplet finished by Ron does not count as closed.', '三組自己摸進來的刻子（不是碰來的）。用榮和完成的刻子不算暗刻。', '222m 555p 888s'],
+    ['三色同刻', 'sanshoku doukou', 'Three-colour triplets', '三色同刻', '2', '2', 'A triplet of the same number in all three suits.', '三種花色都有同樣數字的刻子。', '777m 777p 777s'],
+    ['三槓子', 'sankantsu', 'Three quads', '三槓子', '2', '2', 'Three kans, open or closed.', '三組槓子，明槓或暗槓都可以。'],
+    ['小三元', 'shousangen', 'Little three dragons', '小三元', '2', '2', 'Two dragon triplets and a pair of the third. The two triplets are value tiles too, so it is 4 han at least.', '兩組三元牌的刻子，加上第三種三元牌的雀頭。那兩組刻子也是役牌，所以至少 4 翻。', '555z 666z 77z'],
+    ['混老頭', 'honroutou', 'All terminals and honours', '混老頭', '2', '2', 'Only 1s, 9s and honours. It always comes with all triplets or seven pairs, which add their own han.', '只有 1、9 和字牌。一定會同時是對對和或七對子，各自另外計翻。', '111m 999p 111z 555z 99s'],
+  ]],
+  ['3 han', '3 翻', [
+    ['二盃口', 'ryanpeikou', 'Twice double run', '二盃口', '3', '—', 'Two double runs. It is counted in place of seven pairs.', '兩組一盃口。不和七對子重複計算，只算二盃口。', '223344m 667788p 55s'],
+    first('混一色'),
+    ['純全帯么九', 'junchan', 'Fully outside hand', '純全帶么九', '3', '2', 'Every set and the pair has a 1 or a 9. No honours.', '每組面子和雀頭都含有 1 或 9，沒有字牌。', '123m 789m 123p 999s 11s'],
+  ]],
+  ['6 han', '6 翻', [first('清一色')]],
+  ['Mangan', '滿貫', [
+    ['流し満貫', 'nagashi mangan', 'Terminal discards', '流局滿貫', 'mangan', 'mangan', 'When the wall runs out, every tile you discarded is a 1, a 9 or an honour, and no one called any of them. Paid as a mangan by Tsumo.', '流局時，你打出的牌全部是 1、9 或字牌，而且沒有一張被別人鳴走。照滿貫自摸支付。'],
+  ]],
+  ['Yakuman: 32,000 / 48,000', '役滿：32,000 / 48,000', [
+    ['国士無双', 'kokushi musou', 'Thirteen orphans', '國士無雙', '1×', '—', 'One of each 1, 9 and honour (13 kinds), and one more of any of them.', '1、9 和字牌共 13 種各一張，再加其中任一張成對。', '119m 19p 19s 1234567z'],
+    ['四暗刻', 'suuankou', 'Four closed triplets', '四暗刻', '1×', '—', 'Four triplets you drew yourself. Won by Ron on a wait for either of two pairs, the last triplet is open: then it is three closed triplets and all triplets.', '四組自己摸進來的刻子。如果是雙碰聽而用榮和完成，最後一組算明刻，只能算三暗刻加對對和。', '111m 444p 777s 222z 99s'],
+    ['大三元', 'daisangen', 'Big three dragons', '大三元', '1×', '1×', 'Triplets of all three dragons.', '三種三元牌都是刻子。', '555z 666z 777z'],
+    ['小四喜', 'shousuushii', 'Little four winds', '小四喜', '1×', '1×', 'Triplets of three winds and a pair of the fourth.', '三種風牌的刻子，加上第四種風牌的雀頭。', '111z 222z 333z 44z'],
+    ['字一色', 'tsuuiisou', 'All honours', '字一色', '1×', '1×', 'Only honour tiles.', '只有字牌。', '111z 222z 555z 777z 33z'],
+    ['緑一色', 'ryuuiisou', 'All green', '綠一色', '1×', '1×', 'Only 2, 3, 4, 6 and 8 bamboo and the Green dragon. Mahjong Soul does not require the Green dragon.', '只有 2、3、4、6、8 索和發。雀魂不要求一定要有發。', '223344s 666s 888s 66z'],
+    ['清老頭', 'chinroutou', 'All terminals', '清老頭', '1×', '1×', 'Only 1s and 9s.', '只有 1 和 9。', '111m 999m 111p 999s 11s'],
+    ['九蓮宝燈', 'chuuren poutou', 'Nine gates', '九蓮寶燈', '1×', '—', '1112345678999 in one suit, and one more tile of that suit.', '同一花色的 1112345678999，再加一張同花色的牌。', '111p 234p 55p 678p 999p'],
+    ['四槓子', 'suukantsu', 'Four quads', '四槓子', '1×', '1×', 'Four kans.', '四組槓子。'],
+    ['天和', 'tenhou', 'Blessing of heaven', '天和', '1×', '—', 'The dealer\'s first 14 tiles are a complete hand.', '莊家配牌的 14 張就是完整的和牌。'],
+    ['地和', 'chiihou', 'Blessing of earth', '地和', '1×', '—', 'A non-dealer wins by Tsumo on their first draw, with no call before it.', '閒家第一次摸牌就自摸和牌，而且在那之前沒有人鳴牌。'],
+  ]],
+  ['Double yakuman: 64,000 / 96,000', '雙倍役滿：64,000 / 96,000', [
+    ['国士無双十三面待ち', 'kokushi juusanmen', 'Thirteen orphans, 13-sided wait', '國士無雙十三面', '2×', '—', 'One of each of the 13 kinds, waiting on any of them.', '13 種么九牌各一張，聽其中任何一張。', '19m 19p 19s 1234567z'],
+    ['四暗刻単騎', 'suuankou tanki', 'Four closed triplets, pair wait', '四暗刻單騎', '2×', '—', 'Four closed triplets, waiting on the tile for the pair.', '四組暗刻已經完成，單騎聽雀頭。', '111m 444p 777s 222z 9s'],
+    ['純正九蓮宝燈', 'junsei chuuren', 'True nine gates', '純正九蓮寶燈', '2×', '—', '1112345678999 in one suit, waiting on any of its nine tiles.', '同一花色的 1112345678999，聽這個花色的九種牌。', '111m 2345m 678m 999m'],
+    ['大四喜', 'daisuushii', 'Big four winds', '大四喜', '2×', '2×', 'Triplets of all four winds.', '四種風牌都是刻子。', '111z 222z 333z 444z 55m'],
+  ]],
+];
+
+// ── Old yaku (古役) ──
+// [kanji, reading, English, Chinese, value, in Mahjong Soul's friend rooms, how, how in Chinese,
+// an example]. Mahjong Soul plays the first fourteen in friend rooms, not in ranked (Game8's
+// list of its local yaku, read 22 November 2026); the rest are in none of its rules.
+type OldYaku = [jp: string, reading: string, en: string, zh: string, value: string, soul: boolean, how: string, zhHow: string, hand?: string];
+
+const OLD_YAKU: OldYaku[] = [
+  ['人和', 'renhou', 'Blessing of man', '人和', '1×', true, 'A non-dealer wins by Ron before their first draw, with no call before it. Some rule sets make it a mangan.', '閒家在第一次摸牌前就榮和，而且在那之前沒有人鳴牌。有些規則只算滿貫。'],
+  ['大車輪', 'daisharin', 'Big wheels', '大車輪', '1×', true, 'Seven pairs of 2 to 8 dots. Closed.', '2 到 8 筒各一對的七對子。限門清。', '22p 33p 44p 55p 66p 77p 88p'],
+  ['大竹林', 'daichikurin', 'Big bamboo forest', '大竹林', '1×', true, 'The same in bamboo.', '同樣的牌型，用索子。', '22s 33s 44s 55s 66s 77s 88s'],
+  ['大数隣', 'daisuurin', 'Big neighbours', '大數鄰', '1×', true, 'The same in characters.', '同樣的牌型，用萬子。', '22m 33m 44m 55m 66m 77m 88m'],
+  ['大七星', 'daichisei', 'Big seven stars', '大七星', '2×', true, 'Seven pairs of the seven honours. Closed.', '七種字牌各一對的七對子。限門清。', '11z 22z 33z 44z 55z 66z 77z'],
+  ['石の上にも三年', 'ishi no ue ni mo sannen', 'Three years on a rock', '石上三年', '1×', true, 'Double riichi, and win on the last tile: by Tsumo on the wall\'s last tile, or by Ron on the last discard.', '兩立直，並且用最後一張牌和牌：海底摸月或河底撈魚。'],
+  ['一筒摸月', 'iipin moyue', 'Moon on 1 dots', '一筒摸月', 'mangan', true, 'Win by Tsumo on the wall\'s last tile, and that tile is 1 dots.', '用牌山最後一張牌自摸，而那張牌是一筒。'],
+  ['九筒撈魚', 'chuupin raoyui', 'Fish on 9 dots', '九筒撈魚', 'mangan', true, 'Win by Ron on the last discard, and that tile is 9 dots.', '用最後一張捨牌榮和，而那張牌是九筒。'],
+  ['一色三順', 'isshoku sanjun', 'Pure triple run', '一色三同順', '3 / 2', true, 'The same run three times in one suit. 3 han closed, 2 open.', '同一花色三組完全相同的順子。門清 3 翻，副露 2 翻。', '345s 345s 345s'],
+  ['三連刻', 'sanrenkou', 'Three step triplets', '三連刻', '2', true, 'Triplets of three numbers in a row in one suit.', '同一花色三組數字相連的刻子。', '444p 555p 666p'],
+  ['五門斉', 'uumensai', 'Five gates', '五門齊', '2', true, 'Characters, dots, bamboo, winds and dragons all in the hand.', '手牌裡萬、筒、索、風牌、三元牌五種都有。', '123m 456p 789s 111z 55z'],
+  ['燕返し', 'tsubame gaeshi', 'Swallow\'s return', '燕返', '1', true, 'Win by Ron on the tile another player discards to declare riichi.', '用別人宣告立直時打出的那張牌榮和。'],
+  ['槓振り', 'kanburi', 'Kan discard', '槓振', '1', true, 'Win by Ron on the tile a player discards right after a kan.', '用別人開槓後打出的那張牌榮和。'],
+  ['十二落抬', 'shiiaru raotai', 'Twelve fallen', '十二落抬', '1', true, 'Four calls, and win on the one tile left in your hand.', '鳴牌四次，手上只剩一張，單騎和牌。'],
+  ['十三不塔', 'shiisan puutaa', 'Thirteen unconnected', '十三不搭', '1×', false, 'On your first draw, with no call before it: one pair, and no other two tiles that could make a set (no two of a suit within 2 of each other). Some rule sets make it a mangan.', '第一次摸牌時，在沒有人鳴牌的情況下：只有一組對子，其他牌都不能組成搭子（同一花色的任兩張相差 3 以上）。有些規則只算滿貫。', '147m 258p 369s 12366z'],
+  ['紅孔雀', 'benikujaku', 'Red peacock', '紅孔雀', '1×', false, 'Only 1, 5, 7 and 9 bamboo and the Red dragon: the tiles drawn in red.', '只有 1、5、7、9 索和紅中：都是畫有紅色的牌。', '111s 555s 777s 999s 77z'],
+  ['黒一色', 'kokuiisou', 'All black', '黑一色', '1×', false, 'Only 2, 4 and 8 dots and the four winds: the tiles with no red or green.', '只有 2、4、8 筒和四種風牌：沒有紅色和綠色的牌。', '222p 444p 888p 111z 33z'],
+  ['百万石', 'hyakumangoku', 'A million koku', '百萬石', '1×', false, 'Characters only, and the numbers add up to 100 or more.', '只有萬子，而且所有數字加起來至少 100。', '666m 777m 888m 999m 99m'],
+  ['金門橋', 'kinmonkyou', 'Golden Gate Bridge', '金門橋', '1×', false, '123, 345, 567 and 789 in one suit, and a pair. Some rule sets require a closed hand.', '同一花色的 123、345、567、789，加一組雀頭。有些規則要求門清。', '123p 345p 567p 789p 11z'],
+  ['東北新幹線', 'touhoku shinkansen', 'Tohoku Shinkansen', '東北新幹線', '1×', false, '1 to 9 in one suit, and East and North: a triplet of one and a pair of the other. Closed.', '同一花色的 1 到 9，加上東和北：一組刻子和一組雀頭。限門清。', '123m 456m 789m 111z 44z'],
+  ['四連刻', 'suurenkou', 'Four step triplets', '四連刻', '1×', false, 'Triplets of four numbers in a row in one suit.', '同一花色四組數字相連的刻子。', '333s 444s 555s 666s 99m'],
+  ['一色四順', 'isshoku suujun', 'Pure quadruple run', '一色四同順', '1×', false, 'The same run four times in one suit.', '同一花色四組完全相同的順子。', '234p 234p 234p 234p 88s'],
+  ['三風刻', 'sanpuukou', 'Three wind triplets', '三風刻', '2', false, 'Triplets of three winds, and the fourth wind not the pair (that is little four winds).', '三種風牌的刻子，而第四種風牌不是雀頭（否則就是小四喜）。', '111z 222z 333z'],
+  ['オープン立直', 'oopun riichi', 'Open riichi', '開立直', '2', false, 'Riichi with your hand shown to everyone, 2 han in place of 1. In many rule sets, a player not in riichi who deals into it pays a yakuman.', '把手牌亮給所有人看的立直，算 2 翻，取代立直的 1 翻。在很多規則裡，沒有立直的玩家放銃給它要付役滿。'],
+];
+
+// ── Local rules ──
+// [Japanese, reading, English, Chinese, in Mahjong Soul's ranked rules, what it is, in Chinese].
+// Mahjong Soul's side is from community guides of its ranked rules, which match Tenhou's.
+const LOCAL_RULES: [jp: string, reading: string, en: string, zh: string, soul: boolean, how: string, zhHow: string][] = [
+  ['喰いタン', 'kuitan', 'Open all simples', '食斷', true, 'All simples still counts after a call. Some rule sets do not allow it.', '鳴牌後斷么九仍然成立。有些規則不允許。'],
+  ['後付け', 'atozuke', 'Yaku later', '後付', true, 'You may call before your hand has a yaku, if it has one when it wins.', '還沒有確定的役也可以先鳴牌，只要和牌時有役就好。'],
+  ['数え役満', 'kazoe yakuman', 'Counted yakuman', '累計役滿', true, '13 han or more of ordinary yaku and dora is paid as a yakuman.', '一般的役加寶牌累計 13 翻以上，當作役滿支付。'],
+  ['複合役満', 'fukugou yakuman', 'Yakuman add up', '複合役滿', true, 'Two yakuman in one hand are paid as a double, such as big three dragons with all honours.', '一副手牌同時有兩個役滿時算雙倍役滿，例如大三元加字一色。'],
+  ['ダブロン', 'daburon', 'Double Ron', '雙響', true, 'Two players win on the same discard, and both are paid.', '兩位玩家同時榮和同一張牌，兩人都得分。'],
+  ['責任払い / パオ', 'sekinin barai / pao', 'Liability', '包牌', true, 'A player whose discard lets another call the last set of big three dragons or big four winds pays that yakuman: all of it by Tsumo, half if a third player deals in.', '讓別人鳴牌完成大三元或大四喜最後一組的玩家，要負責支付那個役滿：自摸時全付，別人放銃時各付一半。'],
+  ['切り上げ満貫', 'kiriage mangan', 'Round up to mangan', '切上滿貫', false, '4 han 30 fu and 3 han 60 fu are paid as a mangan.', '4 翻 30 符和 3 翻 60 符當作滿貫支付。'],
+  ['八連荘', 'paarenchan', 'Eight in a row', '八連莊', false, 'A dealer who wins eight hands in a row scores a yakuman for the eighth, whatever the hand.', '莊家連續和牌八次，第八次不管什麼牌型都算役滿。'],
+  ['二翻縛り', 'ryanhan shibari', 'Two-han minimum', '二翻縛', false, 'From 5 repeat counters (本場) on, a win needs 2 han, not counting dora.', '從 5 本場開始，和牌至少要有 2 翻（寶牌不算）。'],
+  ['ワレメ', 'wareme', 'Split wall', '割目', false, 'The player whose part of the wall the deal starts from pays and is paid double for the hand.', '發牌時從誰面前的牌山開始取牌，那位玩家這一局的支付和收入都加倍。'],
+  ['焼き鳥', 'yakitori', 'Roast bird', '燒鳥', false, 'A player who wins no hand all game pays a penalty at the end. The amount varies.', '整場對局一次都沒有和牌的玩家，結束時要付罰點。金額依規則而定。'],
+];
+
+/** A han cell, with its label for a phone, where the table's head is not shown. */
+function hanCell(value: string, label: string, lang: Lang): string {
+  const shown = value === 'mangan' ? (lang === 'en' ? 'Mangan' : '滿貫') : value;
+  return `<td class="hj-han"><span class="hj-lab">${label}</span>${shown}</td>`;
+}
+
+const yakuRows = (rows: Yaku[], lang: Lang): string => rows.map(([jp, reading, en, zh, closed, open, how, zhHow, hand]) => `
   <tr>
     <th scope="row" lang="ja">${jp}</th>
     <td class="hj-read">${reading}</td>
     <td class="hj-en">${lang === 'en' ? en : zh}</td>
-    <td class="hj-han">${closed}</td>
-    <td class="hj-han">${open}</td>
+    ${hanCell(closed, lang === 'en' ? 'Closed ' : '門清 ', lang)}
+    ${hanCell(open, lang === 'en' ? 'Open ' : '副露 ', lang)}
     <td>${lang === 'en' ? how : zhHow}${hand ? `<span class="hj-yaku-hand">${handHtml(hand, lang)}</span>` : ''}</td>
   </tr>`).join('');
+
+/** A table of yaku: kanji, reading, name, closed and open han, and how. */
+const yakuTable = (rows: Yaku[], lang: Lang, caption = ''): string => `
+  <div class="hj-table-wrap">
+    <table class="hj-terms hj-yaku">
+      ${caption ? `<caption>${caption}</caption>` : ''}
+      <thead><tr>${(lang === 'en' ? ['Kanji', 'Reading', 'English', 'Closed', 'Open', 'How'] : ['日文', '讀音', '中文', '門清', '副露', '條件']).map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>
+      <tbody>${yakuRows(rows, lang)}</tbody>
+    </table>
+  </div>`;
+
+const soulMark = (soul: boolean, yes: string, lang: Lang): string => soul
+  ? `<span class="hj-soul">${yes}</span>`
+  : `<span class="hj-soul no">${lang === 'en' ? 'Not in Mahjong Soul\'s rules' : '雀魂規則沒有'}</span>`;
+
+const oldYakuTable = (lang: Lang): string => `
+  <div class="hj-table-wrap">
+    <table class="hj-terms hj-yaku hj-old">
+      <thead><tr>${(lang === 'en' ? ['Kanji', 'Reading', 'English', 'Value', 'Mahjong Soul', 'How'] : ['日文', '讀音', '中文', '翻數', '雀魂', '條件']).map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>
+      <tbody>${OLD_YAKU.map(([jp, reading, en, zh, value, soul, how, zhHow, hand]) => `
+        <tr>
+          <th scope="row" lang="ja">${jp}</th>
+          <td class="hj-read">${reading}</td>
+          <td class="hj-en">${lang === 'en' ? en : zh}</td>
+          ${hanCell(value, lang === 'en' ? 'Value ' : '翻數 ', lang)}
+          <td class="hj-han">${soulMark(soul, lang === 'en' ? 'Friend rooms' : '友人場', lang)}</td>
+          <td>${lang === 'en' ? how : zhHow}${hand ? `<span class="hj-yaku-hand">${handHtml(hand, lang)}</span>` : ''}</td>
+        </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+
+const localRulesHtml = (lang: Lang): string => `
+  <dl class="hj-rules">${LOCAL_RULES.map(([jp, reading, en, zh, soul, how, zhHow]) => `
+    <div>
+      <dt><b lang="ja">${jp}</b> <span class="hj-read">${reading}</span> · ${lang === 'en' ? en : zh}</dt>
+      <dd>${lang === 'en' ? how : zhHow} ${soulMark(soul, lang === 'en' ? 'In Mahjong Soul' : '雀魂有', lang)}</dd>
+    </div>`).join('')}
+  </dl>`;
+
+// ── The demo hand ──
+// One hand played out, step by step. You sit South in East 1 (East deals), and win by Ron with
+// riichi, pinfu, all simples and a red five: 4 han 30 fu, 7,700. The steps are drawn here, all
+// of them; views/holodori-mahjong.ts (wireGuideDemo) shows one at a time.
+const DEMO_DEAL = ['2m', '3m', '4m', '6m', '7m', '0p', '6p', '1p', '3s', '4s', '8s', '9s', '7z'];
+const DEMO_DORA = '9s'; // so the dora is 1 bamboo, which nobody has
+const DEMO_URA = '1p'; // so the hidden dora is 2 dots: none in the hand
+const DEMO_WIN = '5s';
+
+type DemoStep = {
+  draw?: string; // the tile you draw
+  discard?: string; // the tile you discard, after the draw
+  riichi?: true; // the discard declares riichi
+  pon?: true; // West calls Pon on your last discard
+  ron?: string; // the tile you win on
+  score?: true; // the result screen
+  left: number; // tiles left in the wall
+  jp: string; // what the game shows, or the word for the step
+  reading: string;
+  en: string;
+  zh: string;
+};
+
+const DEMO: DemoStep[] = [
+  { left: 70, jp: '配牌', reading: 'haipai',
+    en: 'The deal. You sit South, so East deals: this is East 1 (<span lang="ja">東1局</span>). You have 13 tiles. The dora indicator is 9 bamboo, so the dora is 1 bamboo. You already have one run (234 characters) and a red five.',
+    zh: '配牌。你坐南家，所以東家是莊家：這是東一局（<span lang="ja">東1局</span>）。你有 13 張牌。寶牌指示牌是九索，所以寶牌是一索。你已經有一組順子（234 萬）和一張赤五。' },
+  { draw: '8s', left: 68, jp: '残り 68', reading: 'nokori',
+    en: 'Your first draw: 8 bamboo. Now you have a pair of 8s, your head. With 14 tiles you must discard one. The counter shows the tiles left in the wall.',
+    zh: '第一次摸牌：八索。現在你有一對 8 索當雀頭。手上 14 張，要打出一張。畫面上的數字是牌山剩下的牌數。' },
+  { discard: '7z', left: 68, jp: '打牌', reading: 'dahai',
+    en: 'Discard the lone Red dragon. One 中 alone makes no set; a pair of them would be worth keeping as a value tile.',
+    zh: '打出孤張的紅中。單獨一張中組不成面子；如果是一對，就值得留著當役牌。' },
+  { pon: true, left: 68, jp: 'ポン', reading: 'pon',
+    en: 'West has a pair of Red dragons and calls Pon on yours. West shows the three face up, the one taken from you turned sideways, and discards. West\'s hand is open now, but a 中 triplet is a yaku.',
+    zh: '西家有一對紅中，碰了你打的那張。西家把三張亮出來，從你那裡拿的那張橫放，然後打牌。西家的手牌變成副露，但中的刻子本身就是役。' },
+  { draw: '4z', discard: '4z', left: 65, jp: 'ツモ切り', reading: 'tsumogiri',
+    en: 'You draw North. It is neither your seat wind (South) nor the round wind (East), so it is no value tile: discard the tile you just drew.',
+    zh: '你摸到北。它不是你的自風（南），也不是場風（東），所以不是役牌：直接打出剛摸到的牌（摸切）。' },
+  { draw: '5m', discard: '9s', left: 61, jp: '残り 61', reading: 'nokori',
+    en: 'You draw 5 characters: 567 characters is a run. Discard 9 bamboo, a terminal that fits nothing. Two runs, a pair, and two halves of runs: you are one tile from ready.',
+    zh: '你摸到五萬：567 萬成為一組順子。打出九索，這張老頭牌跟什麼都搭不上。兩組順子、一組雀頭，加上兩組搭子：離聽牌只差一張。' },
+  { draw: '7p', discard: '1p', riichi: true, left: 57, jp: 'リーチ', reading: 'riichi',
+    en: 'You draw 7 dots: 567 dots is done, and you are ready (<span lang="ja">聴牌</span>), waiting on 2 or 5 bamboo. Press リーチ and discard the 1 dots. It is turned sideways, and you put 1,000 points on the table.',
+    zh: '你摸到七筒：567 筒完成，你聽牌了（<span lang="ja">聴牌</span>），聽二索或五索。按 リーチ 並打出一筒。這張牌會橫放，你也要放 1,000 點在桌上。' },
+  { draw: '9m', discard: '9m', left: 53, jp: '一発', reading: 'ippatsu',
+    en: 'You draw 9 characters. It does not win, so the game discards it for you. A win before this discard would have added ippatsu, +1 han.',
+    zh: '你摸到九萬。不能和牌，所以遊戲自動打出。如果在這次打牌之前和牌，就會多一個一發，+1 翻。' },
+  { ron: '5s', left: 51, jp: 'ロン', reading: 'ron',
+    en: 'North discards 5 bamboo: your winning tile. It is not in your own discards, so you are not furiten. Press ロン.',
+    zh: '北家打出五索：正是你要的牌。你自己的捨牌裡沒有它，所以沒有振聽。按 ロン。' },
+  { score: true, left: 51, jp: '和了', reading: 'agari',
+    en: 'The result. Riichi, pinfu, all simples and the red five: 4 han. Pinfu by Ron is 30 fu. 4 han 30 fu is 7,700, paid by North, and you take back your riichi stick. The hidden dora indicator (1 dots: the hidden dora is 2 dots) adds nothing. A non-dealer won, so the deal moves on: next is East 2, and you deal.',
+    zh: '結算。立直、平和、斷么九和赤寶牌：4 翻。平和榮和是 30 符。4 翻 30 符是 7,700 點，由北家支付，你的立直棒也拿回來。裏寶牌指示牌（一筒：裏寶牌是二筒）沒有加翻。閒家和牌，所以換莊：下一局是東二局，由你坐莊。' },
+];
+
+// What the result screen lists, as Mahjong Soul shows it.
+const DEMO_YAKU: [jp: string, en: string, zh: string][] = [
+  ['立直', 'Riichi', '立直'], ['平和', 'Pinfu', '平和'], ['断么九', 'All simples', '斷么九'], ['赤ドラ', 'Red five', '赤寶牌'],
+];
+
+/** Tiles in the order a hand is shown: characters, dots, bamboo, honours, a red five as a five. */
+const sortTiles = (tiles: string[]): string[] => [...tiles].sort((a, b) =>
+  'mpsz'.indexOf(a[1]) - 'mpsz'.indexOf(b[1]) || (Number(a[0]) || 5) - (Number(b[0]) || 5) || Number(a[0]) - Number(b[0]));
+
+const tilesHtml = (tiles: string[], lang: Lang): string => tiles.map(code => tileHtml(code, lang)).join('');
+
+/** A tile turned sideways: a riichi discard, or the tile a call took. */
+const sideTile = (code: string, lang: Lang): string => `<span class="hj-side">${tileHtml(code, lang)}</span>`;
+
+function demoHtml(lang: Lang, t: (en: string, zh: string) => string): string {
+  let hand = [...DEMO_DEAL];
+  const river: { tile: string; side: boolean }[] = [];
+  let west = false;
+  let points = 25000;
+  const steps = DEMO.map((step, i) => {
+    let drawn = '';
+    if (step.draw) { hand.push(step.draw); drawn = step.draw; }
+    if (step.discard) {
+      hand.splice(hand.indexOf(step.discard), 1);
+      river.push({ tile: step.discard, side: Boolean(step.riichi) });
+      drawn = '';
+      if (step.riichi) points -= 1000;
+    }
+    if (step.pon) west = true;
+    if (step.score) points += 7700 + 1000;
+    const last = step.discard ? river.length - 1 : -1;
+    // The tile just drawn, or the winning tile, stands apart from the hand.
+    const shown = sortTiles(drawn ? hand.filter((_, k) => k !== hand.lastIndexOf(drawn)) : hand);
+    const win = step.ron || (step.score ? DEMO_WIN : '');
+    const extra = drawn || win;
+    const riverHtml = river.map(({ tile, side }, k) => {
+      const face = side ? sideTile(tile, lang) : tileHtml(tile, lang);
+      return k === last ? `<span class="hj-new">${face}</span>` : face;
+    }).join('');
+    const result = step.score ? `
+          <div class="hj-demo-result">
+            <p class="hj-demo-ind"><span>${t('Dora indicator', '寶牌指示牌')} ${tileHtml(DEMO_DORA, lang)}</span><span>${t('Hidden dora indicator', '裏寶牌指示牌')} ${tileHtml(DEMO_URA, lang)}</span></p>
+            <ul class="hj-demo-yaku">${DEMO_YAKU.map(([jp, en, zh]) => `<li><b lang="ja">${jp}</b> <span>${t(en, zh)}</span> <em>1 <span lang="ja">翻</span></em></li>`).join('')}</ul>
+            <p class="hj-demo-total"><span lang="ja">30符 4翻</span> <b>${ronPoints(30, 4, false)}</b> <span lang="ja">点</span></p>
+            <p class="hj-demo-pay">${t('You (South)', '你（南家）')} 24,000 → 32,700 <b>+8,700</b> · ${t('North', '北家')} 25,000 → 17,300 <b class="minus">−7,700</b></p>
+          </div>` : '';
+    return `
+        <li class="hj-demo-step"${i ? ' hidden' : ''}>
+          <p class="hj-demo-table"><span lang="ja">東1局 0本場</span><span><span lang="ja">残り</span> ${step.left}</span><span>${t('Dora indicator', '寶牌指示牌')} ${tileHtml(DEMO_DORA, lang)}</span><span>${t('Your points', '你的點數')} ${points.toLocaleString('en-US')}${points < 25000 ? ` <small>${t('(1,000 on the table)', '（1,000 點在桌上）')}</small>` : ''}</span></p>
+          <p class="hj-demo-row"><span class="hj-demo-who">${t('Calls', '副露')}</span>${west ? `${t('West', '西家')} ${sideTile('7z', lang)}${tileHtml('7z', lang)}${tileHtml('7z', lang)}` : `<small>${t('none yet', '還沒有')}</small>`}</p>
+          <p class="hj-demo-row"><span class="hj-demo-who">${t('Your discards', '你的捨牌')}</span>${riverHtml || `<small>${t('none yet', '還沒有')}</small>`}</p>
+          <div class="hj-demo-row hj-demo-hand"><span class="hj-demo-who">${t('Your hand', '你的手牌')}</span><span class="hj-row">${tilesHtml(shown, lang)}</span>${extra ? `<span class="hj-demo-extra${win ? ' win' : ''}">${tileHtml(extra, lang)}</span>` : ''}</div>
+          ${result}
+          <p class="hj-demo-cap"><span class="hj-btn" lang="ja">${step.jp}</span> <span class="hj-read">${step.reading}</span> ${t(step.en, step.zh)}</p>
+        </li>`;
+  }).join('');
+  return `
+        <div class="hj-demo" data-hj-demo tabindex="0" aria-label="${t('Demo hand: arrow keys step through it', '示範牌局：用方向鍵前後切換')}">
+          <div class="hj-demo-nav">
+            <button type="button" class="seg-btn" data-hj-step="-1" disabled>‹ ${t('Back', '上一步')}</button>
+            <span class="hj-demo-count" aria-live="polite"><b>1</b> / ${DEMO.length}</span>
+            <button type="button" class="seg-btn on" data-hj-step="1">${t('Next', '下一步')} ›</button>
+          </div>
+          <ol class="hj-demo-steps">${steps}</ol>
+        </div>`;
+}
 
 // ── Pre-registration ──
 // From COVER's press release of 9 October 2026 and the official campaign page. The 40万 and 50万
@@ -311,6 +590,10 @@ const SECTIONS: [id: string, name: string, zh: string][] = [
   ['riichi', 'Riichi and furiten', '立直與振聽'],
   ['yaku', 'Yaku', '役'],
   ['score', 'Points and the game', '點數與對局'],
+  ['demo', 'A hand, step by step', '示範牌局'],
+  ['all', 'Every yaku', '全部的役'],
+  ['old', 'Old yaku', '古役'],
+  ['local', 'Local rules', '地方規則'],
   ['tips', 'Tips', '小技巧'],
   ['screen', 'On screen', '畫面用語'],
 ];
@@ -374,7 +657,7 @@ function guideHtml(lang: Lang): string {
     </div>`;
   const hand = (tiles: string): string => handHtml(tiles, lang);
 
-  return `
+  return `<div class="hj-guide">
       <header class="hd-head hj-head">
         <p class="hj-kicker" lang="ja">ホロライブ麻雀 -ホロじゃん-</p>
         <h2 class="hd-title">${t('Holojan: a beginner\'s guide', 'Holojan 新手指南')}</h2>
@@ -548,22 +831,17 @@ function guideHtml(lang: Lang): string {
         </div>
       </section>
 
-      <section class="hj-card" id="${id('yaku')}">
+      <section class="hj-card hj-wide" id="${id('yaku')}">
         <h3 class="hm-head">${t('Yaku <small>the twelve to learn first</small>', '役 <small>先學這十二個</small>')}</h3>
         <p>${t(`A hand with no yaku cannot win, even if it is complete. Dora are bonus han, not yaku. "Open" is the value after
         a call; "—" means the yaku needs a closed hand.`,
         `沒有役的手牌，就算完整也不能和牌。寶牌是額外的翻數，不是役。台灣麻將的「台」也不是役：
         莊家、連莊、中洞（嵌張）在日麻都不能讓你和牌。「副露」是鳴牌後的翻數；
         「—」表示這個役必須門清。`)}</p>
-        <div class="hj-table-wrap">
-          <table class="hj-terms hj-yaku">
-            <thead><tr>${(lang === 'en' ? ['Kanji', 'Reading', 'English', 'Closed', 'Open', 'How'] : ['日文', '讀音', '中文', '門清', '副露', '條件']).map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>
-            <tbody>${yakuRows(lang)}</tbody>
-          </table>
-        </div>
+        ${yakuTable(YAKU, lang)}
       </section>
 
-      <section class="hj-card" id="${id('score')}">
+      <section class="hj-card hj-wide" id="${id('score')}">
         <h3 class="hm-head">${t('Points and the game', '點數與對局')}</h3>
         <div class="hj-score">
         <ul class="hj-list">
@@ -588,6 +866,49 @@ function guideHtml(lang: Lang): string {
         </div>
       </section>
 
+      <section class="hj-card hj-wide" id="${id('demo')}">
+        <h3 class="hm-head">${t('A hand, step by step', '示範牌局')}</h3>
+        <p>${t(`One hand played out, from the deal to the result screen: a replay, not a game. Press Next and Back, or
+        the arrow keys. The yellow label is what the game shows at that step, or the Japanese word for it.`,
+        `從配牌到結算，完整打一局：這是重播，不是對戰。按「下一步」和「上一步」，或用方向鍵切換。
+        黃色標籤是遊戲在這一步顯示的文字，或這一步的日文說法。`)}</p>
+        ${demoHtml(lang, t)}
+      </section>
+
+      <section class="hj-card hj-wide" id="${id('all')}">
+        <h3 class="hm-head">${t('Every yaku <small><span lang="ja">役一覧</span></small>', '全部的役 <small><span lang="ja">役一覧</span></small>')}</h3>
+        <p>${t(`Every standard yaku, as Mahjong Soul's ranked rules play them. Six lose 1 han when the hand is open
+        (<span lang="ja">食い下がり</span>, kuisagari): three-colour run, straight, both outside hands and both flushes.
+        Yaku add up: riichi, all simples and pinfu in one hand are 3 han. Holojan has not published its rule set,
+        so some of these may not apply.`,
+        `所有標準的役，以雀魂段位戰的規則為準。有六個役副露時少 1 翻（<span lang="ja">食い下がり</span>，食下）：
+        三色同順、一氣通貫、混全帶么九、純全帶么九、混一色和清一色。役可以疊加：一副手牌同時有立直、
+        斷么九和平和就是 3 翻。Holojan 還沒有公布規則，所以有些役可能不適用。`)}</p>
+        ${YAKU_GROUPS.map(([en, zh, rows]) => yakuTable(rows, lang, t(en, zh))).join('')}
+        <p class="hj-note">${t(`In Mahjong Soul two yakuman in one hand add up, as do the double ones, and 13 han or more of other yaku is
+        paid as a yakuman (<span lang="ja">数え役満</span>). Other rule sets count the four double yakuman as single ones.`,
+        `雀魂裡一副手牌有兩個役滿會累加，雙倍役滿也一樣；其他役累計 13 翻以上也當作役滿支付（<span lang="ja">数え役満</span>）。
+        有些規則把那四個雙倍役滿只算一倍。`)}</p>
+      </section>
+
+      <section class="hj-card hj-wide" id="${id('old')}">
+        <h3 class="hm-head">${t('Old yaku <small><span lang="ja">古役</span> koyaku</small>', '古役 <small><span lang="ja">古役</span> koyaku</small>')}</h3>
+        <p>${t(`Yaku from older rule books and house rules. Mahjong Soul plays the first fourteen in friend rooms only, not in
+        ranked; the rest are not in its rules at all. Values differ from one rule set to the next. Holojan has not published
+        its rule set, so none of these may apply.`,
+        `來自舊規則書和地方規則的役。雀魂只在友人場採用前十四個，段位戰沒有；其餘的雀魂規則完全沒有。
+        各家規則的翻數不同。Holojan 還沒有公布規則，所以這些役可能都不適用。`)}</p>
+        ${oldYakuTable(lang)}
+      </section>
+
+      <section class="hj-card" id="${id('local')}">
+        <h3 class="hm-head">${t('Local rules', '地方規則')}</h3>
+        <p>${t(`Rules that differ between rule sets, and whether Mahjong Soul's ranked games use them. Holojan's are not
+        published yet.`,
+        `各家規則不同的地方，以及雀魂段位戰有沒有採用。Holojan 的規則還沒有公布。`)}</p>
+        ${localRulesHtml(lang)}
+      </section>
+
       <section class="hj-card" id="${id('tips')}">
         <h3 class="hm-head">${t('Tips for a first game', '第一場對局的小技巧')}</h3>
         <ol class="hj-list">
@@ -607,7 +928,7 @@ function guideHtml(lang: Lang): string {
         </ol>
       </section>
 
-      <section class="hj-card" id="${id('screen')}">
+      <section class="hj-card hj-wide" id="${id('screen')}">
         <h3 class="hm-head">${t('On screen', '畫面用語')}</h3>
         <p>${t(`The Japanese you will meet, with how to say it and what it means. The terms are standard Japanese mahjong words, as
         Mahjong Soul's Japanese client shows them. Holojan's menus are not public yet, so its own labels may differ.`,
@@ -618,7 +939,8 @@ function guideHtml(lang: Lang): string {
         ${termTable(t('Hand status', '手牌狀態'), STATUS, lang)}
         ${termTable(t('Results', '結算'), RESULT, lang)}
         ${termTable(t('Menus (likely)', '選單（推測）'), MENUS, lang)}
-      </section>`;
+      </section>
+    </div>`;
 }
 
 /**

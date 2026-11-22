@@ -4102,7 +4102,6 @@ $tile-back-deep: #d77a12;
     display: flex;
     flex-wrap: wrap;
     gap: var(--sp-8);
-    margin-bottom: var(--sp-8);
 
     a {
       display: inline-flex;
@@ -4133,10 +4132,25 @@ $tile-back-deep: #d77a12;
     }
   }
 
+  // Two columns where the guide has the room: the short sections side by side, the long ones
+  // (.hj-wide: the yaku, the demo, the points, the words) across both. Each pair stretches to
+  // the taller of the two.
+  [data-hj-lang] { container-type: inline-size; }
+
+  .hj-guide {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--sp-20);
+  }
+
+  @container (min-width: 860px) {
+    .hj-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .hj-guide > :is(.hj-head, .hj-toc, .hj-wide) { grid-column: 1 / -1; }
+  }
+
   .hj-card {
     @include paper;
 
-    margin-top: var(--sp-20);
     scroll-margin-top: 96px; // under the sticky topbar, as _fgo.scss
     font-size: var(--fs-lg);
     line-height: 1.6;
@@ -4381,6 +4395,173 @@ $tile-back-deep: #d77a12;
     small { color: $ink-soft; font-size: var(--fs-xs); }
   }
 
+  // A han cell's own label, shown on a phone, where the table's head is not.
+  .hj-lab { display: none; }
+
+  // Whether Mahjong Soul plays a rule.
+  .hj-soul {
+    display: inline-block;
+    padding: 0 var(--sp-8);
+    border-radius: var(--radius-pill);
+    background: $cover-deep;
+    color: #fff;
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    line-height: 1.6;
+
+    &.no { background: $panel; color: $ink-soft; box-shadow: inset 0 0 0 1px $line; }
+  }
+
+  .hj-yaku :is(thead th, td.hj-han) { white-space: nowrap; }
+  .hj-old .hj-soul { max-width: 8.5em; white-space: normal; }
+
+  .hj-rules {
+    display: grid;
+    gap: var(--sp-12);
+    margin: 0;
+
+    dt { font-weight: 800; }
+    dt b { font-size: var(--fs-xl); font-weight: 900; }
+    dd { margin: var(--sp-2) 0 0; font-size: var(--fs-sm); }
+  }
+
+  // ── The demo hand ──
+  .hj-demo {
+    padding: var(--sp-12);
+    border-radius: var(--radius-lg);
+    background: $panel;
+
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 2px; }
+  }
+
+  .hj-demo-steps { margin: 0; padding: 0; list-style: none; }
+
+  .hj-demo-table {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-6) var(--sp-16);
+    font-size: var(--fs-sm);
+    font-weight: 800;
+
+    > span { display: inline-flex; align-items: center; gap: var(--sp-6); }
+    small { color: $ink-soft; font-weight: 700; }
+    .hj-tile { margin-bottom: 6px; }
+  }
+
+  .hj-demo-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    min-height: 52px;
+    margin: 0 0 var(--sp-8);
+
+    small { color: $ink-soft; }
+  }
+
+  .hj-demo-who {
+    flex: none;
+    width: 110px;
+    color: $ink-soft;
+    font-size: var(--fs-sm);
+    font-weight: 800;
+  }
+
+  .hj-demo-hand .hj-row { gap: 2px; }
+
+  // The tile just drawn, or the winning one, a little apart from the hand.
+  .hj-demo-extra { margin-left: var(--sp-12); padding-bottom: 6px; }
+  .hj-demo-extra.win .hj-tile { outline: 3px solid $sun; outline-offset: 1px; }
+
+  // A tile turned sideways: a riichi discard, or the one a call took.
+  .hj-side {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 46px;
+    height: 46px;
+    padding-bottom: 6px;
+    box-sizing: content-box;
+
+    .hj-tile { rotate: -90deg; }
+  }
+
+  // The newest discard: a ring on the tile itself, which turns with a sideways one.
+  .hj-new { display: inline-flex; }
+  .hj-new .hj-tile { outline: 3px solid $sun; outline-offset: 1px; }
+
+  .hj-demo-result {
+    margin: 0 0 var(--sp-8);
+    padding: var(--sp-12);
+    border-radius: var(--radius-lg);
+    background: $white;
+
+    p { margin: 0 0 var(--sp-8); }
+  }
+
+  .hj-demo-ind {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-6) var(--sp-16);
+    font-size: var(--fs-sm);
+    font-weight: 800;
+
+    span { display: inline-flex; align-items: center; gap: var(--sp-6); }
+  }
+
+  .hj-demo-yaku {
+    display: grid;
+    gap: var(--sp-4);
+    max-width: 360px;
+    margin: 0 0 var(--sp-8);
+    padding: 0;
+    list-style: none;
+
+    li { display: flex; align-items: baseline; gap: var(--sp-8); border-bottom: 1px solid $line; }
+    b { font-size: var(--fs-xl); font-weight: 900; }
+    span { color: $ink-soft; font-size: var(--fs-sm); }
+    em { margin-left: auto; font-style: normal; font-weight: 900; }
+  }
+
+  .hj-demo-total {
+    font-size: var(--fs-xl);
+    font-weight: 900;
+
+    b { font-size: 28px; color: $cover-deep; }
+  }
+
+  .hj-demo-pay {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+
+    b { color: $cover-deep; }
+    b.minus { color: $tile-red; }
+  }
+
+  .hj-demo-cap {
+    min-height: 4.8em;
+    margin: 0;
+
+    .hj-btn { background: $sun; color: $ink-print; }
+    .hj-read { margin-right: var(--sp-4); color: $cover-deep; font-weight: 800; }
+  }
+
+  .hj-demo-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-16);
+    margin-bottom: var(--sp-12);
+    padding-bottom: var(--sp-12);
+    border-bottom: 1px solid $line;
+
+    .seg-btn { min-width: 112px; }
+    .seg-btn:disabled { opacity: 0.4; cursor: default; }
+  }
+
+  .hj-demo-count { min-width: 4em; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+
   .hj-yaku-hand { display: block; margin-top: var(--sp-6); }
   .hj-yaku .hj-tile { width: 28px; height: 38px; }
   .hj-yaku .hj-tile svg { width: 23px; height: 31px; }
@@ -4429,10 +4610,16 @@ $tile-back-deep: #d77a12;
     }
 
     .hj-yaku {
-      td.hj-han { grid-column: 1 / -1; text-align: left; }
-      td.hj-han::before { color: $ink-soft; font-weight: 700; }
-      td:nth-child(4)::before { content: 'Closed: '; }
-      td:nth-child(5)::before { content: 'Open: '; }
+      // Closed and Open (or Value and Mahjong Soul) side by side, under the kanji and the name.
+      td.hj-han { margin-top: var(--sp-4); text-align: left; }
+      .hj-lab { display: inline; color: $ink-soft; font-weight: 700; }
     }
+
+    .hj-demo { padding: var(--sp-8); }
+    .hj-demo-who { width: 100%; }
+    .hj-demo-row { min-height: 0; }
+    .hj-side { width: 38px; height: 38px; }
+    .hj-demo-cap { min-height: 7.2em; }
+    .hj-demo-nav .seg-btn { min-width: 0; flex: 1; }
   }
 }
