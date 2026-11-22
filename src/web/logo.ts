@@ -1,8 +1,8 @@
 // Wiš'adel has 7 official square crops in icons/: the in-game "game#9" avatar
 // (plain, no suffix — also what manifest.json and the static fallback markup use)
 // and the 6 expressions from her April Fools 2026 emoticon set (see design/source/).
-// Picking one at random per page load gives the header logo and favicon some
-// variety without needing a build-time choice. Hovering the header logo rolls again, and
+// Picking one at random per page load gives the header logo some variety (the favicon is
+// the owner's S logo on every page, 23 November 2026) without needing a build-time choice. Hovering the header logo rolls again, and
 // goes on rolling for as long as the pointer rests on it.
 //
 // The avatar is a cut-out with nothing behind it, where the six expressions came on a red
@@ -66,13 +66,6 @@ function wear(face: Face): void {
   current = face;
   const logoMark = document.querySelector<HTMLImageElement>('.logo-mark');
   if (logoMark) logoMark.src = face.src(48);
-
-  for (const size of [16, 32, 96] as const) {
-    const link = document.querySelector<HTMLLinkElement>(`link[rel="icon"][sizes="${size}x${size}"]`);
-    if (!link) continue;
-    link.href = face.src(size);
-    link.type = link.href.endsWith('.webp') ? 'image/webp' : 'image/png';
-  }
 }
 
 // Never repeats the face on show, so every hover visibly changes it, where there is a

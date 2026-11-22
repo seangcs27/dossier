@@ -947,6 +947,34 @@ function guideHtml(lang: Lang): string {
  * The guide's page: both languages, the Chinese hidden until the reader picks it
  * (views/holodori-mahjong.ts, wireGuideLang).
  */
+// ── The yaku reminder ──
+// Every standard yaku as a short chart (kanji, English, closed / open han), in a panel that
+// opens over the corner button on hover or focus, and stays open on a press (a phone's way).
+const cheatHan = (value: string, lang: Lang): string => value === 'mangan' ? (lang === 'en' ? 'Mangan' : '滿貫') : value;
+const cheatHtml = (lang: Lang): string => YAKU_GROUPS.map(([en, zh, rows]) => `
+  <section class="hj-cheat-group">
+    <h4>${(lang === 'en' ? en : zh).split(/[:：]/)[0]}</h4>
+    <dl>${rows.map(([jp, , enName, zhName, closed, open]) => `
+      <div><dt lang="ja">${jp}</dt><dd>${lang === 'en' ? enName : zhName}</dd><dd class="hj-cheat-han">${cheatHan(closed, lang)}<i>${cheatHan(open, lang)}</i></dd></div>`).join('')}
+    </dl>
+  </section>`).join('');
+
+const dockHtml = (): string => `
+  <div class="hj-dock">
+    <div class="hj-cheat">
+      <button class="hj-cheat-btn" type="button" aria-expanded="false" aria-controls="hj-cheat-panel">
+        <b lang="ja" aria-hidden="true">役</b><span class="hj-cheat-label"><span data-hj-lang="en">Yaku</span><span data-hj-lang="zh" lang="zh-Hant" hidden>役種</span></span>
+      </button>
+      <div class="hj-cheat-panel" id="hj-cheat-panel" role="region" aria-label="Yaku / 役種">
+        <div data-hj-lang="en"><p class="hj-cheat-key">Han: closed <i>open</i>. — means closed only.</p>${cheatHtml('en')}</div>
+        <div data-hj-lang="zh" lang="zh-Hant" hidden><p class="hj-cheat-key">翻數：門清 <i>副露</i>。— 表示只限門清。</p>${cheatHtml('zh')}</div>
+      </div>
+    </div>
+    <button class="hj-top" type="button" aria-label="Back to top / 回到頂端">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+    </button>
+  </div>`;
+
 export function holojongPageHtml(): string {
   return `
     <div class="roster-page hj-page">
@@ -958,6 +986,7 @@ export function holojongPageHtml(): string {
       </div>
       <div data-hj-lang="en" lang="en">${guideHtml('en')}</div>
       <div data-hj-lang="zh" lang="zh-Hant" hidden>${guideHtml('zh')}</div>
+      ${dockHtml()}
     </div>
   `;
 }
