@@ -54,7 +54,47 @@ export function wireGuideDemo(container: HTMLElement): void {
   }
 }
 
-const STORED_LANG = 'dossier.holojong.lang';
+/**
+ * The corner dock: the yaku reminder, open while the pointer or the focus is on it and kept
+ * open by a press until another press, Escape or a press elsewhere; and Back to top, shown
+ * once the page is scrolled.
+ */
+export function wireGuideDock(container: HTMLElement): void {
+  const cheat = container.querySelector<HTMLElement>('.hj-cheat');
+  const top = container.querySelector<HTMLElement>('.hj-top');
+  if (!cheat || !top) return;
+  const button = cheat.querySelector<HTMLButtonElement>('.hj-cheat-btn')!;
+  let pinned = false;
+  let shut: number | undefined;
+  const set = (open: boolean): void => {
+    clearTimeout(shut);
+    cheat.classList.toggle('open', open);
+    button.setAttribute('aria-expanded', String(open));
+  };
+  cheat.onpointerenter = (e) => { if (e.pointerType === 'mouse') set(true); };
+  // A short wait, so the move from the button up into the panel does not shut it.
+  cheat.onpointerleave = (e) => { if (e.pointerType === 'mouse' && !pinned) shut = window.setTimeout(() => set(false), 200); };
+  cheat.addEventListener('focusin', () => set(true));
+  cheat.addEventListener('focusout', (e) => { if (!pinned && !cheat.contains(e.relatedTarget as Node)) set(false); });
+  button.onclick = () => { pinned = !pinned; set(pinned); };
+  const close = (): void => { pinned = false; set(false); };
+  cheat.onkeydown = (e) => { if (e.key === 'Escape' && cheat.classList.contains('open')) { close(); button.focus(); } };
+  const outside = (e: PointerEvent): void => {
+    if (!cheat.isConnected) { document.removeEventListener('pointerdown', outside); return; }
+    if (pinned && !cheat.contains(e.target as Node)) close();
+  };
+  document.addEventListener('pointerdown', outside);
+
+  top.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const onScroll = (): void => {
+    if (!top.isConnected) { window.removeEventListener('scroll', onScroll); return; }
+    top.classList.toggle('shown', window.scrollY > 400);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
+const STORED_LANG ='dossier.holojong.lang';
 
 /**
  * The guide's English / 繁體中文 switch: shows the language picked and keeps it. The first
@@ -89,4 +129,5 @@ export function mountHolodoriMahjong(container: HTMLElement): void {
   wireGuideLinks(container);
   wireGuideLang(container);
   wireGuideDemo(container);
+  wireGuideDock(container);
 }

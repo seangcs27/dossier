@@ -4571,6 +4571,147 @@ $tile-back-deep: #d77a12;
   .hj-yaku .hj-tile .idx { top: 1px; right: 2px; font-size: 7px; }
   .hj-yaku .hj-hand { gap: var(--sp-6); }
 
+  // The corner dock (23 November 2026, the owner's ask): the yaku reminder, a sun button that
+  // opens a chart of every yaku over it, and Back to top under it once the page is scrolled.
+  .hj-dock {
+    position: fixed;
+    right: var(--sp-20);
+    bottom: var(--sp-20);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--sp-10);
+    pointer-events: none;
+
+    > * { pointer-events: auto; }
+  }
+
+  .hj-cheat { position: relative; }
+
+  .hj-cheat-btn,
+  .hj-top {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid $white;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 6px 16px rgb(16 60 110 / 28%);
+    cursor: pointer;
+    transition: transform 0.15s;
+
+    &:hover { transform: translateY(-2px); }
+    &:focus-visible { outline: 3px solid $cover-deep; outline-offset: 2px; }
+  }
+
+  .hj-cheat-btn {
+    gap: var(--sp-8);
+    height: 48px;
+    padding: 0 var(--sp-16) 0 var(--sp-6);
+    background: $sun;
+    color: $ink-print;
+    font: 800 var(--fs-md) var(--hd-face);
+
+    b {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: $ink-print;
+      color: #fff;
+      font-size: var(--fs-lg);
+    }
+  }
+
+  .hj-cheat.open .hj-cheat-btn { transform: none; }
+
+  .hj-top {
+    width: 48px;
+    height: 48px;
+    background: $cover-deep;
+    color: #fff;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+
+    &.shown { opacity: 1; visibility: visible; transform: none; }
+    &.shown:hover { transform: translateY(-2px); }
+
+    svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  }
+
+  // The chart: above the button, its right edge on the button's. The view waits 200 ms before
+  // shutting it, so the pointer crosses the gap on the way up.
+  .hj-cheat-panel {
+    @include paper;
+
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 12px);
+    width: min(560px, calc(100vw - 40px));
+    max-height: min(70vh, 620px);
+    overflow-y: auto;
+    padding: var(--sp-12) var(--sp-16) var(--sp-16);
+    color: $ink;
+    font-size: var(--fs-sm);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px) scale(0.98);
+    transform-origin: bottom right;
+    transition: opacity 0.16s, transform 0.16s, visibility 0.16s;
+  }
+
+  .hj-cheat.open .hj-cheat-panel { opacity: 1; visibility: visible; transform: none; }
+
+  .hj-cheat-key {
+    margin: 0 0 var(--sp-8);
+    color: $ink-soft;
+    font-size: var(--fs-xs);
+
+    i { font-style: normal; opacity: 0.7; }
+  }
+
+  .hj-cheat-panel > div { columns: 2 240px; column-gap: var(--sp-20); }
+
+  .hj-cheat-group {
+    break-inside: avoid;
+    margin-bottom: var(--sp-12);
+
+    h4 {
+      display: inline-block;
+      margin: 0 0 var(--sp-4);
+      padding: 1px var(--sp-10);
+      border-radius: var(--radius-pill);
+      background: $ink-fill;
+      color: #fff;
+      font: 800 var(--fs-xs) var(--hd-face);
+    }
+
+    dl { margin: 0; }
+
+    div {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: var(--sp-8);
+      align-items: baseline;
+      padding: 3px 0;
+      border-bottom: 1px dashed $line;
+    }
+
+    dt { font-weight: 800; white-space: nowrap; }
+    dd { margin: 0; }
+  }
+
+  .hj-cheat-han {
+    font-weight: 800;
+    text-align: right;
+    white-space: nowrap;
+
+    i { margin-left: var(--sp-6); font-style: normal; opacity: 0.55; }
+  }
+
   @media (max-width: 640px) {
     .hh-guide { align-items: flex-start; }
     .hj-card { scroll-margin-top: 118px; } // the phone topbar is 99px tall
