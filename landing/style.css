@@ -79,6 +79,16 @@ h1 {
   font: 800 clamp(2.5rem, 11vw, 6rem) / 0.95 var(--wide);
   font-stretch: 125%;
   letter-spacing: -0.02em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.12em 0.2em;
+}
+
+/* The logo, as tall as the name's capitals and digits. */
+h1 .mark {
+  width: 0.74em;
+  height: 0.74em;
 }
 
 .lede {
