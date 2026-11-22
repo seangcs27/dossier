@@ -20,8 +20,9 @@
   --ground: #12141a;
   --ink: #ece9de;
   --ink-soft: #a7abb9;
-  --rule: #2b3040;
+  --frame: #4b5266;
   --accent: #aab2c4;
+  --logo: 104px;
   --wide: 'Archivo', 'Bahnschrift', 'Arial Narrow', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
@@ -31,6 +32,8 @@
 html { background: var(--ground); }
 
 body {
+  display: flex;
+  flex-direction: column;
   margin: 0;
   min-height: 100dvh;
   background: var(--ground);
@@ -42,6 +45,10 @@ body {
 
 ::selection { background: var(--accent); color: var(--ground); }
 
+a { color: var(--ink); text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
 /* The field fills the window behind everything; field.js draws it. */
 .field {
   position: fixed;
@@ -52,149 +59,167 @@ body {
   pointer-events: none;
 }
 
-main {
+main,
+footer {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
   max-width: 1240px;
-  min-height: 100dvh;
   margin: 0 auto;
-  padding: clamp(28px, 7vh, 80px) 24px 0;
+  padding-inline: 24px;
+}
+
+main {
+  flex: 1;
+  padding-top: clamp(28px, 7vh, 80px);
 }
 
 h1 {
   margin: 0;
-  font: 800 clamp(2.6rem, 8vw, 5.6rem) / 0.95 var(--wide);
+  font: 800 clamp(2.5rem, 11vw, 6rem) / 0.95 var(--wide);
   font-stretch: 125%;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  text-wrap: balance;
+  letter-spacing: -0.02em;
 }
 
 .lede {
-  max-width: 52ch;
-  margin: 1.1rem 0 clamp(28px, 6vh, 64px);
-  color: var(--ink-soft);
-  font-size: 0.95rem;
+  max-width: 48ch;
+  margin: 1rem 0 clamp(32px, 6vh, 64px);
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
 }
 
-.games {
+/* The box: a fieldset, so that the legend cuts the border line itself and the field shows
+   through on either side of the word. */
+.dossier {
+  min-inline-size: 0;
   margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--rule);
+  padding: clamp(8px, 1.5vw, 16px) clamp(12px, 2vw, 24px) clamp(12px, 2vw, 24px);
+  border: 1px solid var(--frame);
+  border-radius: 2px;
+}
+
+.dossier legend {
+  margin-left: 12px;
+  padding: 0 10px;
+  font: 700 1.25rem / 1 var(--wide);
+  font-stretch: 125%;
+}
+
+.arena {
+  position: relative;
+  height: clamp(300px, 52vh, 520px);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: flex-start;
+  justify-content: space-evenly;
+  gap: 16px 8px;
 }
 
 .game {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) minmax(0, 24ch) 28px;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: clamp(14px, 2.6vh, 28px) 0;
-  border-bottom: 1px solid var(--rule);
+  gap: 10px;
+  padding: 8px;
   color: var(--ink);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
 }
 
+/* float.js takes the row apart: each link is placed by its transform from then on. */
+.arena.is-floating .game {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  /* A logo can be dragged (float.js): a finger on one moves it, not the page, and a long press
+     does not open the link's menu. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.is-dragging,
+body.is-dragging .game { cursor: grabbing; }
+
+.game:hover { color: var(--ink); }
+
 .game:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  outline-offset: 2px;
 }
 
-/* Each row owns its game's colour; it shows on the name, the emblem and the arrow while the
-   row is under the pointer or has focus, and the field tunes to it (field.js). */
-.game[data-game='arknights'] { --accent: #6888d6; }
-.game[data-game='endfield']  { --accent: #fae828; }
-.game[data-game='ptn']       { --accent: #e6383c; }
-.game[data-game='holodori']  { --accent: #5aceff; }
-.game[data-game='fgo']       { --accent: #e2b254; }
+/* Each logo owns its game's colour; it shows on the emblem while the logo is under the pointer
+   or has focus, and the field tunes to it (field.js). */
+.game[data-game='arknights'] { --accent: #6888d6; --mark: url('icons/arknights.webp'); }
+.game[data-game='endfield']  { --accent: #fae828; --mark: url('icons/endfield.webp'); }
+.game[data-game='ptn']       { --accent: #e6383c; --mark: url('icons/ptn.webp'); }
+.game[data-game='holodori']  { --accent: #5aceff; --mark: url('icons/holodori.webp'); }
+.game[data-game='fgo']       { --accent: #e2b254; --mark: url('icons/fgo.webp'); }
 
 .emblem {
-  width: 44px;
+  width: var(--logo);
   aspect-ratio: 1;
-  background: var(--ink-soft);
+  background: var(--ink);
   -webkit-mask: var(--mark) center / contain no-repeat;
   mask: var(--mark) center / contain no-repeat;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.game[data-game='arknights'] .emblem { --mark: url('icons/arknights.webp'); }
-.game[data-game='endfield']  .emblem { --mark: url('icons/endfield.webp'); }
-.game[data-game='ptn']       .emblem { --mark: url('icons/ptn.webp'); }
-.game[data-game='holodori']  .emblem { --mark: url('icons/holodori.webp'); }
-.game[data-game='fgo']       .emblem { --mark: url('icons/fgo.webp'); }
-
-.name,
-.what { justify-self: start; }
-
-.name {
-  font: 800 clamp(1.5rem, 4.2vw, 3.2rem) / 1 var(--wide);
-  font-stretch: 125%;
-  letter-spacing: -0.005em;
-  text-transform: uppercase;
-  text-wrap: balance;
-  transition: color 0.2s;
+/* The name: the link's text, so it is the accessible name too. Shown on hover and focus; always
+   on a touch screen, which has no hover, and in the still row. It sits on the ground colour,
+   since the field is at its brightest under the pointer. */
+.tag {
+  width: max-content;
+  max-width: 9.5em;
+  padding: 2px 6px;
+  background: var(--ground);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.what {
-  color: var(--ink-soft);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.go {
-  width: 28px;
-  height: 28px;
-  fill: none;
-  stroke: var(--ink-soft);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s;
-}
-
-.game:hover .name,
-.game:focus-visible .name { color: var(--accent); }
 .game:hover .emblem,
-.game:focus-visible .emblem { background: var(--accent); }
-.game:hover .go,
-.game:focus-visible .go { stroke: var(--accent); transform: translateX(6px); }
+.game:focus-visible .emblem { background: var(--accent); transform: scale(1.08); }
+
+.game:hover .tag,
+.game:focus-visible .tag,
+.arena:not(.is-floating) .tag { opacity: 1; transform: none; }
+
+@media (hover: none) {
+  .tag { opacity: 1; transform: none; }
+}
 
 footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 28px;
-  justify-content: space-between;
-  margin-top: auto;
-  padding: 36px 0 28px;
+  padding-block: 40px 28px;
   color: var(--ink-soft);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
 }
 
-footer p { margin: 0; }
-footer a { color: var(--ink); text-underline-offset: 3px; }
-footer a:hover { color: var(--accent); }
-footer a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+footer p { max-width: 96ch; margin: 0 0 8px; }
+footer .links { display: flex; flex-wrap: wrap; gap: 4px 24px; margin: 16px 0 0; }
 
 @media (max-width: 720px) {
-  main { padding-inline: 16px; }
+  :root { --logo: 60px; }
+  main, footer { padding-inline: 16px; }
+  .arena { height: clamp(420px, 66vh, 540px); }
+  .tag { max-width: 8em; font-size: 0.7rem; }
+}
 
-  .game {
-    grid-template-columns: 40px minmax(0, 1fr) 24px;
-    gap: 6px 14px;
-  }
-
-  .emblem { width: 36px; }
-  .what { grid-column: 2 / 3; grid-row: 2; }
-  .go { width: 24px; height: 24px; grid-column: 3; grid-row: 1; }
+/* A 320px phone: five logos with their names need the room. */
+@media (max-width: 360px) {
+  :root { --logo: 52px; }
+  .tag { max-width: 7em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .go,
-  .name,
-  .emblem { transition: none; }
-  .game:hover .go,
-  .game:focus-visible .go { transform: none; }
+  .emblem,
+  .tag { transition: none; }
+  .game:hover .emblem,
+  .game:focus-visible .emblem { transform: none; }
 }
