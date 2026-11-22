@@ -132,7 +132,16 @@ h1 {
   top: 0;
   left: 0;
   will-change: transform;
+  /* A logo can be dragged (float.js): a finger on one moves it, not the page, and a long press
+     does not open the link's menu. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
+
+body.is-dragging,
+body.is-dragging .game { cursor: grabbing; }
 
 .game:hover { color: var(--ink); }
 
