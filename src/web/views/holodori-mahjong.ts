@@ -20,6 +20,40 @@ export function wireGuideLinks(container: HTMLElement): void {
   });
 }
 
+/**
+ * The demo hand's Back and Next buttons, and the arrow keys while it has the focus. Both
+ * languages' demos are on the same step, so a change of language keeps the place.
+ */
+export function wireGuideDemo(container: HTMLElement): void {
+  const demos = Array.from(container.querySelectorAll<HTMLElement>('[data-hj-demo]'));
+  let at = 0;
+  const go = (step: number, from?: HTMLElement): void => {
+    for (const demo of demos) {
+      const steps = demo.querySelectorAll<HTMLElement>('.hj-demo-step');
+      at = Math.max(0, Math.min(steps.length - 1, step));
+      steps.forEach((li, i) => { li.hidden = i !== at; });
+      demo.querySelector('.hj-demo-count b')!.textContent = String(at + 1);
+      const back = demo.querySelector<HTMLButtonElement>('[data-hj-step="-1"]')!;
+      const next = demo.querySelector<HTMLButtonElement>('[data-hj-step="1"]')!;
+      back.disabled = at === 0;
+      next.disabled = at === steps.length - 1;
+      // A button that turns itself off would drop the focus to the page.
+      if (from && demo.contains(from) && (from as HTMLButtonElement).disabled) (at === 0 ? next : back).focus();
+    }
+  };
+  for (const demo of demos) {
+    demo.onclick = (e) => {
+      const button = (e.target as Element).closest<HTMLElement>('[data-hj-step]');
+      if (button) go(at + Number(button.dataset.hjStep), button);
+    };
+    demo.onkeydown = (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      go(at + (e.key === 'ArrowRight' ? 1 : -1), document.activeElement as HTMLElement);
+    };
+  }
+}
+
 const STORED_LANG = 'dossier.holojong.lang';
 
 /**
@@ -54,4 +88,5 @@ export function mountHolodoriMahjong(container: HTMLElement): void {
   container.innerHTML = holojongPageHtml();
   wireGuideLinks(container);
   wireGuideLang(container);
+  wireGuideDemo(container);
 }
