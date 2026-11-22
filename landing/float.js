@@ -10,7 +10,7 @@
   if (!arena) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  const SPEED = 32; // px per second
+  const SPEED = 48; // px per second
   const EASE = 6; // how fast a held logo stops and a freed one gets going, per second
 
   const bodies = [...arena.querySelectorAll('.game')].map(el => ({
@@ -72,7 +72,8 @@
       b.y += b.vy * b.pace * dt;
       walls(b);
     }
-    for (const other of [false, true]) {
+    // Three passes first, since separating one pair can push it into a third logo.
+    for (const other of [false, false, false, true]) {
       for (let i = 0; i < bodies.length; i++) {
         for (let j = i + 1; j < bodies.length; j++) collide(bodies[i], bodies[j], other);
       }
