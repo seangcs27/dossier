@@ -10,7 +10,7 @@
   if (!arena) return;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-  const SPEED = 24; // px per second
+  const SPEED = 32; // px per second
   const EASE = 6; // how fast a held logo stops and a freed one gets going, per second
 
   const bodies = [...arena.querySelectorAll('.game')].map(el => ({
