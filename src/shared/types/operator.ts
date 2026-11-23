@@ -277,6 +277,8 @@ export interface OperatorArt {
   label: string;    // 'Elite 0/1' | 'Elite 1' | 'Elite 2' | the outfit's own name
   artist: string | null; // illustrator, from the matching skin's drawerList
   url: string;
+  sprite?: string;  // the battle sprite in this outfit, a WebM on arknights.wiki.gg
+  l2d?: string;     // the animated illustration, where the game has one: a WebM on the same wiki
 }
 
 export interface Operator {

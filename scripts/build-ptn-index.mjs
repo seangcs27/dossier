@@ -182,6 +182,89 @@ async function fetchPages() {
   return textOf;
 }
 
+// What the game's own words are for each part of an animated outfit, in the order the page
+// lists them. The wiki records each reaction a Live2D outfit has as a video of its own (MP4
+// or WebM), named for the outfit's picture: 'Milly_Skin2_Hand_Animation.webm' is
+// Milly_Skin2.png answering a touch on the hand. 'Boring' is what it does when left alone a
+// while; 'Sea' and 'Sky' are scenes an outfit has. An outfit with no Idle video may have an
+// animated wallpaper ('<picture>_Animated_Wallpaper.gif'), its idle loop, which stands for it.
+const MOTION_PARTS = [
+  ['Idle', 'Idle'], ['Greet', 'Greeting'], ['Head', 'Head'], ['Body', 'Body'], ['Body1', 'Body'],
+  ['Body2', 'Body 2'], ['Hand', 'Hand'], ['Leg', 'Leg'], ['Boring', 'Waiting'], ['Level', 'Level up'],
+  ['Sea', 'Sea'], ['Sky', 'Sky'],
+];
+
+// Each animated picture's parts, by its file's stem ('Milly_Skin2'): the wiki's recordings,
+// 2600 to 3600 wide and up to 33 MB each, played from the wiki and never downloaded. On 24
+// November 2026: 103 pictures, 42 of them with a video per reaction and the rest a wallpaper
+// alone; the Chinese wiki keeps none. Throws when the wiki cannot be read.
+async function fetchMotions() {
+  const byStem = new Map();
+  const add = (stem, rank, url) => {
+    const parts = byStem.get(stem) ?? [];
+    if (!parts.some(p => p.rank === rank)) byStem.set(stem, [...parts, { rank, part: MOTION_PARTS[rank][1], url }]);
+  };
+  const wallpapers = [];
+  for (const mime of ['video/webm', 'video/mp4', 'image/gif']) {
+    let next = {};
+    do {
+      const json = await wiki({ action: 'query', list: 'allimages', aimime: mime, ailimit: '500', aiprop: 'url', ...next });
+      for (const file of json.query.allimages) {
+        const video = /^(.+_Skin\d+)_([A-Za-z0-9]+)_Animation\.(webm|mp4)$/.exec(file.name);
+        const rank = video ? MOTION_PARTS.findIndex(([key]) => key === video[2]) : -1;
+        if (rank >= 0) add(video[1], rank, file.url);
+        const gif = /^(.+_Skin\d+)_Animated_Wallpaper\.gif$/.exec(file.name);
+        if (gif) wallpapers.push([gif[1], file.url]);
+      }
+      next = json.continue;
+    } while (next);
+  }
+  // After every video, so that an Idle video is taken over the wallpaper.
+  for (const [stem, url] of wallpapers) add(stem, 0, url);
+  for (const [stem, parts] of byStem) {
+    byStem.set(stem, parts.sort((a, b) => a.rank - b.rank).map(({ part, url }) => ({ part, url })));
+  }
+  return byStem;
+}
+
+// Puts each animated picture's parts on it. The wiki names them for the outfit's number,
+// whichever wiki the picture itself came from: the phase-up art is Skin1 and the attires
+// Skin2 on, oldest first (the payload lists them newest first). Some files are under the
+// name without its first word ('Hitomi_Skin1', 'Jotaro_Skin1'), so both are tried; Kujo
+// Jolyne's are under 'Jolyne_Cujoh', which neither finds. With the wiki
+// unreachable, each Sinner keeps the parts the last build's payload had for the same picture.
+async function addMotions(details, sinners) {
+  let byStem;
+  try {
+    byStem = await fetchMotions();
+  } catch (e) {
+    console.warn(`ptn motions: ${e.message}; using the last build's`);
+    for (const d of details) {
+      const prev = JSON.parse(await readFile(path.join(detailDir, `${d.id}.json`), 'utf8').catch(() => '{}'));
+      for (const art of d.arts) {
+        const parts = prev.arts?.find(a => a.kind === art.kind && a.label === art.label)?.motions;
+        if (parts) art.motions = parts;
+      }
+    }
+    return;
+  }
+  const nameOf = new Map(sinners.map(s => [s.id, s.name]));
+  for (const d of details) {
+    const name = nameOf.get(d.id) ?? '';
+    const stems = [...new Set([name, name.replace(/^\S+ /, '')].map(n => n.replace(/ /g, '_')))];
+    const numbered = [
+      ...d.arts.filter(a => a.kind === 'phase').map(art => [art, 1]),
+      ...d.arts.filter(a => a.kind === 'attire').reverse().map((art, i) => [art, i + 2]),
+    ];
+    for (const [art, n] of numbered) {
+      const parts = stems.map(stem => byStem.get(`${stem}_Skin${n}`)).find(Boolean);
+      if (parts) art.motions = parts;
+    }
+  }
+  const shown = details.flatMap(d => d.arts).filter(a => a.motions).length;
+  console.log(`ptn motions: ${shown} pictures animated, of ${byStem.size} the wiki has`);
+}
+
 // As tall as a mugshot's file is, which is taller than a wall stands anyone on a 1080 screen.
 const FIGURE_HEIGHT = 1100;
 
@@ -626,6 +709,7 @@ async function buildRoster() {
 await mkdir(detailDir, { recursive: true });
 try {
   const { sinners, details, unfinished, strays } = await buildRoster();
+  await addMotions(details, sinners);
   await writeFile(SINNERS_FILE, JSON.stringify(sinners));
   // Written again every build, since a page changes with the game.
   await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));

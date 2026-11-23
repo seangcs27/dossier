@@ -178,6 +178,60 @@ function thumbOf(s: PtnSinner, art: PtnArt): string {
   return bakedOf(s, art.kind)?.art ?? artUrl(art.url, 128);
 }
 
+// A reaction's name on the Chinese side; the build names them in English ('Idle', 'Head').
+const MOTION_ZH: Record<string, string> = {
+  Idle: '待机', Greeting: '问候', Head: '头部', Body: '身体', 'Body 2': '身体 2',
+  Hand: '手部', Leg: '腿部', Waiting: '闲置', 'Level up': '升级', Sea: '海', Sky: '天空',
+};
+
+// An animated picture's reactions, along the top of the wall: a press plays one in the
+// picture's place (Idle on a loop, the rest once), and the picture stands still again when it
+// ends or the same button is pressed again. Nothing is fetched before a press: a file is up
+// to 33 MB.
+function motionsHtml(art: PtnArt | undefined): string {
+  if (!art?.motions?.length) return '';
+  const zh = ptnLang() === 'zh';
+  return `
+    <div class="cell-motions" role="group" aria-label="${t('motion')}">
+      <span class="cell-motions-label">${t('motion')}</span>
+      ${art.motions.map((m, i) => `
+        <button class="motion-part" data-motion="${i}" aria-pressed="false">
+          ${escHtml(zh ? MOTION_ZH[m.part] ?? m.part : m.part)}
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+// Plays the reaction a button names in the picture's place, or puts the picture back.
+function playMotion(cell: Element, button: HTMLElement, art: PtnArt): void {
+  const frame = cell.querySelector<HTMLElement>('.cell-print, .cell-stand');
+  const img = frame?.querySelector('img');
+  if (!frame || !img) return;
+  const stop = () => {
+    frame.querySelector('.cell-motion')?.remove();
+    img.classList.remove('under');
+    cell.querySelectorAll('[data-motion]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  };
+  const again = button.getAttribute('aria-pressed') === 'true';
+  stop();
+  if (again) return;
+  const motion = art.motions![Number(button.dataset.motion)];
+  const loop = motion.part === 'Idle';
+  let media: HTMLImageElement | HTMLVideoElement;
+  if (/\.gif(\?|$)/.test(motion.url)) {
+    media = Object.assign(document.createElement('img'), { src: motion.url, alt: '' });
+  } else {
+    media = Object.assign(document.createElement('video'), { src: motion.url, autoplay: true, loop, playsInline: true });
+    if (!loop) media.addEventListener('ended', stop);
+  }
+  media.className = 'cell-motion';
+  // The picture holds its place until the first frame is in, so the wall does not go blank.
+  media.addEventListener(media instanceof HTMLVideoElement ? 'loadeddata' : 'load', () => img.classList.add('under'), { once: true });
+  frame.append(media);
+  button.setAttribute('aria-pressed', 'true');
+}
+
 // The wall with the Sinner on it, and on its floor the name of the picture on show (an
 // attire's led by its collection) over a frame for each picture there is.
 function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
@@ -206,6 +260,7 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
     <div class="cell" style="--cm: ${cm}; --top-cm: ${top}">
       <div class="cell-rules" aria-hidden="true">${rulesHtml(top)}</div>
       <span class="cell-mark"><b>${cm} cm</b></span>
+      ${motionsHtml(arts[picked])}
       ${picture}
       <div class="cell-floor">
         <p class="cell-caption">
@@ -216,8 +271,9 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
         ${arts.length > 1 ? `
           <div class="exhibits" role="tablist" aria-label="${t('pictures')}">
             ${arts.map((a, i) => `
-              <button class="exhibit${i === picked ? ' on' : ''}" data-art="${i}"
-                      role="tab" aria-selected="${i === picked}" data-tip="${escHtml(labelOf(a))}">
+              <button class="exhibit${i === picked ? ' on' : ''}${a.motions ? ' animated' : ''}" data-art="${i}"
+                      role="tab" aria-selected="${i === picked}"
+                      data-tip="${escHtml(a.motions ? `${labelOf(a)} · ${t('motion')}` : labelOf(a))}">
                 <img src="${escHtml(thumbOf(s, a))}" alt="${escHtml(labelOf(a))}" loading="lazy" decoding="async">
               </button>
             `).join('')}
@@ -674,6 +730,13 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
         picked = Number(thumb.dataset.art);
         render();
         container.querySelector<HTMLElement>(`[data-art="${picked}"]`)?.focus();
+        return;
+      }
+      const part = target.closest<HTMLElement>('[data-motion]');
+      if (part) {
+        const art = detail?.arts[picked];
+        const cell = part.closest('.cell');
+        if (art && cell) playMotion(cell, part, art);
         return;
       }
       const langButton = target.closest<HTMLElement>('[data-lang]');

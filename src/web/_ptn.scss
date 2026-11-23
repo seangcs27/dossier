@@ -1099,7 +1099,85 @@ body[data-view='ptn'] #view {
   &:hover { border-color: $bone; }
   &:focus-visible { outline: 2px solid $bone; outline-offset: 2px; }
   &.on { border-color: $red; }
+
+  // A picture the game animates: a play mark on its corner.
+  &.animated {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      width: 16px;
+      height: 16px;
+      background: $red;
+      clip-path: polygon(30% 22%, 30% 78%, 78% 50%);
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      width: 16px;
+      height: 16px;
+      background: $ink;
+    }
+  }
 }
+
+// An animated picture's reactions, along the top of the wall: square buttons in the
+// placard's face, the one playing in the world's red.
+.cell-motions {
+  position: absolute;
+  top: var(--sp-8);
+  left: calc(var(--gutter) + var(--sp-8));
+  right: var(--sp-8);
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.cell-motions-label {
+  margin-right: var(--sp-4);
+  color: var(--ptn-wall-ink);
+  font-family: var(--ptn-placard);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.motion-part {
+  padding: var(--sp-2) var(--sp-10);
+  border: 1px solid $ink;
+  background: $ink;
+  color: $bone;
+  font-family: var(--ptn-placard);
+  font-weight: 500;
+  font-size: var(--fs-base);
+  cursor: pointer;
+  transition: background-color 0.15s var(--ptn-ease), border-color 0.15s var(--ptn-ease);
+
+  &:hover { border-color: $red; }
+  &[aria-pressed='true'] { border-color: $red; background: $red; }
+  &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: 2px; }
+}
+
+// A reaction playing, over the picture and at its size: the picture keeps its place under it
+// (hidden once the first frame is in), so the frame neither moves nor collapses.
+.cell-motion {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cell-print img.under { visibility: hidden; }
 
 // The trail and, at its far end, the language's switch: one line, the trail's own height.
 .ptn-trail {

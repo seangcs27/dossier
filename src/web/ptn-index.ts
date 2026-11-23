@@ -152,6 +152,9 @@ export interface PtnArt {
   intro?: string;
   impression?: string[];
   video?: string;
+  // An animated attire's reactions, from the English wiki: each part its name ('Idle',
+  // 'Head', 'Waiting') and a WebM on the wiki, played from there.
+  motions?: { part: string; url: string }[];
 }
 
 export interface PtnSinnerDetail {
