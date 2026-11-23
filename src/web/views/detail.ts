@@ -189,6 +189,9 @@ function activeModulePhase(s: DetailState): ModulePhase | null {
 
 let state: DetailState | null = null;
 let mountSeq = 0;
+// Whether an art piece with an animated illustration plays it in place of the still. Off
+// to begin with, since the video is 1 to 10 MB; kept from one operator to the next.
+let motionOn = false;
 
 const visibleSkills = (op: Operator): OperatorSkillDetail[] =>
   (op.skills ?? []).filter(s => !s.excel.hidden && s.excel.levels.length > 0);
@@ -1080,15 +1083,37 @@ function splashHtml(op: Operator, artIdx: number): string {
         </div>
       ` : ''}
       ${splashTagsHtml(op)}
-      <img class="splash-img" src="${artUrl(active.url, 1024)}" alt="${escHtml(active.label)}"
-           fetchpriority="high" decoding="async"
-           data-act="art-open" role="button" tabindex="0" aria-label="Open ${escHtml(active.label)} at full size"
-           onerror="this.onerror=null;this.src='${active.url.replace(/'/g, '%27')}'">
+      ${motionOn && active.l2d ? `
+        <div class="splash-live">
+          <img class="splash-backdrop" src="${artUrl(active.url, 1024)}" alt="" aria-hidden="true" decoding="async">
+          <video class="splash-img splash-video" src="${escHtml(active.l2d)}" poster="${artUrl(active.url, 1024)}"
+                 autoplay loop muted playsinline
+                 data-act="art-open" role="button" tabindex="0" aria-label="Open ${escHtml(active.label)} at full size"></video>
+        </div>
+      ` : `
+        <img class="splash-img" src="${artUrl(active.url, 1024)}" alt="${escHtml(active.label)}"
+             fetchpriority="high" decoding="async"
+             data-act="art-open" role="button" tabindex="0" aria-label="Open ${escHtml(active.label)} at full size"
+             onerror="this.onerror=null;this.src='${active.url.replace(/'/g, '%27')}'">
+      `}
       <div class="splash-caption">
         ${series ? `<span class="section-label">${escHtml(series)}</span>` : ''}
         <span class="splash-name">${escHtml(active.label)}</span>
         ${active.artist ? `<span class="splash-artist">${ICON_BRUSH}${escHtml(active.artist)}</span>` : ''}
+        ${active.l2d ? `
+          <button class="splash-motion" data-act="motion" role="switch" aria-checked="${motionOn}"
+                  data-tip="Play this art's Live2D animation, as arknights.wiki.gg recorded it">
+            <svg class="play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z"/></svg>
+            Live2D
+            <span class="track" aria-hidden="true"></span>
+          </button>
+        ` : ''}
       </div>
+      ${active.sprite ? `
+        <div class="splash-sprite">
+          <video src="${escHtml(active.sprite)}" autoplay loop muted playsinline aria-label="${escHtml(active.label)}'s battle sprite"></video>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -1282,6 +1307,11 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
         state.artIdx = Number(value);
         renderAll(container);
         container.querySelector('.splash')?.scrollIntoView({ block: 'nearest' });
+        return;
+      case 'motion':
+        motionOn = !motionOn;
+        renderAll(container);
+        container.querySelector<HTMLElement>('.splash-motion')?.focus();
         return;
       // The page follows the viewer: whichever piece was showing when it closed becomes the
       // page's own, and focus goes back to the art it was opened from.

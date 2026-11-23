@@ -111,6 +111,7 @@ scripts/
                                recorded by hand from YouTube
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
   backup-art.mjs             ← Arknights', Path to Nowhere's and hololive Dreams' remote art onto the source-art-backup release, run by hand
+  backup-wiki-videos.mjs     ← the wiki videos the Arknights and PtN pages play onto the wiki-video-backup release, run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
@@ -567,15 +568,18 @@ overwriting it with an empty bundle; CI restores that data from the last run's c
 each deploy also uploads every baked image (not the JSON) as `dossier-img.tar` on the
 `dossier-img-backup` release, and a run that finds no cache restores the images from it before
 building; the payloads are rebuilt from their sources. What the pages load from other hosts
-at runtime is backed up by hand to two more releases, by scripts that share
+at runtime is backed up by hand to three more releases, by scripts that share
 `scripts/lib/release-backup.mjs` (fetch what `backup/<name>/` lacks, start from the
 release's tar when that folder is empty, upload only when something was fetched):
 `node scripts/backup-art.mjs` (Arknights' illustrations, outfit avatars, module
 illustrations and icons from Arknight-Images, Path to Nowhere's prints from its wikis and
 hololive Dreams' key art from the official site's image host; the illustrations and prints
 kept as 2048px WebP, the art viewer's largest size; the `source-art-backup` release, first made
-19 October 2026 as `art-backup`) and `node scripts/backup-holodori-media.mjs` (hololive Dreams,
-below). Run both after a build that added operators, Sinners, holomems or cards. **See "Where
+19 October 2026 as `art-backup`), `node scripts/backup-holodori-media.mjs` (hololive Dreams,
+below) and `node scripts/backup-wiki-videos.mjs` (the Arknights sprites and animated
+illustrations and Path to Nowhere's animated outfits, as the two wikis have them; the
+`wiki-video-backup` release, first made 24 November 2026). Run all three after a build that
+added operators, Sinners, holomems, cards or outfits. **See "Where
 the pictures and media live" below for what each backup is and why none of it is in the repo.** With nothing on disk to keep, the build still
 fails — an empty bundle is worse than a red run. Every request goes
 through a 20 s timeout (a stalled connection on a shared runner hung the build for 15+
@@ -917,6 +921,25 @@ set and information architecture all follow theirs, so read
 - **Skin rail** — renders each outfit's **55 KB square avatar**, not its illustration.
   Pointing 64px thumbnails at full art meant SilverAsh pulled 16.4 MB before the page
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
+- **Animated art and the sprite** (24 November 2026, the owner's "media such as L2D") — an art
+  piece the game animates has a "Live2D" switch in its caption (a play glyph and a track),
+  which plays the animated illustration in place of the still (off at first, since one is 1
+  to 10 MB; kept from operator to operator), and every piece with a battle sprite plays it,
+  looped, in the art's bottom-right corner (a 220x225 box, the recording's full height, that
+  takes no pointer events). The animation has no background: the game builds it from its own
+  particle effects in the scene, and no source checked (the wiki, ArknightsSpines' idle
+  WebMs, the Spine atlases) has it, so the still stands behind it as it is
+  (`.splash-backdrop`, the owner's pick over leaving it bare or blurring it). Both are arknights.wiki.gg's screen recordings, WebM on
+  transparency, played from the wiki and not downloaded: the payload's `arts[].l2d` and
+  `arts[].sprite` (`fetchWikiVideos` and `addVideos` in `build-operator-index.mjs`, one
+  listing of the wiki's WebMs). **Not the game's Spine files**: playing those needs the Spine
+  runtime, whose licence asks for a paid Spine Editor licence. The wiki names a file
+  `<Name>.webm` (the sprite), `<Name>_L2D.webm` (Elite 2's animation) and
+  `<Name>_Skin_<n>[_L2D].webm`, where n is the outfit's place among the operator's outfits by
+  release (`getTime`): 1,211 of 1,427 pieces have a sprite and 59 an animation (38
+  operators); the one file that rule misses is Amiya (Medic)'s, numbered across Amiya's forms.
+  A browser on another origin may play them; a fetch with a browser's user agent and no cookie
+  is refused (403), which is why the build asks with its own.
 - **Panel** — rarity-tinted strip with stars, then faction badge + serif operator name (the
   alter epithet in `--dim`) + class / branch / position row. The badge is the operator's most
   specific faction (team, else group, else nation), painted as a luminance mask in one colour
@@ -1661,6 +1684,20 @@ of a CN-only Sinner, are added with the file `<Sinner><attire>.png`. The pages a
 (`attires`). The price has no currency named; an outfit only the Chinese wiki has is in Chinese on
 the English side too.
 
+**An animated outfit plays its reactions** (24 November 2026, the owner's "media such as L2D"):
+on the wall, where the picture hangs. A picture that moves has a red play mark on its frame;
+with it on show, a row of buttons at the top of the wall (`.cell-motions`: Idle, Greeting,
+Head, Body, Hand, Leg, Waiting, Level up, as the picture has them) plays one over the still,
+which is what shows by default. Idle loops; any other plays once and goes back to the still;
+the button pressed again stops it. They are the English wiki's recordings of the Live2D
+picture, `<Stem>_Skin<n>_<Part>_Animation.webm` or `.mp4`, and `<Stem>_Skin<n>_Animated_Wallpaper.gif`
+as the Idle where no Idle video is, 2600 to 3600 px wide and 5 to 33 MB a video, played from
+the wiki and never downloaded; the payload's `arts[].motions` (`fetchMotions` and
+`addMotions` in `build-ptn-index.mjs`). Skin1 is the phase-up art and Skin2 on the attires,
+oldest first; the stem is the Sinner's name, or the name less its first word (Kisugi). On 24
+November 2026 that matched 102 of the wiki's 103 pictures (63 phase-up, 39 attires, of 225);
+Kujo Jolyne's files are under `Jolyne_Cujoh` and are missed. The Chinese wiki keeps none.
+
 Not on the dossier, though the English wiki has them: the interrogation records' own pages. The
 ranges, costs and voice lines are the Chinese wiki's (above).
 
@@ -2310,15 +2347,16 @@ Decided 9 November 2026, after the owner asked whether the backups' assets shoul
 the repo, "so we can use them", and for names that say what each is. They have asked before,
 so the answer is written down.
 
-**Three kinds, three backups** (GitHub releases of this repo, one tar each):
+**Four backups** (GitHub releases of this repo, one tar each):
 
 | Name | Is | Made | Read by |
 |---|---|---|---|
 | `dossier-img-backup` (`dossier-img.tar`, ~112 MB) | Dossier's own images: what the build fetches, re-encodes to WebP and serves from this site | Every deploy, by the workflow | The deploy, when its cache is gone |
 | `source-art-backup` (`source-art.tar`, ~1 GB) | Art the pages load from *other* hosts at runtime: Arknights, Path to Nowhere, hololive Dreams' key art | By hand, `scripts/backup-art.mjs` | Nothing |
 | `media-backup` (`holodori-media.tar`, ~620 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
+| `wiki-video-backup` (`wiki-video.tar`, ~920 MB) | Video the Arknights and Path to Nowhere pages play from the two wikis: battle sprites, animated illustrations, animated outfits. A release of its own since source-art's tar is ~1 GB and a release file may be no larger than 2 GiB | By hand, `scripts/backup-wiki-videos.mjs` | Nothing |
 
-All three are **pre-releases**, so the repository's "Latest release" is never a backup's tar (the
+All four are **pre-releases**, so the repository's "Latest release" is never a backup's tar (the
 scripts and the workflow create them so, and a by-hand run rewrites the release's notes with
 the date, the file count and the size). The tags are the names above; `gh release edit --tag`
 renames one without moving its file.
@@ -2329,7 +2367,7 @@ names, such as `char_298_susuro_1sus`, and 10 `uniequip_002_*` module icons), wh
 has never had, so the pages already hide them on error; the media took 2,408 (4,328 in all,
 624 MB), none failing.
 
-The last two are **insurance, not a fallback**: no page falls back to them, so if a source died
+The last three are **insurance, not a fallback**: no page falls back to them, so if a source died
 its images would break until someone re-hosted the files and changed the addresses. Endfield and
 Fate/Grand Order have nothing in them: the build bakes their art into dossier-img.
 

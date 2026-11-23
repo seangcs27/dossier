@@ -2325,6 +2325,24 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   object-fit: contain;
 }
 
+// The Live2D recording has no background (the game draws it from particle effects no source
+// has), so the still stands behind it.
+.splash-live {
+  position: relative;
+  max-width: 100%;
+
+  .splash-video { position: relative; }
+}
+
+.splash-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .splash-empty .splash-img {
   width: 180px;
   border-radius: var(--radius-lg);
@@ -2664,6 +2682,74 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   color: var(--link);
 
   .ico { width: 16px; height: 16px; flex-shrink: 0; }
+}
+
+// The Live2D switch, for an art piece the game animates: a play glyph, the word and a
+// track whose knob goes over to the accent's gold while the animation plays.
+.splash-motion {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-4) var(--sp-6) var(--sp-4) var(--sp-10);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: rgb(232 200 112 / 12%);
+  color: var(--accent);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+
+  .play { width: 12px; height: 12px; fill: currentColor; }
+
+  .track {
+    position: relative;
+    width: 30px;
+    height: 16px;
+    border-radius: var(--radius-pill);
+    background: var(--border);
+    transition: background-color 0.2s;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text);
+      transition: transform 0.2s;
+    }
+  }
+
+  &:hover { background: rgb(232 200 112 / 22%); }
+  &[aria-checked='true'] .track { background: var(--accent); }
+  &[aria-checked='true'] .track::after { transform: translateX(14px); background: var(--bg); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+// The battle sprite in the art's bottom-right corner. The recording is 1024x576 with the
+// sprite small in its middle: the box is the recording's whole height, so nothing above or
+// below the sprite is cut, and the empty sides are cut away. It takes no presses, so the art
+// under its empty part still opens.
+.splash-sprite {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 220px;
+  height: 225px;
+  overflow: hidden;
+  pointer-events: none;
+
+  video {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 400px;
+    transform: translateX(-50%);
+  }
 }
 
 // ── Data panel ──

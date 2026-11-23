@@ -144,6 +144,65 @@ async function fetchCharacterArtIndex() {
   }
 }
 
+// Every WebM arknights.wiki.gg keeps, its file name ('Dusk_Skin_1_L2D.webm') to its address.
+// They are the wiki's screen recordings of the game's animations: an operator's battle
+// sprite (`<Name>.webm`, `<Name>_Skin_<n>.webm`, 1024x576) and an animated illustration
+// (`<Name>_L2D.webm` for Elite 2, `<Name>_Skin_<n>_L2D.webm`, 1024x1024), both on
+// transparency. Recordings rather than the game's own Spine files, because playing those
+// needs the Spine runtime, whose licence asks for a paid Spine Editor licence. The page
+// plays them from the wiki; nothing is downloaded. Supplemental: with the wiki unreachable,
+// the addresses the last build's payloads carried are used again.
+async function fetchWikiVideos() {
+  try {
+    const byName = new Map();
+    let from = '';
+    for (;;) {
+      const qs = new URLSearchParams({
+        action: 'query', list: 'allimages', aimime: 'video/webm', ailimit: '500', aiprop: 'url',
+        format: 'json', ...(from ? { aicontinue: from } : {}),
+      });
+      const res = await timedFetch(`${WIKI_API}?${qs}`);
+      if (!res.ok) throw new Error(`wiki ${res.status}`);
+      const json = await res.json();
+      for (const file of json.query.allimages) byName.set(file.name, file.url);
+      if (!json.continue) return byName;
+      from = json.continue.aicontinue;
+    }
+  } catch (e) {
+    const byName = new Map();
+    const dir = path.join(outDir, 'operator-details');
+    for (const file of await readdir(dir).catch(() => [])) {
+      const prev = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
+      for (const url of (prev.arts ?? []).flatMap(a => [a.sprite, a.l2d]).filter(Boolean)) {
+        byName.set(decodeURIComponent(new URL(url).pathname.split('/').pop()), url);
+      }
+    }
+    console.warn(`wiki videos: ${e.message}; using the last build's ${byName.size}`);
+    return byName;
+  }
+}
+
+// Puts each art piece's sprite and animated illustration on it, where the wiki has them.
+// The wiki numbers an operator's outfits 1, 2, … in the order they came out, which is the
+// skins' `getTime` order: checked on 24 November 2026, that rule finds every sprite file of
+// 400 operators, and where it misses, the wiki has no file for the newest outfit yet. Of the
+// 60 animated illustrations it places 59; Amiya (Medic)'s is numbered across Amiya's forms.
+// A mode-only operator is skipped, since a trainer shares its name with a real operator.
+function addVideos(arts, id, name, skins, videos) {
+  const stem = name.replace(/ /g, '_');
+  const outfits = (skins ?? [])
+    .filter(s => s.displaySkin?.skinName)
+    .sort((a, b) => a.displaySkin.getTime - b.displaySkin.getTime);
+  const numberOf = new Map(outfits.map((s, i) => [s.portraitId, i + 1]));
+  return arts.map(art => {
+    const n = numberOf.get(`${id}_${art.suffix}`);
+    const outfit = n ? `${stem}_Skin_${n}` : stem;
+    const sprite = videos.get(`${outfit}.webm`);
+    const l2d = n || art.suffix === '2' ? videos.get(`${outfit}_L2D.webm`) : undefined;
+    return { ...art, ...(sprite ? { sprite } : {}), ...(l2d ? { l2d } : {}) };
+  });
+}
+
 // Class enum -> the English class name arknights.wiki.gg uses in its branch-icon
 // filenames. Same eight values as PROFESSION_LABEL in src/web/format.ts; duplicated
 // because this is a standalone Node script, not part of the TS build.
@@ -1086,7 +1145,7 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 // wait for the next rebuild instead. Best-effort per operator: one bad fetch shouldn't
 // cost the others.
 async function buildOperatorDetails(regular, cnSupplement) {
-  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds, wikiPages] = await Promise.all([
+  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds, wikiPages, videos] = await Promise.all([
     fetchAceTranslations(),
     fetchWikiTraits(cnSupplement.map(c => c.appellation)),
     fetchRiicTranslations(),
@@ -1094,6 +1153,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
     fetchCharacterArtIndex(),
     fetchLimitedIds(),
     fetchWikiPages(),
+    fetchWikiVideos(),
   ]);
   const cnById = new Map(cnSupplement.map(c => [c.id, c]));
 
@@ -1133,7 +1193,8 @@ async function buildOperatorDetails(regular, cnSupplement) {
             wikiPages.get(entry.id),
           )
         : base;
-      const arts = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
+      const listed = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
+      const arts = entry.mode || !op.data?.name ? listed : addVideos(listed, entry.id, op.data.name, op.skins, videos);
       // `op`, not `base`: for a CN-supplement operator `op` is buildCnOperatorPayload's
       // translated overlay. Spreading `base` here would silently ship the raw Chinese
       // buildPayload returns instead of the fan translations, in both this file and the
