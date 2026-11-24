@@ -947,7 +947,12 @@ set and information architecture all follow theirs, so read
   release (`getTime`): 1,211 of 1,427 pieces have a sprite and 59 an animation (38
   operators); the one file that rule misses is Amiya (Medic)'s, numbered across Amiya's forms.
   A browser on another origin may play them; a fetch with a browser's user agent and no cookie
-  is refused (403), which is why the build asks with its own.
+  is refused (403), which is why the build asks with its own. **A piece the wiki has no
+  animation of takes ArknightsSpines' render** (`ArknightsAssets/ArknightsSpines`, cn branch,
+  `illust/Idle/dyn_illust_<skin>.webm`, on transparency, played from GitHub's raw host;
+  `fetchSpineVideos`, matched by the skin's `dynIllustId`, less its `_2` for Elite 2): 9 more
+  on 24 November 2026, so 68 of the 94 the game animates. That branch was last updated in July
+  2025, so the 26 left are the newer pieces.
 - **Panel** — rarity-tinted strip with stars, then faction badge + serif operator name (the
   alter epithet in `--dim`) + class / branch / position row. The badge is the operator's most
   specific faction (team, else group, else nation), painted as a luminance mask in one colour
