@@ -32,7 +32,7 @@ import {
   codeOf, dayOf, holdPtnLang, libramName, nameOf, PTN_LANGS, ptnLang, rankName, setPtnLang, t, tagsOf, tendencyName,
   type PtnLang,
 } from '../ptn-lang';
-import { ptnRoster } from './ptn';
+import { ptnRoster } from '../ptn-roster';
 
 // Each tab and the word for it (ptn-lang.ts has it in both languages).
 const TABS = [

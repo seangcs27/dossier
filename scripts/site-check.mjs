@@ -24,10 +24,13 @@ const KB = 1024;
 // 2026, by the owner, when the roster's birthday labels took it to 50.5 KB. The same day the
 // owner raised three more that bundle data a rebuild grows (the gacha record and announcements,
 // the card list, the cast), at 24.2, 67.5 and 25.6 KB: front page to 30, card page to 80,
-// holomem page to 30, so that a new banner or card does not fail the deploy.
+// holomem page to 30, so that a new banner or card does not fail the deploy. The Path to
+// Nowhere dossier reached 55.0 KB on 24 November 2026 with its outfits' animations; it stopped
+// loading the roster page's code (`ptn-roster.ts`), which took it to 45.3, and the owner raised
+// it to 60 for room to grow.
 const BUDGET = {
   'holodori-home': 30, 'holodori-gachas': 25, events: 25, 'endfield-detail': 25,
-  'holodori-holomem': 30, detail: 40, 'ptn-detail': 55, 'holodori-card': 80,
+  'holodori-holomem': 30, detail: 40, 'ptn-detail': 60, 'holodori-card': 80,
   grid: 120, endfield: 120, ptn: 120, holodori: 120, 'holodori-songs': 120, 'holodori-cards': 120, fgo: 120,
   'holodori-calendar': 120, 'holodori-mahjong': 25,
 };

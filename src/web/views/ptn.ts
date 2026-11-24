@@ -1,5 +1,6 @@
 import { escHtml } from '../format';
-import { mountRoster, newRosterState, type RosterOrder } from '../card';
+import { mountRoster, type RosterOrder } from '../card';
+import { ptnRoster } from '../ptn-roster';
 import { getPtnSinners, type PtnSinner } from '../ptn-index';
 import {
   birthdayText, birthMonthName, codeOf, daysAway, holdPtnLang, libramName, monthOf, nameOf, PTN_LANGS, ptnLang,
@@ -22,10 +23,6 @@ const LIBRAM_SETS = [
   { label: 'setImmortal', values: ['IMMORTAL'] },
   { label: 'setInfinite', values: ['INFINITE'] },
 ] as const;
-
-// This page's search and picks, kept across visits, and which of the two pictures its wall
-// is showing. A Sinner's dossier reads the last, to open on the same picture.
-export const ptnRoster = newRosterState();
 
 // A day later than any release: where a Sinner with none on record sorts, since having none
 // means the record has not caught up with them, or the Global server has not.

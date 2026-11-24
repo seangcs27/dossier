@@ -247,6 +247,11 @@ src/
                       #/holodori/holomem/<id> , #/fgo)
     card.ts         ← the card and the roster page the games after Endfield share: RosterCard,
                       mountRoster, and its search box and filter panel for a game that asks
+    roster-state.ts ← newRosterState, apart from card.ts so a page can hold a roster's state
+                      without loading the roster
+    ptn-roster.ts   ← Path to Nowhere's roster state, which a Sinner's dossier reads for the
+                      picture to open on, without loading the roster page (24 November 2026:
+                      that import alone was 10 KB of the dossier's first-load JavaScript)
     logo.ts         ← picks one of 7 Wiš'adel icon variants per page load, again on hover, and
                       then once a second for as long as a mouse rests on the logo. All seven
                       are on the emoticon set's red square: the plain avatar (-1) was given
