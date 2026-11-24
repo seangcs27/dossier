@@ -1390,7 +1390,11 @@ day of probing it from one machine, and for hours after), and a build that took 
 "unreachable" came back with the CN-only Sinners and every Chinese name gone, and GitHub's
 runners were refused the same way on the first deploy that read the pages, for the whole
 run. So `ptn-bili.mjs` goes one request at a time with a 400 ms pause and asks again after
-a 567 (waiting 5, 20 and 60 s), and a request that still fails falls to **the snapshot**:
+a 567 (waiting 5, 20 and 60 s), and a request that still fails falls to **the snapshot**
+(and **the first 567 to outlast all three waits closes the wiki for the rest of the run**: it
+is logged once and every later request fails at once, with no pause and no waits, to the
+snapshot; each had cost 85 s, and the deploy of 23 November 2026 spent 10 of its 11 minutes
+that way, 24 November 2026):
 `scripts/lib/ptn-bili-snapshot.json`, tracked (2.0 MB, 0.5 compressed), which has that
 wiki's roster rows, the text of each of its 160 pages (notes to editors dropped), every
 exclusive crimebrand's page (`brands`) and the terms they and the pages name (`terms`), the voice pages (`voices`), and the addresses of the pictures asked of it (`files`, `images`), as the last build that read it whole left them. Any

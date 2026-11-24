@@ -26,14 +26,25 @@ const BACKOFF_MS = [5_000, 20_000, 60_000];
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+// The 567 that outlasted every wait. Once one has, the wiki is taken as closed to this run
+// and each later request fails with it at once, to the caller's snapshot, instead of
+// spending another 85 s on the same three waits (a deploy lost 10 minutes that way).
+let refusal;
+
 // Every request this file makes goes through here: one at a time, a pause before each.
 async function wiki(params) {
+  if (refusal) throw refusal;
   await sleep(PAUSE_MS);
   for (let attempt = 0; ; attempt++) {
     try {
       return await api(params);
     } catch (err) {
-      if (!/^567 /.test(err.message) || attempt === BACKOFF_MS.length) throw err;
+      if (!/^567 /.test(err.message)) throw err;
+      if (attempt === BACKOFF_MS.length) {
+        refusal = err;
+        console.warn(`ptn: the Chinese wiki refused every wait (${err.message}); the rest of this run goes to its snapshot`);
+        throw err;
+      }
       await sleep(BACKOFF_MS[attempt]);
     }
   }
