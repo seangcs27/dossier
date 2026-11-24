@@ -169,15 +169,46 @@ async function fetchWikiVideos() {
       from = json.continue.aicontinue;
     }
   } catch (e) {
+    const byName = await lastVideos(url => !url.startsWith(SPINES_BASE));
+    console.warn(`wiki videos: ${e.message}; using the last build's ${byName.size}`);
+    return byName;
+  }
+}
+
+// The videos the last build's payloads carried, file name to address, for a source that
+// cannot be reached.
+async function lastVideos(keep) {
+  const byName = new Map();
+  const dir = path.join(outDir, 'operator-details');
+  for (const file of await readdir(dir).catch(() => [])) {
+    const prev = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
+    for (const url of (prev.arts ?? []).flatMap(a => [a.sprite, a.l2d]).filter(u => u && keep(u))) {
+      byName.set(decodeURIComponent(new URL(url).pathname.split('/').pop()), url);
+    }
+  }
+  return byName;
+}
+
+// ArknightsAssets/ArknightsSpines' renders of the game's animated illustrations
+// (`illust/Idle/dyn_illust_<portrait>.webm`, on transparency, as the wiki's are), for the
+// pieces the wiki has no recording of. Its cn branch was last updated in July 2025, so it
+// fills 9 of the 35 the wiki lacks (24 November 2026). Played from GitHub's raw host, not
+// downloaded. Supplemental, as the wiki's are.
+const SPINES_BASE = 'https://raw.githubusercontent.com/ArknightsAssets/ArknightsSpines/cn/';
+async function fetchSpineVideos() {
+  try {
+    const res = await timedFetch('https://api.github.com/repos/ArknightsAssets/ArknightsSpines/git/trees/cn?recursive=1');
+    if (!res.ok) throw new Error(`tree ${res.status}`);
     const byName = new Map();
-    const dir = path.join(outDir, 'operator-details');
-    for (const file of await readdir(dir).catch(() => [])) {
-      const prev = JSON.parse(await readFile(path.join(dir, file), 'utf8'));
-      for (const url of (prev.arts ?? []).flatMap(a => [a.sprite, a.l2d]).filter(Boolean)) {
-        byName.set(decodeURIComponent(new URL(url).pathname.split('/').pop()), url);
+    for (const { path: file } of (await res.json()).tree) {
+      if (/^illust\/Idle\/dyn_illust_.*\.webm$/.test(file)) {
+        byName.set(file.split('/').pop(), SPINES_BASE + file.split('/').map(encodeURIComponent).join('/'));
       }
     }
-    console.warn(`wiki videos: ${e.message}; using the last build's ${byName.size}`);
+    return byName;
+  } catch (e) {
+    const byName = await lastVideos(url => url.startsWith(SPINES_BASE));
+    console.warn(`spine videos: ${e.message}; using the last build's ${byName.size}`);
     return byName;
   }
 }
@@ -188,7 +219,9 @@ async function fetchWikiVideos() {
 // 400 operators, and where it misses, the wiki has no file for the newest outfit yet. Of the
 // 60 animated illustrations it places 59; Amiya (Medic)'s is numbered across Amiya's forms.
 // A mode-only operator is skipped, since a trainer shares its name with a real operator.
-function addVideos(arts, id, name, skins, videos) {
+// A piece the wiki has no animation of takes ArknightsSpines' render, named for the skin's
+// `dynIllustId` (for Elite 2, that id less its '_2').
+function addVideos(arts, id, name, skins, videos, spines) {
   const stem = name.replace(/ /g, '_');
   const outfits = (skins ?? [])
     .filter(s => s.displaySkin?.skinName)
@@ -198,7 +231,9 @@ function addVideos(arts, id, name, skins, videos) {
     const n = numberOf.get(`${id}_${art.suffix}`);
     const outfit = n ? `${stem}_Skin_${n}` : stem;
     const sprite = videos.get(`${outfit}.webm`);
-    const l2d = n || art.suffix === '2' ? videos.get(`${outfit}_L2D.webm`) : undefined;
+    const dyn = (skins ?? []).find(s => s.portraitId === `${id}_${art.suffix}`)?.dynIllustId;
+    const l2d = (n || art.suffix === '2' ? videos.get(`${outfit}_L2D.webm`) : undefined)
+      ?? (dyn ? spines.get(`${dyn}.webm`) ?? spines.get(`${dyn.replace(/_2$/, '')}.webm`) : undefined);
     return { ...art, ...(sprite ? { sprite } : {}), ...(l2d ? { l2d } : {}) };
   });
 }
@@ -1145,7 +1180,7 @@ function buildCnOperatorPayload(op, id, appellation, skillTl, talentTl, traitByN
 // wait for the next rebuild instead. Best-effort per operator: one bad fetch shouldn't
 // cost the others.
 async function buildOperatorDetails(regular, cnSupplement) {
-  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds, wikiPages, videos] = await Promise.all([
+  const [{ skills: skillTl, talents: talentTl }, traitByName, riicBuffs, potentialKeywords, artIndex, limitedIds, wikiPages, videos, spines] = await Promise.all([
     fetchAceTranslations(),
     fetchWikiTraits(cnSupplement.map(c => c.appellation)),
     fetchRiicTranslations(),
@@ -1154,6 +1189,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
     fetchLimitedIds(),
     fetchWikiPages(),
     fetchWikiVideos(),
+    fetchSpineVideos(),
   ]);
   const cnById = new Map(cnSupplement.map(c => [c.id, c]));
 
@@ -1194,7 +1230,7 @@ async function buildOperatorDetails(regular, cnSupplement) {
           )
         : base;
       const listed = buildArtsList(entry.id, artIndex.get(entry.id) ?? [], op.skins);
-      const arts = entry.mode || !op.data?.name ? listed : addVideos(listed, entry.id, op.data.name, op.skins, videos);
+      const arts = entry.mode || !op.data?.name ? listed : addVideos(listed, entry.id, op.data.name, op.skins, videos, spines);
       // `op`, not `base`: for a CN-supplement operator `op` is buildCnOperatorPayload's
       // translated overlay. Spreading `base` here would silently ship the raw Chinese
       // buildPayload returns instead of the fan translations, in both this file and the
