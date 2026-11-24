@@ -111,7 +111,8 @@ scripts/
                                recorded by hand from YouTube
   backup-holodori-media.mjs  ← hololive Dreams' audio, video and full card art onto the media-backup release, run by hand
   backup-art.mjs             ← Arknights', Path to Nowhere's and hololive Dreams' remote art onto the source-art-backup release, run by hand
-  backup-wiki-videos.mjs     ← the wiki videos the Arknights and PtN pages play onto the wiki-video-backup release, run by hand
+  backup-wiki-videos.mjs     ← the wiki videos the Arknights and PtN pages play onto three releases (arknights-video-backup,
+                               ptn-video-backup, ptn-gif-backup), run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
@@ -573,7 +574,7 @@ overwriting it with an empty bundle; CI restores that data from the last run's c
 each deploy also uploads every baked image (not the JSON) as `dossier-img.tar` on the
 `dossier-img-backup` release, and a run that finds no cache restores the images from it before
 building; the payloads are rebuilt from their sources. What the pages load from other hosts
-at runtime is backed up by hand to three more releases, by scripts that share
+at runtime is backed up by hand to five more releases, by scripts that share
 `scripts/lib/release-backup.mjs` (fetch what `backup/<name>/` lacks, start from the
 release's tar when that folder is empty, upload only when something was fetched):
 `node scripts/backup-art.mjs` (Arknights' illustrations, outfit avatars, module
@@ -582,8 +583,10 @@ hololive Dreams' key art from the official site's image host; the illustrations 
 kept as 2048px WebP, the art viewer's largest size; the `source-art-backup` release, first made
 19 October 2026 as `art-backup`), `node scripts/backup-holodori-media.mjs` (hololive Dreams,
 below) and `node scripts/backup-wiki-videos.mjs` (the Arknights sprites and animated
-illustrations and Path to Nowhere's animated outfits, as the two wikis have them; the
-`wiki-video-backup` release, first made 24 November 2026). Run all three after a build that
+illustrations and Path to Nowhere's animated outfits, as the two wikis have them; three
+releases, since one tar would be over GitHub's 2 GiB a file: `arknights-video-backup` for
+Arknights, first made 24 November 2026, and `ptn-video-backup` and `ptn-gif-backup` for Path
+to Nowhere's reactions and animated wallpapers). Run all three after a build that
 added operators, Sinners, holomems, cards or outfits. **See "Where
 the pictures and media live" below for what each backup is and why none of it is in the repo.** With nothing on disk to keep, the build still
 fails — an empty bundle is worse than a red run. Every request goes
@@ -2356,16 +2359,22 @@ Decided 9 November 2026, after the owner asked whether the backups' assets shoul
 the repo, "so we can use them", and for names that say what each is. They have asked before,
 so the answer is written down.
 
-**Four backups** (GitHub releases of this repo, one tar each):
+**Six backups** (GitHub releases of this repo, one tar each):
 
 | Name | Is | Made | Read by |
 |---|---|---|---|
 | `dossier-img-backup` (`dossier-img.tar`, ~112 MB) | Dossier's own images: what the build fetches, re-encodes to WebP and serves from this site | Every deploy, by the workflow | The deploy, when its cache is gone |
 | `source-art-backup` (`source-art.tar`, ~1 GB) | Art the pages load from *other* hosts at runtime: Arknights, Path to Nowhere, hololive Dreams' key art | By hand, `scripts/backup-art.mjs` | Nothing |
 | `media-backup` (`holodori-media.tar`, ~620 MB) | Audio and video the pages load from another host: hololive Dreams' voice lines, animations, signatures, full card art (the one game with any) | By hand, `scripts/backup-holodori-media.mjs` | Nothing |
-| `wiki-video-backup` (`wiki-video.tar`, ~920 MB) | Video the Arknights and Path to Nowhere pages play from the two wikis: battle sprites, animated illustrations, animated outfits. A release of its own since source-art's tar is ~1 GB and a release file may be no larger than 2 GiB | By hand, `scripts/backup-wiki-videos.mjs` | Nothing |
+| `arknights-video-backup` (`arknights-video.tar`, ~605 MiB) | Video the Arknights pages play from arknights.wiki.gg: battle sprites, animated illustrations | By hand, `scripts/backup-wiki-videos.mjs` | Nothing |
+| `ptn-video-backup` (`ptn-video.tar`, ~1,449 MiB) | Video the Path to Nowhere pages play from pathtonowhere.wiki.gg: the animated outfits' reactions, MP4 and WebM | By hand, the same script | Nothing |
+| `ptn-gif-backup` (`ptn-gif.tar`, ~394 MiB) | The same wiki's animated wallpapers (GIF), played as the Idle where no Idle video is | By hand, the same script | Nothing |
 
-All four are **pre-releases**, so the repository's "Latest release" is never a backup's tar (the
+The wiki videos are three releases, not one, since a release file may be no larger than 2 GiB
+and the three sets came to about 2.4 GiB on 24 November 2026. The reactions grow with every
+animated outfit, so `ptn-video-backup` is the one to split again when it nears 2 GiB.
+
+All six are **pre-releases**, so the repository's "Latest release" is never a backup's tar (the
 scripts and the workflow create them so, and a by-hand run rewrites the release's notes with
 the date, the file count and the size). The tags are the names above; `gh release edit --tag`
 renames one without moving its file.
@@ -2376,7 +2385,7 @@ names, such as `char_298_susuro_1sus`, and 10 `uniequip_002_*` module icons), wh
 has never had, so the pages already hide them on error; the media took 2,408 (4,328 in all,
 624 MB), none failing.
 
-The last three are **insurance, not a fallback**: no page falls back to them, so if a source died
+The last five are **insurance, not a fallback**: no page falls back to them, so if a source died
 its images would break until someone re-hosted the files and changed the addresses. Endfield and
 Fate/Grand Order have nothing in them: the build bakes their art into dossier-img.
 
