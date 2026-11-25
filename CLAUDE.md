@@ -114,6 +114,7 @@ scripts/
   backup-wiki-videos.mjs     ← the wiki videos the Arknights and PtN pages play onto three releases (arknights-video-backup,
                                ptn-video-backup, ptn-gif-backup), run by hand
   lib/release-backup.mjs     ← the two backups' fetch, restore and upload
+  measure-l2d-fit.mjs        ← where each Live2D recording's figure sits on its still, into lib/l2d-fit.json, run by hand
   build-fgo-index.mjs        ← fgo/servants.json + fgo/figures/
   lib/mode-order.mjs         ← where each mode-only operator sorts, recorded by hand
   lib/wiki-text.mjs          ← reads an arknights.wiki.gg operator page: templates, wiki markup to the game's
@@ -796,7 +797,7 @@ menu button first; on the grid the count pill gives its room in row 1 to the sec
 and shows instead as a bare number inside the search box (`#search-count`), which `body`'s
 `data-view` (set by `showShell`) decides. Under 360px the wordmark shrinks to fit a 320px phone.
 
-**The footer** (`#site-foot`, 18 November 2026, the owner's ask for "a footer and credit the sources") closes every page, below `#view` in `index.html`, so the Astro layout takes it from the same file and keeps it across a page swap (`data-astro-transition-persist`); it is in the flow, not pinned, so a card page's voice dock (sticky inside its own section) always ends above it. `showShell` fills it from `footer.ts`'s table, one entry per game: its owners, and a line per source (Arknights: ArknightsGamedata, arknights.wiki.gg, Sanity Gone, AN-EN-Tags, Arknight-Images, ArknightsGameResource, the dossier's layout after Sanity Gone and the schedule's after Arkpedia; Endfield: its wiki; Path to Nowhere: its wiki, the Chinese wiki, S1N; hololive Dreams: HolodoriDB, the official site, holodori.best, hololive Dreams Lab and Steam, hololive Fan Wiki, YouTube; FGO: Atlas Academy and its ODC-BY 1.0 licence), then a fan-made, unofficial, not-affiliated line, the repository link and, on the Astro site, the build's date (`DOSSIER_NOW` pins it; the SPA leaves it empty). The Astro pages draw only that fixed part at build time and the credit list is set when the page's script runs. **A new source is a line in that table**; the pages no longer carry credit lines of their own, but for the card page's "Numbers checked against holodori.best" link to that card. Its colours are the surface variables of the world showing (Path to Nowhere restates them for its wall, which the footer stands on), so it reads in every world and theme; on Path to Nowhere's roster, the wall being a window tall, the footer is a scroll below it. Styles: `_footer.scss`.
+**The footer** (`#site-foot`, 18 November 2026, the owner's ask for "a footer and credit the sources") closes every page, below `#view` in `index.html`, so the Astro layout takes it from the same file and keeps it across a page swap (`data-astro-transition-persist`); it is in the flow, not pinned (`body` is a flex column and the footer's `margin-top: auto` holds it at the window's foot on a short page; 26 November 2026, the owner's ask, with the disclaimer on the left and a column to each source on the right), so a card page's voice dock (sticky inside its own section) always ends above it. `showShell` fills it from `footer.ts`'s table, one entry per game: its owners, and a line per source (Arknights: ArknightsGamedata, arknights.wiki.gg, Sanity Gone, AN-EN-Tags, Arknight-Images, ArknightsGameResource, the dossier's layout after Sanity Gone and the schedule's after Arkpedia; Endfield: its wiki; Path to Nowhere: its wiki, the Chinese wiki, S1N; hololive Dreams: HolodoriDB, the official site, holodori.best, hololive Dreams Lab and Steam, hololive Fan Wiki, YouTube; FGO: Atlas Academy and its ODC-BY 1.0 licence), then a fan-made, unofficial, not-affiliated line, the repository link and, on the Astro site, the build's date (`DOSSIER_NOW` pins it; the SPA leaves it empty). The Astro pages draw only that fixed part at build time and the credit list is set when the page's script runs. **A new source is a line in that table**; the pages no longer carry credit lines of their own, but for the card page's "Numbers checked against holodori.best" link to that card. Its colours are the surface variables of the world showing (Path to Nowhere restates them for its wall, which the footer stands on), so it reads in every world and theme; on Path to Nowhere's roster, the wall being a window tall, the footer is a scroll below it. Styles: `_footer.scss`.
 
 **Breadcrumbs** (`crumbsHtml` in `format.ts`) open a dossier and the schedule: the way back
 as a pill with a back chevron ("‹ Operators", or "‹ Sinners" on a Sinner's page), a chevron, and the page's own name, in the
@@ -937,7 +938,14 @@ set and information architecture all follow theirs, so read
   takes no pointer events). The animation has no background: the game builds it from its own
   particle effects in the scene, and no source checked (the wiki, ArknightsSpines' idle
   WebMs, the Spine atlases) has it, so the still stands behind it as it is
-  (`.splash-backdrop`, the owner's pick over leaving it bare or blurring it). Both are arknights.wiki.gg's screen recordings, WebM on
+  (`.splash-backdrop`, the owner's pick over leaving it bare or blurring it). **The recordings
+  are framed by the game's camera, not the illustration** (26 November 2026): their figure was
+  drawn at 0.68 to 1.07 of the still's and up to 20% of the box off it, so the still showed a
+  second figure. `node scripts/measure-l2d-fit.mjs` (by hand, after a build that adds
+  animations; needs local Chrome or Edge) matches each recording's first frame to its still
+  into `scripts/lib/l2d-fit.json`, `[k, dx, dy]` by file name; the build puts it on the art as
+  `l2dFit` and the page draws the video at `translate(dx%, dy%) scale(k)`. An unmeasured one
+  plays unmoved and the build names it. Both are arknights.wiki.gg's screen recordings, WebM on
   transparency, played from the wiki and not downloaded: the payload's `arts[].l2d` and
   `arts[].sprite` (`fetchWikiVideos` and `addVideos` in `build-operator-index.mjs`, one
   listing of the wiki's WebMs). **Not the game's Spine files**: playing those needs the Spine

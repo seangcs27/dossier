@@ -18,6 +18,9 @@ body {
   color: var(--text);
   min-height: 100vh;
   padding-left: var(--side-w);
+  // A column, so the footer's auto margin (_footer.scss) holds it at the window's foot.
+  display: flex;
+  flex-direction: column;
 }
 
 // ── Sidebar ──
@@ -2749,6 +2752,26 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
     bottom: 0;
     width: 400px;
     transform: translateX(-50%);
+  }
+}
+
+// On a phone the corner was half the art's width and covered it, so the sprite takes a row of
+// its own under the art, at the right; the caption, held to the splash's foot, sits beside it.
+@media (max-width: 640px) {
+  .splash { flex-wrap: wrap; }
+
+  .splash-sprite {
+    position: relative;
+    flex: 0 0 100%;
+    width: auto;
+    height: 169px;
+
+    video {
+      left: auto;
+      right: -70px;
+      width: 300px;
+      transform: none;
+    }
   }
 }
 

@@ -279,6 +279,9 @@ export interface OperatorArt {
   url: string;
   sprite?: string;  // the battle sprite in this outfit, a WebM on arknights.wiki.gg
   l2d?: string;     // the animated illustration, where the game has one: a WebM on the same wiki
+  // [k, dx, dy]: drawn at k times its size and moved dx, dy percent of its box, the animation's
+  // figure lies on the still's (scripts/measure-l2d-fit.mjs)
+  l2dFit?: [number, number, number];
 }
 
 export interface Operator {

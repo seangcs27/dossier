@@ -1087,6 +1087,7 @@ function splashHtml(op: Operator, artIdx: number): string {
         <div class="splash-live">
           <img class="splash-backdrop" src="${artUrl(active.url, 1024)}" alt="" aria-hidden="true" decoding="async">
           <video class="splash-img splash-video" src="${escHtml(active.l2d)}" poster="${artUrl(active.url, 1024)}"
+                 ${active.l2dFit ? `style="transform: translate(${active.l2dFit[1]}%, ${active.l2dFit[2]}%) scale(${active.l2dFit[0]})"` : ''}
                  autoplay loop muted playsinline
                  data-act="art-open" role="button" tabindex="0" aria-label="Open ${escHtml(active.label)} at full size"></video>
         </div>
