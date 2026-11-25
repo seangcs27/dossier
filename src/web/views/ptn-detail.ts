@@ -178,24 +178,69 @@ function thumbOf(s: PtnSinner, art: PtnArt): string {
   return bakedOf(s, art.kind)?.art ?? artUrl(art.url, 128);
 }
 
-// A reaction's name on the Chinese side; the build names them in English ('Idle', 'Head').
+// A reaction's name on the Chinese side, and in either language what sets it off in the game:
+// the wiki's file names say it ('Milly_Skin2_Hand_Animation' answers a touch on her hand,
+// 'Boring' is left alone a while). The build names them in English ('Idle', 'Head').
 const MOTION_ZH: Record<string, string> = {
   Idle: '待机', Greeting: '问候', Head: '头部', Body: '身体', 'Body 2': '身体 2',
   Hand: '手部', Leg: '腿部', Waiting: '闲置', 'Level up': '升级', Sea: '海', Sky: '天空',
 };
+const MOTION_TIP: Record<string, [string, string]> = {
+  Greeting: ['When the Sinner greets you', '禁闭者问候时'],
+  Head: ['A touch on the head', '触摸头部'],
+  Body: ['A touch on the body', '触摸身体'],
+  'Body 2': ['Another touch on the body', '再次触摸身体'],
+  Hand: ['A touch on the hand', '触摸手部'],
+  Leg: ['A touch on the leg', '触摸腿部'],
+  Waiting: ['Left alone a while', '一段时间无操作'],
+  'Level up': ['On a level up', '升级时'],
+  Sea: ['A scene of the outfit', '装束场景'],
+  Sky: ['A scene of the outfit', '装束场景'],
+};
+// The reactions to a touch, which the strip groups under one word.
+const TOUCH = new Set(['Head', 'Body', 'Body 2', 'Hand', 'Leg']);
 
-// An animated picture's reactions, along the top of the wall: a press plays one in the
-// picture's place (Idle on a loop, the rest once), and the picture stands still again when it
-// ends or the same button is pressed again. Nothing is fetched before a press: a file is up
-// to 33 MB.
+// Whether a picture's Idle loop plays in its place: on until the reader turns it off, and kept
+// from picture to picture and Sinner to Sinner while the page is open.
+let liveOn = true;
+
+// The key that turns an MP4's black ground transparent. Its alpha is a pixel's brightness, the
+// sum of R, G and B, steeply: only what is within about 0.15 of black goes, the ground and the
+// art's fade into it, as the still's edge does. A pixel the video does not cover stays
+// transparent, as its alpha weighs the ground's part. Once on the page, beside the wall: the
+// art viewer's recordings use it too.
+const KEY_HTML = `
+  <svg class="cell-key" aria-hidden="true">
+    <filter id="ptn-key" color-interpolation-filters="sRGB">
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  7 7 7 -0.07 0"/>
+    </filter>
+  </svg>
+`;
+
+// An animated picture's controls, one ink strip at the top of the wall in the placards' face: the
+// Live2D switch, its lamp red while the Idle loop plays in the picture's place, then a cell to
+// each other reaction, which plays once and goes back to the loop (or the still, with the switch
+// off), the touches under one word. The same cell pressed again stops it.
 function motionsHtml(art: PtnArt | undefined): string {
-  if (!art?.motions?.length) return '';
+  const motions = art?.motions ?? [];
+  const idle = motions.some(m => m.part === 'Idle');
+  // The touches last, so that the word over them runs to the strip's end.
+  const reactions = motions.map((m, i) => ({ m, i })).filter(({ m }) => m.part !== 'Idle')
+    .sort((a, b) => Number(TOUCH.has(a.m.part)) - Number(TOUCH.has(b.m.part)));
+  if (!idle && !reactions.length) return '';
   const zh = ptnLang() === 'zh';
+  const touch = reactions.findIndex(({ m }) => TOUCH.has(m.part));
   return `
     <div class="cell-motions" role="group" aria-label="${t('motion')}">
-      <span class="cell-motions-label">${t('motion')}</span>
-      ${art.motions.map((m, i) => `
-        <button class="motion-part" data-motion="${i}" aria-pressed="false">
+      ${idle ? `
+        <button class="cell-live" data-live role="switch" aria-checked="${liveOn}">
+          <span class="lamp" aria-hidden="true"></span>Live2D
+        </button>
+      ` : `<span class="cell-motions-label">${t('motion')}</span>`}
+      ${reactions.map(({ m, i }, at) => `
+        ${at === touch ? `<span class="cell-motions-label touch">${zh ? '触摸' : 'Touch'}</span>` : ''}
+        <button class="motion-part" data-motion="${i}" aria-pressed="false"
+                ${MOTION_TIP[m.part] ? `data-tip="${escHtml(MOTION_TIP[m.part][zh ? 1 : 0])}"` : ''}>
           ${escHtml(zh ? MOTION_ZH[m.part] ?? m.part : m.part)}
         </button>
       `).join('')}
@@ -203,33 +248,76 @@ function motionsHtml(art: PtnArt | undefined): string {
   `;
 }
 
-// Plays the reaction a button names in the picture's place, or puts the picture back.
-function playMotion(cell: Element, button: HTMLElement, art: PtnArt): void {
-  const frame = cell.querySelector<HTMLElement>('.cell-print, .cell-stand');
+// Sizes a recording to the still it stands for. The still is cut to the art's edges, and a
+// recording keeps a margin round the art and is narrower (1.25:1 to the stills' 1.5 or so), so
+// fitted whole into the still's frame it came out smaller. Its art box (`box`, from the build) is
+// fitted to the frame instead, keeping its shape, and centred on it.
+function fitBox(media: HTMLVideoElement, img: HTMLImageElement, [x, y, w, h]: number[]): void {
+  // The still's shape is the frame's, and the recording can be ready before the still is (the
+  // viewer's picture is the last piece's until the next one is in).
+  if (!img.complete || !img.naturalWidth) {
+    img.addEventListener('load', () => fitBox(media, img, [x, y, w, h]), { once: true });
+    return;
+  }
+  const frame = img.naturalWidth / img.naturalHeight;
+  const shape = media.videoWidth / media.videoHeight;
+  // As shares of the frame's width and height.
+  const width = (w * shape) / h >= frame ? 1 / w : shape / (h * frame);
+  const height = (width * frame) / shape;
+  Object.assign(media.style, {
+    width: `${width * 100}%`, height: `${height * 100}%`,
+    left: `${(0.5 - (x + w / 2) * width) * 100}%`, top: `${(0.5 - (y + h / 2) * height) * 100}%`,
+  });
+}
+
+// Puts in the picture's place what is asked: a reaction by its number, or with nothing asked
+// the Idle loop where the switch is on, and otherwise the picture itself. `scope` holds the
+// picture and its strip: the wall's cell, or the art viewer. Nothing is fetched until it is
+// shown: a recording is up to 33 MB.
+function showOnWall(scope: Element, art: PtnArt, ask: number | null): void {
+  const frame = scope.querySelector<HTMLElement>('.cell-print, .cell-stand, .av-art');
   const img = frame?.querySelector('img');
   if (!frame || !img) return;
-  const stop = () => {
-    frame.querySelector('.cell-motion')?.remove();
-    img.classList.remove('under');
-    cell.querySelectorAll('[data-motion]').forEach(b => b.setAttribute('aria-pressed', 'false'));
-  };
-  const again = button.getAttribute('aria-pressed') === 'true';
-  stop();
-  if (again) return;
-  const motion = art.motions![Number(button.dataset.motion)];
-  const loop = motion.part === 'Idle';
-  let media: HTMLImageElement | HTMLVideoElement;
-  if (/\.gif(\?|$)/.test(motion.url)) {
-    media = Object.assign(document.createElement('img'), { src: motion.url, alt: '' });
-  } else {
-    media = Object.assign(document.createElement('video'), { src: motion.url, autoplay: true, loop, playsInline: true });
-    if (!loop) media.addEventListener('ended', stop);
+  frame.querySelector('.cell-motion')?.remove();
+  img.classList.remove('under');
+  scope.querySelectorAll('[data-motion]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  scope.querySelector(`[data-motion="${ask}"]`)?.setAttribute('aria-pressed', 'true');
+  const idle = art.motions?.findIndex(m => m.part === 'Idle') ?? -1;
+  const index = ask ?? (liveOn ? idle : -1);
+  if (index < 0) return;
+  const loop = index === idle;
+  // The loop starts on its own, which a browser allows only without sound.
+  const { url, ground, box } = art.motions![index];
+  // An MP4 on black has its ground keyed out (`#ptn-key`, KEY_HTML). Any other ground (white,
+  // a colour, a WebM's own) stays, cut back to the art's box: a card the still's size.
+  const keyed = /\.mp4(\?|$)/.test(url) && !ground;
+  const media = Object.assign(document.createElement('video'), {
+    className: `cell-motion${keyed ? ' keyed' : ''}`, src: url, autoplay: true, loop, muted: loop, playsInline: true,
+  });
+  if (box && !keyed) {
+    const [x, y, w, h] = box.map(n => n * 100);
+    media.style.clipPath = `inset(${y}% ${100 - x - w}% ${100 - y - h}% ${x}%)`;
   }
-  media.className = 'cell-motion';
+  media.addEventListener('loadedmetadata', () => fitBox(media, img, box ?? [0, 0, 1, 1]), { once: true });
+  if (!loop) media.addEventListener('ended', () => showOnWall(scope, art, null));
   // The picture holds its place until the first frame is in, so the wall does not go blank.
-  media.addEventListener(media instanceof HTMLVideoElement ? 'loadeddata' : 'load', () => img.classList.add('under'), { once: true });
+  media.addEventListener('loadeddata', () => img.classList.add('under'), { once: true });
   frame.append(media);
-  button.setAttribute('aria-pressed', 'true');
+}
+
+// A press on the strip, on the wall or in the viewer: a reaction, or the Live2D switch. Says
+// whether it was one.
+function pressStrip(target: Element, scope: Element, art: PtnArt | undefined): boolean {
+  const part = target.closest<HTMLElement>('[data-motion]');
+  const live = target.closest<HTMLElement>('[data-live]');
+  if (!part && !live) return false;
+  if (live) {
+    liveOn = !liveOn;
+    live.setAttribute('aria-checked', String(liveOn));
+  }
+  const ask = part && part.getAttribute('aria-pressed') !== 'true' ? Number(part.dataset.motion) : null;
+  if (art) showOnWall(scope, art, ask);
+  return true;
 }
 
 // The wall with the Sinner on it, and on its floor the name of the picture on show (an
@@ -260,6 +348,7 @@ function wallHtml(s: PtnSinner, arts: PtnArt[], picked: number): string {
     <div class="cell" style="--cm: ${cm}; --top-cm: ${top}">
       <div class="cell-rules" aria-hidden="true">${rulesHtml(top)}</div>
       <span class="cell-mark"><b>${cm} cm</b></span>
+      ${KEY_HTML}
       ${motionsHtml(arts[picked])}
       ${picture}
       <div class="cell-floor">
@@ -714,6 +803,10 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
     container.innerHTML = shellHtml(sinner, detail, picked);
     fadeRectangle(container);
     root = container.firstElementChild;
+    // The picture's Idle loop, where it has one and the switch is on.
+    const cell = root?.querySelector('.cell');
+    const art = detail?.arts[picked];
+    if (cell && art) showOnWall(cell, art, null);
     // Bound to this render's own page, not to the container every view shares: a handler
     // left there would answer a press on the Arknights dossier's tabs too.
     root?.addEventListener('click', (ev) => {
@@ -732,13 +825,8 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
         container.querySelector<HTMLElement>(`[data-art="${picked}"]`)?.focus();
         return;
       }
-      const part = target.closest<HTMLElement>('[data-motion]');
-      if (part) {
-        const art = detail?.arts[picked];
-        const cell = part.closest('.cell');
-        if (art && cell) playMotion(cell, part, art);
-        return;
-      }
+      const cell = target.closest('.cell');
+      if (cell && pressStrip(target, cell, detail?.arts[picked])) return;
       const langButton = target.closest<HTMLElement>('[data-lang]');
       if (langButton) {
         if (langButton.getAttribute('aria-disabled')) return;
@@ -753,14 +841,30 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
   // The Arknights viewer, on this game's pictures: its pieces are that game's type, which
   // wants an outfit's code and an illustrator this one has none of, and its thumbnails are
   // asked of the proxy since there are no outfit avatars to show. The page follows the
-  // viewer to whichever picture it closed on.
+  // viewer to whichever picture it closed on. A picture is cut to its edges as on the wall, so
+  // that an animated one's recording fits it the same way, and plays with its strip over it.
   const openViewer = (): void => {
     const arts = detail?.arts ?? [];
     if (!arts.length) return;
+    let shown = picked;
     openArtViewer(
       sinner.id, arts.map(a => ({ suffix: a.kind, label: labelOf(a), artist: null, url: a.url })), picked,
       (index) => { picked = index; render(); },
       art => artUrl(art.url, 128),
+      {
+        srcOf: art => `${artUrl(art.url, 2048)}&trim=10`,
+        onShow: (index, frame) => {
+          const viewer = frame.closest('dialog')!;
+          shown = index;
+          viewer.querySelector('.cell-motions')?.remove();
+          viewer.querySelector('.av-stage')!.insertAdjacentHTML('afterend', motionsHtml(arts[index]));
+          if (!viewer.dataset.strip) {
+            viewer.dataset.strip = '';
+            viewer.addEventListener('click', ev => pressStrip(ev.target as Element, viewer, arts[shown]));
+          }
+          showOnWall(viewer, arts[index], null);
+        },
+      },
     );
   };
   render();

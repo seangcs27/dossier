@@ -154,7 +154,10 @@ export interface PtnArt {
   video?: string;
   // An animated attire's reactions, from the English wiki: each part its name ('Idle',
   // 'Head', 'Waiting') and a WebM on the wiki, played from there.
-  motions?: { part: string; url: string }[];
+  // `ground` is the colour it is recorded on ('#ffffff') where that is not black or (a WebM's)
+  // transparent, and `box` the art's box in the recording (x, y, width, height, as shares of its
+  // own) where it does not fill it.
+  motions?: { part: string; url: string; ground?: string; box?: number[] }[];
 }
 
 export interface PtnSinnerDetail {

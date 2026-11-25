@@ -2393,10 +2393,19 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   &:active { cursor: grabbing; }
 }
 
-.av-img {
-  display: block;
+// The picture's frame takes the zoom and the drag, so that what a caller lays over the
+// picture (art-viewer.ts, `onShow`) goes with it.
+.av-art {
+  position: relative;
   margin: auto;
   flex-shrink: 0;
+  user-select: none;
+}
+
+.av-img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   user-select: none;
 }
