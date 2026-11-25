@@ -186,26 +186,68 @@ async function fetchPages() {
 // lists them. The wiki records each reaction a Live2D outfit has as a video of its own (MP4
 // or WebM), named for the outfit's picture: 'Milly_Skin2_Hand_Animation.webm' is
 // Milly_Skin2.png answering a touch on the hand. 'Boring' is what it does when left alone a
-// while; 'Sea' and 'Sky' are scenes an outfit has. An outfit with no Idle video may have an
-// animated wallpaper ('<picture>_Animated_Wallpaper.gif'), its idle loop, which stands for it.
+// while; 'Sea' and 'Sky' are scenes an outfit has. The wiki's animated wallpapers
+// ('<picture>_Animated_Wallpaper.gif') are not taken: they record the game's whole screen, its
+// name, tendency and logos over the picture (24 November 2026, the owner's call).
 const MOTION_PARTS = [
   ['Idle', 'Idle'], ['Greet', 'Greeting'], ['Head', 'Head'], ['Body', 'Body'], ['Body1', 'Body'],
   ['Body2', 'Body 2'], ['Hand', 'Hand'], ['Leg', 'Leg'], ['Boring', 'Waiting'], ['Level', 'Level up'],
   ['Sea', 'Sea'], ['Sky', 'Sky'],
 ];
 
+// The colour each animated picture's recordings are on where it is not black: white for 21 of
+// the MP4s, a pale blue for Milly's Skin3, and the brown of Milly's Skin2, a WebM (the WebMs are
+// on transparency but for it and Bianca_Skin1, which is on black and filled by its art). Recorded
+// by hand on 26 November 2026 from a frame of each (all 120 recordings, 42 pictures; nothing a
+// build can read says which, the wiki's own thumbnails of them being HTTP 500). The page keys out
+// the black of an MP4 and leaves every other ground; a new MP4 missing here is keyed as black.
+const GROUND = new Map([
+  ...['000_Skin3', 'Angell_Skin3', 'Ariel_Skin3', 'Bianca_Skin3', 'Che_Skin2', 'Christina_Skin2',
+    'Coquelic_Skin2', 'Coquelic_Skin3', 'Crache_Skin3', 'Crache_Skin4', 'Dove_Skin2', 'Dudu_Skin2',
+    'Dudu_Skin3', 'Enfer_Skin4', 'Hypatia_Skin3', 'Ignis_Skin3', 'Kelvin_Skin2', 'L.L._Skin3',
+    'Necresta·Hella_Skin3', 'Pricilla_Skin2', 'Summer_Skin4'].map(stem => [stem, '#ffffff']),
+  ['Milly_Skin3', '#e2e7fd'], ['Milly_Skin2', '#412714'],
+]);
+
+// Where the art is in each animated picture's recordings where it does not fill them: x, y,
+// width and height as shares of the recording, measured by hand on 26 November 2026 from a
+// frame 1.5 s in (the same frames as GROUND, 42 pictures; 6 fill theirs). The page fits this
+// box to the still, which is cut to the art's edges, and cuts a recording it does not key back
+// to it; it fits a whole recording where none is.
+const BOX = new Map([
+  ['000_Skin3', [0.043, 0.034, 0.957, 0.939]], ['Adela_Skin3', [0.005, 0.014, 0.995, 0.986]],
+  ['Adela_Skin4', [0, 0.095, 1, 0.851]], ['Ariel_Skin3', [0.054, 0, 0.946, 0.966]],
+  ['Bianca_Skin1', [0.005, 0.007, 0.995, 0.993]], ['Celine_Skin1', [0.043, 0, 0.919, 1]],
+  ['Che_Skin2', [0, 0, 0.989, 1]], ['Christina_Skin2', [0.011, 0.007, 0.989, 0.993]],
+  ['Coquelic_Skin2', [0.075, 0.034, 0.876, 0.939]], ['Crache_Skin3', [0.022, 0.02, 0.957, 0.919]],
+  ['Crache_Skin4', [0, 0.061, 0.995, 0.845]], ['Demon_Skin2', [0, 0, 0.887, 0.919]],
+  ['Demon_Skin3', [0.005, 0, 0.995, 0.953]], ['Dove_Skin2', [0, 0.027, 0.984, 0.946]],
+  ['Dreya_Skin1', [0.102, 0.054, 0.823, 0.818]], ['Dreya_Skin2', [0.118, 0.081, 0.634, 0.831]],
+  ['Dreya_Skin3', [0.032, 0.014, 0.941, 0.973]], ['Dudu_Skin2', [0.054, 0, 0.898, 1]],
+  ['Dudu_Skin3', [0, 0.007, 0.989, 0.939]], ['EMP_Skin2', [0.204, 0, 0.608, 1]],
+  ['EMP_Skin3', [0.011, 0.182, 0.968, 0.676]], ['Enfer_Skin4', [0.065, 0.007, 0.86, 0.993]],
+  ['Gekkabijin_Skin2', [0.027, 0, 0.952, 1]], ['Hilda_Skin2', [0, 0.115, 1, 0.797]],
+  ['Hypatia_Skin3', [0.011, 0.068, 0.978, 0.912]], ['Ignis_Skin3', [0.048, 0.088, 0.909, 0.905]],
+  ['Kelvin_Skin2', [0.108, 0.007, 0.796, 0.993]], ['Kisugi_Ai_Skin2', [0.07, 0.014, 0.898, 0.986]],
+  ['L.L._Skin3', [0.043, 0.054, 0.941, 0.899]], ['Milly_Skin2', [0.057, 0.04, 0.887, 0.922]],
+  ['Milly_Skin3', [0.011, 0.014, 0.973, 0.986]],
+  ['Moore_Skin3', [0.011, 0, 0.962, 0.973]],
+  ['Necresta·Hella_Skin3', [0.038, 0.027, 0.952, 0.939]],
+  ['Pricilla_Skin2', [0.14, 0, 0.812, 0.993]], ['Summer_Skin4', [0.048, 0, 0.876, 0.993]],
+  ['Xiaofeng_Skin2', [0, 0, 1, 0.959]],
+]);
+
 // Each animated picture's parts, by its file's stem ('Milly_Skin2'): the wiki's recordings,
 // 2600 to 3600 wide and up to 33 MB each, played from the wiki and never downloaded. On 24
-// November 2026: 103 pictures, 42 of them with a video per reaction and the rest a wallpaper
-// alone; the Chinese wiki keeps none. Throws when the wiki cannot be read.
+// November 2026: 42 pictures (3 phase-up, 39 attires); the Chinese wiki keeps none. Throws when
+// the wiki cannot be read.
 async function fetchMotions() {
   const byStem = new Map();
   const add = (stem, rank, url) => {
     const parts = byStem.get(stem) ?? [];
     if (!parts.some(p => p.rank === rank)) byStem.set(stem, [...parts, { rank, part: MOTION_PARTS[rank][1], url }]);
   };
-  const wallpapers = [];
-  for (const mime of ['video/webm', 'video/mp4', 'image/gif']) {
+  for (const mime of ['video/webm', 'video/mp4']) {
     let next = {};
     do {
       const json = await wiki({ action: 'query', list: 'allimages', aimime: mime, ailimit: '500', aiprop: 'url', ...next });
@@ -213,16 +255,13 @@ async function fetchMotions() {
         const video = /^(.+_Skin\d+)_([A-Za-z0-9]+)_Animation\.(webm|mp4)$/.exec(file.name);
         const rank = video ? MOTION_PARTS.findIndex(([key]) => key === video[2]) : -1;
         if (rank >= 0) add(video[1], rank, file.url);
-        const gif = /^(.+_Skin\d+)_Animated_Wallpaper\.gif$/.exec(file.name);
-        if (gif) wallpapers.push([gif[1], file.url]);
       }
       next = json.continue;
     } while (next);
   }
-  // After every video, so that an Idle video is taken over the wallpaper.
-  for (const [stem, url] of wallpapers) add(stem, 0, url);
   for (const [stem, parts] of byStem) {
-    byStem.set(stem, parts.sort((a, b) => a.rank - b.rank).map(({ part, url }) => ({ part, url })));
+    const frame = { ...(GROUND.has(stem) && { ground: GROUND.get(stem) }), ...(BOX.has(stem) && { box: BOX.get(stem) }) };
+    byStem.set(stem, parts.sort((a, b) => a.rank - b.rank).map(({ part, url }) => ({ part, url, ...frame })));
   }
   return byStem;
 }
@@ -242,8 +281,9 @@ async function addMotions(details, sinners) {
     for (const d of details) {
       const prev = JSON.parse(await readFile(path.join(detailDir, `${d.id}.json`), 'utf8').catch(() => '{}'));
       for (const art of d.arts) {
-        const parts = prev.arts?.find(a => a.kind === art.kind && a.label === art.label)?.motions;
-        if (parts) art.motions = parts;
+        // A build before 24 November 2026 had the wallpapers as well.
+        const parts = prev.arts?.find(a => a.kind === art.kind && a.label === art.label)?.motions?.filter(p => !p.url.includes('.gif'));
+        if (parts?.length) art.motions = parts;
       }
     }
     return;

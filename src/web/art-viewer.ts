@@ -26,6 +26,15 @@ const SWIPE_PX = 60;
 // long passes without one.
 const SWIPE_REST_MS = 200;
 
+/** What a caller can change of how a piece is shown. */
+export interface ArtViewerExtras {
+  // The address the stage shows a piece at; the proxy's 2048px by default.
+  srcOf?: (art: OperatorArt) => string;
+  // Told each piece as it is shown, with the frame round its picture (zoomed and dragged with
+  // it), for a caller that lays something over it: Path to Nowhere's animated outfits.
+  onShow?: (index: number, frame: HTMLElement) => void;
+}
+
 /**
  * Opens the viewer on `arts[start]`. `onClose` is told which piece was showing when it
  * closed, so the page behind can follow the viewer rather than snap back. `thumbOf` is the
@@ -35,6 +44,7 @@ const SWIPE_REST_MS = 200;
 export function openArtViewer(
   opId: OperatorId, arts: OperatorArt[], start: number, onClose: (index: number) => void,
   thumbOf: (art: OperatorArt) => string = art => operatorSkinAvatarUrl(opId, art.suffix),
+  { srcOf = art => artUrl(art.url, 2048), onShow }: ArtViewerExtras = {},
 ): void {
   let index = start;
   let zoom = ZOOM_FIT;
@@ -48,7 +58,9 @@ export function openArtViewer(
   dialog.setAttribute('aria-label', 'Artwork viewer');
   dialog.innerHTML = `
     <div class="av-stage">
-      <img class="av-img" src="${artUrl(arts[start].url, 2048)}" alt="${escHtml(arts[start].label)}" draggable="false">
+      <div class="av-art">
+        <img class="av-img" src="${srcOf(arts[start])}" alt="${escHtml(arts[start].label)}" draggable="false">
+      </div>
     </div>
     <button class="av-nav av-prev" data-av="prev" aria-label="Previous artwork">
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"></path></svg>
@@ -85,6 +97,7 @@ export function openArtViewer(
   document.body.append(dialog);
 
   const stage = dialog.querySelector<HTMLElement>('.av-stage')!;
+  const frame = dialog.querySelector<HTMLElement>('.av-art')!;
   const img = dialog.querySelector<HTMLImageElement>('.av-img')!;
   const slider = dialog.querySelector<HTMLInputElement>('input[type="range"]')!;
   const percent = dialog.querySelector<HTMLElement>('.av-percent')!;
@@ -103,7 +116,7 @@ export function openArtViewer(
     // Where a drag below fit left the art; from fit up the stage scrolls instead.
     if (zoom >= ZOOM_FIT) {
       shift = { x: 0, y: 0 };
-      img.style.translate = '';
+      frame.style.translate = '';
     }
     const ratio = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
     // A single piece's frame takes the picture's own shape (styles.scss, `.single`), so it is
@@ -112,8 +125,8 @@ export function openArtViewer(
     // The stage's whole box, scrollbars included: an image already in the cache is here at
     // its full size before this runs, and the scrollbars it raises would shrink the fit.
     const wide = Math.floor(Math.min(stage.offsetWidth, stage.offsetHeight * ratio) * zoom / 100);
-    img.style.width = `${wide}px`;
-    img.style.height = `${wide / ratio}px`;
+    frame.style.width = `${wide}px`;
+    frame.style.height = `${wide / ratio}px`;
     slider.value = String(zoom);
     slider.style.setProperty('--fill', `${((zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
     percent.textContent = `${Math.round(zoom)}%`;
@@ -126,7 +139,7 @@ export function openArtViewer(
     const art = arts[index];
     // 2048px rather than the page's 1024: this is the one place the detail is looked at.
     img.onerror = () => { img.onerror = null; img.src = art.url; };
-    img.src = artUrl(art.url, 2048);
+    img.src = srcOf(art);
     img.alt = art.label;
     label.textContent = art.label;
     count.textContent = arts.length > 1 ? `${index + 1} / ${arts.length}` : '';
@@ -135,6 +148,7 @@ export function openArtViewer(
       thumb.setAttribute('aria-selected', String(i === index));
     });
     setZoom(ZOOM_FIT);
+    onShow?.(index, frame);
   };
 
   // A press on the dialog itself is a press on the backdrop around the popup, and closes it.
@@ -219,7 +233,7 @@ export function openArtViewer(
     } else {
       // A second finger makes it a pinch, and whatever the first had dragged is put back.
       drag = null;
-      img.style.translate = zoom < ZOOM_FIT ? `${shift.x}px ${shift.y}px` : '';
+      frame.style.translate = zoom < ZOOM_FIT ? `${shift.x}px ${shift.y}px` : '';
       pinch = { spread: spread(), zoom };
     }
   });
@@ -234,11 +248,11 @@ export function openArtViewer(
       stage.scrollTop = drag.top - (ev.clientY - drag.y);
     } else if (drag && zoom < ZOOM_FIT) {
       // Smaller than the stage there is nothing to scroll, so the art itself moves, and stays.
-      img.style.translate = `${shift.x + ev.clientX - drag.x}px ${shift.y + ev.clientY - drag.y}px`;
+      frame.style.translate = `${shift.x + ev.clientX - drag.x}px ${shift.y + ev.clientY - drag.y}px`;
     } else if (drag) {
       // Nothing to pan while the art fits, so it follows the pointer sideways: far enough
       // and letting go turns to the next piece.
-      img.style.translate = `${ev.clientX - drag.x}px`;
+      frame.style.translate = `${ev.clientX - drag.x}px`;
     }
   });
 
@@ -253,7 +267,7 @@ export function openArtViewer(
       return;
     }
     drag = null;
-    img.style.translate = '';
+    frame.style.translate = '';
     // Dragging the art left brings the next one in from the right.
     if (ev.type === 'pointerup' && zoom <= ZOOM_FIT && Math.abs(travel) >= SWIPE_PX) {
       showArt(index + (travel < 0 ? 1 : -1));

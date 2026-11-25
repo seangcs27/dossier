@@ -926,6 +926,9 @@ set and information architecture all follow theirs, so read
   illustration; 31 October 2026) opens as a frame of the picture's own shape with no arrows or
   bar: the close button floats on its top-right corner and the zoom (minus, slider, plus, and
   the percent, which fits again) in its bottom-right one. Zoomed out below fit, any piece is dragged where it is wanted and stays there.
+  The zoom and the drag move the picture's frame (`.av-art`), not the picture, and a caller may
+  pass `srcOf` (the address a piece is shown at) and `onShow` (told each piece with that frame,
+  to lay something over it): Path to Nowhere's animated outfits use both.
 - **Skin rail** — renders each outfit's **55 KB square avatar**, not its illustration.
   Pointing 64px thumbnails at full art meant SilverAsh pulled 16.4 MB before the page
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
@@ -1702,18 +1705,71 @@ of a CN-only Sinner, are added with the file `<Sinner><attire>.png`. The pages a
 the English side too.
 
 **An animated outfit plays its reactions** (24 November 2026, the owner's "media such as L2D"):
-on the wall, where the picture hangs. A picture that moves has a red play mark on its frame;
-with it on show, a row of buttons at the top of the wall (`.cell-motions`: Idle, Greeting,
-Head, Body, Hand, Leg, Waiting, Level up, as the picture has them) plays one over the still,
-which is what shows by default. Idle loops; any other plays once and goes back to the still;
-the button pressed again stops it. They are the English wiki's recordings of the Live2D
-picture, `<Stem>_Skin<n>_<Part>_Animation.webm` or `.mp4`, and `<Stem>_Skin<n>_Animated_Wallpaper.gif`
-as the Idle where no Idle video is, 2600 to 3600 px wide and 5 to 33 MB a video, played from
-the wiki and never downloaded; the payload's `arts[].motions` (`fetchMotions` and
-`addMotions` in `build-ptn-index.mjs`). Skin1 is the phase-up art and Skin2 on the attires,
-oldest first; the stem is the Sinner's name, or the name less its first word (Kisugi). On 24
-November 2026 that matched 102 of the wiki's 103 pictures (63 phase-up, 39 attires, of 225);
-Kujo Jolyne's files are under `Jolyne_Cujoh` and are missed. The Chinese wiki keeps none.
+on the wall, where the picture hangs. A picture that moves has a red play mark on its frame.
+With it on show, an ink strip pinned to the top of the wall (`.cell-motions`, 26 November 2026,
+the owner's ask that it fit the game: a camera's REC tag, like the height's tag at the other end)
+starts with the **Live2D switch** (`.cell-live`, on by default, the owner's ask; kept from picture
+to picture and Sinner to Sinner while the page is open), whose square lamp is red and slowly
+pulsing while the Idle loop plays in the picture's place, muted, from the moment the picture is
+shown; off, the lamp is hollow and the still stands. Then a cell to each other reaction
+(Greeting, Waiting, Level up, then the touches, Head, Body, Body 2, Hand and Leg, under the word
+"Touch", as the picture has them; Milly's Timeless Silhouette has all eight) plays it once, with
+sound, and goes back to the loop or the still; the cell pressed again stops it, and the one
+playing fills red. **Each reaction's tooltip says what sets it off in the game** (26 November
+2026, the owner's ask; `MOTION_TIP` in `ptn-detail.ts`): a touch on that part, the Sinner's
+greeting, left alone a while (the wiki's `Boring`), a level up. That is what the wiki's file names
+say; no page of either wiki captions them. A picture with reactions and no Idle (7) has no switch,
+only its reactions after "Animation". **The art viewer plays them too** (26 November 2026, the
+owner's ask): the PtN page passes `openArtViewer` a `srcOf` (the picture cut to its edges, as on
+the wall) and an `onShow`, which puts the strip over the stage's corner and the recording in the
+picture's frame (`.av-art`, which the viewer zooms and drags in place of the picture). They are
+the English wiki's recordings of the
+Live2D picture, `<Stem>_Skin<n>_<Part>_Animation.webm` or `.mp4`, 2600 to 3600 px wide and 5 to
+33 MB a video, played from the wiki and never downloaded; the payload's `arts[].motions`
+(`fetchMotions` and `addMotions` in `build-ptn-index.mjs`). Skin1 is the phase-up art and Skin2
+on the attires, oldest first; the stem is the Sinner's name, or the name less its first word
+(Kisugi). On 24 November 2026 that is 42 pictures (3 phase-up, 39 attires, of 226). **The wiki's
+`<Stem>_Skin<n>_Animated_Wallpaper.gif` is not taken** (24 November 2026, the owner's call): it
+was the Idle of 60 phase-up arts, and it records the game's whole screen, the Sinner's name,
+tendency and logos over the picture. Nothing better was found: the Chinese wiki has no
+animated art (its one video field is the attire's `装束影像`), and the game's Live2D models
+would need its extracted files and the Cubism runtime. **101 of the 120 recordings are MP4s on a
+plain ground, and the black one is keyed out** (25 and 26 November 2026, the owner's ask: it stood
+as a box where the still has a transparent edge). The ground is black for 16 pictures, white for
+21 and a pale blue (`#e2e7fd`) for Milly's Skin3; the WebMs are on transparency but for Milly's
+Skin2 (brown, `#412714`; the owner's screenshot, where it ran past the still) and Bianca's Skin1
+(black, filled by its art). It is **recorded by hand** in `GROUND` in `build-ptn-index.mjs` from a
+frame of each (the wiki's own thumbnails of its videos are HTTP 500, and nothing else a build can
+read says which); a part's payload carries `ground` where it is not black or transparent, and a new
+MP4 the record lacks is keyed as black. The key is an SVG filter on the video (`KEY_HTML` in
+`ptn-detail.ts`, the page's `#ptn-key`): a pixel's alpha is its brightness, the sum of its R, G and
+B, steeply, so only what is within about 0.15 of black goes (a filter can show a video from another
+host; a canvas could not read it back, wiki.gg sending no CORS headers). **Every other ground stays
+and is cut back to the art's box** (`clip-path`), a card the still's size: the owner's call of 26
+November 2026 ("drop white"), after a key for white took the art's own whites with it (000's
+guitar and shards showed the wall through). **A recording is sized to its still**
+(26 November 2026, the owner's report that turning Live2D on zoomed out): the still is served cut
+to the art's edges (`&trim=10`), while a recording keeps a margin round the art and is narrower
+(1.25:1 to a still's 1.5 or so), so fitted whole into the still's frame it came out smaller. The
+art's box in each recording is **recorded by hand** in `BOX` beside `GROUND` (x, y, width, height
+as shares of it, measured from the same frames; 36 pictures, the 6 others filling theirs), carried
+as `box`, and `fitBox` in `ptn-detail.ts` fits that box to the still's frame, keeping its shape,
+the rest of the recording running past the frame on its transparent ground. Kujo Jolyne's files are
+under `Jolyne_Cujoh` and are missed. The detail page's figure no longer grows under the pointer (24 November 2026, the
+owner's ask; the roster's still does).
+
+**An attire's showcase video is not played on the page** (26 November 2026, the owner's call):
+210 of 226 attires have one on Bilibili (the payload's `video`), and it stays a link on the
+Outfits tab. Bilibili's embedded player was tried on the wall on 24 and 25 November and dropped: in
+a frame it played Bilibili's own error clip ("视频链接失效", its API answering 412, likely the
+frame's blocked cookies), a viewer not signed in gets 640x360, and a phone gets a cover that waits
+for a tap and shows the bullet comments whatever it is asked. **The game's own YouTube channel has
+them** (`@pathtonowhere`, found 26 November 2026 through S1N's attire pages, which embed them): a
+"Sinner Attire - [MBCC-S-459 Milly] - ★★★ Timeless Silhouette" video to an attire, about 40 s (the
+art, the chibi, a voice line), embeddable. Not used yet: no build reads YouTube, so each attire's
+video id would be recorded by hand, as hololive Dreams' clips are. Neither it nor any other source
+found (the official X account, S1N, Reddit) has the separate reactions: the English wiki's
+recordings are the only ones.
 
 Not on the dossier, though the English wiki has them: the interrogation records' own pages. The
 ranges, costs and voice lines are the Chinese wiki's (above).

@@ -140,6 +140,8 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
   // reader's own nearest, which the widths asked for below are for (Bahnschrift is as wide
   // as it is told to be; Barlow Condensed has the one width).
   --ptn-placard: 'Barlow Condensed', 'Noto Sans SC', 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  // Here and not on the page alone: the art viewer, outside it, sets the animation strip too.
+  --ptn-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   // The wall, its floor, and what is drawn on the wall, in either theme.
   --ptn-wall: #{$wall};
@@ -217,7 +219,6 @@ $world: "body:is([data-view='ptn'], [data-view='ptn-detail'])";
 
   --ptn-rule: rgb(23 24 26 / 24%);
   --ptn-rule-strong: rgb(23 24 26 / 52%);
-  --ptn-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
   @include dark {
     --surface: #45473f;
@@ -943,12 +944,10 @@ body[data-view='ptn'] #view {
   object-fit: contain;
   object-position: 50% 100%;
   filter: drop-shadow(0 8px 12px rgb(23 24 26 / 30%));
-  transition: filter 0.22s var(--ptn-ease), transform 0.22s var(--ptn-ease);
-  transform-origin: 50% 100%;
+  transition: filter 0.22s var(--ptn-ease);
 
   .cell-stand:not(:disabled):hover & {
     filter: drop-shadow(0 14px 20px rgb(23 24 26 / 38%));
-    transform: scale(1.012);
   }
 
   .cell-stand.none & {
@@ -1127,44 +1126,135 @@ body[data-view='ptn'] #view {
   }
 }
 
-// An animated picture's reactions, along the top of the wall: square buttons in the
-// placard's face, the one playing in the world's red.
+// An animated picture's controls: one ink strip pinned to the top of the wall, like the height's
+// tag at the other end and a camera's REC tag. A cell to each control, split by hairlines, set
+// in the placard's face; the reaction playing fills in the world's one red.
 .cell-motions {
   position: absolute;
   top: var(--sp-8);
   left: calc(var(--gutter) + var(--sp-8));
-  right: var(--sp-8);
   z-index: 3;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-4);
-}
-
-.cell-motions-label {
-  margin-right: var(--sp-4);
-  color: var(--ptn-wall-ink);
-  font-family: var(--ptn-placard);
-  font-weight: 700;
-  font-size: var(--fs-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.motion-part {
-  padding: var(--sp-2) var(--sp-10);
-  border: 1px solid $ink;
+  max-width: calc(100% - var(--gutter) - var(--sp-16));
   background: $ink;
+  box-shadow: 0 6px 14px rgb(23 24 26 / 28%);
+}
+
+.cell-motions-label,
+.cell-live,
+.motion-part {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-6);
+  height: 28px;
+  padding: 0 var(--sp-10);
+  border: 0;
+  background: none;
   color: $bone;
   font-family: var(--ptn-placard);
   font-weight: 500;
-  font-size: var(--fs-base);
-  cursor: pointer;
-  transition: background-color 0.15s var(--ptn-ease), border-color 0.15s var(--ptn-ease);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 
-  &:hover { border-color: $red; }
-  &[aria-pressed='true'] { border-color: $red; background: $red; }
-  &:focus-visible { outline: 2px solid var(--ptn-wall-ink); outline-offset: 2px; }
+  & + & { box-shadow: inset 1px 0 rgb(236 235 227 / 16%); }
+}
+
+// What the strip is, where the picture has reactions and no loop to switch; and the word the
+// touches stand under, which points on to them.
+.cell-motions-label {
+  color: $bone-dim;
+  font-weight: 700;
+
+  &.touch {
+    padding-right: var(--sp-4);
+    font-weight: 500;
+
+    &::after { content: '›'; margin-left: var(--sp-4); }
+  }
+}
+
+// In the art viewer: over the stage's top left corner, clear of the close button. On a phone its
+// cells are tighter, so that Milly's ten take two rows and not three.
+.art-viewer .cell-motions {
+  top: var(--sp-12);
+  left: var(--sp-12);
+  max-width: calc(100% - 80px);
+
+  @media (max-width: 640px) {
+    left: var(--sp-8);
+    max-width: calc(100% - 64px);
+
+    > * { padding: 0 var(--sp-6); }
+  }
+}
+
+.cell-live,
+.motion-part {
+  cursor: pointer;
+  transition: background-color 0.15s var(--ptn-ease), color 0.15s var(--ptn-ease);
+
+  // The height line's red, drawn under the cell the pointer is on.
+  &::after {
+    content: '';
+    position: absolute;
+    left: var(--sp-10);
+    right: var(--sp-10);
+    bottom: 4px;
+    height: 2px;
+    background: $red;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.22s var(--ptn-ease);
+  }
+
+  &:hover::after { transform: scaleX(1); }
+  &:focus-visible { outline: 2px solid $red; outline-offset: -2px; }
+}
+
+.motion-part {
+  color: rgb(236 235 227 / 72%);
+
+  &:hover { color: $bone; }
+
+  &[aria-pressed='true'] {
+    background: $red;
+    color: $bone;
+
+    &::after { transform: scaleX(0); }
+  }
+}
+
+// The Live2D switch: its lamp a hollow square while the still is up, red and slowly pulsing
+// while the loop plays.
+.cell-live {
+  font-weight: 700;
+  color: $bone-dim;
+
+  .lamp {
+    width: 8px;
+    height: 8px;
+    box-shadow: inset 0 0 0 1px currentColor;
+    transition: background-color 0.15s var(--ptn-ease), box-shadow 0.15s var(--ptn-ease);
+  }
+
+  &:hover { color: $bone; }
+
+  &[aria-checked='true'] {
+    color: $bone;
+
+    .lamp {
+      background: $red;
+      box-shadow: 0 0 0 3px rgb(184 20 28 / 30%);
+      animation: ptn-rec 1.6s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes ptn-rec {
+  50% { opacity: 0.45; }
 }
 
 // A reaction playing, over the picture and at its size: the picture keeps its place under it
@@ -1177,7 +1267,17 @@ body[data-view='ptn'] #view {
   object-fit: contain;
 }
 
-.cell-print img.under { visibility: hidden; }
+:is(.cell-print, .av-art) img.under { visibility: hidden; }
+
+// The wiki's MP4 recordings on black, which the key turns transparent (KEY_HTML in
+// views/ptn-detail.ts). The others, on white or a colour (the build's GROUND), are not keyed.
+.cell-motion.keyed { filter: url('#ptn-key'); }
+
+.cell-key {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
 
 // The trail and, at its far end, the language's switch: one line, the trail's own height.
 .ptn-trail {
