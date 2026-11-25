@@ -213,6 +213,12 @@ async function fetchSpineVideos() {
   }
 }
 
+// Where each animated illustration's figure sits against its still, keyed by the recording's
+// file name: [k, dx, dy], measured by hand with scripts/measure-l2d-fit.mjs. An animation the
+// table lacks plays unmoved and is named after the operator loop.
+const L2D_FIT = JSON.parse(await readFile(new URL('./lib/l2d-fit.json', import.meta.url), 'utf8'));
+const unfitted = [];
+
 // Puts each art piece's sprite and animated illustration on it, where the wiki has them.
 // The wiki numbers an operator's outfits 1, 2, … in the order they came out, which is the
 // skins' `getTime` order: checked on 24 November 2026, that rule finds every sprite file of
@@ -234,7 +240,9 @@ function addVideos(arts, id, name, skins, videos, spines) {
     const dyn = (skins ?? []).find(s => s.portraitId === `${id}_${art.suffix}`)?.dynIllustId;
     const l2d = (n || art.suffix === '2' ? videos.get(`${outfit}_L2D.webm`) : undefined)
       ?? (dyn ? spines.get(`${dyn}.webm`) ?? spines.get(`${dyn.replace(/_2$/, '')}.webm`) : undefined);
-    return { ...art, ...(sprite ? { sprite } : {}), ...(l2d ? { l2d } : {}) };
+    const l2dFit = l2d ? L2D_FIT[decodeURIComponent(new URL(l2d).pathname.split('/').pop())] : undefined;
+    if (l2d && !l2dFit) unfitted.push(`${id} ${art.label}`);
+    return { ...art, ...(sprite ? { sprite } : {}), ...(l2d ? { l2d } : {}), ...(l2dFit ? { l2dFit } : {}) };
   });
 }
 
@@ -1291,6 +1299,9 @@ async function buildOperatorDetails(regular, cnSupplement) {
       console.warn(`operator detail skipped for ${entry.id}: ${e.message}`);
     }
   });
+  if (unfitted.length) {
+    console.warn(`l2d fit: ${unfitted.length} animations not measured, run scripts/measure-l2d-fit.mjs: ${unfitted.join(', ')}`);
+  }
   // Written by the caller, after the MIN_DETAILS_WRITTEN floor check: `popup` is
   // accumulated across every operator and would otherwise get flushed here even when
   // `written` collapses to near-zero, silently overwriting a good popup.json before that

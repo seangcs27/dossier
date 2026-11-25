@@ -71,13 +71,13 @@ const CREDITS: Record<FooterGame, GameCredits> = {
 };
 
 const links = (from: Link[]): string =>
-  from.map(([name, href]) => `<a href="${href}" target="_blank" rel="noopener">${name}</a>`).join(', ');
+  from.map(([name, href]) => `<a href="${href}" target="_blank" rel="noopener">${name}</a>`).join('');
 
 /** The footer's credit list and its disclaimer for a game, as markup for #foot-credits and #foot-note. */
 export function footerHtml(game: FooterGame): { credits: string; note: string } {
   const { owners, credits } = CREDITS[game];
   return {
-    credits: credits.map(c => `<li><span class="foot-what">${c.what}</span> ${links(c.from)}</li>`).join(''),
+    credits: credits.map(c => `<li><span class="foot-what">${c.what}</span>${links(c.from)}</li>`).join(''),
     note: `Dossier is a fan-made, unofficial site and is not affiliated with ${owners}. All game art, names and trademarks belong to their owners.`,
   };
 }

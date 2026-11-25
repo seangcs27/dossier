@@ -172,10 +172,15 @@
   <main id="view"></main>
   <!-- Under every page: its game's sources, filled in by showShell (footer.ts). -->
   <footer class="site-foot" id="site-foot">
-    <h2 class="foot-head">Sources</h2>
-    <ul class="foot-credits" id="foot-credits"></ul>
-    <p class="foot-note" id="foot-note"></p>
-    <p class="foot-meta"><a href="https://github.com/seangcs27/dossier" target="_blank" rel="noopener">Dossier on GitHub</a><span class="foot-built"></span></p>
+    <div class="foot-about">
+      <p class="foot-name">Dossier</p>
+      <p class="foot-note" id="foot-note"></p>
+      <p class="foot-meta"><a href="https://github.com/seangcs27/dossier" target="_blank" rel="noopener">Dossier on GitHub</a><span class="foot-built"></span></p>
+    </div>
+    <div class="foot-sources">
+      <h2 class="foot-head">Sources</h2>
+      <ul class="foot-credits" id="foot-credits"></ul>
+    </div>
   </footer>
   <!-- What makes separate blocks read as one liquid shape: blur them, then cut the blur back
        to a hard edge, so two blocks that sit close run together and every corner between

@@ -3,10 +3,17 @@
 // it. It takes every colour from the surface variables, which each game's world restates, so
 // it reads on all of them in both themes; holodori's face is its own where it is set.
 
+// The body is a column (styles.scss), so on a page shorter than the window the auto margin takes
+// the space left and the footer sits at the window's foot.
 .site-foot {
   --foot-pad: var(--sp-24);
 
-  padding: var(--sp-24) var(--foot-pad) var(--sp-24);
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 3fr;
+  gap: var(--sp-24) 48px;
+  margin-top: auto;
+  padding: 32px var(--foot-pad);
+  background: var(--surface);
   border-top: 1px solid var(--border);
   color: var(--text);
   font-family: var(--hd-face, inherit);
@@ -29,24 +36,41 @@
   text-transform: uppercase;
 }
 
+.foot-name {
+  margin: 0;
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+// A column to each source: what it gave, then its links one under the other.
 .foot-credits {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--sp-6) var(--sp-24);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-items: start;
+  gap: var(--sp-16) var(--sp-24);
   margin: 0;
   padding: 0;
   list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-2);
+  }
 }
 
 .foot-what {
-  display: block;
+  margin-bottom: var(--sp-2);
+  color: var(--dim);
   font-size: var(--fs-xs);
 }
 
 .foot-note,
 .foot-meta {
-  max-width: 70ch;
-  margin: var(--sp-12) 0 0;
+  max-width: 48ch;
+  margin: var(--sp-8) 0 0;
+  color: var(--dim);
 }
 
 // Path to Nowhere's shell is ink and bone but its page is the wall, which turns light and dark
@@ -59,6 +83,10 @@ body:is([data-view='ptn'], [data-view='ptn-detail']) .site-foot {
 
 .foot-built::before { content: ' · '; }
 .foot-built:empty::before { content: none; }
+
+@media (max-width: 900px) {
+  .site-foot { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 640px) {
   .site-foot { --foot-pad: var(--sp-16); }
