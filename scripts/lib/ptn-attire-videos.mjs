@@ -124,7 +124,7 @@ export const ATTIRE_VIDEOS = [
   ['lynn', 'Skittish Star', 'R1AJpb__Qvs'],
   ['mantis', 'Botanical Notes', 'g5-KIojESAo'],
   ['mantis', 'Sylvan Silhouette', 'o_t9UnFtqZM'],
-  ['margaret', 'Ode to Peace', 'Dtuvpei86Pw'], // also listed as 宁和颂诗, below
+  ['margaret', 'Ode to Peace', 'Dtuvpei86Pw'],
   ['matilda', 'Elfin Siesta', 'BGIfgnuz4sU'],
   ['mcqueen', 'Whimsical Theater', 'AESdbylJ1Ao'],
   ['mcqueen', 'Inferno of Deception', 'HLYZiQQm_TI'],
@@ -198,8 +198,7 @@ export const ATTIRE_VIDEOS = [
 ];
 
 // The 44 attires the channel had no video of on 26 November 2026, searched for by Sinner.
-// A Chinese label is an attire the English wiki does not list yet. Margaret's 宁和颂诗 is her Ode to
-// Peace a second time, which the pairing with the Chinese wiki lists apart.
+// A Chinese label is an attire the English wiki does not list yet.
 //   anne: Steamy Night Chat · celine: 临梦拾章 · ceto: 哨戒夜巡 · chameleon: Message in Dreams
 //   chelsea: Moonlight Rendezvous · clementine: 绯夜猎影 · crache: Eternal Night Hunt
 //   demon: Under the Neon Lights · deren: Jojo Collab · echo: 绯雪藏珍 · eirene: Seaside Sunrise
@@ -208,7 +207,7 @@ export const ATTIRE_VIDEOS = [
 //   horo: Abiding Moment · hypatia: Crepuscular Bloom · ignis: Warm Flame
 //   jasmine: Gossamer Sway · jelena: 密荫之下 · labyrinth: Fortune and Prosperity
 //   langley: Banquet Guest · luvia-ray: Glittering Stars · macchiato: Beguiled Heart
-//   margaret: 宁和颂诗 · murphy: 逃窜系冒险者 · ninety-nine: 新世界 · nox: Ashen Prayer
+//   margaret: 新月圣谕 · murphy: 逃窜系冒险者 · ninety-nine: 新世界 · nox: Ashen Prayer
 //   owo: King of Lion Dance · pricilla: Night of Petals · pylgia: 锈刻海墟
 //   roulecca: Seaside Dessert Stand · serpent: Source of Happiness · serpent: Awake from Slumber
 //   shalom: 微明止息 · siglinde: 余晖候令 · sumire: Flower of Fantasy · summer: Desert Delusions

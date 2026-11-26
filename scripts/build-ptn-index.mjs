@@ -653,7 +653,9 @@ async function buildRoster() {
   const extras = new Map();
   for (const s of sinners.filter(sinner => sinner.nameCn && zhAttires.has(sinner.nameCn))) {
     const detail = details.find(d => d.id === s.id);
-    const zh = zhAttires.get(s.nameCn).sort((a, b) => a.released.localeCompare(b.released));
+    // An attire with no day yet has not come out, so it is the newest (Margaret's 新月圣谕,
+    // which sorted first and took Ode to Peace's place).
+    const zh = zhAttires.get(s.nameCn).sort((a, b) => (a.released || '9999').localeCompare(b.released || '9999'));
     const own = detail.arts.filter(art => art.kind === 'attire').reverse();
     // Paired by their place in the list; where the stars the English wiki gives do not agree
     // with the Chinese wiki's, the lists are not the same and nothing is paired.
