@@ -132,6 +132,12 @@ async function measure({ still, video }) {
     }
   };
   search(0.6, 1.45, 0.02, -36, 36, -36, 36, 2);
+  // A best at the search's edge is no fit: ArknightsSpines frames some figures far smaller
+  // (Texas the Omertosa's, at about a third of the box's foot), so look again, wider and coarser.
+  if (best[1] < 0.61 || best[1] > 1.44 || Math.abs(best[2]) > 35 || Math.abs(best[3]) > 35) {
+    best = [Infinity, 1, 0, 0];
+    search(0.6, 3, 0.05, -120, 120, -120, 120, 4);
+  }
   const [, k, x, y] = best;
   search(k - 0.02, k + 0.02, 0.005, x - 2, x + 2, y - 2, y + 2, 0.5);
   const round = (n, places) => Number(n.toFixed(places));
