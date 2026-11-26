@@ -212,23 +212,27 @@ const GROUND = new Map([
 
 // Where the art is in each animated picture's recordings where it does not fill them: x, y,
 // width and height as shares of the recording, measured by hand on 26 November 2026 from a
-// frame 1.5 s in (the same frames as GROUND, 42 pictures; 6 fill theirs). The page fits this
+// frame 1.5 s in (the same frames as GROUND, 42 pictures; 6 fill theirs). Seven that sat visibly
+// off their still (Angell_Skin3, Cassian_Skin2, Che_Skin2, Demon_Skin2, Dreya_Skin1, Dreya_Skin2,
+// Ignis_Skin3) were measured again on 27 November 2026 by matching the still to the frame, which
+// gives a box of the still's shape that can run past the recording's edge. The page fits this
 // box to the still, which is cut to the art's edges, and cuts a recording it does not key back
 // to it; it fits a whole recording where none is.
 const BOX = new Map([
   ['000_Skin3', [0.043, 0.034, 0.957, 0.939]], ['Adela_Skin3', [0.005, 0.014, 0.995, 0.986]],
+  ['Angell_Skin3', [0, 0.055, 0.998, 0.889]], ['Cassian_Skin2', [0.004, 0.092, 0.989, 0.813]],
   ['Adela_Skin4', [0, 0.095, 1, 0.851]], ['Ariel_Skin3', [0.054, 0, 0.946, 0.966]],
   ['Bianca_Skin1', [0.005, 0.007, 0.995, 0.993]], ['Celine_Skin1', [0.043, 0, 0.919, 1]],
-  ['Che_Skin2', [0, 0, 0.989, 1]], ['Christina_Skin2', [0.011, 0.007, 0.989, 0.993]],
+  ['Che_Skin2', [0.066, 0.003, 0.894, 1.011]], ['Christina_Skin2', [0.011, 0.007, 0.989, 0.993]],
   ['Coquelic_Skin2', [0.075, 0.034, 0.876, 0.939]], ['Crache_Skin3', [0.022, 0.02, 0.957, 0.919]],
-  ['Crache_Skin4', [0, 0.061, 0.995, 0.845]], ['Demon_Skin2', [0, 0, 0.887, 0.919]],
+  ['Crache_Skin4', [0, 0.061, 0.995, 0.845]], ['Demon_Skin2', [0.021, 0, 0.955, 0.998]],
   ['Demon_Skin3', [0.005, 0, 0.995, 0.953]], ['Dove_Skin2', [0, 0.027, 0.984, 0.946]],
-  ['Dreya_Skin1', [0.102, 0.054, 0.823, 0.818]], ['Dreya_Skin2', [0.118, 0.081, 0.634, 0.831]],
+  ['Dreya_Skin1', [0.039, 0.014, 0.959, 0.985]], ['Dreya_Skin2', [0.066, 0.028, 0.89, 1.049]],
   ['Dreya_Skin3', [0.032, 0.014, 0.941, 0.973]], ['Dudu_Skin2', [0.054, 0, 0.898, 1]],
   ['Dudu_Skin3', [0, 0.007, 0.989, 0.939]], ['EMP_Skin2', [0.204, 0, 0.608, 1]],
   ['EMP_Skin3', [0.011, 0.182, 0.968, 0.676]], ['Enfer_Skin4', [0.065, 0.007, 0.86, 0.993]],
   ['Gekkabijin_Skin2', [0.027, 0, 0.952, 1]], ['Hilda_Skin2', [0, 0.115, 1, 0.797]],
-  ['Hypatia_Skin3', [0.011, 0.068, 0.978, 0.912]], ['Ignis_Skin3', [0.048, 0.088, 0.909, 0.905]],
+  ['Hypatia_Skin3', [0.011, 0.068, 0.978, 0.912]], ['Ignis_Skin3', [0.045, 0, 0.915, 1.01]],
   ['Kelvin_Skin2', [0.108, 0.007, 0.796, 0.993]], ['Kisugi_Ai_Skin2', [0.07, 0.014, 0.898, 0.986]],
   ['L.L._Skin3', [0.043, 0.054, 0.941, 0.899]], ['Milly_Skin2', [0.057, 0.04, 0.887, 0.922]],
   ['Milly_Skin3', [0.011, 0.014, 0.973, 0.986]],
