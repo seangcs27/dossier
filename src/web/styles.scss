@@ -2405,6 +2405,16 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   user-select: none;
 }
 
+// An Arknights piece's Live2D over its still (detail.ts); the stage's own gestures go through it.
+.av-l2d {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .av-img {
   display: block;
   width: 100%;

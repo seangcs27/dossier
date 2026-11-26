@@ -21,6 +21,7 @@ import type {
   ItemCost,
   ModulePhase,
   Operator,
+  OperatorArt,
   OperatorAttributes,
   OperatorData,
   OperatorModule,
@@ -189,9 +190,15 @@ function activeModulePhase(s: DetailState): ModulePhase | null {
 
 let state: DetailState | null = null;
 let mountSeq = 0;
-// Whether an art piece with an animated illustration plays it in place of the still. Off
-// to begin with, since the video is 1 to 10 MB; kept from one operator to the next.
-let motionOn = false;
+// Whether an art piece with an animated illustration plays it over the still, on the page and
+// in the art viewer. On to begin with (the owner's ask, 27 November 2026), though the video is
+// 1 to 10 MB; kept from one operator to the next.
+let motionOn = true;
+
+// The animation's transform onto its still (scripts/measure-l2d-fit.mjs), or none.
+const fitStyle = (art: OperatorArt): string => art.l2dFit
+  ? `style="transform: translate(${art.l2dFit[1]}%, ${art.l2dFit[2]}%) scale(${art.l2dFit[0]})"`
+  : '';
 
 const visibleSkills = (op: Operator): OperatorSkillDetail[] =>
   (op.skills ?? []).filter(s => !s.excel.hidden && s.excel.levels.length > 0);
@@ -1087,7 +1094,7 @@ function splashHtml(op: Operator, artIdx: number): string {
         <div class="splash-live">
           <img class="splash-backdrop" src="${artUrl(active.url, 1024)}" alt="" aria-hidden="true" decoding="async">
           <video class="splash-img splash-video" src="${escHtml(active.l2d)}" poster="${artUrl(active.url, 1024)}"
-                 ${active.l2dFit ? `style="transform: translate(${active.l2dFit[1]}%, ${active.l2dFit[2]}%) scale(${active.l2dFit[0]})"` : ''}
+                 ${fitStyle(active)}
                  autoplay loop muted playsinline
                  data-act="art-open" role="button" tabindex="0" aria-label="Open ${escHtml(active.label)} at full size"></video>
         </div>
@@ -1321,6 +1328,17 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
           if (!state) return;
           if (index !== state.artIdx) { state.artIdx = index; renderAll(container); }
           container.querySelector<HTMLElement>('.splash-img')?.focus();
+        }, undefined, {
+          // With the switch on, a piece that moves plays over its still in the viewer too,
+          // zoomed and dragged with it.
+          onShow: (index, frame) => {
+            frame.querySelector('.av-l2d')?.remove();
+            const art = state?.op.arts?.[index];
+            if (!motionOn || !art?.l2d) return;
+            frame.insertAdjacentHTML('beforeend', `
+              <video class="av-l2d" src="${escHtml(art.l2d)}" ${fitStyle(art)}
+                     autoplay loop muted playsinline aria-hidden="true"></video>`);
+          },
         });
         return;
       case 'phase': {

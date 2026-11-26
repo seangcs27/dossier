@@ -937,8 +937,10 @@ set and information architecture all follow theirs, so read
   settled; avatars put that at ~2.9 MB. A missing avatar falls back to the illustration.
 - **Animated art and the sprite** (24 November 2026, the owner's "media such as L2D") — an art
   piece the game animates has a "Live2D" switch in its caption (a play glyph and a track),
-  which plays the animated illustration in place of the still (off at first, since one is 1
-  to 10 MB; kept from operator to operator), and every piece with a battle sprite plays it,
+  which plays the animated illustration in place of the still (on at first since 27 November
+  2026, the owner's ask, though one is 1 to 10 MB; kept from operator to operator; the art
+  viewer plays it too while the switch is on, over the piece's frame through `onShow`, so it
+  zooms and drags with it), and every piece with a battle sprite plays it,
   looped, in the art's bottom-right corner (a 220x225 box, the recording's full height, that
   takes no pointer events). The animation has no background: the game builds it from its own
   particle effects in the scene, and no source checked (the wiki, ArknightsSpines' idle
@@ -949,7 +951,9 @@ set and information architecture all follow theirs, so read
   second figure. `node scripts/measure-l2d-fit.mjs` (by hand, after a build that adds
   animations; needs local Chrome or Edge) matches each recording's first frame to its still
   into `scripts/lib/l2d-fit.json`, `[k, dx, dy]` by file name; the build puts it on the art as
-  `l2dFit` and the page draws the video at `translate(dx%, dy%) scale(k)`. An unmeasured one
+  `l2dFit` and the page draws the video at `translate(dx%, dy%) scale(k)` (68 on 27 November
+  2026, all checked by eye; a best at the search's edge is searched again wider, which
+  Texas the Omertosa's Elite 2 render needed at 1.68). An unmeasured one
   plays unmoved and the build names it. Both are arknights.wiki.gg's screen recordings, WebM on
   transparency, played from the wiki and not downloaded: the payload's `arts[].l2d` and
   `arts[].sprite` (`fetchWikiVideos` and `addVideos` in `build-operator-index.mjs`, one
