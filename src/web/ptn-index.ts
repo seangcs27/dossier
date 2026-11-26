@@ -158,6 +158,9 @@ export interface PtnArt {
   // transparent, and `box` the art's box in the recording (x, y, width, height, as shares of its
   // own) where it does not fill it.
   motions?: { part: string; url: string; ground?: string; box?: number[] }[];
+  // An attire's showcase video on the game's YouTube channel, recorded by hand
+  // (scripts/lib/ptn-attire-videos.mjs).
+  youtube?: string;
 }
 
 export interface PtnSinnerDetail {

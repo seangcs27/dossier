@@ -122,6 +122,8 @@ scripts/
   lib/ptn-page.mjs           ← reads a pathtonowhere.wiki.gg Sinner page into its payload
   lib/ptn-record.mjs         ← when each Sinner was released, and the files of five the wiki has
                                no page for: recorded by hand from S1N, one line a release
+  lib/ptn-attire-videos.mjs  ← each attire's showcase video on the game's YouTube channel, recorded
+                               by hand, one line an attire
   lib/ptn-bili.mjs           ← reads the game's Chinese wiki: every Sinner's Chinese name, tags and
                                flags, the CN-only Sinners and their pages, a picture's address
   lib/ptn-bili-page.mjs      ← that wiki's {{禁闭者图鉴}} page into the same payload as ptn-page.mjs
@@ -1766,18 +1768,27 @@ the rest of the recording running past the frame on its transparent ground. Kujo
 under `Jolyne_Cujoh` and are missed. The detail page's figure no longer grows under the pointer (24 November 2026, the
 owner's ask; the roster's still does).
 
-**An attire's showcase video is not played on the page** (26 November 2026, the owner's call):
-210 of 226 attires have one on Bilibili (the payload's `video`), and it stays a link on the
-Outfits tab. Bilibili's embedded player was tried on the wall on 24 and 25 November and dropped: in
-a frame it played Bilibili's own error clip ("视频链接失效", its API answering 412, likely the
-frame's blocked cookies), a viewer not signed in gets 640x360, and a phone gets a cover that waits
-for a tap and shows the bullet comments whatever it is asked. **The game's own YouTube channel has
-them** (`@pathtonowhere`, found 26 November 2026 through S1N's attire pages, which embed them): a
-"Sinner Attire - [MBCC-S-459 Milly] - ★★★ Timeless Silhouette" video to an attire, about 40 s (the
-art, the chibi, a voice line), embeddable. Not used yet: no build reads YouTube, so each attire's
-video id would be recorded by hand, as hololive Dreams' clips are. Neither it nor any other source
-found (the official X account, S1N, Reddit) has the separate reactions: the English wiki's
-recordings are the only ones.
+**An attire's showcase video plays on the Outfits tab, from the game's own YouTube channel**
+(26 November 2026, the owner's ask): `@pathtonowhere` has a "Sinner Attire - [MBCC-S-459 Milly] -
+★★★ Timeless Silhouette" video to an attire, about 40 s (the art, the chibi, a voice line). The
+ids are **recorded by hand** in `scripts/lib/ptn-attire-videos.mjs`, a line to an attire (the
+Sinner's id, the attire's label as the payload has it, the video's id), from the channel's
+"■ Sinner Attire" playlist (204 videos; 24 attires uploaded twice, the first taken) and its search,
+each checked with YouTube's oEmbed (the channel's own, embeddable): 182 of 226 attires. The 44 with
+none are listed at the file's foot; a new attire's video is one line there, and the build warns
+of a line no attire has (`addAttireVideos` in `build-ptn-index.mjs`, the art's `youtube`). **S1N's
+attire pages embed mostly fan uploads** (175 of 220: Jiu Jiu, AwokenDreamer…), so they are not
+the source. On the tab a "Play showcase" button (a cell of the wall's REC strip, a red play
+triangle) puts a 16:9 `youtube-nocookie.com` player under it, autoplaying, and a second press takes
+it away; one plays at a time. **YouTube is asked for nothing before the press**: the button has
+no poster from YouTube's image host, the outfit's own picture being beside its name. Any press
+that draws the page again (a tab, a picture) takes the player with it. The Bilibili video (the
+payload's `video`, 210 of 226) stays a link beside it: Bilibili's embedded player was tried on
+the wall on 24 and 25 November and dropped, since in a frame it played Bilibili's own error clip
+("视频链接失效", its API answering 412, likely the frame's blocked cookies), a viewer not signed in
+gets 640x360, and a phone gets a cover that waits for a tap and shows the bullet comments
+whatever it is asked. Neither channel nor any other source found (the official X account, S1N,
+Reddit) has the separate reactions: the English wiki's recordings are the only ones.
 
 Not on the dossier, though the English wiki has them: the interrogation records' own pages. The
 ranges, costs and voice lines are the Chinese wiki's (above).
