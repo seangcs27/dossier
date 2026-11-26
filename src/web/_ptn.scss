@@ -1504,11 +1504,10 @@ body[data-view='ptn'] #view {
   transition: background-color 0.15s var(--ptn-ease), border-color 0.15s var(--ptn-ease);
 
   .play-mark {
-    width: 0;
-    height: 0;
-    border-left: 9px solid $red;
-    border-top: 5px solid transparent;
-    border-bottom: 5px solid transparent;
+    width: 9px;
+    height: 10px;
+    background: $red;
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
   }
 
   &:hover { border-color: $bone; }
@@ -1519,10 +1518,9 @@ body[data-view='ptn'] #view {
     border-color: $red;
 
     .play-mark {
-      width: 9px;
       height: 9px;
-      border: 0;
       background: $bone;
+      clip-path: none;
     }
   }
 }
