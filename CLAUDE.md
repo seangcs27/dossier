@@ -1766,7 +1766,9 @@ guitar and shards showed the wall through). **A recording is sized to its still*
 to the art's edges (`&trim=10`), while a recording keeps a margin round the art and is narrower
 (1.25:1 to a still's 1.5 or so), so fitted whole into the still's frame it came out smaller. The
 art's box in each recording is **recorded by hand** in `BOX` beside `GROUND` (x, y, width, height
-as shares of it, measured from the same frames; 36 pictures, the 6 others filling theirs), carried
+as shares of it, measured from the same frames; 38 pictures, the 4 others filling theirs; 27
+November 2026, a review of all 42 against their stills found 7 off, Angell, Cassian, Che, Demon's
+Skin2, Dreya's Skin1 and Skin2 and Ignis, measured again by matching the still to the frame), carried
 as `box`, and `fitBox` in `ptn-detail.ts` fits that box to the still's frame, keeping its shape,
 the rest of the recording running past the frame on its transparent ground. Kujo Jolyne's files are
 under `Jolyne_Cujoh` and are missed. The detail page's figure no longer grows under the pointer (24 November 2026, the
