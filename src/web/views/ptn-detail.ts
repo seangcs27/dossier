@@ -669,10 +669,30 @@ function outfitsPanel(s: PtnSinner, d: PtnSinnerDetail): string {
           [t('price'), art.price ? String(art.price) : ''],
         ])}
         ${lines.filter(Boolean).map(line => `<p class="rich file-text">${rich(line as string)}</p>`).join('')}
-        ${art.video ? `<p><a class="file-link" href="https://www.bilibili.com/video/${encodeURIComponent(art.video)}" target="_blank" rel="noopener">${t('outfitVideo')} ↗</a></p>` : ''}
+        ${art.youtube || art.video ? `<p class="outfit-links">${art.youtube ? `<button class="outfit-play" data-youtube="${escHtml(art.youtube)}" aria-expanded="false"><span class="play-mark" aria-hidden="true"></span>${t('outfitYoutube')}</button>` : ''}${art.video ? `<a class="file-link" href="https://www.bilibili.com/video/${encodeURIComponent(art.video)}" target="_blank" rel="noopener">${t('outfitVideo')} ↗</a>` : ''}</p>` : ''}
       </section>
     `;
   }).join('');
+}
+
+// An attire's showcase video, from the game's YouTube channel, under its button: YouTube is
+// asked for nothing until the button is pressed, and a second press takes the player away.
+// One plays at a time, so opening another closes the one open.
+function toggleShowcase(button: HTMLElement): void {
+  const open = button.getAttribute('aria-expanded') === 'true';
+  const panel = button.closest('.op-tabpanel')!;
+  panel.querySelectorAll('.outfit-player').forEach(player => player.remove());
+  panel.querySelectorAll('.outfit-play').forEach(other => other.setAttribute('aria-expanded', 'false'));
+  if (open) return;
+  const name = button.closest('.outfit')?.querySelector('.entry-name')?.textContent ?? '';
+  const src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(button.dataset.youtube!)}?autoplay=1&playsinline=1&rel=0`;
+  button.setAttribute('aria-expanded', 'true');
+  button.closest('.outfit-links')!.insertAdjacentHTML('afterend', `
+    <div class="outfit-player">
+      <iframe src="${escHtml(src)}" title="${escHtml(`${name} (YouTube)`)}"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>`);
 }
 
 // The file: who the Sinner is, then each document under the wiki's own heading for it,
@@ -816,6 +836,11 @@ export function mountPtnDetail(container: HTMLElement, id: string): void {
         tab = tabButton.dataset.tab as TabId;
         render();
         container.querySelector<HTMLElement>(`[data-tab="${tab}"]`)?.focus();
+        return;
+      }
+      const play = target.closest<HTMLElement>('[data-youtube]');
+      if (play) {
+        toggleShowcase(play);
         return;
       }
       const thumb = target.closest<HTMLElement>('[data-art]');

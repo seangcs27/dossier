@@ -44,6 +44,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { bakeImages } from './lib/bake-images.mjs';
 import { wikiApi } from './lib/fetch.mjs';
+import { ATTIRE_VIDEOS } from './lib/ptn-attire-videos.mjs';
 import { fetchBiliAttires, fetchBiliBrands, fetchBiliFiles, fetchBiliImages, fetchBiliPages, fetchBiliSinners, fetchBiliTerms } from './lib/ptn-bili.mjs';
 import { parseBiliAttire, parseBiliBrand, parseBiliDetail, parseBiliVoices, termsIn } from './lib/ptn-bili-page.mjs';
 import { toEnglish } from './lib/ptn-cn-english.mjs';
@@ -303,6 +304,21 @@ async function addMotions(details, sinners) {
   }
   const shown = details.flatMap(d => d.arts).filter(a => a.motions).length;
   console.log(`ptn motions: ${shown} pictures animated, of ${byStem.size} the wiki has`);
+}
+
+// Puts each attire's showcase video on it, from the record kept by hand, and returns the
+// record's lines that name no attire the roster has (a slip, or a label a wiki renamed).
+function addAttireVideos(details) {
+  const left = new Map(ATTIRE_VIDEOS.map(([sinner, label, id]) => [`${sinner}|${label}`, id]));
+  for (const d of details) {
+    for (const art of d.arts.filter(a => a.kind === 'attire')) {
+      const key = `${d.id}|${art.label}`;
+      if (!left.has(key)) continue;
+      art.youtube = left.get(key);
+      left.delete(key);
+    }
+  }
+  return [...left.keys()];
 }
 
 // As tall as a mugshot's file is, which is taller than a wall stands anyone on a 1080 screen.
@@ -637,7 +653,9 @@ async function buildRoster() {
   const extras = new Map();
   for (const s of sinners.filter(sinner => sinner.nameCn && zhAttires.has(sinner.nameCn))) {
     const detail = details.find(d => d.id === s.id);
-    const zh = zhAttires.get(s.nameCn).sort((a, b) => a.released.localeCompare(b.released));
+    // An attire with no day yet has not come out, so it is the newest (Margaret's 新月圣谕,
+    // which sorted first and took Ode to Peace's place).
+    const zh = zhAttires.get(s.nameCn).sort((a, b) => (a.released || '9999').localeCompare(b.released || '9999'));
     const own = detail.arts.filter(art => art.kind === 'attire').reverse();
     // Paired by their place in the list; where the stars the English wiki gives do not agree
     // with the Chinese wiki's, the lists are not the same and nothing is paired.
@@ -750,6 +768,7 @@ await mkdir(detailDir, { recursive: true });
 try {
   const { sinners, details, unfinished, strays } = await buildRoster();
   await addMotions(details, sinners);
+  const videoStrays = addAttireVideos(details);
   await writeFile(SINNERS_FILE, JSON.stringify(sinners));
   // Written again every build, since a page changes with the game.
   await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));
@@ -765,6 +784,7 @@ try {
   );
   if (undated.length) console.warn(`ptn: no release recorded for ${undated.join(', ')} — add them to scripts/lib/ptn-record.mjs`);
   if (strays.length) console.warn(`ptn: the release record names ${strays.join(', ')}, whom the roster does not have`);
+  if (videoStrays.length) console.warn(`ptn: the attire video record names ${videoStrays.join(', ')}, which no Sinner's attires have (scripts/lib/ptn-attire-videos.mjs)`);
   await bakePtnFont(await placardText(sinners, details));
 } catch (err) {
   // The page imports this file, so one has to exist for the bundle to build at all.
