@@ -143,7 +143,7 @@ export function homeHtml(now: number, { disc, backs }: HomeOptions = {}): string
       </header>
       <a class="hh-guide" href="#/holodori/mahjong">
         <b lang="ja">ホロじゃん</b>
-        <span><strong>New: Holojan, hololive's mahjong game, out 25 November.</strong> How to pre-register and how to play</span>
+        <span><strong>New: Holojang, hololive's mahjong game, out now.</strong> How to get it and how to play</span>
       </a>
       <nav class="hh-links" aria-label="hololive Dreams">
         ${linkHtml('#/holodori/holomems', cast.length, 'Talent', cast.slice(0, 4).flatMap(c => faceOf(c).src ?? []), 'icons')}

@@ -1,11 +1,13 @@
 import { escHtml } from '../format';
 
-// A guide to hololive Mahjong -Holojan- (ホロライブ麻雀 -ホロじゃん-, COVER and Aiming's
-// mahjong game): how to pre-register, the rules of Japanese (riichi) mahjong for a beginner,
-// and the Japanese on its screens with a reading and a meaning. The game is Japanese only and
-// was not out when this was written (19 November 2026): the facts are the official site's and
-// COVER's press release, and the rules are standard riichi as Mahjong Soul plays them, since
-// Holojan has not published its own. Nothing here reads the clock or any data.
+// A guide to hololive Mahjong -Holojang- (ホロライブ麻雀 -ホロじゃん-, COVER and Aiming's
+// mahjong game; "Holojang" is the owner's name for it, the game having no English title): how
+// to get it, the rules of Japanese (riichi) mahjong for a beginner, and the Japanese on its
+// screens with a reading and a meaning. Written on 19 November 2026 before release and brought
+// up to the released game (out 25 November) on 28 November: the facts are the official site's
+// (holo-jong.com, its notices) and COVER's press release, the modes and the beginner assist
+// Game*Spark's hands-on of 27 November, and the rules are standard riichi as Mahjong Soul plays
+// them, since Holojang's official pages do not list its own. Nothing here reads the clock or any data.
 
 // ── The tiles ──
 // A tile is written as Mahjong Soul and Tenhou write it: a number and a suit letter, m (manzu,
@@ -558,12 +560,13 @@ function demoHtml(lang: Lang, t: (en: string, zh: string) => string): string {
         </div>`;
 }
 
-// ── Pre-registration ──
-// From COVER's press release of 9 October 2026 and the official campaign page. The 40万 and 50万
-// tiers are on the campaign page only.
+// ── Getting the game, and the pre-registration rewards ──
+// From COVER's press release of 9 October 2026, the official campaign page and the official
+// site's notices of 24 and 25 November. The 40万 and 50万 tiers are on the campaign page only.
 const STORE = {
   ios: 'https://apps.apple.com/jp/app/id6762111285',
   android: 'https://play.google.com/store/apps/details?id=com.aiming.hololive.mahjong',
+  browser: 'https://www.holo-jong.com/information/important/ujjxqxwnol/',
   x: 'https://x.com/hololivemahjong',
   site: 'https://www.holo-jong.com/',
   campaign: 'https://www.holo-jong.com/pre-registration/',
@@ -583,7 +586,7 @@ const out = (href: string, text: string): string => `<a href="${escHtml(href)}" 
 // The pages of the guide, each a section the contents link to.
 const SECTIONS: [id: string, name: string, zh: string][] = [
   ['about', 'The game', '遊戲介紹'],
-  ['register', 'Pre-register', '事前登錄'],
+  ['register', 'Get the game', '下載遊戲'],
   ['tiles', 'The tiles', '麻將牌'],
   ['hand', 'A winning hand', '和牌的手牌'],
   ['turn', 'Your turn', '你的回合'],
@@ -660,8 +663,8 @@ function guideHtml(lang: Lang): string {
   return `<div class="hj-guide">
       <header class="hd-head hj-head">
         <p class="hj-kicker" lang="ja">ホロライブ麻雀 -ホロじゃん-</p>
-        <h2 class="hd-title">${t('Holojan: a beginner\'s guide', 'Holojan 新手指南')}</h2>
-        <p class="hd-sub">${t('How to pre-register, how to play Japanese mahjong, and what the Japanese on the screen says', '怎麼事前登錄、怎麼打日本麻將，以及畫面上的日文是什麼意思')}</p>
+        <h2 class="hd-title">${t('Holojang: a beginner\'s guide', 'Holojang 新手指南')}</h2>
+        <p class="hd-sub">${t('How to get it, how to play Japanese mahjong, and what the Japanese on the screen says', '怎麼下載、怎麼打日本麻將，以及畫面上的日文是什麼意思')}</p>
       </header>
 
       <nav class="hj-toc" aria-label="${t('Guide contents', '指南目錄')}">
@@ -671,55 +674,64 @@ function guideHtml(lang: Lang): string {
       <section class="hj-card" id="${id('about')}">
         <h3 class="hm-head">${t('The game', '遊戲介紹')}</h3>
         <dl class="hj-facts">
-          <div><dt>${t('Title', '名稱')}</dt><dd><span lang="ja">ホロライブ麻雀 -ホロじゃん-</span> (hololive Mahjong -Holojan-)</dd></div>
+          <div><dt>${t('Title', '名稱')}</dt><dd><span lang="ja">ホロライブ麻雀 -ホロじゃん-</span> (hololive Mahjong -Holojang-)</dd></div>
           <div><dt>${t('Made by', '開發')}</dt><dd>${t('COVER and Aiming', 'COVER 與 Aiming')}</dd></div>
-          <div><dt>${t('Release', '上市')}</dt><dd>${t('25 November 2026', '2026 年 11 月 25 日')}</dd></div>
-          <div><dt>${t('Platforms', '平台')}</dt><dd>${t('iOS, Android, Windows and web browser', 'iOS、Android、Windows 和網頁瀏覽器')}</dd></div>
+          <div><dt>${t('Release', '上市')}</dt><dd>${t('Out now: 25 November 2026, 12:00 Japan time', '已上市：2026 年 11 月 25 日 12:00（日本時間）')}</dd></div>
+          <div><dt>${t('Platforms', '平台')}</dt><dd>${t('iOS, Android and Windows. The browser version is delayed, with no new date.', 'iOS、Android 和 Windows。網頁版延期，尚未公布新日期。')}</dd></div>
           <div><dt>${t('Price', '價格')}</dt><dd>${t('Free to play, with in-game purchases', '免費遊玩，有遊戲內購買')}</dd></div>
           <div><dt>${t('Talent', '成員')}</dt><dd>${t('37: Gen 0–5, hololive GAMERS, holoX, ReGLOSS and FLOW GLOW', '37 位：0–5 期生、hololive GAMERS、holoX、ReGLOSS 和 FLOW GLOW')}</dd></div>
           <div><dt>${t('Language', '語言')}</dt><dd>${t('Japanese. No English version is announced.', '日文。尚未宣布英文版。')}</dd></div>
         </dl>
-        <p>${t(`It is a mahjong game to play with your oshi: new voice lines, stamps to send during a match, a
-        beginner-assist feature, single-player, friend matches, tournaments, spectating and replays.
-        The official pages do not yet state the rule set. This guide teaches standard Japanese
-        (riichi) mahjong, the rules Mahjong Soul uses, which is almost certainly what Holojan plays.`,
-        `這是一款和你的推し一起打的麻將遊戲：全新語音、對局中可以傳送的貼圖、新手輔助功能、單人遊戲、
-        友人戰、大會、觀戰和牌譜。官方頁面還沒有說明採用的規則。本指南教的是標準的日本（立直）麻將，
-        也就是雀魂（Mahjong Soul）的規則，Holojan 幾乎可以確定也是這一套。`)}</p>
+        <p>${t(`It is a mahjong game to play with your oshi: new voice lines, stamps to send during a match,
+        an original story, single-player, friend matches, tournaments, spectating and replays. A tutorial teaches
+        the controls and the basic rules; then you play the computer, then other players online, in East-only
+        (<span lang="ja">東風戦</span>) or half games (<span lang="ja">半荘戦</span>), and there is three-player mahjong
+        (<span lang="ja">三人麻雀</span>).`,
+        `這是一款和你的推し一起打的麻將遊戲：全新語音、對局中可以傳送的貼圖、原創故事、單人遊戲、
+        友人戰、大會、觀戰和牌譜。先有教學說明操作和基本規則，接著和電腦對戰，再和線上玩家對戰，
+        有東風戰和半莊戰，也有三人麻將。`)}</p>
+        <p>${t(`<b>Beginner assist</b> (<span lang="ja">初心者アシスト</span>) suggests a discard, marks the tiles that are
+        dangerous or safe to discard, counts how many tiles you are from ready (shanten), and suggests yaku. Each part can
+        be turned off on its own. The official pages still do not list the rule set. This guide teaches standard Japanese
+        (riichi) mahjong, the rules Mahjong Soul uses, which is almost certainly what Holojang plays.`,
+        `<b>新手輔助</b>（<span lang="ja">初心者アシスト</span>）會建議要打的牌、標出危險牌和安全牌、
+        顯示向聽數，並建議可以做的役。每一項都可以分別關閉。官方頁面仍然沒有列出規則。本指南教的是
+        標準的日本（立直）麻將，也就是雀魂（Mahjong Soul）的規則，Holojang 幾乎可以確定也是這一套。`)}</p>
       </section>
 
       <section class="hj-card" id="${id('register')}">
-        <h3 class="hm-head">${t('Pre-register', '事前登錄')}</h3>
-        <p>${t(`No close date is stated; pre-registration usually runs until launch. Every reward tier reached when it closes is given
-        to everyone who registered, once each, in the game after launch.`,
-        `官方沒有公布截止日期；事前登錄通常持續到上市為止。截止時達成的每一階獎勵，上市後都會在遊戲內
-        發給所有登錄的人，每人一次。`)}</p>
+        <h3 class="hm-head">${t('Get the game', '下載遊戲')}</h3>
+        <p>${t('It is free to download on every platform.', '每個平台都可以免費下載。')}</p>
         <ol class="hj-steps">
           <li>
             <b>${t('iPhone or iPad', 'iPhone 或 iPad')}</b>
-            <p>${t(`Open the ${out(STORE.ios, 'App Store page')} and tap <span class="hj-btn" lang="ja">入手</span> (Get).
-            For a game not out yet, this is the pre-order: it downloads by itself on release day.`,
-            `打開 ${out(STORE.ios, 'App Store 頁面')}，點 <span class="hj-btn" lang="ja">入手</span>（取得）。
-            遊戲還沒上市時，這就是預訂：上市當天會自動下載。`)}</p>
+            <p>${t(`Open the ${out(STORE.ios, 'App Store page')} and tap <span class="hj-btn" lang="ja">入手</span> (Get).`,
+            `打開 ${out(STORE.ios, 'App Store 頁面')}，點 <span class="hj-btn" lang="ja">入手</span>（取得）。`)}</p>
           </li>
           <li>
             <b>Android</b>
-            <p>${t(`Open the ${out(STORE.android, 'Google Play page')} and tap <span class="hj-btn" lang="ja">事前登録</span>
-            (Pre-register). Turn on "Install automatically when available" if you are asked.`,
-            `打開 ${out(STORE.android, 'Google Play 頁面')}，點 <span class="hj-btn" lang="ja">事前登録</span>
-            （事前登錄）。如果系統詢問，請開啟「上市後自動安裝」。`)}</p>
+            <p>${t(`Open the ${out(STORE.android, 'Google Play page')} and tap <span class="hj-btn" lang="ja">インストール</span>
+            (Install).`,
+            `打開 ${out(STORE.android, 'Google Play 頁面')}，點 <span class="hj-btn" lang="ja">インストール</span>（安裝）。`)}</p>
+          </li>
+          <li>
+            <b>Windows</b>
+            <p>${t(`On the ${out(STORE.site, 'official site')}, press <span class="hj-btn" lang="ja">Windows版をダウンロード</span>
+            (Download for Windows) and run the installer it gives you.`,
+            `在${out(STORE.site, '官方網站')}按 <span class="hj-btn" lang="ja">Windows版をダウンロード</span>（下載 Windows 版），
+            再執行下載的安裝程式。`)}</p>
+          </li>
+          <li>
+            <b>${t('Browser', '瀏覽器')}</b>
+            <p>${t(`Not out: it was due on 25 November and was ${out(STORE.browser, 'delayed')} with no new date.`,
+            `尚未推出：原定 11 月 25 日上市，已${out(STORE.browser, '延期')}，尚未公布新日期。`)}</p>
           </li>
           <li>
             <b>X (Twitter)</b>
-            <p>${t(`Follow ${out(STORE.x, '@hololivemahjong')}. The follow counts toward the campaign, and the goods draws
-            are among its followers, with winners told by direct message. Goods ship in Japan only.`,
-            `追蹤 ${out(STORE.x, '@hololivemahjong')}。追蹤會算進活動人數，周邊抽獎也從追蹤者中抽出，
+            <p>${t(`Follow ${out(STORE.x, '@hololivemahjong')} for news and campaigns. Its goods draws are among its
+            followers, with winners told by direct message. Goods ship in Japan only.`,
+            `追蹤 ${out(STORE.x, '@hololivemahjong')} 取得消息和活動資訊。周邊抽獎從追蹤者中抽出，
             得獎者會收到私訊通知。周邊只寄送日本國內。`)}</p>
-          </li>
-          <li>
-            <b>${t('Windows and browser', 'Windows 和瀏覽器')}</b>
-            <p>${t(`No store or launcher is named yet. Check the ${out(STORE.site, 'official site')} on 25 November.`,
-            `還沒有公布商店或啟動器。請在 11 月 25 日查看${out(STORE.site, '官方網站')}。`)}</p>
           </li>
         </ol>
         <p class="hj-note">${t(`<b>Outside Japan:</b> the store pages are Japan's. If one says the app is not
@@ -728,7 +740,11 @@ function guideHtml(lang: Lang): string {
         `<b>日本以外：</b>商店頁面是日本區的。如果頁面顯示這個 App 在你的國家或地區無法使用，
         就是遊戲沒有在你所在地區的商店上架。官方頁面沒有說明會不會在日本以外推出。`)}</p>
 
-        <h4 class="hj-sub">${t('Rewards by registrations', '登錄人數獎勵')}</h4>
+        <h4 class="hj-sub">${t('Pre-registration rewards', '事前登錄獎勵')}</h4>
+        <p>${t(`Pre-registration ran from 9 October to launch. Every tier it reached is given to everyone who registered,
+        once each, in the game; the in-game notices (<span lang="ja">お知らせ</span>) say how to collect it.`,
+        `事前登錄從 10 月 9 日開始，到上市為止。達成的每一階獎勵都會在遊戲內發給所有登錄的人，每人一次；
+        領取方法見遊戲內公告（<span lang="ja">お知らせ</span>）。`)}</p>
         <div class="hj-table-wrap">
           <table class="hj-terms hj-milestones">
             <thead><tr><th scope="col">${t('Registrations', '登錄人數')}</th><th scope="col">${t('Reward', '獎勵')}</th></tr></thead>
@@ -736,10 +752,10 @@ function guideHtml(lang: Lang): string {
           </table>
         </div>
         <p class="hj-note">${t(`<span lang="ja">万</span> (man) is 10,000, so <span lang="ja">10万人</span> is 100,000 people.
-        The official X account reported more than 400,000 registrations. Details on the
-        ${out(STORE.campaign, 'campaign page')} (Japanese).`,
+        The official X account reported more than 400,000 registrations before launch; the official pages do not give
+        the final count. Details on the ${out(STORE.campaign, 'campaign page')} (Japanese).`,
         `日文的 <span lang="ja">万</span>（man）就是「萬」，所以 <span lang="ja">10万人</span> 是十萬人。
-        官方 X 帳號公布登錄人數已超過 40 萬。詳情見${out(STORE.campaign, '活動頁面')}（日文）。`)}</p>
+        官方 X 帳號在上市前公布登錄人數已超過 40 萬；官方頁面沒有公布最終人數。詳情見${out(STORE.campaign, '活動頁面')}（日文）。`)}</p>
       </section>
 
       <section class="hj-card" id="${id('tiles')}">
@@ -765,11 +781,11 @@ function guideHtml(lang: Lang): string {
         (from <span lang="ja">發財</span>, "get rich"), <b lang="ja">中</b> chun ("centre", or "hit the mark").
         The 1s and 9s of all three suits (characters, dots and bamboo) are the terminals; terminals and honours together are
         <span lang="ja">么九牌</span> (yaochuuhai).
-        Tiles drawn here in a standard style; Holojan's own tile art is not shown yet.`,
+        Tiles drawn here in a standard style; not Holojang's own tile art.`,
         `風牌讀作 <b lang="ja">東</b> ton、<b lang="ja">南</b> nan、<b lang="ja">西</b> shaa、<b lang="ja">北</b> pei；
         三元牌是 <b lang="ja">白</b> haku（白板，空白的牌）、<b lang="ja">發</b> hatsu（發財）、<b lang="ja">中</b> chun（紅中）。
         萬、筒、索三種數牌的 1 和 9 都是「老頭牌」；老頭牌加上字牌，合稱「么九牌」（yaochuuhai）。
-        這裡的牌是標準樣式；Holojan 自己的牌面還沒有公開。`)}</p>
+        這裡的牌是標準樣式，不是 Holojang 自己的牌面。`)}</p>
       </section>
 
       <section class="hj-card" id="${id('hand')}">
@@ -879,11 +895,11 @@ function guideHtml(lang: Lang): string {
         <h3 class="hm-head">${t('Every yaku <small><span lang="ja">役一覧</span></small>', '全部的役 <small><span lang="ja">役一覧</span></small>')}</h3>
         <p>${t(`Every standard yaku, as Mahjong Soul's ranked rules play them. Six lose 1 han when the hand is open
         (<span lang="ja">食い下がり</span>, kuisagari): three-colour run, straight, both outside hands and both flushes.
-        Yaku add up: riichi, all simples and pinfu in one hand are 3 han. Holojan has not published its rule set,
-        so some of these may not apply.`,
+        Yaku add up: riichi, all simples and pinfu in one hand are 3 han. Holojang's official pages do not list its
+        rule set, so some of these may not apply.`,
         `所有標準的役，以雀魂段位戰的規則為準。有六個役副露時少 1 翻（<span lang="ja">食い下がり</span>，食下）：
         三色同順、一氣通貫、混全帶么九、純全帶么九、混一色和清一色。役可以疊加：一副手牌同時有立直、
-        斷么九和平和就是 3 翻。Holojan 還沒有公布規則，所以有些役可能不適用。`)}</p>
+        斷么九和平和就是 3 翻。Holojang 的官方頁面沒有列出規則，所以有些役可能不適用。`)}</p>
         ${YAKU_GROUPS.map(([en, zh, rows]) => yakuTable(rows, lang, t(en, zh))).join('')}
         <p class="hj-note">${t(`In Mahjong Soul two yakuman in one hand add up, as do the double ones, and 13 han or more of other yaku is
         paid as a yakuman (<span lang="ja">数え役満</span>). Other rule sets count the four double yakuman as single ones.`,
@@ -894,18 +910,18 @@ function guideHtml(lang: Lang): string {
       <section class="hj-card hj-wide" id="${id('old')}">
         <h3 class="hm-head">${t('Old yaku <small><span lang="ja">古役</span> koyaku</small>', '古役 <small><span lang="ja">古役</span> koyaku</small>')}</h3>
         <p>${t(`Yaku from older rule books and house rules. Mahjong Soul plays the first fourteen in friend rooms only, not in
-        ranked; the rest are not in its rules at all. Values differ from one rule set to the next. Holojan has not published
-        its rule set, so none of these may apply.`,
+        ranked; the rest are not in its rules at all. Values differ from one rule set to the next. Holojang's official pages do
+        not list its rule set, so none of these may apply.`,
         `來自舊規則書和地方規則的役。雀魂只在友人場採用前十四個，段位戰沒有；其餘的雀魂規則完全沒有。
-        各家規則的翻數不同。Holojan 還沒有公布規則，所以這些役可能都不適用。`)}</p>
+        各家規則的翻數不同。Holojang 的官方頁面沒有列出規則，所以這些役可能都不適用。`)}</p>
         ${oldYakuTable(lang)}
       </section>
 
       <section class="hj-card" id="${id('local')}">
         <h3 class="hm-head">${t('Local rules', '地方規則')}</h3>
-        <p>${t(`Rules that differ between rule sets, and whether Mahjong Soul's ranked games use them. Holojan's are not
-        published yet.`,
-        `各家規則不同的地方，以及雀魂段位戰有沒有採用。Holojan 的規則還沒有公布。`)}</p>
+        <p>${t(`Rules that differ between rule sets, and whether Mahjong Soul's ranked games use them. Holojang's official pages do
+        not list its own.`,
+        `各家規則不同的地方，以及雀魂段位戰有沒有採用。Holojang 的官方頁面沒有列出它的規則。`)}</p>
         ${localRulesHtml(lang)}
       </section>
 
@@ -931,9 +947,9 @@ function guideHtml(lang: Lang): string {
       <section class="hj-card hj-wide" id="${id('screen')}">
         <h3 class="hm-head">${t('On screen', '畫面用語')}</h3>
         <p>${t(`The Japanese you will meet, with how to say it and what it means. The terms are standard Japanese mahjong words, as
-        Mahjong Soul's Japanese client shows them. Holojan's menus are not public yet, so its own labels may differ.`,
+        Mahjong Soul's Japanese client shows them. This guide has not been checked against Holojang's own menus, so its labels may differ.`,
         `你會看到的日文，附上讀音和意思。這些都是標準的日本麻將用語，以雀魂日文版的顯示為準。
-        Holojan 的選單還沒有公開，所以實際的文字可能不同。`)}</p>
+        本指南沒有對照 Holojang 自己的選單，所以實際的文字可能不同。`)}</p>
         ${termTable(t('Buttons during a hand', '對局中的按鈕'), BUTTONS, lang)}
         ${termTable(t('The table', '牌桌'), TABLE, lang)}
         ${termTable(t('Hand status', '手牌狀態'), STATUS, lang)}
