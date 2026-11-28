@@ -196,6 +196,13 @@ let mountSeq = 0;
 let motionOn = true;
 
 // The animation's transform onto its still (scripts/measure-l2d-fit.mjs), or none.
+// A phone plays no battle sprite on the page (it is in the gallery): two videos with alpha at
+// once dropped frames there. Read when the page is drawn.
+const onPhone = (): boolean => matchMedia('(max-width: 640px)').matches;
+
+// The gallery's empty frame for a sprite, the recording's 1024x576.
+const SPRITE_FRAME = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="576"/>')}`;
+
 const fitStyle = (art: OperatorArt): string => art.l2dFit
   ? `style="transform: translate(${art.l2dFit[1]}%, ${art.l2dFit[2]}%) scale(${art.l2dFit[0]})"`
   : '';
@@ -1117,7 +1124,7 @@ function splashHtml(op: Operator, artIdx: number): string {
           </button>
         ` : ''}
       </div>
-      ${active.sprite ? `
+      ${active.sprite && !onPhone() ? `
         <div class="splash-sprite">
           <video src="${escHtml(active.sprite)}" autoplay loop muted playsinline aria-label="${escHtml(active.label)}'s battle sprite"></video>
         </div>
@@ -1323,24 +1330,41 @@ export async function mountDetail(container: HTMLElement, id: string): Promise<v
         return;
       // The page follows the viewer: whichever piece was showing when it closed becomes the
       // page's own, and focus goes back to the art it was opened from.
-      case 'art-open':
-        openArtViewer(state.op.id, state.op.arts ?? [], state.artIdx, (index) => {
+      case 'art-open': {
+        // The gallery is every piece, then each battle sprite as a piece of its own after them
+        // (the owner's ask, 28 November 2026: on a phone the page has no room to play it).
+        const arts = state.op.arts ?? [];
+        const seen = new Set<string>();
+        const sprites = arts.flatMap((art, of) => art.sprite && !seen.has(art.sprite) && seen.add(art.sprite)
+          ? [{ art: { ...art, label: `${art.label} · Chibi` }, of }] : []);
+        const pieces = [...arts, ...sprites.map(s => s.art)];
+        openArtViewer(state.op.id, pieces, state.artIdx, (index) => {
           if (!state) return;
-          if (index !== state.artIdx) { state.artIdx = index; renderAll(container); }
+          const shown = index < arts.length ? index : sprites[index - arts.length].of;
+          if (shown !== state.artIdx) { state.artIdx = shown; renderAll(container); }
           container.querySelector<HTMLElement>('.splash-img')?.focus();
         }, undefined, {
+          // A sprite has no still: the frame takes its recording's 16:9 and stays empty under it.
+          srcOf: art => art.label.endsWith(' · Chibi') ? SPRITE_FRAME : artUrl(art.url, 2048),
           // With the switch on, a piece that moves plays over its still in the viewer too,
-          // zoomed and dragged with it.
+          // zoomed and dragged with it; a sprite plays in its empty frame.
           onShow: (index, frame) => {
-            frame.querySelector('.av-l2d')?.remove();
-            const art = state?.op.arts?.[index];
-            if (!motionOn || !art?.l2d) return;
+            frame.querySelector('.av-l2d, .av-sprite')?.remove();
+            const art = pieces[index];
+            if (index >= arts.length) {
+              frame.insertAdjacentHTML('beforeend', `
+                <video class="av-sprite" src="${escHtml(art.sprite!)}"
+                       autoplay loop muted playsinline aria-label="${escHtml(art.label)}"></video>`);
+              return;
+            }
+            if (!motionOn || !art.l2d) return;
             frame.insertAdjacentHTML('beforeend', `
               <video class="av-l2d" src="${escHtml(art.l2d)}" ${fitStyle(art)}
                      autoplay loop muted playsinline aria-hidden="true"></video>`);
           },
         });
         return;
+      }
       case 'phase': {
         state.phaseIdx = Number(value);
         state.level = state.op.data.phases[state.phaseIdx].maxLevel;

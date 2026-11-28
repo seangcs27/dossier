@@ -2405,8 +2405,10 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   user-select: none;
 }
 
-// An Arknights piece's Live2D over its still (detail.ts); the stage's own gestures go through it.
-.av-l2d {
+// An Arknights piece's Live2D over its still, and a battle sprite in its empty frame
+// (detail.ts); the stage's own gestures go through both.
+.av-l2d,
+.av-sprite {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -2414,6 +2416,10 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
   object-fit: contain;
   pointer-events: none;
 }
+
+// Zoomed past fit the 2048px still shows through: the animation is 1024px.
+.av-l2d { transition: opacity 0.2s; }
+.art-viewer.zoomed .av-l2d { opacity: 0; }
 
 .av-img {
   display: block;
@@ -2771,26 +2777,6 @@ $tab-taper: 0.94;          // the bottom slope starts at this share of the heigh
     bottom: 0;
     width: 400px;
     transform: translateX(-50%);
-  }
-}
-
-// On a phone the corner was half the art's width and covered it, so the sprite takes a row of
-// its own under the art, at the right; the caption, held to the splash's foot, sits beside it.
-@media (max-width: 640px) {
-  .splash { flex-wrap: wrap; }
-
-  .splash-sprite {
-    position: relative;
-    flex: 0 0 100%;
-    width: auto;
-    height: 169px;
-
-    video {
-      left: auto;
-      right: -70px;
-      width: 300px;
-      transform: none;
-    }
   }
 }
 

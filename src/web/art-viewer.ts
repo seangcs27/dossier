@@ -130,6 +130,9 @@ export function openArtViewer(
     slider.value = String(zoom);
     slider.style.setProperty('--fill', `${((zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100}%`);
     percent.textContent = `${Math.round(zoom)}%`;
+    // Past fit, what a caller lays over the picture gives way to it (`.av-l2d` in styles.scss):
+    // an animation is 1024px where the still is 2048, and showed its pixels zoomed in.
+    dialog.classList.toggle('zoomed', zoom > ZOOM_FIT);
     stage.scrollLeft = cx * stage.scrollWidth - stage.clientWidth / 2;
     stage.scrollTop = cy * stage.scrollHeight - stage.clientHeight / 2;
   };
