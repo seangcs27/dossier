@@ -156,8 +156,9 @@ export interface PtnArt {
   // 'Head', 'Waiting') and a WebM on the wiki, played from there.
   // `ground` is the colour it is recorded on ('#ffffff') where that is not black or (a WebM's)
   // transparent, and `box` the art's box in the recording (x, y, width, height, as shares of its
-  // own) where it does not fill it.
-  motions?: { part: string; url: string; ground?: string; box?: number[] }[];
+  // own) where it does not fill it. `cut` is a recording on black that is cut to the still's
+  // outline in place of being keyed, its art being too dark for the key.
+  motions?: { part: string; url: string; ground?: string; box?: number[]; cut?: boolean }[];
   // An attire's showcase video on the game's YouTube channel, recorded by hand
   // (scripts/lib/ptn-attire-videos.mjs).
   youtube?: string;

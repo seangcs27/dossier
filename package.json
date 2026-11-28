@@ -23,6 +23,7 @@
     "routes": "node scripts/route-inventory.mjs",
     "shots": "node scripts/shots.mjs",
     "render-check": "node scripts/render-check.mjs",
+    "l2d-check": "node scripts/l2d-check.mjs",
     "prebuild:ext": "npm run build:index",
     "build:ext": "webpack --config webpack.ext.js --mode production",
     "prebuild:web": "npm run build:index",

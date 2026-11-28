@@ -44,6 +44,7 @@ npm run design       # build:web, then regenerate design/components/*.html previ
 
 npm run routes       # Every route the web target answers (919), checked against router.ts → dist/routes.txt
 npm run render-check # Every module in src/web/render/ in plain Node, twice from a fixed clock
+npm run l2d-check -- <site-url> [ids]  # Each PtN animated picture's recording against its still
 npm run shots -- capture dist/web .shots/<set>   # Screenshots at 3 widths, and the smoke run
 npm run shots -- compare .shots/<a> .shots/<b>   # Pixel diff of two sets; changed ones to <b>/diff/
 
@@ -138,6 +139,7 @@ scripts/
   build-design-previews.mjs  ← design/components/*.html (inlines the real compiled CSS)
   route-inventory.mjs        ← every route the web target answers, from the generated data, checked against router.ts
   render-check.mjs           ← runs every module in src/web/render/ in plain Node (see "The Astro site")
+  l2d-check.mjs              ← each PtN animated picture's recording laid over its still: place, size, the switch
   shots.mjs                  ← screenshots of 21 pages at 3 widths, the smoke run, and the diff of two sets
 
 design/            ← Claude Design mirror; components/ and manifest.json are generated
@@ -1768,9 +1770,22 @@ to the art's edges (`&trim=10`), while a recording keeps a margin round the art 
 art's box in each recording is **recorded by hand** in `BOX` beside `GROUND` (x, y, width, height
 as shares of it, measured from the same frames; 38 pictures, the 4 others filling theirs; 27
 November 2026, a review of all 42 against their stills found 7 off, Angell, Cassian, Che, Demon's
-Skin2, Dreya's Skin1 and Skin2 and Ignis, measured again by matching the still to the frame), carried
+Skin2, Dreya's Skin1 and Skin2 and Ignis, measured again by matching the still to the frame; 28
+November, `l2d-check` below found six more, Bianca's Skin3, Christina, Coquelic's Skin3, Crache's
+Skin4, Dreya's Skin2 again and EMP's Skin3, set from the scale and shift it measured), carried
 as `box`, and `fitBox` in `ptn-detail.ts` fits that box to the still's frame, keeping its shape,
-the rest of the recording running past the frame on its transparent ground. Kujo Jolyne's files are
+the rest of the recording running past the frame on its transparent ground. **An MP4 on black whose
+art is too dark for the key is cut to the still's outline instead** (`CUT_TO_STILL` in the build,
+the payload's `cut`; 27 November 2026, Dreya's Cosmic Escapist, whose stairs and walls the key took):
+the recording sits in a box the still's size (`.cell-cut`) masked by the still itself, which wsrv.nl
+serves with CORS, as a mask image needs. **`npm run l2d-check -- <site-url> [ids]`**
+(`scripts/l2d-check.mjs`, 27 November 2026) checks every animated picture: it shoots the picture's
+box with the recording held on its first frame and again with the still over magenta, finds the
+scale and shift that best lay one on the other over the still's art alone (so a white card does
+not count), and fails a picture that needs more than 4% of either, or whose Live2D switch does not
+put the still back. Hamel's Azure Waltz is listed as known (`KNOWN`): its greeting zooms its own
+camera. On 28 November 2026 the other 40 pictures it could read fit (Summer's payload was unreadable). Run it after adding to `GROUND`, `BOX` or the wiki's
+recordings; a full run fetches every recording, about 1 GB. Kujo Jolyne's files are
 under `Jolyne_Cujoh` and are missed. The detail page's figure no longer grows under the pointer (24 November 2026, the
 owner's ask; the roster's still does).
 
