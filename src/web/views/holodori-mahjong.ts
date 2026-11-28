@@ -1,7 +1,7 @@
 import { holojongPageHtml } from '../render/holojong-html';
 import { hideSearch } from '../shell';
 
-// The guide to hololive Mahjong -Holojan- (#/holodori/mahjong), in hololive Dreams' world
+// The guide to hololive Mahjong -Holojang- (#/holodori/mahjong), in hololive Dreams' world
 // (_holodori.scss). The page is drawn by render/holojong-html.ts.
 
 /**

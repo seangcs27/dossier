@@ -103,7 +103,7 @@ export function showShell(page: Route['view']): void {
     'holodori-gachas': gachasLink, 'holodori-calendar': calendarLink,
   } as
     Record<string, HTMLElement | undefined>)[page];
-  // The Holojan guide hangs off the front page, so the front page's logo is lit for it.
+  // The Holojang guide hangs off the front page, so the front page's logo is lit for it.
   const front = page === 'holodori-home' || page === 'holodori-mahjong';
   setCurrent(operatorsLink, !own && !front);
   setCurrent(eventsLink, own === eventsLink);

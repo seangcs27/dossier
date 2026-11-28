@@ -54,8 +54,8 @@ const CREDITS: Record<FooterGame, GameCredits> = {
       { what: 'Talent the game lacks', from: [['hololive Fan Wiki', 'https://hololive.wiki']] },
       { what: 'Chorus clips (played from the official music videos) and channel avatars', from: [['YouTube', 'https://www.youtube.com']] },
       {
-        what: 'Holojan guide: facts, and the rules after',
-        from: [['Holojan official site', 'https://www.holo-jong.com/'], ['COVER', 'https://hololivepro.com/news/20261009-01-309/'], ['Mahjong Soul', 'https://mahjongsoul.yo-star.com/']],
+        what: 'Holojang guide: facts, and the rules after',
+        from: [['Holojang official site', 'https://www.holo-jong.com/'], ['COVER', 'https://hololivepro.com/news/20261009-01-309/'], ['Mahjong Soul', 'https://mahjongsoul.yo-star.com/']],
       },
     ],
   },

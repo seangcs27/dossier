@@ -42,7 +42,7 @@ export function parseHash(hash: string): Route {
   if (hash === '#/holodori/songs') return { view: 'holodori-songs' };
   if (hash === '#/holodori/cards') return { view: 'holodori-cards' };
   if (hash === '#/holodori/calendar') return { view: 'holodori-calendar' };
-  // The guide to hololive's mahjong game, Holojan, in hololive Dreams' world.
+  // The guide to hololive's mahjong game, Holojang, in hololive Dreams' world.
   if (hash === '#/holodori/mahjong') return { view: 'holodori-mahjong' };
   const holomem = /^#\/holodori\/holomem\/([^/]+)$/.exec(hash);
   if (holomem) return { view: 'holodori-holomem', id: decodeURIComponent(holomem[1]) };

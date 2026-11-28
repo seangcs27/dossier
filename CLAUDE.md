@@ -2011,11 +2011,15 @@ graph where the game's chorus could be in the full version, 3 s before it, for t
 the game's chorus. It is an estimate, which the song carries as `estimated` and the player
 words "Highlight" instead of "Chorus"; the same pick on the 32 songs whose lengths line up
 fell within 8 s of the game's own window 29 times in 32, over a narrow range. The same file
-gives five songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
+gives twelve songs the dump has no link for their official upload (`MV_FOR`, hololive Dreams'
 channel, the game's length; Amaryllis and CORE//UNBREAKABLE added 25 October, KaienSpectacle 2
-November); 10 songs
-still have no disc, older ones whose only uploads are the full-length audio or a different
-version. **The clip plays at the site's volume** (25 October 2026), from a speaker and
+November, the six of November's updates and Yumemiru Sora He, from hololive's own channel's
+lyric preview, 28 November); 8 songs
+still have no disc, older ones whose only uploads are the full-length audio (the artist's
+auto-generated "Topic" channel on YouTube) or a different version (an English cover, a fes.
+key-visual PV, a call-practice video with voices over the song). A dump link wins over
+`MV_FOR` (GREATEST had none until the dump gave it Kanade's official MV), so a line there is
+dead weight once the dump has the song's link. **The clip plays at the site's volume** (25 October 2026), from a speaker and
 slider under the video that set YouTube's volume over `postMessage`: in a player that small
 YouTube's own slider drops below its speaker, and the owner found the pointer lost it on the
 way. A new song's link comes from the dump,
@@ -2287,6 +2291,20 @@ restated in white and the game's ink, a plain sky ground (its "Dream Park" lette
 over it, was taken off on 31 October 2026, the owner's ask), and Poppins (600 to 900, self-hosted, OFL) throughout. Like the rest of the
 site it animates whatever `prefers-reduced-motion` says. Its handlers are assigned to its
 own page element, since `card.ts`'s finder takes `document`'s.
+
+**The Holojang guide** (`#/holodori/mahjong`, `render/holojong-html.ts`, `views/holodori-mahjong.ts`;
+19 November 2026, linked from the front page) is a beginner's guide to hololive Mahjong -Holojang-
+(ホロライブ麻雀 -ホロじゃん-, COVER and Aiming), in English and Chinese, in this world. **"Holojang" is
+the owner's name for it** (28 November 2026): the game has no English title, its own pages are
+Japanese only, and its domain spells it `holo-jong`; the file and route names keep `holojong` and
+`mahjong`. It was out on 25 November (iOS, Android, Windows; the browser version delayed with no new
+date), and the guide was brought up to the released game on 28 November: how to get it on each
+platform, the modes and the beginner assist. **Its facts are the official site's** (`holo-jong.com`,
+its notices under `/information/`, whose text the page's script fills in, so a plain fetch of the
+page has none of it) and COVER's press release; the modes and the beginner assist are Game*Spark's
+hands-on of 27 November, since no official page lists them. No datamine or wiki of the game was
+found. The official pages still list no rule set, so the rules are standard riichi as Mahjong
+Soul plays them, and the page says so. Nothing in it reads data or the clock.
 
 **Fate/Grand Order** (`#/fgo`, 470 Servants, 52 of them JP only).
 `scripts/build-fgo-index.mjs` reads Atlas Academy's two "basic" exports, NA's and JP's with
