@@ -1364,7 +1364,13 @@ and Helix came to Global on 3 November 2026 with no English wiki page (only thei
 Gallery subpages), so nothing the build reads said so until the record did; they keep the
 Chinese wiki's file and stand under "Arrested 2026". The wiki's page for a new Sinner can lag
 the game by days, so **a Sinner on the Chinese roster only is a line in `RELEASES` away from
-Global**: S1N's Banners page (Archive tab) says who a banner added.
+Global**: S1N's Banners page (Archive tab) says who a banner added. **A CN-only Sinner's id is
+their English name as that wiki gives it, slugged**, and it can give a variant the name of the
+Sinner she is one of: 星渊·夏音 is "Summer" there, as 夏音 is (found 28 November 2026, when the
+two wrote one `summer.json` at once and it came out as invalid JSON). Such a one is named in
+`CN_ONLY_NAMES` in `build-ptn-index.mjs` (星渊·夏音 is `Xingyuan·Summer`, `xingyuan-summer`,
+her title romanised until an English one is out), and a build where two Sinners share an id
+throws before it writes anything, so the last build's files are kept.
 They have a `releasedCn` and a collab's own `code` where they have no MBCC number, and
 **their whole file is that wiki's page for them, in Chinese**
 (`scripts/lib/ptn-bili-page.mjs`, 13 October 2026; the first pass left them a head and
