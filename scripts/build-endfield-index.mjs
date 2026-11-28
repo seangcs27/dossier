@@ -66,10 +66,12 @@ const SPLASH_WIDTH = 1024;
 // splash as baked at SPLASH_WIDTH, its height twice its width as a bust's is, set by eye as
 // holodori's FACE_X are. Si's file is named in the table and was never uploaded (checked 28
 // October 2026), and the wiki's own is fetched on the build after it has one. Argent Flow's
-// `Argent Flow tooltip.png` is missing the same way (checked 18 November 2026).
+// `Argent Flow tooltip.png` is missing the same way (checked 18 November 2026), and so is
+// `Kay tooltip.png` (28 November 2026).
 const BUST_FROM_SPLASH = {
   chr_0036_jsspsi: { left: 320, top: 250, width: 220 },
   chr_0037_minghe: { left: 320, top: 110, width: 340 },
+  chr_0040_sweetpie: { left: 335, top: 235, width: 280 },
 };
 // The glyphs are shown at 11 to 28px.
 const GLYPH_SIZE = 64;

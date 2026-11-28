@@ -1230,7 +1230,9 @@ and the page says it has no operators; a single image or page that cannot be had
 in that set's summary line and whatever is on disk for it stays. An operator whose bust the
 wiki has no file of is cut from their splash art instead (`BUST_FROM_SPLASH` in the script:
 a box on the 1024px splash, set by eye, 180x360 out; Si's, 28 October 2026, the owner's pick
-of two crops: her table row names a `Si tooltip.png` the wiki never had). It is dropped at the
+of two crops: her table row names a `Si tooltip.png` the wiki never had; Argent Flow's and
+Kay's are cut the same way). A new operator whose bust the wiki lacks needs a box added there
+by hand. A cut bust is dropped at the
 start of every build, so the wiki's own bust is fetched the build after it has one. One with
 neither is marked `noPortrait` in the roster, so the filmstrip shows its first letter
 without asking for a file that is not there.
