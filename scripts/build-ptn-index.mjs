@@ -161,6 +161,12 @@ const RELEASED = new Map([
   ...RELEASES.flatMap(([day, names]) => names.map(name => [name, day])),
 ]);
 
+// A CN-only Sinner whose English name the Chinese wiki also gives another Sinner, by their
+// Chinese name: the name they go by here, which their id is made from. 星渊·夏音 is a second
+// Summer (both rows 'Summer', number 011); no English name is out for her yet, so her title
+// is romanised, after Famorene·Eirene's.
+const CN_ONLY_NAMES = new Map([['星渊·夏音', 'Xingyuan·Summer']]);
+
 // The text of every page in the roster's category, by title: the category's members come
 // with their text, so listing them and reading them is one question.
 async function fetchPages() {
@@ -500,7 +506,8 @@ async function buildRoster() {
   const brandOf = new Map([...brandPages.values()].map(text => parseBiliBrand(text, termOf))
     .filter(parsed => parsed?.brand.name).map(({ holder, brand }) => [holder, brand]));
   for (const row of cnOnly) {
-    const id = slugOf(row.name);
+    const name = CN_ONLY_NAMES.get(row.nameCn) ?? row.name;
+    const id = slugOf(name);
     // A collab's Sinner is filed under a code of its own world, not an MBCC number.
     const code = /^\d+$/.test(row.number) || row.number === '数据未知' ? {} : { code: row.number };
     // The page's birthplace is the roster entry's, as the English wiki's is; the rest is the
@@ -518,14 +525,14 @@ async function buildRoster() {
       Object.assign(page, translated);
     }
     sinners.push({
-      id, name: row.name, nameCn: row.nameCn,
+      id, name, nameCn: row.nameCn,
       number: row.number === '数据未知' ? 'Unknown' : row.number, ...code,
       rank: row.rank, ...(row.height ? { height: row.height } : {}),
       tendency: row.tendency, libram: row.libram, birthplace, tags: [], tagsCn: row.tagsCn,
       ...(row.limited ? { limited: row.limited } : {}), ...(row.core ? { core: true } : {}),
       // One the release record has a day for is on Global already, with the English wiki yet to
       // write their page: they keep the Chinese wiki's file and lose the CN-only mark.
-      ...(RELEASED.has(row.name) ? {} : { cnOnly: true }), releasedCn: row.releasedCn, ...(page.zh ? { translated: true } : {}),
+      ...(RELEASED.has(name) ? {} : { cnOnly: true }), releasedCn: row.releasedCn, ...(page.zh ? { translated: true } : {}),
     });
     details.push({
       id,
@@ -533,7 +540,7 @@ async function buildRoster() {
         Name_CN: row.nameCn,
         ...(row.height ? { Height: `${row.height}cm` } : {}),
         Bio: 'This Sinner is on the CN server only, and the English wiki has no page for them.',
-      }, row.name)),
+      }, name)),
     });
   }
 
@@ -773,6 +780,11 @@ try {
   const { sinners, details, unfinished, strays } = await buildRoster();
   await addMotions(details, sinners);
   const videoStrays = addAttireVideos(details);
+  // Two Sinners with one id would write one payload file twice at once, which comes out as
+  // neither. Thrown before anything is written, so the last build's files are kept.
+  const ids = sinners.map(s => s.id);
+  const twice = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+  if (twice.length) throw new Error(`two Sinners share the id ${twice.join(', ')} — name one in CN_ONLY_NAMES`);
   await writeFile(SINNERS_FILE, JSON.stringify(sinners));
   // Written again every build, since a page changes with the game.
   await Promise.all(details.map(d => writeFile(path.join(detailDir, `${d.id}.json`), JSON.stringify(d))));
