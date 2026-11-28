@@ -12,6 +12,15 @@ export const MV_FOR = {
   m0367: '7CM4ZbyrafQ',   // CORE//UNBREAKABLE
   m0368: '8On-I5qQeLw',   // Forge My Soul
   m0369: 'R-ChvjRIKdk',   // KaienSpectacle (117 s against 116; added 2 November 2026)
+  // Added 28 November 2026, each checked embeddable with YouTube's oEmbed.
+  m0383: 'uUckK82qZkM',   // slight fever (130 s against 129)
+  m0384: '_dpOzpLoIoA',   // Dear You, A Love Song Just for You! (104 against 104)
+  m0385: 'bgwcVkAMV8w',   // Burning hope (130 against 130)
+  m0386: 'pzUoVO4Lf6o',   // Halulu (124 against 122)
+  m0387: 'ozuDe2Wn8Hc',   // PEKORISER (138 against 135)
+  m0405: 'K18AokpGnBs',   // Holiday Dream (137 against 135)
+  // hololive's own channel: the lyric preview of 24 January 2020, 103 s against 102.
+  m0003: 'mE_Q5vam910',   // Yumemiru Sora He
 };
 
 // The game plays a short cut of most songs (about 2 minutes) and its dump links the full
