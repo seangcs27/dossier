@@ -278,7 +278,7 @@ function showOnWall(scope: Element, art: PtnArt, ask: number | null): void {
   const frame = scope.querySelector<HTMLElement>('.cell-print, .cell-stand, .av-art');
   const img = frame?.querySelector('img');
   if (!frame || !img) return;
-  frame.querySelector('.cell-motion')?.remove();
+  frame.querySelector('.cell-cut, .cell-motion')?.remove();
   img.classList.remove('under');
   scope.querySelectorAll('[data-motion]').forEach(b => b.setAttribute('aria-pressed', 'false'));
   scope.querySelector(`[data-motion="${ask}"]`)?.setAttribute('aria-pressed', 'true');
@@ -287,14 +287,16 @@ function showOnWall(scope: Element, art: PtnArt, ask: number | null): void {
   if (index < 0) return;
   const loop = index === idle;
   // The loop starts on its own, which a browser allows only without sound.
-  const { url, ground, box } = art.motions![index];
-  // An MP4 on black has its ground keyed out (`#ptn-key`, KEY_HTML). Any other ground (white,
-  // a colour, a WebM's own) stays, cut back to the art's box: a card the still's size.
-  const keyed = /\.mp4(\?|$)/.test(url) && !ground;
+  const { url, ground, box, cut } = art.motions![index];
+  // An MP4 on black has its ground keyed out (`#ptn-key`, KEY_HTML), unless its art is too dark
+  // for that (`cut`): it is then masked by the still's own outline, in a box the still's size.
+  // Any other ground (white, a colour, a WebM's own) stays, cut back to the art's box: a card the
+  // still's size.
+  const keyed = /\.mp4(\?|$)/.test(url) && !ground && !cut;
   const media = Object.assign(document.createElement('video'), {
     className: `cell-motion${keyed ? ' keyed' : ''}`, src: url, autoplay: true, loop, muted: loop, playsInline: true,
   });
-  if (box && !keyed) {
+  if (box && !keyed && !cut) {
     const [x, y, w, h] = box.map(n => n * 100);
     media.style.clipPath = `inset(${y}% ${100 - x - w}% ${100 - y - h}% ${x}%)`;
   }
@@ -302,7 +304,14 @@ function showOnWall(scope: Element, art: PtnArt, ask: number | null): void {
   if (!loop) media.addEventListener('ended', () => showOnWall(scope, art, null));
   // The picture holds its place until the first frame is in, so the wall does not go blank.
   media.addEventListener('loadeddata', () => img.classList.add('under'), { once: true });
-  frame.append(media);
+  if (!cut) {
+    frame.append(media);
+    return;
+  }
+  const holder = Object.assign(document.createElement('span'), { className: 'cell-cut' });
+  holder.style.setProperty('--still', `url("${img.currentSrc || img.src}")`);
+  holder.append(media);
+  frame.append(holder);
 }
 
 // A press on the strip, on the wall or in the viewer: a reaction, or the Live2D switch. Says

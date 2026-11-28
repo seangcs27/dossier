@@ -985,8 +985,14 @@ body[data-view='ptn'] #view {
 // following its own edge (18 November 2026, the owner's ask; only the phase-up art was before,
 // and a mount showed through its gaps as a white sheet). Given the room the frame took.
 .cell-print.bare {
-  // Under the Sinner's height line, which is always 1/13 of the wall down, and its tag.
-  top: calc(var(--band-h) * 0.12);
+  // As large as the wall holds it: between the Sinner's height line, which is always 1/13 of
+  // the wall down, with its tag and the motion strip above it, and the floor, 4px clear of
+  // each, and centred there (27 November 2026, the owner's ask). The box stays the picture's
+  // own, which the recording's place is worked out from (`fitBox`).
+  --print-top: calc(var(--band-h) / 13 + 4px);
+  --print-h: calc(var(--band-h) - var(--print-top) - 4px);
+  top: calc(var(--print-top) + var(--print-h) / 2);
+  transform: translate(-50%, -50%);
   padding: 0;
   border: 0;
   background: none;
@@ -1001,7 +1007,7 @@ body[data-view='ptn'] #view {
 
   img {
     max-width: calc(100cqw - var(--gutter) - var(--sp-8));
-    max-height: calc(var(--band-h) * 0.86);
+    max-height: var(--print-h);
   }
 
   // A rectangle (an interrogation's picture, an attire that is one): its four edges fade
@@ -1268,6 +1274,15 @@ body[data-view='ptn'] #view {
 }
 
 :is(.cell-print, .av-art) img.under { visibility: hidden; }
+
+// A recording cut to the still's outline (the build's CUT_TO_STILL): a box the still's size,
+// masked by the still, with the recording placed in it as it would be in the frame.
+.cell-cut {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: var(--still) center / 100% 100% no-repeat;
+  mask: var(--still) center / 100% 100% no-repeat;
+}
 
 // The wiki's MP4 recordings on black, which the key turns transparent (KEY_HTML in
 // views/ptn-detail.ts). The others, on white or a colour (the build's GROUND), are not keyed.
